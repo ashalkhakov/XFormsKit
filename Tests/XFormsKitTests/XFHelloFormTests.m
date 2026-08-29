@@ -13,6 +13,8 @@
     if (path) {
         return [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:NULL];
     }
+    // Fallback when the fixture has not been copied into the test bundle
+    // (running the file as a loose compile).
     NSString *here = [@__FILE__ stringByDeletingLastPathComponent];
     path = [[here stringByDeletingLastPathComponent]
             stringByAppendingPathComponent:@"Fixtures/hello.xhtml"];

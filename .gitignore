@@ -9,21 +9,14 @@ shared_obj/
 # Xcode
 build/
 DerivedData/
-xcuserdata/
 *.xcuserdata
 *.xcuserstate
+xcuserdata/
 *.moved-aside
 *.hmap
 *.ipa
 *.dSYM.zip
 *.dSYM
-
-# CocoaPods / Carthage / fastlane leftovers
-Carthage/Build/
-fastlane/report.xml
-fastlane/Preview.html
-fastlane/screenshots/**/*.png
-fastlane/test_output
 
 # Misc
 .DS_Store
