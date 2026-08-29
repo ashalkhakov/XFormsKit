@@ -1,0 +1,10 @@
+#import "XFXPath.h"
+#import "XFXPathValue.h"
+#import "XFExprContext.h"
+#import "XFModel.h"
+#import "XFInstance.h"
+#import "XFXML.h"
+#import "XFErrors.h"
+#import <Foundation/NSXMLNode.h>
+#import <Foundation/NSXMLElement.h>
+#import <Foundation/NSXMLDocument.h>
