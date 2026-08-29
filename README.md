@@ -45,6 +45,6 @@ Requires GNUstep Base, GUI, Make, and [tools-xctest](https://github.com/gnustep/
 
 ## License
 
-GNU Lesser General Public License 2.1. See `LICENSE` and `COPYING.LIB`.
+GNU Lesser General Public License 2.1. See `LICENSE`.
 The implementation is original so a later relicensing is still possible
 if all contributors agree.
