@@ -24,9 +24,540 @@
 		AA000001000000000000000D /* XFProcessor.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000000D; };
 		AA000001000000000000000E /* XFFormView.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000000E; };
 		AA0000010000000000000010 /* XFormsKit.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000010; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000011 /* XFNamespaces.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000011; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000012 /* XFErrors.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000012; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000013 /* XFXML.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000013; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000014 /* XFInstance.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000014; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000015 /* XFModel.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000015; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000016 /* XFExprContext.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000016; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000017 /* XFXPathValue.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000017; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000018 /* XFXPath.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000018; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000019 /* XFBinding.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000019; settings = {ATTRIBUTES = (Public, ); }; };
+		AA000001000000000000001A /* XFControl.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000001000000000000001A; settings = {ATTRIBUTES = (Public, ); }; };
+		AA000001000000000000001B /* XFInputControl.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000001000000000000001B; settings = {ATTRIBUTES = (Public, ); }; };
+		AA000001000000000000001C /* XFOutputControl.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000001000000000000001C; settings = {ATTRIBUTES = (Public, ); }; };
+		AA000001000000000000001D /* XFProcessor.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000001000000000000001D; settings = {ATTRIBUTES = (Public, ); }; };
+		AA000001000000000000001E /* XFFormView.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000001000000000000001E; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0000010000000000000020 /* XFXPathTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000020; };
 		AA0000010000000000000021 /* XFInstanceTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000021; };
 		AA0000010000000000000022 /* XFHelloFormTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000022; };
 		AA0000010000000000000023 /* hello.xhtml in Resources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000023; };
 		AA0000010000000000000024 /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		CC0000010000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DD0000010000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE0000010000000000000001;
+			remoteInfo = XFormsKit;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		BB0000010000000000000001 /* XFNamespaces.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFNamespaces.m; sourceTree = "<group>"; };
+		BB0000010000000000000002 /* XFErrors.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFErrors.m; sourceTree = "<group>"; };
+		BB0000010000000000000003 /* XFXML.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXML.m; sourceTree = "<group>"; };
+		BB0000010000000000000004 /* XFInstance.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFInstance.m; sourceTree = "<group>"; };
+		BB0000010000000000000005 /* XFModel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFModel.m; sourceTree = "<group>"; };
+		BB0000010000000000000006 /* XFExprContext.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFExprContext.m; sourceTree = "<group>"; };
+		BB0000010000000000000007 /* XFXPathValue.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXPathValue.m; sourceTree = "<group>"; };
+		BB0000010000000000000008 /* XFXPath.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXPath.m; sourceTree = "<group>"; };
+		BB0000010000000000000030 /* XFXPathLexer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXPathLexer.m; sourceTree = "<group>"; };
+		BB0000010000000000000031 /* XFXPathParser.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXPathParser.m; sourceTree = "<group>"; };
+		BB0000010000000000000032 /* XFXPathPriv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFXPathPriv.h; sourceTree = "<group>"; };
+		BB0000010000000000000009 /* XFBinding.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFBinding.m; sourceTree = "<group>"; };
+		BB000001000000000000000A /* XFControl.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFControl.m; sourceTree = "<group>"; };
+		BB000001000000000000000B /* XFInputControl.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFInputControl.m; sourceTree = "<group>"; };
+		BB000001000000000000000C /* XFOutputControl.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFOutputControl.m; sourceTree = "<group>"; };
+		BB000001000000000000000D /* XFProcessor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFProcessor.m; sourceTree = "<group>"; };
+		BB000001000000000000000E /* XFFormView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFFormView.m; sourceTree = "<group>"; };
+		BB0000010000000000000010 /* XFormsKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFormsKit.h; sourceTree = "<group>"; };
+		BB0000010000000000000011 /* XFNamespaces.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFNamespaces.h; sourceTree = "<group>"; };
+		BB0000010000000000000012 /* XFErrors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFErrors.h; sourceTree = "<group>"; };
+		BB0000010000000000000013 /* XFXML.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFXML.h; sourceTree = "<group>"; };
+		BB0000010000000000000014 /* XFInstance.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFInstance.h; sourceTree = "<group>"; };
+		BB0000010000000000000015 /* XFModel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFModel.h; sourceTree = "<group>"; };
+		BB0000010000000000000016 /* XFExprContext.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFExprContext.h; sourceTree = "<group>"; };
+		BB0000010000000000000017 /* XFXPathValue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFXPathValue.h; sourceTree = "<group>"; };
+		BB0000010000000000000018 /* XFXPath.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFXPath.h; sourceTree = "<group>"; };
+		BB0000010000000000000019 /* XFBinding.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFBinding.h; sourceTree = "<group>"; };
+		BB000001000000000000001A /* XFControl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFControl.h; sourceTree = "<group>"; };
+		BB000001000000000000001B /* XFInputControl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFInputControl.h; sourceTree = "<group>"; };
+		BB000001000000000000001C /* XFOutputControl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFOutputControl.h; sourceTree = "<group>"; };
+		BB000001000000000000001D /* XFProcessor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFProcessor.h; sourceTree = "<group>"; };
+		BB000001000000000000001E /* XFFormView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFFormView.h; sourceTree = "<group>"; };
+		BB0000010000000000000020 /* XFXPathTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXPathTests.m; sourceTree = "<group>"; };
+		BB0000010000000000000021 /* XFInstanceTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFInstanceTests.m; sourceTree = "<group>"; };
+		BB0000010000000000000022 /* XFHelloFormTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFHelloFormTests.m; sourceTree = "<group>"; };
+		BB0000010000000000000023 /* hello.xhtml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = hello.xhtml; sourceTree = "<group>"; };
+		BB0000010000000000000100 /* XFormsKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = XFormsKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB0000010000000000000101 /* XFormsKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XFormsKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB0000010000000000000102 /* COPYING.LIB */ = {isa = PBXFileReference; lastKnownFileType = text; path = COPYING.LIB; sourceTree = "<group>"; };
+		BB0000010000000000000105 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		BB0000010000000000000103 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		BB0000010000000000000104 /* GNUmakefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = GNUmakefile; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		FF0000010000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FF0000010000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000010000000000000024 /* XFormsKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		GG0000010000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				BB0000010000000000000103 /* README.md */,
+				BB0000010000000000000102 /* COPYING.LIB */,
+				BB0000010000000000000105 /* LICENSE */,
+				BB0000010000000000000104 /* GNUmakefile */,
+				GG0000010000000000000002 /* Sources */,
+				GG0000010000000000000003 /* Tests */,
+				GG0000010000000000000004 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		GG0000010000000000000002 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				GG0000010000000000000005 /* XFormsKit */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		GG0000010000000000000003 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				GG0000010000000000000006 /* XFormsKitTests */,
+				GG0000010000000000000007 /* Fixtures */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		GG0000010000000000000004 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BB0000010000000000000100 /* XFormsKit.framework */,
+				BB0000010000000000000101 /* XFormsKitTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		GG0000010000000000000005 /* XFormsKit */ = {
+			isa = PBXGroup;
+			children = (
+				BB0000010000000000000010 /* XFormsKit.h */,
+				BB0000010000000000000011 /* XFNamespaces.h */,
+				BB0000010000000000000001 /* XFNamespaces.m */,
+				BB0000010000000000000012 /* XFErrors.h */,
+				BB0000010000000000000002 /* XFErrors.m */,
+				BB0000010000000000000013 /* XFXML.h */,
+				BB0000010000000000000003 /* XFXML.m */,
+				BB0000010000000000000014 /* XFInstance.h */,
+				BB0000010000000000000004 /* XFInstance.m */,
+				BB0000010000000000000015 /* XFModel.h */,
+				BB0000010000000000000005 /* XFModel.m */,
+				BB0000010000000000000016 /* XFExprContext.h */,
+				BB0000010000000000000017 /* XFXPathValue.h */,
+				BB0000010000000000000018 /* XFXPath.h */,
+				BB0000010000000000000019 /* XFBinding.h */,
+				BB0000010000000000000009 /* XFBinding.m */,
+				BB000001000000000000001A /* XFControl.h */,
+				BB000001000000000000000A /* XFControl.m */,
+				BB000001000000000000001B /* XFInputControl.h */,
+				BB000001000000000000000B /* XFInputControl.m */,
+				BB000001000000000000001C /* XFOutputControl.h */,
+				BB000001000000000000000C /* XFOutputControl.m */,
+				BB000001000000000000001D /* XFProcessor.h */,
+				BB000001000000000000000D /* XFProcessor.m */,
+				BB000001000000000000001E /* XFFormView.h */,
+				GG0000010000000000000008 /* XPath */,
+				GG0000010000000000000009 /* UI */,
+			);
+			path = XFormsKit;
+			sourceTree = "<group>";
+		};
+		GG0000010000000000000006 /* XFormsKitTests */ = {
+			isa = PBXGroup;
+			children = (
+				BB0000010000000000000020 /* XFXPathTests.m */,
+				BB0000010000000000000021 /* XFInstanceTests.m */,
+				BB0000010000000000000022 /* XFHelloFormTests.m */,
+			);
+			path = XFormsKitTests;
+			sourceTree = "<group>";
+		};
+		GG0000010000000000000007 /* Fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				BB0000010000000000000023 /* hello.xhtml */,
+			);
+			path = Fixtures;
+			sourceTree = "<group>";
+		};
+		GG0000010000000000000008 /* XPath */ = {
+			isa = PBXGroup;
+			children = (
+				BB0000010000000000000006 /* XFExprContext.m */,
+				BB0000010000000000000007 /* XFXPathValue.m */,
+				BB0000010000000000000032 /* XFXPathPriv.h */,
+				BB0000010000000000000030 /* XFXPathLexer.m */,
+				BB0000010000000000000031 /* XFXPathParser.m */,
+				BB0000010000000000000008 /* XFXPath.m */,
+			);
+			path = XPath;
+			sourceTree = "<group>";
+		};
+		GG0000010000000000000009 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				BB000001000000000000000E /* XFFormView.m */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		HH0000010000000000000001 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000010000000000000010 /* XFormsKit.h in Headers */,
+				AA0000010000000000000011 /* XFNamespaces.h in Headers */,
+				AA0000010000000000000012 /* XFErrors.h in Headers */,
+				AA0000010000000000000013 /* XFXML.h in Headers */,
+				AA0000010000000000000014 /* XFInstance.h in Headers */,
+				AA0000010000000000000015 /* XFModel.h in Headers */,
+				AA0000010000000000000016 /* XFExprContext.h in Headers */,
+				AA0000010000000000000017 /* XFXPathValue.h in Headers */,
+				AA0000010000000000000018 /* XFXPath.h in Headers */,
+				AA0000010000000000000019 /* XFBinding.h in Headers */,
+				AA000001000000000000001A /* XFControl.h in Headers */,
+				AA000001000000000000001B /* XFInputControl.h in Headers */,
+				AA000001000000000000001C /* XFOutputControl.h in Headers */,
+				AA000001000000000000001D /* XFProcessor.h in Headers */,
+				AA000001000000000000001E /* XFFormView.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		EE0000010000000000000001 /* XFormsKit */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = LL0000010000000000000001 /* Build configuration list for PBXNativeTarget "XFormsKit" */;
+			buildPhases = (
+				HH0000010000000000000001 /* Headers */,
+				SS0000010000000000000001 /* Sources */,
+				FF0000010000000000000001 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = XFormsKit;
+			productName = XFormsKit;
+			productReference = BB0000010000000000000100 /* XFormsKit.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		EE0000010000000000000002 /* XFormsKitTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = LL0000010000000000000002 /* Build configuration list for PBXNativeTarget "XFormsKitTests" */;
+			buildPhases = (
+				SS0000010000000000000002 /* Sources */,
+				FF0000010000000000000002 /* Frameworks */,
+				RR0000010000000000000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DP0000010000000000000001 /* PBXTargetDependency */,
+			);
+			name = XFormsKitTests;
+			productName = XFormsKitTests;
+			productReference = BB0000010000000000000101 /* XFormsKitTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DD0000010000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					EE0000010000000000000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+					EE0000010000000000000002 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = LL0000010000000000000003 /* Build configuration list for PBXProject "XFormsKit" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = GG0000010000000000000001;
+			productRefGroup = GG0000010000000000000004 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				EE0000010000000000000001 /* XFormsKit */,
+				EE0000010000000000000002 /* XFormsKitTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		RR0000010000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000010000000000000023 /* hello.xhtml in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		SS0000010000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000010000000000000001 /* XFNamespaces.m in Sources */,
+				AA0000010000000000000002 /* XFErrors.m in Sources */,
+				AA0000010000000000000003 /* XFXML.m in Sources */,
+				AA0000010000000000000004 /* XFInstance.m in Sources */,
+				AA0000010000000000000005 /* XFModel.m in Sources */,
+				AA0000010000000000000006 /* XFExprContext.m in Sources */,
+				AA0000010000000000000007 /* XFXPathValue.m in Sources */,
+				AA0000010000000000000030 /* XFXPathLexer.m in Sources */,
+				AA0000010000000000000031 /* XFXPathParser.m in Sources */,
+				AA0000010000000000000008 /* XFXPath.m in Sources */,
+				AA0000010000000000000009 /* XFBinding.m in Sources */,
+				AA000001000000000000000A /* XFControl.m in Sources */,
+				AA000001000000000000000B /* XFInputControl.m in Sources */,
+				AA000001000000000000000C /* XFOutputControl.m in Sources */,
+				AA000001000000000000000D /* XFProcessor.m in Sources */,
+				AA000001000000000000000E /* XFFormView.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		SS0000010000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000010000000000000020 /* XFXPathTests.m in Sources */,
+				AA0000010000000000000021 /* XFInstanceTests.m in Sources */,
+				AA0000010000000000000022 /* XFHelloFormTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		DP0000010000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE0000010000000000000001 /* XFormsKit */;
+			targetProxy = CC0000010000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		XC0000010000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		XC0000010000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		XC0000010000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "LGPL-2.1";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsKit;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Sources",
+					"$(SRCROOT)/Sources/XFormsKit",
+					"$(SRCROOT)/Sources/XFormsKit/XPath",
+				);
+				PUBLIC_HEADERS_FOLDER_PATH = Headers;
+			};
+			name = Debug;
+		};
+		XC0000010000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "LGPL-2.1";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsKit;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Sources",
+					"$(SRCROOT)/Sources/XFormsKit",
+					"$(SRCROOT)/Sources/XFormsKit/XPath",
+				);
+				PUBLIC_HEADERS_FOLDER_PATH = Headers;
+			};
+			name = Release;
+		};
+		XC0000010000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Sources",
+					"$(SRCROOT)/Sources/XFormsKit",
+					"$(SRCROOT)/Sources/XFormsKit/XPath",
+				);
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsKitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		XC0000010000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Sources",
+					"$(SRCROOT)/Sources/XFormsKit",
+					"$(SRCROOT)/Sources/XFormsKit/XPath",
+				);
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsKitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		LL0000010000000000000001 /* Build configuration list for PBXNativeTarget "XFormsKit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				XC0000010000000000000003 /* Debug */,
+				XC0000010000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		LL0000010000000000000002 /* Build configuration list for PBXNativeTarget "XFormsKitTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				XC0000010000000000000005 /* Debug */,
+				XC0000010000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		LL0000010000000000000003 /* Build configuration list for PBXProject "XFormsKit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				XC0000010000000000000001 /* Debug */,
+				XC0000010000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = DD0000010000000000000001 /* Project object */;
+}
