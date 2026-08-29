@@ -46,6 +46,8 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/XFModel.m \
 	Sources/XFormsKit/XPath/XFExprContext.m \
 	Sources/XFormsKit/XPath/XFXPathValue.m \
+	Sources/XFormsKit/XPath/XFXPathLexer.m \
+	Sources/XFormsKit/XPath/XFXPathParser.m \
 	Sources/XFormsKit/XPath/XFXPath.m \
 	Sources/XFormsKit/XFBinding.m \
 	Sources/XFormsKit/XFControl.m \
@@ -54,7 +56,7 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/XFProcessor.m \
 	Sources/XFormsKit/UI/XFFormView.m
 
-XFormsKit_INCLUDE_DIRS = -ISources -ISources/XFormsKit
+XFormsKit_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath
 XFormsKit_OBJCFLAGS += -fobjc-arc -Wall -Wextra
 
 XFormsKitTests_NEEDS_GUI = yes
@@ -64,7 +66,7 @@ XFormsKitTests_OBJC_FILES = \
 	Tests/XFormsKitTests/XFHelloFormTests.m
 
 XFormsKitTests_RESOURCE_FILES = Tests/Fixtures/hello.xhtml
-XFormsKitTests_INCLUDE_DIRS = -ISources -ISources/XFormsKit
+XFormsKitTests_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath
 XFormsKitTests_OBJCFLAGS += -fobjc-arc -Wall
 XFormsKitTests_BUNDLE_LIBS += -lXFormsKit -lXCTest
 XFormsKitTests_LIB_DIRS += -L./XFormsKit.framework/Versions/Current
