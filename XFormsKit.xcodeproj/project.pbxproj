@@ -24,33 +24,9 @@
 		AA000001000000000000000D /* XFProcessor.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000000D; };
 		AA000001000000000000000E /* XFFormView.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000000E; };
 		AA0000010000000000000010 /* XFormsKit.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000010; settings = {ATTRIBUTES = (Public, ); }; };
-		AA0000010000000000000011 /* XFNamespaces.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000011; settings = {ATTRIBUTES = (Public, ); }; };
-		AA0000010000000000000012 /* XFErrors.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000012; settings = {ATTRIBUTES = (Public, ); }; };
-		AA0000010000000000000013 /* XFXML.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000013; settings = {ATTRIBUTES = (Public, ); }; };
-		AA0000010000000000000014 /* XFInstance.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000014; settings = {ATTRIBUTES = (Public, ); }; };
-		AA0000010000000000000015 /* XFModel.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000015; settings = {ATTRIBUTES = (Public, ); }; };
-		AA0000010000000000000016 /* XFExprContext.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000016; settings = {ATTRIBUTES = (Public, ); }; };
-		AA0000010000000000000017 /* XFXPathValue.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000017; settings = {ATTRIBUTES = (Public, ); }; };
-		AA0000010000000000000018 /* XFXPath.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000018; settings = {ATTRIBUTES = (Public, ); }; };
-		AA0000010000000000000019 /* XFBinding.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000019; settings = {ATTRIBUTES = (Public, ); }; };
-		AA000001000000000000001A /* XFControl.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000001000000000000001A; settings = {ATTRIBUTES = (Public, ); }; };
-		AA000001000000000000001B /* XFInputControl.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000001000000000000001B; settings = {ATTRIBUTES = (Public, ); }; };
-		AA000001000000000000001C /* XFOutputControl.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000001000000000000001C; settings = {ATTRIBUTES = (Public, ); }; };
-		AA000001000000000000001D /* XFProcessor.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000001000000000000001D; settings = {ATTRIBUTES = (Public, ); }; };
-		AA000001000000000000001E /* XFFormView.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000001000000000000001E; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0000010000000000000020 /* XFXPathTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000020; };
 		AA0000010000000000000021 /* XFInstanceTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000021; };
 		AA0000010000000000000022 /* XFHelloFormTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000022; };
 		AA0000010000000000000023 /* hello.xhtml in Resources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000023; };
 		AA0000010000000000000024 /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100; };
 /* End PBXBuildFile section */
-
-/* Begin PBXContainerItemProxy section */
-		CC0000010000000000000001 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = DD0000010000000000000001 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = EE0000010000000000000001;
-			remoteInfo = XFormsKit;
-		};
-/* End PBXContainerItemProxy section */
