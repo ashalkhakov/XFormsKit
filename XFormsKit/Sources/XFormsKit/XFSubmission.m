@@ -113,12 +113,13 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
         }
     }
 
-    NSString *ref = [[element attributeForName:@"ref"] stringValue];
-    if (ref.length) {
-        sub.refBinding = [XFBinding bindingWithExpression:ref element:element error:error];
-        if (sub.refBinding == nil) {
-            return nil;
+    NSError *bindError = nil;
+    sub.refBinding = [XFBinding bindingForElement:element attribute:@"ref" error:&bindError];
+    if (bindError) {
+        if (error) {
+            *error = bindError;
         }
+        return nil;
     }
 
     // xf:header (XSLTForms .header(nodeset, combine, name, values)): the

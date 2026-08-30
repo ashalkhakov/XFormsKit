@@ -18,6 +18,7 @@
 #import "XFUploadControl.h"
 #import "XFNodeState.h"
 #import "XFModel.h"
+#import "XFProcessor.h"
 #import "XFErrors.h"
 #import "XFXMLEvents.h"
 #import "XFDeferredUpdates.h"
@@ -29,6 +30,10 @@
 @property (nonatomic, strong) XFBinding *hintBinding;
 @property (nonatomic, strong) XFBinding *helpBinding;
 @property (nonatomic, strong) XFBinding *alertBinding;
+/// The label as parts: NSString literals and XFBinding for nested
+/// xf:output elements / the label's own ref|value|bind (G-23).
+@property (nonatomic, copy) NSArray *labelParts;
+@property (nonatomic, assign) BOOL labelIsDynamic;
 @property (nonatomic, copy, readwrite) NSArray<NSString *> *mipEvents;
 @property (nonatomic, assign) BOOL mipKnown;
 @end
@@ -89,8 +94,86 @@
     return s.length ? s : nil;
 }
 
+/// XsltForms_label: a label with ref/value/bind is a bound element
+/// refreshed with the control; inline markup is text and nested
+/// xf:output elements are evaluated in place (label.xsl) (G-23).
+- (void)loadLabelParts
+{
+    self.labelParts = nil;
+    self.labelIsDynamic = NO;
+    NSXMLElement *el = [XFXML childElementWithLocalName:@"label"
+                                          namespaceURI:XFXFormsNamespaceURI
+                                             ofElement:self.element];
+    if (el == nil) {
+        return;
+    }
+    XFBinding *own = [XFBinding bindingForElement:el attribute:@"ref" error:NULL];
+    if (own == nil && [el attributeForName:@"value"]) {
+        own = [XFBinding bindingForElement:el attribute:@"value" error:NULL];
+    }
+    if (own) {
+        self.labelParts = @[ own ];
+        self.labelIsDynamic = YES;
+        return;
+    }
+    NSMutableArray *parts = [NSMutableArray array];
+    [self collectLabelPartsOf:el into:parts];
+    self.labelParts = parts;
+}
+
+- (void)collectLabelPartsOf:(NSXMLElement *)el into:(NSMutableArray *)parts
+{
+    for (NSXMLNode *child in [el children]) {
+        NSXMLNodeKind kind = [child kind];
+        if (kind == NSXMLTextKind) {
+            [parts addObject:[child stringValue] ?: @""];
+        } else if (kind == NSXMLElementKind) {
+            NSXMLElement *c = (NSXMLElement *)child;
+            if ([XFXML element:c hasLocalName:@"output" namespaceURI:XFXFormsNamespaceURI]) {
+                NSString *attr = [c attributeForName:@"value"] && ![c attributeForName:@"ref"] ? @"value" : @"ref";
+                XFBinding *b = [XFBinding bindingForElement:c attribute:attr error:NULL];
+                if (b) {
+                    [parts addObject:b];
+                    self.labelIsDynamic = YES;
+                }
+            } else {
+                [self collectLabelPartsOf:c into:parts];
+            }
+        }
+    }
+}
+
+- (XFExprContext *)childContextFrom:(XFExprContext *)ctx
+{
+    // XsltForms_globals.build: children evaluate against the element's
+    // bound node (`element.node || ctx`) — labels, hints, items, itemsets
+    if (self.boundNode && ctx.contextNode != self.boundNode) {
+        XFExprContext *c = [ctx cloneWithNode:self.boundNode position:1 nodeList:@[ self.boundNode ]];
+        return c;
+    }
+    return ctx;
+}
+
+- (NSString *)labelInContext:(XFExprContext *)ctx
+{
+    if (!self.labelIsDynamic) {
+        return self.label;
+    }
+    XFExprContext *labelCtx = [self childContextFrom:ctx];
+    NSMutableString *text = [NSMutableString string];
+    for (id part in self.labelParts) {
+        if ([part isKindOfClass:[XFBinding class]]) {
+            [text appendString:[(XFBinding *)part stringValueInContext:labelCtx error:NULL] ?: @""];
+        } else {
+            [text appendString:part];
+        }
+    }
+    return [text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+}
+
 - (void)loadSupportChildren
 {
+    [self loadLabelParts];
     self.hintBinding = [self bindingFromChild:@"hint"];
     self.helpBinding = [self bindingFromChild:@"help"];
     self.alertBinding = [self bindingFromChild:@"alert"];
@@ -101,8 +184,12 @@
     self.alert = [self literalFromChild:@"alert"];
 }
 
-- (void)refreshSupportInContext:(XFExprContext *)ctx
+- (void)refreshSupportInContext:(XFExprContext *)context
 {
+    if (self.labelIsDynamic) {
+        self.label = [self labelInContext:context];
+    }
+    XFExprContext *ctx = [self childContextFrom:context];
     if (self.hintBinding) {
         self.hint = [self.hintBinding stringValueInContext:ctx error:NULL];
     }
@@ -235,23 +322,8 @@
               preferredAttribute:(NSString *)preferred
                           error:(NSError **)error
 {
-    NSString *attr = preferred;
-    if (attr.length == 0 || [element attributeForName:attr] == nil) {
-        if ([element attributeForName:@"nodeset"]) {
-            attr = @"nodeset";
-        } else if ([element attributeForName:@"ref"]) {
-            attr = @"ref";
-        } else if ([element attributeForName:@"value"]) {
-            attr = @"value";
-        } else {
-            return nil;
-        }
-    }
-    NSString *expr = [[element attributeForName:attr] stringValue];
-    if (expr.length == 0) {
-        return nil;
-    }
-    return [XFBinding bindingWithExpression:expr element:element error:error];
+    // bind="id" wins over ref/nodeset/value (toScriptBinding.xsl), G-21
+    return [XFBinding bindingForElement:element attribute:preferred error:error];
 }
 
 + (instancetype)controlWithElement:(NSXMLElement *)element
@@ -386,9 +458,27 @@
     return YES;
 }
 
+- (XFProcessor *)processor
+{
+    id owner = self.owner;
+    if ([owner isKindOfClass:[XFProcessor class]]) {
+        return owner;
+    }
+    if ([owner isKindOfClass:[XFModel class]] && [[(XFModel *)owner owner] isKindOfClass:[XFProcessor class]]) {
+        return (XFProcessor *)[(XFModel *)owner owner];
+    }
+    return nil;
+}
+
 - (void)focus
 {
-    self.focused = YES;
+    // xforms-focus default action → XsltForms_control.focus (G-24)
+    XFProcessor *processor = [self processor];
+    if (processor) {
+        [processor focusControl:self fromUI:NO];
+    } else {
+        self.focused = YES;
+    }
 }
 
 - (void)refreshWithContext:(XFExprContext *)context error:(NSError **)error
@@ -410,7 +500,6 @@
         return;
     }
     self.stringValue = value ?: @"";
-    [self refreshSupportInContext:context];
 }
 
 
@@ -428,6 +517,8 @@
 {
     self.inScopeContextNode = context.contextNode;
     [self refreshWithContext:context error:error];
+    // label/hint/help/alert bindings follow the control (every subclass)
+    [self refreshSupportInContext:context];
     if (![self isValueControl]) {
         return;
     }

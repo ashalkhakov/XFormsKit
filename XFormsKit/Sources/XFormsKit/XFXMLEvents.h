@@ -74,6 +74,14 @@ typedef void (^XFEventDefaultAction)(id _Nullable xfElement, XFEvent *event);
 /// context of the control registered for it); nil when unknown.
 - (nullable NSXMLNode *)inScopeNodeForElement:(NSXMLElement *)element;
 
+/// XsltForms_globals.error: dispatch an exception event (xforms-binding-,
+/// -compute-, -link-, -version-exception) on `target` (an xf object or a
+/// host element) and remember the message (G-30). XSLTForms then throws;
+/// XFormsKit keeps going and reports the error through the usual NSError.
++ (void)raise:(NSString *)eventName on:(nullable id)target message:(nullable NSString *)message;
+/// Messages recorded by +raise:on:message:, oldest first.
+@property (nonatomic, strong, readonly) NSMutableArray<NSString *> *exceptionMessages;
+
 @end
 
 @protocol XFXMLEventHandler <NSObject>

@@ -8,6 +8,8 @@
 #import <XFormsKit/XFRangeControl.h>
 #import <XFormsKit/XFLabelControl.h>
 #import <XFormsKit/XFInputControl.h>
+#import <XFormsKit/XFRepeat.h>
+#import <XFormsKit/XFAbstractAction.h>
 #import <XFormsKit/XFUploadControl.h>
 #import <XFormsKit/XFNodeState.h>
 #import <XFormsKit/XFXML.h>
@@ -129,7 +131,7 @@
                       extra:
                       @"<xf:select id=\"s\" ref=\"picked\">"
                       @"  <xf:label>P</xf:label>"
-                      @"  <xf:itemset nodeset=\"opt\">"
+                      @"  <xf:itemset nodeset=\"../opt\">"
                       @"    <xf:label ref=\"n\"/>"
                       @"    <xf:value ref=\"v\"/>"
                       @"  </xf:itemset>"
@@ -162,7 +164,7 @@
                       @"  <xf:label>C</xf:label>"
                       @"  <xf:choices>"
                       @"    <xf:label>Primaries</xf:label>"
-                      @"    <xf:itemset nodeset=\"colors/color\">"
+                      @"    <xf:itemset nodeset=\"../colors/color\">"
                       @"      <xf:label ref=\"n\"/>"
                       @"      <xf:copy ref=\".\"/>"
                       @"    </xf:itemset>"
@@ -402,6 +404,134 @@
     XCTAssertTrue([sel selectValue:@"true"]);
     [p controlDidChangeValue:sel];
     XCTAssertTrue(name.readonly);
+}
+
+- (void)testLabelsAreBoundAndFollowTheInstance // G-23
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><lbl>First</lbl><n>Ada</n><g>Grp</g><o>x</o></data></xf:instance>"
+                      @"<xf:setvalue ev:event=\"poke\" ref=\"lbl\" value=\"'Given'\"/>"
+                      @"<xf:setvalue ev:event=\"poke\" ref=\"n\" value=\"'Bob'\"/>"
+                      @"<xf:setvalue ev:event=\"poke\" ref=\"g\" value=\"'Group'\"/>"
+                      extra:
+                      @"<xf:input id=\"i1\" ref=\"n\"><xf:label ref=\"../lbl\"/></xf:input>"
+                      @"<xf:input id=\"i2\" ref=\"n\"><xf:label>Name (<b><xf:output ref=\".\"/></b>)</xf:label></xf:input>"
+                      @"<xf:output id=\"o1\" value=\"'v'\"><xf:label value=\"concat('L', n)\"/></xf:output>"
+                      @"<xf:select1 ref=\"o\"><xf:label>S</xf:label>"
+                      @"  <xf:choices><xf:label ref=\"../g\"/><xf:item><xf:label>X</xf:label><xf:value>x</xf:value></xf:item></xf:choices>"
+                      @"</xf:select1>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    NSArray<XFInputControl *> *ins = p.inputControls;
+    XCTAssertEqualObjects(ins[0].label, @"First");
+    XCTAssertEqualObjects(ins[1].label, @"Name (Ada)");
+    XCTAssertEqualObjects(p.outputControls.firstObject.label, @"LAda");
+    XFSelectControl *sel = nil;
+    for (XFControl *c in p.controls) {
+        if ([c isKindOfClass:[XFSelectControl class]]) { sel = (XFSelectControl *)c; }
+    }
+    XCTAssertEqualObjects(sel.items.firstObject.groupLabel, @"Grp");
+    [XFXMLEvents dispatch:p.model name:@"poke"];
+    XCTAssertEqualObjects(ins[0].label, @"Given");
+    XCTAssertEqualObjects(ins[1].label, @"Name (Bob)");
+    XCTAssertEqualObjects(p.outputControls.firstObject.label, @"LBob");
+    XCTAssertEqualObjects(sel.items.firstObject.groupLabel, @"Group");
+}
+
+- (void)testSetfocusMovesFocusRepeatIndexAndDispatchesFocusEvents // G-24
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><n>a</n><item>1</item><item>2</item></data></xf:instance>"
+                      @"<xf:setfocus ev:event=\"go1\" control=\"in\"/>"
+                      @"<xf:setfocus ev:event=\"go2\"><xf:control value=\"'top'\"/></xf:setfocus>"
+                      extra:
+                      @"<xf:input id=\"top\" ref=\"n\"><xf:label>N</xf:label>"
+                      @"  <xf:action id=\"top-in\" ev:event=\"DOMFocusIn\"/>"
+                      @"</xf:input>"
+                      @"<xf:repeat id=\"r\" nodeset=\"item\">"
+                      @"  <xf:input id=\"in\" ref=\".\"><xf:label>I</xf:label>"
+                      @"    <xf:action id=\"in-in\" ev:event=\"DOMFocusIn\"/>"
+                      @"    <xf:action id=\"in-out\" ev:event=\"DOMFocusOut\"/>"
+                      @"  </xf:input>"
+                      @"</xf:repeat>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFRepeat *r = p.repeats.firstObject;
+    XCTAssertEqual(r.index, (NSUInteger)1);
+    __block XFControl *requested = nil;
+    p.focusRequestHandler = ^(XFControl *c) { requested = c; };
+
+    // focus the input of the second item directly (as a widget would)
+    XFControl *second = r.items[1].controls.firstObject;
+    [p focusControl:second fromUI:YES];
+    XCTAssertEqual(p.focusedControl, second);
+    XCTAssertTrue(second.focused);
+    XCTAssertEqual(r.index, (NSUInteger)2);
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"in-in"] invocationCount], (NSInteger)1);
+    XCTAssertNil(requested);
+
+    // xf:setfocus → xforms-focus → focus: previous control gets DOMFocusOut
+    [XFXMLEvents dispatch:p.model name:@"go2"];
+    XCTAssertEqual(p.focusedControl, p.inputControls.firstObject);
+    XCTAssertEqual(requested, p.inputControls.firstObject);
+    XCTAssertFalse(second.focused);
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"in-out"] invocationCount], (NSInteger)1);
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"top-in"] invocationCount], (NSInteger)1);
+
+    // an output never takes the focus
+    [p blurFocusedControl];
+    XCTAssertNil(p.focusedControl);
+}
+
+- (void)testSelectRangeEventsItemTargetsAndRelevantItemset // G-25
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><v>a</v><opt>a</opt><opt>b</opt><opt>hidden</opt><show>true</show></data></xf:instance>"
+                      @"<xf:bind nodeset=\"opt[. = 'hidden']\" relevant=\"../show = 'true'\"/>"
+                      @"<xf:setvalue ev:event=\"bogus\" ref=\"v\" value=\"'zzz'\"/>"
+                      @"<xf:setvalue ev:event=\"fix\" ref=\"v\" value=\"'b'\"/>"
+                      @"<xf:setvalue ev:event=\"hide\" ref=\"show\" value=\"'false'\"/>"
+                      extra:
+                      @"<xf:select1 id=\"s\" ref=\"v\"><xf:label>S</xf:label>"
+                      @"  <xf:action id=\"oor\" ev:event=\"xforms-out-of-range\"/>"
+                      @"  <xf:action id=\"inr\" ev:event=\"xforms-in-range\"/>"
+                      @"  <xf:item id=\"ia\"><xf:label>A</xf:label><xf:value>a</xf:value>"
+                      @"    <xf:action id=\"a-desel\" ev:event=\"xforms-deselect\"/></xf:item>"
+                      @"  <xf:item id=\"ib\"><xf:label>B</xf:label><xf:value>b</xf:value>"
+                      @"    <xf:action id=\"b-sel\" ev:event=\"xforms-select\"/></xf:item>"
+                      @"  <xf:itemset nodeset=\"../opt\"><xf:label ref=\".\"/><xf:value ref=\".\"/></xf:itemset>"
+                      @"</xf:select1>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFSelectControl *sel = nil;
+    for (XFControl *c in p.controls) {
+        if ([c isKindOfClass:[XFSelectControl class]]) { sel = (XFSelectControl *)c; }
+    }
+    XCTAssertEqual(sel.items.count, (NSUInteger)5, @"items=%@", [sel.items valueForKey:@"value"]);
+    XCTAssertFalse(sel.outOfRange);
+
+    [XFXMLEvents dispatch:p.model name:@"bogus"];
+    XCTAssertTrue(sel.outOfRange);
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"oor"] invocationCount], (NSInteger)1);
+    [XFXMLEvents dispatch:p.model name:@"fix"];
+    XCTAssertFalse(sel.outOfRange);
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"inr"] invocationCount], (NSInteger)1);
+
+    // UI selection: xforms-select on the picked xf:item, xforms-deselect on
+    // the previous one (handlers sit on the items, not on the select)
+    XCTAssertTrue([sel selectValue:@"a"]);
+    [p controlDidChangeValue:sel];
+    XCTAssertTrue([sel selectValue:@"b"]);
+    [p controlDidChangeValue:sel];
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"b-sel"] invocationCount], (NSInteger)1);
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"a-desel"] invocationCount], (NSInteger)1);
+
+    // itemset drops non-relevant nodes
+    [XFXMLEvents dispatch:p.model name:@"hide"];
+    XCTAssertEqual(sel.items.count, (NSUInteger)4);
 }
 
 @end

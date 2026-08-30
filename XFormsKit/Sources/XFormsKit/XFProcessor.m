@@ -1,5 +1,6 @@
 #import "XFProcessor.h"
 #import "XFHostNode.h"
+#import "XFXPath.h"
 #import "XFModel.h"
 #import "XFInstance.h"
 #import "XFBinding.h"
@@ -28,6 +29,7 @@
 @property (nonatomic, strong, readwrite) XFModel *model;
 @property (nonatomic, copy, readwrite) NSArray<XFModel *> *models;
 @property (nonatomic, copy, readwrite) NSArray<XFControl *> *controls;
+@property (nonatomic, weak, readwrite) XFControl *focusedControl;
 @property (nonatomic, copy, readwrite) NSArray<XFAbstractAction *> *actions;
 @end
 
@@ -252,11 +254,37 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
 
     [[XFXMLEvents sharedEvents] installListenersInDocument:document];
 
+    // XsltForms_model.init: xf:model/@functions and @version checks (G-30)
+    for (XFModel *m in self.models) {
+        NSString *functions = [[m.element attributeForName:@"functions"] stringValue];
+        for (NSString *fname in [functions componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]) {
+            if (fname.length == 0) {
+                continue;
+            }
+            NSString *local = [fname componentsSeparatedByString:@":"].lastObject;
+            if (![XFXPath hasFunctionNamed:fname] && ![XFXPath hasFunctionNamed:local]) {
+                [XFXMLEvents raise:@"xforms-compute-exception" on:m
+                           message:[NSString stringWithFormat:@"Function %@() not found", fname]];
+            }
+        }
+        NSString *version = [[m.element attributeForName:@"version"] stringValue];
+        for (NSString *v in [version componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]) {
+            if (v.length && ![v isEqualToString:@"1.0"] && ![v isEqualToString:@"1.1"]) {
+                [XFXMLEvents raise:@"xforms-version-exception" on:self.model
+                           message:[NSString stringWithFormat:@"Version %@ not supported", v]];
+                break;
+            }
+        }
+    }
+
     for (XFModel *m in self.models) {
         [XFXMLEvents dispatch:m name:@"xforms-model-construct"];
         [XFXMLEvents dispatch:m name:@"xforms-model-construct-done"];
     }
     [self refreshControls];
+    // case.xsl: the initially selected case of every switch gets
+    // xforms-select once (G-26)
+    [self dispatchInitialSelectIn:self.controls];
     // XsltForms_globals.init: ready is set once for all models, then
     // xforms-ready is dispatched to every model (G-18). It is synchronous
     // here (no setTimeout): callers see a ready processor on return.
@@ -629,13 +657,98 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
     return YES;
 }
 
+- (void)dispatchInitialSelectIn:(NSArray<XFControl *> *)controls
+{
+    for (XFControl *c in controls) {
+        if ([c isKindOfClass:[XFSwitch class]]) {
+            [(XFSwitch *)c dispatchInitialSelect];
+            for (XFCase *caze in [(XFSwitch *)c cases]) {
+                [self dispatchInitialSelectIn:caze.children];
+            }
+        } else if ([c isKindOfClass:[XFGroup class]]) {
+            [self dispatchInitialSelectIn:[(XFGroup *)c children]];
+        } else if ([c isKindOfClass:[XFRepeat class]]) {
+            for (XFRepeatItem *item in [(XFRepeat *)c items]) {
+                [self dispatchInitialSelectIn:item.controls];
+            }
+        }
+    }
+}
+
+#pragma mark - focus (G-24)
+
+- (void)focusControl:(XFControl *)control fromUI:(BOOL)fromUI
+{
+    if (control == nil || [control isKindOfClass:[XFOutputControl class]]) {
+        return;   // XsltForms_control.focus: outputs never take the focus
+    }
+    XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
+    if (self.focusedControl != control) {
+        [du openAction:@"focus"];
+        [self blurFocusedControl];
+        _focusedControl = control;
+        control.focused = YES;
+        // XsltForms_repeat.selectItem for every enclosing repeat item
+        XFControl *child = control;
+        XFControl *parent = control.parentControl;
+        while (parent) {
+            if ([parent isKindOfClass:[XFRepeat class]]) {
+                XFRepeat *repeat = (XFRepeat *)parent;
+                for (XFRepeatItem *item in repeat.items) {
+                    if ([item.controls indexOfObjectIdenticalTo:child] != NSNotFound) {
+                        [repeat setIndex:item.position];
+                        break;
+                    }
+                }
+            }
+            child = parent;
+            parent = parent.parentControl;
+        }
+        [XFXMLEvents dispatch:control name:@"DOMFocusIn"];
+        [du closeAction:@"focus"];
+    }
+    if (!fromUI && self.focusRequestHandler) {
+        self.focusRequestHandler(control);
+    }
+}
+
+- (void)blurFocusedControl
+{
+    XFControl *previous = self.focusedControl;
+    if (previous == nil) {
+        return;
+    }
+    XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
+    [du openAction:@"blur"];
+    previous.focused = NO;
+    _focusedControl = nil;
+    [XFXMLEvents dispatch:previous name:@"DOMFocusOut"];
+    [du closeAction:@"blur"];
+}
+
+- (XFModel *)modelContainingNode:(NSXMLNode *)node
+{
+    if (node == nil) {
+        return nil;
+    }
+    for (XFModel *m in self.models) {
+        if ([m instanceOwningNode:node]) {
+            return m;
+        }
+    }
+    return nil;
+}
+
 - (void)controlDidChangeValue:(XFControl *)control
 {
     // XSLTForms: XsltForms_globals.openAction(); model.addChange(node);
     // xforms-value-changed; closeAction() -> rebuild/recalculate/revalidate/
     // refresh through the deferred-update queue. Every UI-originated change
     // must come through here, or dependent MIPs are not recomputed.
-    XFModel *model = [control.owner isKindOfClass:[XFModel class]] ? (XFModel *)control.owner : self.model;
+    // the model owning the bound node (a control may bind into another
+    // model via model="id" / instance('id'), G-22)
+    XFModel *model = [self modelContainingNode:control.boundNode]
+        ?: ([control.owner isKindOfClass:[XFModel class]] ? (XFModel *)control.owner : self.model);
     XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
     // xforms-value-changed is dispatched by the refresh that follows
     // (XsltForms_control.refresh), once, and only if the value changed (G-11)

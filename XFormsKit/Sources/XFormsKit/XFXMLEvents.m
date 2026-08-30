@@ -20,6 +20,7 @@ static const void *kXFElementKey   = &kXFElementKey;
 @end
 
 @interface XFXMLEvents ()
+@property (nonatomic, strong, readwrite) NSMutableArray<NSString *> *exceptionMessages;
 - (void)registerStandardEvents;
 @end
 
@@ -557,6 +558,8 @@ static const void *kXFElementKey   = &kXFElementKey;
     [self define:@"xforms-submit-error" bubbles:YES cancelable:NO defaultAction:nil];
     [self define:@"xforms-compute-exception" bubbles:YES cancelable:NO defaultAction:nil];
     [self define:@"xforms-binding-exception" bubbles:YES cancelable:NO defaultAction:nil];
+    [self define:@"xforms-link-exception" bubbles:YES cancelable:NO defaultAction:nil];
+    [self define:@"xforms-version-exception" bubbles:YES cancelable:NO defaultAction:nil];
     [self define:@"ajx-start" bubbles:YES cancelable:YES defaultAction:^(id xf, XFEvent *ev) {
         (void)ev;
         if ([xf respondsToSelector:@selector(start)]) {
@@ -581,6 +584,22 @@ static const void *kXFElementKey   = &kXFElementKey;
     [self define:@"xforms-upload-error" bubbles:YES cancelable:NO defaultAction:nil];
 }
 
+
++ (void)raise:(NSString *)eventName on:(id)target message:(NSString *)message
+{
+    XFXMLEvents *events = [self sharedEvents];
+    if (events.exceptionMessages == nil) {
+        events.exceptionMessages = [NSMutableArray array];
+    }
+    [events.exceptionMessages addObject:[NSString stringWithFormat:@"%@: %@", eventName, message ?: @""]];
+    id xf = target;
+    if ([target isKindOfClass:[NSXMLElement class]]) {
+        xf = [events xfElementForElement:target] ?: target;
+    }
+    if (xf) {
+        [self dispatch:xf name:eventName];
+    }
+}
 
 - (NSXMLNode *)inScopeNodeForElement:(NSXMLElement *)element
 {

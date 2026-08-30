@@ -6,6 +6,7 @@
 #import "XFNamespaces.h"
 #import "XFXMLEvents.h"
 #import "XFModel.h"
+#import "XFNodeState.h"
 #import <Foundation/NSXMLElement.h>
 #import <Foundation/NSXMLNode.h>
 #import <Foundation/NSXMLDocument.h>
@@ -26,6 +27,7 @@ typedef NS_ENUM(NSInteger, XFSelectTemplateKind) {
 @property (nonatomic, copy, nullable) NSString *labelLiteral;
 @property (nonatomic, copy, nullable) NSString *valueLiteral;
 @property (nonatomic, copy) NSArray<XFSelectTemplate *> *children;
+@property (nonatomic, strong, nullable) NSXMLElement *element;
 @end
 
 @implementation XFSelectTemplate
@@ -39,6 +41,7 @@ typedef NS_ENUM(NSInteger, XFSelectTemplateKind) {
 @property (nonatomic, copy, readwrite) NSArray<XFItem *> *items;
 @property (nonatomic, copy) NSArray<XFSelectTemplate *> *templates;
 @property (nonatomic, assign, readwrite) BOOL usesCopy;
+@property (nonatomic, assign, readwrite) BOOL outOfRange;
 @end
 
 @implementation XFSelectControl
@@ -87,6 +90,7 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
 {
     XFSelectTemplate *t = [[XFSelectTemplate alloc] init];
     t.groupLabel = groupLabel;
+    t.element = element;
     NSError *inner = nil;
     if ([XFXML element:element hasLocalName:@"item" namespaceURI:XFXFormsNamespaceURI]) {
         t.kind = XFSelectTemplateItem;
@@ -114,6 +118,7 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
     } else if ([XFXML element:element hasLocalName:@"choices" namespaceURI:XFXFormsNamespaceURI]) {
         t.kind = XFSelectTemplateChoices;
         t.labelLiteral = [XFControl labelForElement:element] ?: XFChildLiteral(element, @"label");
+        t.labelBinding = XFChildBinding(element, @"label", &inner);   // choices/label/@ref (G-23)
         NSMutableArray *kids = [NSMutableArray array];
         for (NSXMLNode *child in [element children]) {
             if ([child kind] != NSXMLElementKind) continue;
@@ -190,6 +195,7 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
     XFItem *item = [[XFItem alloc] init];
     item.groupLabel = t.groupLabel;
     item.sourceNode = source;
+    item.element = t.element;
     if (t.labelBinding) {
         item.label = [t.labelBinding stringValueInContext:context error:NULL] ?: @"";
     } else if (t.labelLiteral.length) {
@@ -223,8 +229,17 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
                   into:(NSMutableArray<XFItem *> *)out
 {
     if (t.kind == XFSelectTemplateChoices) {
+        NSString *group = t.labelBinding
+            ? ([t.labelBinding stringValueInContext:context error:NULL] ?: @"")
+            : t.labelLiteral;
+        NSUInteger start = out.count;
         for (XFSelectTemplate *kid in t.children) {
             [self expandTemplate:kid context:context error:error into:out];
+        }
+        for (NSUInteger i = start; i < out.count; i++) {
+            if (out[i].groupLabel == nil || [out[i].groupLabel isEqualToString:t.labelLiteral ?: @""] || t.labelBinding) {
+                out[i].groupLabel = group;
+            }
         }
         return;
     }
@@ -238,6 +253,12 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
     NSArray<NSXMLNode *> *nodes = [t.nodeset evaluateInContext:context error:error].nodes ?: @[];
     NSUInteger i = 1;
     for (NSXMLNode *node in nodes) {
+        // XsltForms_itemset.build_: non-relevant nodes give no item
+        XFNodeState *state = [XFNodeState existingStateOnNode:node];
+        if (state && !state.relevant) {
+            i++;
+            continue;
+        }
         XFExprContext *itemCtx = [context cloneWithNode:node position:i nodeList:nodes];
         [self emitItemFromTemplate:t context:itemCtx source:node into:out];
         i++;
@@ -321,12 +342,40 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
         }
     }
     self.selectedValues = sel;
+
+    // XsltForms_select.setValue: every wanted value must be an item, else
+    // the control is out of range (an empty single selection is neither)
+    BOOL well = YES;
+    for (NSString *v in wanted) {
+        if (v.length && [self itemWithValue:v] == nil) {
+            well = NO;
+            break;
+        }
+    }
+    BOOL emptySingle = !self.multiple && (self.stringValue.length == 0);
+    if (well || emptySingle) {
+        if (self.outOfRange) {
+            self.outOfRange = NO;
+            [XFXMLEvents dispatch:self name:@"xforms-in-range"];
+        }
+    } else if (!self.outOfRange) {
+        self.outOfRange = YES;
+        [XFXMLEvents dispatch:self name:@"xforms-out-of-range"];
+    }
+}
+
+/// xforms-select / xforms-deselect go to the xf:item (XsltForms_select
+/// itemClick dispatches to input.parentNode), G-25.
+- (void)dispatch:(NSString *)name toItem:(XFItem *)item
+{
+    id target = item.element ? ([[XFXMLEvents sharedEvents] xfElementForElement:item.element] ?: (id)item.element) : (id)self;
+    [XFXMLEvents dispatch:target name:name];
 }
 
 - (void)refreshWithContext:(XFExprContext *)context error:(NSError **)error
 {
     [super refreshWithContext:context error:error];
-    [self rebuildItemsWithContext:context error:error];
+    [self rebuildItemsWithContext:[self childContextFrom:context] error:error];
 }
 
 - (NSString *)joinedSelection
@@ -430,11 +479,17 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
     } else {
         selected = @[ item ];
     }
+    NSArray<XFItem *> *before = [self selectedItems];
     if (![self writeSelection:selected error:NULL]) {
         return NO;
     }
     [self markSelected];
-    [XFXMLEvents dispatch:self name:@"xforms-select"];
+    for (XFItem *old in before) {
+        if (old != item && !self.multiple) {
+            [self dispatch:@"xforms-deselect" toItem:old];
+        }
+    }
+    [self dispatch:@"xforms-select" toItem:item];
     return YES;
 }
 
@@ -447,17 +502,17 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
         return [self selectItem:item];
     }
     NSMutableArray *cur = [[self selectedItems] mutableCopy];
-    if ([cur containsObject:item]) {
+    BOOL removing = [cur containsObject:item];
+    if (removing) {
         [cur removeObject:item];
-        [XFXMLEvents dispatch:self name:@"xforms-deselect"];
     } else {
         [cur addObject:item];
-        [XFXMLEvents dispatch:self name:@"xforms-select"];
     }
     if (![self writeSelection:cur error:NULL]) {
         return NO;
     }
     [self markSelected];
+    [self dispatch:removing ? @"xforms-deselect" : @"xforms-select" toItem:item];
     return YES;
 }
 

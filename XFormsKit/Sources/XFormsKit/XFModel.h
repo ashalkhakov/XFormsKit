@@ -42,7 +42,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (nullable XFInstance *)instanceWithIdentifier:(nullable NSString *)identifier;
 - (nullable XFInstance *)defaultInstance;
+/// The instance holding `node`, else the default instance.
 - (nullable XFInstance *)instanceContainingNode:(nullable NSXMLNode *)node;
+/// The instance holding `node`, or nil when no instance of this model does.
+- (nullable XFInstance *)instanceOwningNode:(nullable NSXMLNode *)node;
 - (nullable XFBind *)bindWithIdentifier:(NSString *)identifier;
 - (nullable XFSubmission *)submissionWithIdentifier:(nullable NSString *)identifier;
 - (nullable XFRepeat *)repeatWithIdentifier:(nullable NSString *)identifier;

@@ -3,6 +3,9 @@
 #import "XFNamespaces.h"
 #import "XFXMLEvents.h"
 #import "XFExprContext.h"
+#import "XFBinding.h"
+#import "XFDeferredUpdates.h"
+#import "XFModel.h"
 #import "XFHostNode.h"
 
 @interface XFCase ()
@@ -96,6 +99,8 @@
 @interface XFSwitch ()
 @property (nonatomic, strong) NSMutableArray<XFCase *> *mutableCases;
 @property (nonatomic, weak, readwrite) XFCase *selectedCase;
+@property (nonatomic, strong, readwrite) XFBinding *caserefBinding;
+@property (nonatomic, strong) NSXMLNode *caserefNode;
 @end
 
 @implementation XFSwitch
@@ -114,8 +119,28 @@
                             model:(id)model
                             error:(NSError **)error
 {
-    XFSwitch *sw = [[self alloc] initWithElement:element binding:nil label:[XFControl labelForElement:element]];
+    // switch.xsl: a switch is an XsltForms_group with an optional binding
+    // (context + relevance for its cases) and a caseref binding (G-26)
+    NSError *inner = nil;
+    XFBinding *binding = [XFControl bindingOnElement:element preferredAttribute:@"ref" error:&inner];
+    if (inner) {
+        if (error) {
+            *error = inner;
+        }
+        return nil;
+    }
+    XFSwitch *sw = [[self alloc] initWithElement:element binding:binding label:[XFControl labelForElement:element]];
     sw.owner = model;
+    NSString *caseref = [[element attributeForName:@"caseref"] stringValue];
+    if (caseref.length) {
+        sw.caserefBinding = [XFBinding bindingWithExpression:caseref element:element error:&inner];
+        if (sw.caserefBinding == nil) {
+            if (error) {
+                *error = inner;
+            }
+            return nil;
+        }
+    }
     sw.mutableCases = [NSMutableArray array];
     for (NSXMLNode *child in [element children]) {
         if ([child kind] != NSXMLElementKind) {
@@ -171,22 +196,76 @@
 
 - (void)selectCase:(XFCase *)caze
 {
-    if (caze == nil || caze == self.selectedCase) {
+    [self selectCase:caze writeCaseref:YES];
+}
+
+/// XsltForms_toggle.toggle: one action; every other case gets
+/// xforms-deselect, the target xforms-select.
+- (void)selectCase:(XFCase *)caze writeCaseref:(BOOL)write
+{
+    if (caze == nil) {
         return;
     }
-    XFCase *previous = self.selectedCase;
-    if (previous) {
-        previous.selected = NO;
-        [XFXMLEvents dispatch:previous name:@"xforms-deselect"];
+    XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
+    [du openAction:@"toggle"];
+    for (XFCase *c in self.mutableCases) {
+        if (c != caze) {
+            c.selected = NO;
+            [XFXMLEvents dispatch:c name:@"xforms-deselect"];
+        }
     }
     caze.selected = YES;
     self.selectedCase = caze;
+    // XForms 2.0 caseref: toggling writes the case id back to the node
+    if (write && self.caserefBinding && self.caserefNode && caze.identifier.length
+        && ![[XFXML stringValueOfNode:self.caserefNode] isEqualToString:caze.identifier]) {
+        [XFXML setStringValue:caze.identifier ofNode:self.caserefNode];
+        id owner = self.owner;
+        XFModel *model = [owner isKindOfClass:[XFModel class]] ? owner : [owner model];
+        [model addChange:self.caserefNode];
+        [du addChangedModel:model];
+    }
     [XFXMLEvents dispatch:caze name:@"xforms-select"];
+    [du closeAction:@"toggle"];
+}
+
+- (void)dispatchInitialSelect
+{
+    if (self.caserefBinding == nil && self.selectedCase) {
+        [XFXMLEvents dispatch:self.selectedCase name:@"xforms-select"];
+    }
 }
 
 - (void)refreshWithContext:(XFExprContext *)context error:(NSError **)error
 {
-    [self.selectedCase refreshInContext:context error:error];
+    XFExprContext *childCtx = context;
+    if (self.binding) {
+        NSError *inner = nil;
+        NSXMLNode *node = [self.binding boundNodeInContext:context error:&inner];
+        if (inner) {
+            if (error) {
+                *error = inner;
+            }
+            return;
+        }
+        self.boundNode = node;
+        [self applyMIPsFromNode:node];
+        if (node) {
+            childCtx = [context cloneWithNode:node position:1 nodeList:@[ node ]];
+        }
+    } else {
+        self.relevant = YES;
+    }
+    if (self.caserefBinding) {
+        // XsltForms_group.build_: the caseref value selects the case
+        self.caserefNode = [self.caserefBinding boundNodeInContext:childCtx error:NULL];
+        NSString *cid = self.caserefNode ? [XFXML stringValueOfNode:self.caserefNode] : nil;
+        XFCase *wanted = [self caseWithIdentifier:cid];
+        if (wanted && wanted != self.selectedCase) {
+            [self selectCase:wanted writeCaseref:NO];
+        }
+    }
+    [self.selectedCase refreshInContext:childCtx error:error];
 }
 
 @end

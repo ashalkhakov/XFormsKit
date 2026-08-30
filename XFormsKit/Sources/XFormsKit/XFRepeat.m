@@ -181,8 +181,20 @@
         raw = value.nodes ?: @[];
     }
     NSArray<NSXMLNode *> *nodes = [self relevantNodesFrom:raw];
+    // XsltForms_repeat.build_: the index follows the current node when it
+    // is still in the nodeset (G-27); otherwise the number is kept, clamped
+    NSXMLNode *current = [self currentItem].node;
     self.nodes = nodes;
     self.boundNode = nodes.firstObject;
+    if (current) {
+        NSUInteger at = [nodes indexOfObjectIdenticalTo:current];
+        if (at != NSNotFound && _index != at + 1) {
+            _index = at + 1;
+            if (self.model) {
+                [[XFDeferredUpdates sharedUpdates] addChangedModel:self.model];
+            }
+        }
+    }
 
     NSMutableArray<XFRepeatItem *> *items = [NSMutableArray array];
     NSUInteger i = 1;

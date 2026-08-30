@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 
 @class XFBinding;
+@class XFProcessor;
 @class XFExprContext;
 @class NSXMLElement;
 @class NSXMLNode;
@@ -43,6 +44,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)refreshWithContext:(XFExprContext *)context error:(NSError **)error;
 - (void)focus;
+/// The processor owning this control (directly or through its model).
+- (nullable XFProcessor *)processor;
 - (BOOL)commitStringValue:(nullable NSString *)value error:(NSError **)error;
 - (void)applyMIPsFromBoundNode;
 
@@ -56,6 +59,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// textarea, full-appearance selects); NO for controls that flow inline
 /// with surrounding host text like XSLTForms' `<span>` wrappers (G-20).
 - (BOOL)isBlockLevel;
+/// The context the control's children (label, hint, items, itemsets)
+/// evaluate in: the bound node when there is one, else `ctx`.
+- (XFExprContext *)childContextFrom:(XFExprContext *)ctx;
 /// Apply MIPs from an arbitrary node (nil with a binding = non-relevant).
 - (void)applyMIPsFromNode:(nullable NSXMLNode *)node;
 /// YES for `value="..."` (xf:output) with no `ref` / `bind`.

@@ -24,15 +24,13 @@
     if (self == nil) {
         return nil;
     }
-    NSString *ref = [[element attributeForName:@"ref"] stringValue];
-    if (ref.length == 0) {
-        ref = [[element attributeForName:@"nodeset"] stringValue];
-    }
-    if (ref.length) {
-        self.binding = [XFBinding bindingWithExpression:ref element:element error:error];
-        if (self.binding == nil) {
-            return nil;
+    NSError *bindError = nil;
+    self.binding = [XFBinding bindingForElement:element attribute:@"ref" error:&bindError];
+    if (bindError) {
+        if (error) {
+            *error = bindError;
         }
+        return nil;
     }
     NSString *value = [[element attributeForName:@"value"] stringValue];
     if (value.length) {

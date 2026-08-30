@@ -146,9 +146,10 @@
         self.relevant = YES;
         self.boundNode = context.contextNode;
     }
-    if (!self.relevant) {
-        return;
-    }
+    // XsltForms_group.refresh only toggles xforms-disabled; the children
+    // keep being built/refreshed (their own relevance comes from the
+    // node inheritance), so MIP state and events stay current while the
+    // group is hidden (G-29)
     for (XFControl *child in self.mutableChildren) {
         [child refreshInContext:childCtx error:error];
     }

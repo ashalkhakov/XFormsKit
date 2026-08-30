@@ -30,6 +30,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable NSArray<NSXMLNode *> *)nodesInContext:(XFExprContext *)context
                                             error:(NSError **)error;
 
+/// YES when an XPath / XForms function with this name is available
+/// (core, XForms 1.1 and XSLTForms extensions), for xf:model/@functions.
++ (BOOL)hasFunctionNamed:(NSString *)name;
+
 @end
 
 NS_ASSUME_NONNULL_END

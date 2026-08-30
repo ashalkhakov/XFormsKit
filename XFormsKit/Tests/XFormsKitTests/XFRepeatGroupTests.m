@@ -8,6 +8,7 @@
 #import <XFormsKit/XFTriggerControl.h>
 #import <XFormsKit/XFSetindexAction.h>
 #import <XFormsKit/XFXML.h>
+#import <XFormsKit/XFAbstractAction.h>
 #import <math.h>
 
 @interface XFRepeatGroupTests : XCTestCase
@@ -405,6 +406,58 @@
     XCTAssertFalse(m.rows[1].header);
     XCTAssertEqualObjects(m.rows[1].cells[1].control.stringValue, @"7");
     XCTAssertNil([m selectedRow]);
+}
+
+- (void)testRepeatIndexFollowsNodeAfterRebuild // G-27
+{
+    // the first item turns non-relevant: the nodeset shrinks in front of
+    // the current node; the index follows the node (XsltForms_repeat
+    // build_), it does not keep the number (which would now mean "c")
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><item>a</item><item>b</item><item>c</item><hide>0</hide></data></xf:instance>"
+                      @"<xf:bind nodeset=\"item[1]\" relevant=\"../hide = '0'\"/>"
+                      @"<xf:setindex ev:event=\"pick\" repeat=\"r\" index=\"2\"/>"
+                      @"<xf:setvalue ev:event=\"hide\" ref=\"hide\" value=\"'1'\"/>"
+                      extra:@"<xf:repeat id=\"r\" nodeset=\"item\"><xf:output ref=\".\"/></xf:repeat>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFRepeat *r = p.repeats.firstObject;
+    [XFXMLEvents dispatch:p.model name:@"pick"];
+    XCTAssertEqual(r.index, (NSUInteger)2);
+    NSXMLNode *b = [r currentNode];
+    XCTAssertEqualObjects([XFXML stringValueOfNode:b], @"b");
+    [XFXMLEvents dispatch:p.model name:@"hide"];
+    XCTAssertEqual(r.items.count, (NSUInteger)2);
+    XCTAssertEqual([r currentNode], b);
+    XCTAssertEqual(r.index, (NSUInteger)1);
+}
+
+- (void)testNonRelevantGroupStillRefreshesChildren // G-29
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><g><n>Ada</n></g><other>x</other><show>0</show></data></xf:instance>"
+                      @"<xf:bind nodeset=\"g\" relevant=\"../show = '1'\"/>"
+                      @"<xf:setvalue ev:event=\"poke\" ref=\"g/n\" value=\"'Bob'\"/>"
+                      @"<xf:setvalue ev:event=\"poke\" ref=\"other\" value=\"'y'\"/>"
+                      extra:
+                      @"<xf:group ref=\"g\">"
+                      @"  <xf:output id=\"o\" ref=\"n\"><xf:action id=\"chg\" ev:event=\"xforms-value-changed\"/></xf:output>"
+                      @"  <xf:output id=\"o2\" ref=\"../other\"/>"
+                      @"</xf:group>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFGroup *g = p.groups.firstObject;
+    XCTAssertFalse(g.relevant);
+    NSArray<XFOutputControl *> *outs = p.outputControls;
+    XCTAssertEqualObjects(outs[0].stringValue, @"Ada");
+    XCTAssertFalse(outs[0].relevant);   // inherited from g
+    XCTAssertTrue(outs[1].relevant);    // bound outside g
+    [XFXMLEvents dispatch:p.model name:@"poke"];
+    XCTAssertEqualObjects(outs[0].stringValue, @"Bob");
+    XCTAssertEqualObjects(outs[1].stringValue, @"y");
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"chg"] invocationCount], (NSInteger)1);
 }
 
 @end

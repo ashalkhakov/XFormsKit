@@ -117,6 +117,11 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
         _widgets = [NSMutableArray array];
         _tables = [NSMutableArray array];
         [self setAutoresizingMask:NSViewNotSizable];
+        __weak XFFormView *weakSelf = self;
+        // xf:setfocus / xforms-focus → first responder (G-24)
+        processor.focusRequestHandler = ^(XFControl *control) {
+            [weakSelf makeControlFirstResponder:control];
+        };
         [self rebuild];
     }
     return self;
@@ -308,6 +313,11 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
         }
         if (selected >= 0) {
             [popup selectItemAtIndex:selected];
+        } else {
+            // XsltForms_select.setValue: an empty / unknown value shows a
+            // blank first option instead of the first item (G-25)
+            [popup insertItemWithTitle:@"" atIndex:0];
+            [popup selectItemAtIndex:0];
         }
         return popup;
     }
@@ -1047,6 +1057,11 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     self.contentHeight = y + kMargin;
     [self setFrame:NSMakeRect(0, 0, MAX(kWrapWidth, self.maxRight + kMargin), MAX(self.contentHeight, 80))];
     [self setNeedsDisplay:YES];
+    // the widgets were recreated: give the engine's focused control its
+    // first responder back
+    if (self.processor.focusedControl && [self window]) {
+        [self makeControlFirstResponder:self.processor.focusedControl];
+    }
 }
 
 - (XFWidget *)widgetForView:(id)sender
@@ -1105,6 +1120,79 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     if (url && [upload commitFileAtURL:url error:NULL]) {
         [self.processor controlDidChangeValue:upload];
         [self reloadFromProcessor];
+    }
+}
+
+#pragma mark - Focus (G-24)
+
+- (XFWidget *)widgetForControl:(XFControl *)control
+{
+    if (control == nil) {
+        return nil;
+    }
+    for (XFWidget *w in self.widgets) {
+        if (w.control == control) {
+            return w;
+        }
+    }
+    // repeat items recreate their controls on refresh: same element,
+    // same bound node
+    for (XFWidget *w in self.widgets) {
+        if (w.control.element == control.element && w.control.boundNode == control.boundNode) {
+            return w;
+        }
+    }
+    return nil;
+}
+
+- (void)makeControlFirstResponder:(XFControl *)control
+{
+    XFWidget *w = [self widgetForControl:control];
+    NSView *view = w.view;
+    if ([view isKindOfClass:[NSScrollView class]]) {
+        view = [(NSScrollView *)view documentView];
+    }
+    if (view && [view window] && [view acceptsFirstResponder]) {
+        [[view window] makeFirstResponder:view];
+    }
+}
+
+/// A widget took the keyboard focus: the engine's focus follows
+/// (XsltForms_control.focusHandler).
+- (void)widgetDidFocus:(id)sender
+{
+    XFControl *control = [self controlForSender:sender];
+    if (control) {
+        [self.processor focusControl:control fromUI:YES];
+    }
+}
+
+- (void)controlTextDidBeginEditing:(NSNotification *)note
+{
+    [self widgetDidFocus:[note object]];
+}
+
+- (void)controlTextDidEndEditing:(NSNotification *)note
+{
+    // focus stays on Return; leaving the field is a blur (DOMFocusOut)
+    NSNumber *movement = [note userInfo][@"NSTextMovement"];
+    if (movement && [movement integerValue] == NSReturnTextMovement) {
+        return;
+    }
+    XFControl *control = [self controlForSender:[note object]];
+    if (control && control == self.processor.focusedControl) {
+        [self.processor blurFocusedControl];
+    }
+}
+
+- (void)textDidBeginEditing:(NSNotification *)note
+{
+    NSTextView *tv = [note object];
+    for (XFWidget *w in self.widgets) {
+        if ([w.view isKindOfClass:[NSScrollView class]] && [(NSScrollView *)w.view documentView] == tv) {
+            [self.processor focusControl:w.control fromUI:YES];
+            return;
+        }
     }
 }
 
@@ -1171,11 +1259,19 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
             if ([view isKindOfClass:[NSPopUpButton class]] && [control isKindOfClass:[XFSelectControl class]]) {
                 NSPopUpButton *popup = (NSPopUpButton *)view;
                 NSString *selected = [(XFSelectControl *)control selectedValues].firstObject;
+                BOOL found = NO;
                 for (NSMenuItem *item in [popup itemArray]) {
-                    if ([[item representedObject] isEqual:selected]) {
+                    if (selected && [[item representedObject] isEqual:selected]) {
                         [popup selectItem:item];
+                        found = YES;
                         break;
                     }
+                }
+                if (!found) {
+                    if ([[popup itemAtIndex:0] representedObject] != nil || [[popup itemTitleAtIndex:0] length]) {
+                        [popup insertItemWithTitle:@"" atIndex:0];
+                    }
+                    [popup selectItemAtIndex:0];
                 }
             } else if ([view isKindOfClass:[NSButton class]] && [control isKindOfClass:[XFSelectControl class]]) {
                 NSString *value = [view toolTip];
@@ -1245,6 +1341,7 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
 - (void)buttonClicked:(NSButton *)sender
 {
     XFControl *control = [self controlForSender:sender];
+    [self widgetDidFocus:sender];
     if ([control isKindOfClass:[XFTriggerControl class]]) {
         [(XFTriggerControl *)control activate];
         [self.processor refreshControls];
@@ -1256,6 +1353,7 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
 - (void)sliderChanged:(NSSlider *)sender
 {
     XFControl *control = [self controlForSender:sender];
+    [self widgetDidFocus:sender];
     if ([control isKindOfClass:[XFRangeControl class]]) {
         if ([(XFRangeControl *)control commitNumericValue:[sender doubleValue] error:NULL]) {
             [self.processor controlDidChangeValue:control];
@@ -1267,6 +1365,7 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
 - (void)popupChanged:(NSPopUpButton *)sender
 {
     XFControl *control = [self controlForSender:sender];
+    [self widgetDidFocus:sender];
     if ([control isKindOfClass:[XFSelectControl class]]) {
         NSString *value = [[sender selectedItem] representedObject];
         if ([(XFSelectControl *)control selectValue:value ?: [sender titleOfSelectedItem]]) {
@@ -1279,6 +1378,7 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
 - (void)checkClicked:(NSButton *)sender
 {
     XFControl *control = [self controlForSender:sender];
+    [self widgetDidFocus:sender];
     if ([control isKindOfClass:[XFSelectControl class]]) {
         if ([(XFSelectControl *)control toggleValue:[sender toolTip] ?: [sender title]]) {
             [self.processor controlDidChangeValue:control];
@@ -1290,6 +1390,7 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
 - (void)boolClicked:(NSButton *)sender
 {
     XFControl *control = [self controlForSender:sender];
+    [self widgetDidFocus:sender];
     if (control) {
         [self commitControl:control value:([sender state] == NSOnState) ? @"true" : @"false"];
     }
@@ -1298,6 +1399,7 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
 - (void)dateChanged:(NSDatePicker *)sender
 {
     XFControl *control = [self controlForSender:sender];
+    [self widgetDidFocus:sender];
     if ([control isKindOfClass:[XFInputControl class]]) {
         if ([(XFInputControl *)control commitDateValue:[sender dateValue] error:NULL]) {
             [self.processor controlDidChangeValue:control];
@@ -1489,14 +1591,15 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
         return @(NSOffState);
     }
     if ([control isKindOfClass:[XFSelectControl class]]) {
-        NSInteger i = 0;
+        // popup cells carry a blank first entry (G-25): index + 1
+        NSInteger i = 1;
         for (XFItem *item in [(XFSelectControl *)control items]) {
             if (item.selected) {
                 return @(i);
             }
             i++;
         }
-        return @(-1);
+        return @(0);
     }
     if ([self isBooleanInput:control]) {
         BOOL on = [control.stringValue isEqualToString:@"true"] || [control.stringValue isEqualToString:@"1"];
@@ -1540,7 +1643,7 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
         return;
     }
     if ([control isKindOfClass:[XFSelectControl class]]) {
-        NSInteger idx = [value integerValue];
+        NSInteger idx = [value integerValue] - 1;   // blank first entry
         NSArray *items = [(XFSelectControl *)control items];
         if (idx >= 0 && (NSUInteger)idx < items.count) {
             XFItem *item = items[(NSUInteger)idx];
@@ -1592,6 +1695,7 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     } else if ([control isKindOfClass:[XFSelectControl class]]) {
         NSPopUpButtonCell *pc = [[NSPopUpButtonCell alloc] initTextCell:@"" pullsDown:NO];
         [pc setBordered:NO];
+        [pc addItemWithTitle:@""];
         for (XFItem *item in [(XFSelectControl *)control items]) {
             [pc addItemWithTitle:item.label ?: item.value ?: @""];
         }

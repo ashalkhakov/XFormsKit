@@ -1,4 +1,6 @@
 #import "XFXPathPriv.h"
+#import "XFXMLEvents.h"
+#import "XFExprContext.h"
 
 @implementation XFFunctionCallExpr
 
@@ -14,6 +16,9 @@
 {
     XFXPathFunction *fn = [XFXPathCoreFunctions functionNamed:self.name];
     if (fn == nil) {
+        // FunctionCallExpr.js → globals.error(..., "xforms-compute-exception")
+        [XFXMLEvents raise:@"xforms-compute-exception" on:ctx.model
+                   message:[NSString stringWithFormat:@"Function %@() not found", self.name]];
         if (error) {
             *error = [NSError errorWithDomain:XFErrorDomain
                                          code:XFErrorXPathEvaluation

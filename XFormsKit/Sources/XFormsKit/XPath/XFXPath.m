@@ -144,4 +144,9 @@
     return value ? value.nodes : nil;
 }
 
++ (BOOL)hasFunctionNamed:(NSString *)name
+{
+    return name.length > 0 && [XFXPathCoreFunctions functionNamed:name] != nil;
+}
+
 @end

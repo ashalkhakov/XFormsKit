@@ -44,22 +44,14 @@
     if (self == nil) {
         return nil;
     }
-    NSString *nodeset = [[element attributeForName:@"nodeset"] stringValue];
-    if (nodeset.length == 0) {
-        nodeset = [[element attributeForName:@"ref"] stringValue];
-    }
-    NSString *bindID = [[element attributeForName:@"bind"] stringValue];
-    if (bindID.length) {
-        XFBind *bind = [model bindWithIdentifier:bindID];
-        if (bind.nodesetBinding.expression.length) {
-            nodeset = bind.nodesetBinding.expression;
+    // nodeset / ref, or bind="id" resolved to the bind's nodes (G-21)
+    NSError *bindError = nil;
+    self.nodesetBinding = [XFBinding bindingForElement:element attribute:@"nodeset" error:&bindError];
+    if (bindError) {
+        if (error) {
+            *error = bindError;
         }
-    }
-    if (nodeset.length) {
-        self.nodesetBinding = [XFBinding bindingWithExpression:nodeset element:element error:error];
-        if (self.nodesetBinding == nil) {
-            return nil;
-        }
+        return nil;
     }
     NSString *origin = [[element attributeForName:@"origin"] stringValue];
     NSXMLElement *originEl = [XFXML firstElementWithLocalName:@"origin"

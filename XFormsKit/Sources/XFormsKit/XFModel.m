@@ -1,4 +1,5 @@
 #import "XFModel.h"
+#import "XFProcessor.h"
 #import "XFDeferredUpdates.h"
 #import "XFInstance.h"
 #import "XFBind.h"
@@ -53,13 +54,20 @@
         [instances addObject:instance];
     }
     if (instances.count == 0) {
-        if (error) {
-            *error = [NSError errorWithDomain:XFErrorDomain
-                                         code:XFErrorDocument
-                                     userInfo:@{ NSLocalizedDescriptionKey:
-                                                     @"xf:model has no xf:instance" }];
+        // jsgen/model.xsl: a model without xf:instance gets a synthesised
+        // default instance <data/> holding one empty element per plain
+        // NCName `ref` in the document (G-28; duplicates collapsed here)
+        NSError *inner = nil;
+        XFInstance *synthesised = [XFInstance instanceWithElement:[self synthesisedInstanceElementFor:modelElement]
+                                                            error:&inner];
+        if (synthesised == nil) {
+            if (error) {
+                *error = inner;
+            }
+            return nil;
         }
-        return nil;
+        synthesised.model = model;
+        [instances addObject:synthesised];
     }
     model.instances = instances;
 
@@ -206,7 +214,41 @@
     return self.instances.firstObject;
 }
 
-- (XFInstance *)instanceContainingNode:(NSXMLNode *)node
++ (NSXMLElement *)synthesisedInstanceElementFor:(NSXMLElement *)modelElement
+{
+    NSMutableArray<NSString *> *names = [NSMutableArray array];
+    NSCharacterSet *nameChars = [NSCharacterSet characterSetWithCharactersInString:
+        @"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-."];
+    NSCharacterSet *startChars = [NSCharacterSet characterSetWithCharactersInString:
+        @"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"];
+    NSXMLNode *root = [modelElement rootDocument] ?: (NSXMLNode *)modelElement;
+    for (NSXMLNode *attr in [root nodesForXPath:@"//@ref" error:NULL]) {
+        NSXMLNode *parent = [attr parent];
+        if (![[parent URI] isEqualToString:XFXFormsNamespaceURI]) {
+            continue;
+        }
+        NSString *ref = [attr stringValue] ?: @"";
+        if (ref.length == 0 || ![startChars characterIsMember:[ref characterAtIndex:0]]
+            || [ref rangeOfCharacterFromSet:[nameChars invertedSet]].location != NSNotFound) {
+            continue;
+        }
+        if (![names containsObject:ref]) {
+            [names addObject:ref];
+        }
+    }
+    NSXMLElement *data = [[NSXMLElement alloc] initWithName:@"data"];
+    [data addNamespace:[NSXMLNode namespaceWithName:@"" stringValue:@""]];
+    for (NSString *name in names) {
+        [data addChild:[[NSXMLElement alloc] initWithName:name]];
+    }
+    NSXMLElement *instance = [[NSXMLElement alloc] initWithName:@"xf:instance" URI:XFXFormsNamespaceURI];
+    [instance addNamespace:[NSXMLNode namespaceWithName:@"xf" stringValue:XFXFormsNamespaceURI]];
+    [instance addAttribute:[NSXMLNode attributeWithName:@"id" stringValue:@"instance-default"]];
+    [instance addChild:data];
+    return instance;
+}
+
+- (XFInstance *)instanceOwningNode:(NSXMLNode *)node
 {
     if (node == nil) {
         return nil;
@@ -219,7 +261,15 @@
             return instance;
         }
     }
-    return [self defaultInstance];
+    return nil;
+}
+
+- (XFInstance *)instanceContainingNode:(NSXMLNode *)node
+{
+    if (node == nil) {
+        return nil;
+    }
+    return [self instanceOwningNode:node] ?: [self defaultInstance];
 }
 
 - (XFSubmission *)submissionWithIdentifier:(NSString *)identifier
@@ -291,6 +341,17 @@
 {
     if (node == nil) {
         return;
+    }
+    // A node of another model's instance (written through model="id" /
+    // instance('id'), G-22) is recorded with that model — XSLTForms keys
+    // the change on the instance document's model.
+    if (![self instanceOwningNode:node] && [self.owner isKindOfClass:[XFProcessor class]]) {
+        for (XFModel *m in [(XFProcessor *)self.owner models]) {
+            if (m != self && [m instanceOwningNode:node]) {
+                [m addChange:node];
+                return;
+            }
+        }
     }
     // XsltForms_model.addChange: pick the list by the global `building`
     // state and register the model with the deferred-update queue.

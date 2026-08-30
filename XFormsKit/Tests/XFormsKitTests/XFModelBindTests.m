@@ -7,6 +7,9 @@
 #import <XFormsKit/XFBind.h>
 #import <XFormsKit/XFNodeState.h>
 #import <XFormsKit/XFXML.h>
+#import <XFormsKit/XFBinding.h>
+#import <XFormsKit/XFSelectControl.h>
+#import <XFormsKit/XFErrors.h>
 
 @interface XFModelBindTests : XCTestCase
 @end
@@ -190,6 +193,114 @@
     XCTAssertTrue([p setValue:@"true" ofControl:input error:&error]);
     XCTAssertTrue(st().relevant, @"unbound descendant must become relevant again");
     XCTAssertFalse(st().readonly, @"unbound descendant must become writable again");
+}
+
+#pragma mark - G-21 bind="id", G-22 model="id"
+
+- (void)testBindAttributeOnControlSetvalueAndInsert // G-21
+{
+    NSError *error = nil;
+    XFProcessor *p = [self processor:
+                      @"<xf:instance><data xmlns=\"\"><n>Ada</n><item k=\"1\">a</item><item>b</item><item k=\"1\">c</item></data></xf:instance>"
+                      @"<xf:bind id=\"outer\" nodeset=\".\"><xf:bind id=\"bn\" nodeset=\"n\"/></xf:bind>"
+                      @"<xf:bind id=\"bk\" nodeset=\"item[@k='1']\"/>"
+                      @"<xf:setvalue ev:event=\"xforms-ready\" bind=\"bn\" value=\"'Bob'\"/>"
+                      @"<xf:insert ev:event=\"xforms-ready\" bind=\"bk\" position=\"after\"/>"
+                      extra:
+                      @"<xf:input id=\"in\" bind=\"bn\"><xf:label>N</xf:label></xf:input>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFControl *input = p.inputControls.firstObject;
+    XCTAssertEqualObjects(input.binding.bindID, @"bn");
+    XCTAssertEqualObjects(input.stringValue, @"Bob");
+    // the insert used the bind's node list: the clone of the LAST bound
+    // node (c) sits after it, not after the last <item> in document order
+    NSXMLElement *root = [[p defaultInstance] documentElement];
+    NSArray *items = [root elementsForName:@"item"];
+    XCTAssertEqual(items.count, (NSUInteger)4);
+    XCTAssertEqualObjects([XFXML stringValueOfNode:items[3]], @"c");
+    XCTAssertEqualObjects([[(NSXMLElement *)items[3] attributeForName:@"k"] stringValue], @"1");
+    XCTAssertTrue([p setValue:@"Cy" ofControl:input error:&error], @"%@", error);
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"n"].firstObject], @"Cy");
+}
+
+- (void)testUnknownBindIsAnError // G-21
+{
+    NSError *error = nil;
+    XFProcessor *p = [self processor:
+                      @"<xf:instance><data xmlns=\"\"><n>Ada</n></data></xf:instance>"
+                      extra:@"<xf:output bind=\"nope\"/>"
+                        error:&error];
+    // the control exists but its refresh reports the missing bind
+    XCTAssertNotNil(p);
+    XCTAssertFalse([p refresh:&error]);
+    XCTAssertEqual(error.code, (NSInteger)XFErrorBinding);
+}
+
+- (void)testModelAttributeSelectsModelForControlsActionsAndItemsets // G-22
+{
+    NSString *xml =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
+        @"      xmlns:xf=\"http://www.w3.org/2002/xforms\""
+        @"      xmlns:ev=\"http://www.w3.org/2001/xml-events\">"
+        @"  <xf:model id=\"m1\"><xf:instance><d xmlns=\"\"><n>one</n></d></xf:instance>"
+        @"    <xf:setvalue ev:event=\"poke\" model=\"m2\" ref=\"n\" value=\"'changed'\"/>"
+        @"  </xf:model>"
+        @"  <xf:model id=\"m2\"><xf:instance><d xmlns=\"\"><n>two</n><opt>x</opt><opt>y</opt></d></xf:instance>"
+        @"    <xf:bind id=\"b2\" nodeset=\"n\" readonly=\"true()\"/>"
+        @"  </xf:model>"
+        @"  <xf:output id=\"o1\" ref=\"n\"/>"
+        @"  <xf:output id=\"o2\" model=\"m2\" ref=\"n\"/>"
+        @"  <xf:output id=\"o3\" bind=\"b2\"/>"
+        @"  <xf:select1 ref=\"n\"><xf:label>S</xf:label>"
+        @"    <xf:itemset model=\"m2\" nodeset=\"opt\"><xf:label ref=\".\"/><xf:value ref=\".\"/></xf:itemset>"
+        @"  </xf:select1>"
+        @"</html>";
+    NSError *error = nil;
+    XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    NSArray<XFOutputControl *> *outs = p.outputControls;
+    XCTAssertEqual(outs.count, (NSUInteger)3);
+    XCTAssertEqualObjects(outs[0].stringValue, @"one");
+    XCTAssertEqualObjects(outs[1].stringValue, @"two");
+    XCTAssertEqualObjects(outs[2].stringValue, @"two");
+    XCTAssertTrue(outs[2].readonly);
+    XFSelectControl *sel = nil;
+    for (XFControl *c in p.controls) {
+        if ([c isKindOfClass:[XFSelectControl class]]) { sel = (XFSelectControl *)c; }
+    }
+    XCTAssertEqual(sel.items.count, (NSUInteger)2);
+    XCTAssertEqualObjects(sel.items[1].value, @"y");
+    // setvalue model="m2" writes m2's node; m2 is the model that gets
+    // recalculated / refreshed
+    [XFXMLEvents dispatch:p.model name:@"poke"];
+    XCTAssertEqualObjects(outs[1].stringValue, @"changed");
+    XCTAssertEqualObjects(outs[2].stringValue, @"changed");
+    XCTAssertEqualObjects(outs[0].stringValue, @"one");
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[[[p.models[1] defaultInstance] documentElement] elementsForName:@"n"].firstObject], @"changed");
+}
+
+- (void)testModelWithoutInstanceGetsSynthesisedData // G-28
+{
+    NSError *error = nil;
+    XFProcessor *p = [self processor:
+                      @"<xf:setvalue ev:event=\"xforms-ready\" ref=\"name\" value=\"'Ada'\"/>"
+                      extra:
+                      @"<xf:input ref=\"name\"><xf:label>N</xf:label></xf:input>"
+                      @"<xf:input ref=\"name\"><xf:label>Again</xf:label></xf:input>"
+                      @"<xf:output ref=\"age\"/>"
+                      @"<xf:output ref=\"a/b\"/>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XCTAssertEqual(p.model.instances.count, (NSUInteger)1);
+    XCTAssertEqualObjects(p.model.instances.firstObject.identifier, @"instance-default");
+    NSXMLElement *root = [[p defaultInstance] documentElement];
+    XCTAssertEqualObjects([root name], @"data");
+    XCTAssertEqual([root elementsForName:@"name"].count, (NSUInteger)1);
+    XCTAssertEqual([root elementsForName:@"age"].count, (NSUInteger)1);
+    XCTAssertEqual([root elementsForName:@"a"].count, (NSUInteger)0);
+    XCTAssertEqualObjects(p.inputControls.firstObject.stringValue, @"Ada");
+    XCTAssertEqualObjects(p.inputControls[1].stringValue, @"Ada");
 }
 
 @end

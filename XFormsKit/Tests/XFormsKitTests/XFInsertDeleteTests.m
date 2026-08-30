@@ -7,6 +7,7 @@
 #import <XFormsKit/XFSwitch.h>
 #import <XFormsKit/XFRepeat.h>
 #import <XFormsKit/XFXML.h>
+#import <XFormsKit/XFAbstractAction.h>
 #import <XFormsKit/XFBind.h>
 #import <XFormsKit/XFNodeState.h>
 
@@ -269,6 +270,49 @@
     XCTAssertEqual(bind.nodes.count, (NSUInteger)1);
     XCTAssertEqual([bind.nodes.firstObject parent], [[p.model defaultInstance] documentElement]);
     XCTAssertTrue([XFNodeState stateOnNode:[self items:p].firstObject].readonly);
+}
+
+- (void)testSwitchRefCaserefAndInitialSelect // G-26
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><g><n>Ada</n><which>c2</which></g><show>1</show></data></xf:instance>"
+                      @"<xf:bind nodeset=\"g\" relevant=\"../show = '1'\"/>"
+                      @"<xf:setvalue ev:event=\"pick1\" ref=\"g/which\" value=\"'c1'\"/>"
+                      @"<xf:setvalue ev:event=\"hide\" ref=\"show\" value=\"'0'\"/>"
+                      @"<xf:toggle ev:event=\"go2\" case=\"c2\"/>"
+                      extra:
+                      @"<xf:switch id=\"sw\" ref=\"g\" caseref=\"which\">"
+                      @"  <xf:case id=\"c1\"><xf:action id=\"c1-sel\" ev:event=\"xforms-select\"/><xf:output id=\"o1\" ref=\"n\"/></xf:case>"
+                      @"  <xf:case id=\"c2\"><xf:action id=\"c2-sel\" ev:event=\"xforms-select\"/><xf:action id=\"c2-desel\" ev:event=\"xforms-deselect\"/></xf:case>"
+                      @"</xf:switch>"
+                      @"<xf:switch id=\"plain\"><xf:case id=\"p1\" selected=\"true\"><xf:action id=\"p1-sel\" ev:event=\"xforms-select\"/></xf:case><xf:case id=\"p2\"/></xf:switch>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFSwitch *sw = (XFSwitch *)p.controls[0];
+    XFSwitch *plain = (XFSwitch *)p.controls[1];
+    // caseref picks c2 although c1 comes first
+    XCTAssertEqualObjects(sw.selectedCase.identifier, @"c2");
+    XCTAssertTrue(sw.relevant);
+    // the initially selected case of a plain switch got xforms-select once
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"p1-sel"] invocationCount], (NSInteger)1);
+    XCTAssertEqualObjects(plain.selectedCase.identifier, @"p1");
+
+    // caseref follows the instance…
+    [XFXMLEvents dispatch:p.model name:@"pick1"];
+    XCTAssertEqualObjects(sw.selectedCase.identifier, @"c1");
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"c1-sel"] invocationCount], (NSInteger)1);
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"c2-desel"] invocationCount], (NSInteger)1);
+    // …the case content evaluates against the switch's bound node (g)
+    XCTAssertEqualObjects(p.outputControls.firstObject.stringValue, @"Ada");
+    // …and a toggle writes the case id back into the caseref node
+    [XFXMLEvents dispatch:p.model name:@"go2"];
+    XCTAssertEqualObjects(sw.selectedCase.identifier, @"c2");
+    NSXMLElement *root = [[p defaultInstance] documentElement];
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[root nodesForXPath:@"g/which" error:NULL].firstObject], @"c2");
+    // switch/@ref: non-relevant bound node hides the switch
+    [XFXMLEvents dispatch:p.model name:@"hide"];
+    XCTAssertFalse(sw.relevant);
 }
 
 @end

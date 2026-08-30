@@ -3,6 +3,7 @@
 #import <XFormsKit/XFXMLEvents.h>
 #import <XFormsKit/XFListener.h>
 #import <XFormsKit/XFEvent.h>
+#import <XFormsKit/XFAbstractAction.h>
 #import <XFormsKit/XFTriggerControl.h>
 #import <XFormsKit/XFXML.h>
 #import <Foundation/NSXMLDocument.h>
@@ -487,6 +488,37 @@
         @"</xf:model>"];
     XCTAssertEqual(p.models.count, (NSUInteger)2);
     XCTAssertTrue([[p actionWithIdentifier:@"reval"] wasInvokedForEvent:@"xforms-revalidate"]);
+}
+
+- (void)testExceptionEventsAreDispatched // G-30
+{
+    [[[XFXMLEvents sharedEvents] exceptionMessages] removeAllObjects];
+    XFProcessor *p = [self processorWithBody:
+        @"<xf:model id=\"m\" functions=\"nosuchfn\" version=\"3.0\">"
+        @"  <xf:instance><data xmlns=\"\"><n>1</n></data></xf:instance>"
+        @"  <xf:instance id=\"ext\" src=\"file:///nonexistent/xformskit-missing.xml\"/>"
+        @"  <xf:action id=\"compute\" ev:event=\"xforms-compute-exception\"/>"
+        @"  <xf:action id=\"version\" ev:event=\"xforms-version-exception\"/>"
+        @"  <xf:action id=\"link\" ev:event=\"xforms-link-exception\"/>"
+        @"  <xf:action id=\"binding\" ev:event=\"xforms-binding-exception\"/>"
+        @"  <xf:setvalue ev:event=\"boom\" ref=\"n\" value=\"nosuchfn(.)\"/>"
+        @"</xf:model>"
+        @"<xf:output id=\"o\" bind=\"nope\"/>"];
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"compute"] invocationCount], (NSInteger)1); // @functions
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"version"] invocationCount], (NSInteger)1);
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"link"] invocationCount], (NSInteger)1);
+    // the unknown bind raised on the output; the handler sits on the model
+    // (document-level bubbling reaches the model only for model targets),
+    // so check the recorded message
+    NSArray *messages = [[XFXMLEvents sharedEvents] exceptionMessages];
+    BOOL sawBinding = NO;
+    for (NSString *m in messages) {
+        if ([m hasPrefix:@"xforms-binding-exception"]) sawBinding = YES;
+    }
+    XCTAssertTrue(sawBinding, @"%@", messages);
+    // an unknown function at evaluation time
+    [XFXMLEvents dispatch:p.model name:@"boom"];
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"compute"] invocationCount], (NSInteger)2);
 }
 
 @end

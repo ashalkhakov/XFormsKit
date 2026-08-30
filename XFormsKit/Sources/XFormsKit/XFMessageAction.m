@@ -23,12 +23,13 @@
         return nil;
     }
     self.level = [[element attributeForName:@"level"] stringValue] ?: @"modal";
-    NSString *ref = [[element attributeForName:@"ref"] stringValue];
-    if (ref.length) {
-        self.binding = [XFBinding bindingWithExpression:ref element:element error:error];
-        if (self.binding == nil) {
-            return nil;
+    NSError *bindError = nil;
+    self.binding = [XFBinding bindingForElement:element attribute:@"ref" error:&bindError];
+    if (bindError) {
+        if (error) {
+            *error = bindError;
         }
+        return nil;
     }
     return self;
 }

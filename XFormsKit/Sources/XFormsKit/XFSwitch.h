@@ -2,6 +2,8 @@
 
 @class XFHostNode;
 
+@class XFBinding;
+
 NS_ASSUME_NONNULL_BEGIN
 
 @interface XFCase : XFControl
@@ -19,6 +21,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, copy, readonly) NSArray<XFCase *> *cases;
 @property (nonatomic, weak, nullable, readonly) XFCase *selectedCase;
+/// `caseref`: the node whose value is the selected case id (G-26).
+@property (nonatomic, strong, readonly, nullable) XFBinding *caserefBinding;
+/// XSLTForms case.xsl: the initially selected case gets xforms-select
+/// once at start-up (not with caseref).
+- (void)dispatchInitialSelect;
 
 + (nullable instancetype)switchWithElement:(NSXMLElement *)element
                                      model:(nullable id)model

@@ -1,4 +1,5 @@
 #import "XFInstance.h"
+#import "XFXMLEvents.h"
 #import "XFErrors.h"
 #import "XFXML.h"
 #import "XFModel.h"
@@ -105,7 +106,13 @@
 - (void)construct
 {
     if (self.src.length && self.document == nil) {
-        [self loadFromSrc:NULL];
+        NSError *inner = nil;
+        if (![self loadFromSrc:&inner]) {
+            // XsltForms_instance: globals.error(element, "xforms-link-exception", "Fatal error loading " + src)
+            [XFXMLEvents raise:@"xforms-link-exception" on:self.element ?: (id)self.model
+                       message:[NSString stringWithFormat:@"Fatal error loading %@ (%@)", self.src,
+                                inner.localizedDescription ?: @""]];
+        }
     }
 }
 

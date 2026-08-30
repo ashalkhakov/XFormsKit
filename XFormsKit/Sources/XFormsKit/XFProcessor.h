@@ -42,6 +42,19 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSArray<XFGroup *> *groups;
 @property (nonatomic, copy, readonly) NSArray<XFRepeat *> *repeats;
 
+/// The control holding the XForms focus (XsltForms_globals.focus), G-24.
+@property (nonatomic, weak, readonly, nullable) XFControl *focusedControl;
+/// Called when the engine moves the focus (xf:setfocus, xforms-focus):
+/// hosts make the control's widget first responder.
+@property (nonatomic, copy, nullable) void (^focusRequestHandler)(XFControl *control);
+/// XsltForms_control.focus: blur the previous control (DOMFocusOut), set the
+/// repeat index of every repeat item the control sits in, dispatch
+/// DOMFocusIn. `fromUI` = the widget already has the keyboard focus (no
+/// focusRequestHandler call).
+- (void)focusControl:(XFControl *)control fromUI:(BOOL)fromUI;
+/// XsltForms_globals.blur(true): DOMFocusOut on the focused control.
+- (void)blurFocusedControl;
+
 - (nullable XFAbstractAction *)actionWithIdentifier:(NSString *)identifier;
 - (nullable XFRepeat *)repeatWithIdentifier:(NSString *)identifier;
 
@@ -64,6 +77,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// change on the model, dispatches `xforms-value-changed`, then
 /// rebuild/recalculate/revalidate/refresh as needed.
 - (void)controlDidChangeValue:(XFControl *)control;
+/// The model whose instances hold `node` (nil if none).
+- (nullable XFModel *)modelContainingNode:(nullable NSXMLNode *)node;
 
 
 - (void)activateControl:(XFTriggerControl *)control;
