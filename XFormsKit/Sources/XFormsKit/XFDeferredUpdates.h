@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 
 @class XFModel;
+@class XFXPathValue;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -10,6 +11,15 @@ NS_ASSUME_NONNULL_BEGIN
 @interface XFDeferredUpdates : NSObject
 
 @property (nonatomic, strong, readonly) NSMutableArray<NSString *> *messages;
+
+/// Variable scopes (XSLTForms varScope / varResolver, G-77): containers
+/// push a scope while refreshing their children and actions while running
+/// theirs; xf:var / xf:setvar publish into the innermost scope; `$x`
+/// looks outward through the stack.
+- (void)pushVariableScope;
+- (void)popVariableScope;
+- (void)setVariable:(nullable XFXPathValue *)value named:(NSString *)name;
+- (nullable XFXPathValue *)variableNamed:(NSString *)name;
 @property (nonatomic, strong, readonly) NSMutableArray *changedModels;
 /// XsltForms_globals.building: YES while the UI is being refreshed. Changes
 /// recorded meanwhile go to the pending lists and become current after the

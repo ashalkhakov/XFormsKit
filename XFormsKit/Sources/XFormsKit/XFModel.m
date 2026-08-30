@@ -15,6 +15,8 @@
 
 @interface XFModel ()
 @property (nonatomic, copy, readwrite) NSArray<XFInstance *> *instances;
+@property (nonatomic, copy, readwrite) NSDictionary<NSString *, NSDictionary<NSString *, NSString *> *> *translations;
+@property (nonatomic, copy, readwrite) NSString *defaultLanguage;
 @property (nonatomic, copy, readwrite) NSArray<XFSubmission *> *submissions;
 @property (nonatomic, strong) NSMutableArray<XFRepeat *> *mutableRepeats;
 @property (nonatomic, strong) NSMutableArray<XFBind *> *mutableBinds;
@@ -70,6 +72,30 @@
         [instances addObject:synthesised];
     }
     model.instances = instances;
+
+    // xf:itext/xf:translation[@lang]/xf:text[@id]/xf:value (G-94)
+    NSMutableDictionary *translations = [NSMutableDictionary dictionary];
+    NSString *defaultLanguage = nil;
+    for (NSXMLElement *itext in [XFXML childElementsWithLocalName:@"itext" namespaceURI:XFXFormsNamespaceURI ofElement:modelElement]) {
+        for (NSXMLElement *tr in [XFXML childElementsWithLocalName:@"translation" namespaceURI:XFXFormsNamespaceURI ofElement:itext]) {
+            NSString *lang = [[tr attributeForName:@"lang"] stringValue] ?: @"";
+            if (defaultLanguage == nil) {
+                defaultLanguage = lang;
+            }
+            NSMutableDictionary *texts = translations[lang] ?: [NSMutableDictionary dictionary];
+            for (NSXMLElement *text in [XFXML childElementsWithLocalName:@"text" namespaceURI:XFXFormsNamespaceURI ofElement:tr]) {
+                NSString *tid = [[text attributeForName:@"id"] stringValue];
+                if (tid.length == 0) {
+                    continue;
+                }
+                NSXMLElement *value = [XFXML childElementsWithLocalName:@"value" namespaceURI:XFXFormsNamespaceURI ofElement:text].firstObject;
+                texts[tid] = [XFXML stringValueOfNode:value ?: text] ?: @"";
+            }
+            translations[lang] = texts;
+        }
+    }
+    model.translations = translations;
+    model.defaultLanguage = defaultLanguage;
 
     NSArray<NSXMLElement *> *submissionElements =
         [XFXML childElementsWithLocalName:@"submission"
@@ -194,6 +220,27 @@
             self.instances = keep;
         }
     }
+}
+
+- (NSString *)itextForIdentifier:(NSString *)identifier language:(NSString *)language
+{
+    NSDictionary *texts = nil;
+    if (language.length) {
+        texts = self.translations[language];
+        if (texts == nil) {
+            NSString *primary = [language componentsSeparatedByString:@"-"].firstObject;
+            for (NSString *lang in self.translations) {
+                if ([[[lang componentsSeparatedByString:@"-"].firstObject lowercaseString] isEqualToString:[primary lowercaseString]]) {
+                    texts = self.translations[lang];
+                    break;
+                }
+            }
+        }
+    }
+    if (texts == nil && self.defaultLanguage) {
+        texts = self.translations[self.defaultLanguage];
+    }
+    return texts[identifier];
 }
 
 - (XFInstance *)instanceWithIdentifier:(NSString *)identifier

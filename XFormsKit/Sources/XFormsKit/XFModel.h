@@ -14,8 +14,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)refreshControls;
 @end
 
+@class XFSubform;
+
 @interface XFModel : NSObject
 
+/// The subform this model was loaded with (nil for the main form), G-90.
+@property (nonatomic, weak, nullable) XFSubform *subform;
 @property (nonatomic, copy, nullable) NSString *identifier;
 @property (nonatomic, strong, nullable) NSXMLElement *element;
 @property (nonatomic, weak, nullable) id<XFModelOwner> owner;
@@ -25,6 +29,15 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak, nullable) XFSubmission *defaultSubmission;
 @property (nonatomic, copy, readonly) NSArray<XFRepeat *> *repeats;
 @property (nonatomic, strong, nullable) id<XFSubmissionTransport> transport;
+
+/// `xf:itext` translations (jsgen/itext.xsl → XsltForms_model.additext):
+/// language → (text id → value); `defaultLanguage` is the first
+/// translation's @lang — G-94.
+@property (nonatomic, copy, readonly) NSDictionary<NSString *, NSDictionary<NSString *, NSString *> *> *translations;
+@property (nonatomic, copy, readonly, nullable) NSString *defaultLanguage;
+/// itext(): the text for `identifier` in `language` (a BCP-47 tag matched
+/// exactly, then by primary subtag), else in the default language.
+- (nullable NSString *)itextForIdentifier:(NSString *)identifier language:(nullable NSString *)language;
 
 /// After `xforms-ready`. Matches XsltForms_globals.ready for this model.
 @property (nonatomic, assign) BOOL ready;

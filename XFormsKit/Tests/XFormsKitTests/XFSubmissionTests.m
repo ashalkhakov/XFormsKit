@@ -631,4 +631,40 @@
     XCTAssertEqualObjects([[[root elementsForName:@"________"].firstObject attributeForLocalName:@"fullname" URI:@"http://www.agencexml.com/exml"] stringValue], @"odd key");
 }
 
+- (void)testJSONAndCSVSubmissionBodies // G-97
+{
+    // round trip through json2xml (G-55) and back
+    NSString *src = @"{\"name\":\"Ada\",\"age\":36,\"ok\":true,\"tags\":[\"a\",\"b\"],\"addr\":{\"city\":\"Paris\"},\"none\":null,\"empty\":[]}";
+    NSString *xml = [XFInstance xmlStringFromJSONData:[src dataUsingEncoding:NSUTF8StringEncoding] error:NULL];
+    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
+    NSString *json = [XFInstance jsonStringFromNode:[doc rootElement]];
+    id parsed = [NSJSONSerialization JSONObjectWithData:[json dataUsingEncoding:NSUTF8StringEncoding] options:0 error:NULL];
+    XCTAssertEqualObjects(parsed[@"name"], @"Ada");
+    XCTAssertEqualObjects(parsed[@"age"], @36);
+    XCTAssertEqualObjects(parsed[@"ok"], @YES);
+    XCTAssertEqualObjects(parsed[@"tags"], (@[ @"a", @"b" ]));
+    XCTAssertEqualObjects(parsed[@"addr"], (@{ @"city": @"Paris" }));
+    XCTAssertEqualObjects(parsed[@"empty"], @[]);
+    XCTAssertEqualObjects(parsed[@"none"], [NSNull null]);
+    // a plain instance submitted with mediatype="application/json"
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><rows xmlns=\"\"><row><a>1.5</a><b>x,y</b></row><row><a>2</a><b>z</b></row></rows></xf:instance>"
+                      @"<xf:submission id=\"j\" resource=\"http://example.test/j\" method=\"post\" replace=\"none\" mediatype=\"application/json\"/>"
+                      @"<xf:submission id=\"c\" resource=\"http://example.test/c\" method=\"post\" replace=\"none\" mediatype=\"text/csv\" separator=\"; ,\"/>"
+                      @"<xf:send id=\"sj\" submission=\"j\"/><xf:send id=\"sc\" submission=\"c\"/>"
+                      extra:nil error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFMapSubmissionTransport *map = [[XFMapSubmissionTransport alloc] init];
+    [map setXML:@"<ok/>" forURL:@"http://example.test/j"];
+    [map setXML:@"<ok/>" forURL:@"http://example.test/c"];
+    p.model.transport = map;
+    [self send:p identifier:@"sj"];
+    XCTAssertEqualObjects(map.lastRequest.mediaType, @"application/json");
+    id body = [NSJSONSerialization JSONObjectWithData:[map.lastRequest.body dataUsingEncoding:NSUTF8StringEncoding] options:0 error:NULL];
+    XCTAssertEqualObjects(body, (@{ @"rows": @{ @"row": @[ @{ @"a": @"1.5", @"b": @"x,y" }, @{ @"a": @"2", @"b": @"z" } ] } }));
+    [self send:p identifier:@"sc"];
+    XCTAssertEqualObjects(map.lastRequest.body, @"a;b\n1,5;x,y\n2;z\n");
+}
+
 @end

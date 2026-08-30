@@ -1,4 +1,5 @@
 #import "XFXPathPriv.h"
+#import "XFDeferredUpdates.h"
 
 @implementation XFExpr
 - (XFXPathValue *)evaluate:(XFExprContext *)ctx error:(NSError **)error
@@ -60,7 +61,7 @@
 - (XFXPathValue *)evaluate:(XFExprContext *)ctx error:(NSError **)error
 {
     (void)error;
-    XFXPathValue *v = ctx.variables[self.name];
+    XFXPathValue *v = ctx.variables[self.name] ?: [[XFDeferredUpdates sharedUpdates] variableNamed:self.name];
     if (v) {
         return v;
     }

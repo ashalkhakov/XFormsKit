@@ -315,6 +315,190 @@ static void XFJSON2XML(NSString *name, id json, BOOL root, BOOL inarray, NSMutab
     return ret;
 }
 
+#pragma mark - xml2json / xml2csv (G-97)
+
+static NSString * const XFEXMLNS = @"http://www.agencexml.com/exml";
+static NSString * const XFEXINS = @"http://www.agencexml.com/exi";
+
+static NSString *XFJSONQuote(NSString *s)
+{
+    NSData *d = [NSJSONSerialization dataWithJSONObject:@[ s ?: @"" ] options:0 error:NULL];
+    NSString *arr = d ? [[NSString alloc] initWithData:d encoding:NSUTF8StringEncoding] : @"[\"\"]";
+    return [arr substringWithRange:NSMakeRange(1, arr.length - 2)];
+}
+
+static NSString *XFJSONName(NSXMLElement *el)
+{
+    NSString *lname = [el localName] ?: [el name];
+    if ([lname isEqualToString:@"________"]) {
+        lname = [[el attributeForLocalName:@"fullname" URI:XFEXMLNS] stringValue] ?: lname;
+    }
+    return lname;
+}
+
+static BOOL XFJSONIsAnonymous(NSXMLElement *el)
+{
+    return [[el localName] isEqualToString:@"anonymous"] && [[el URI] isEqualToString:XFEXMLNS];
+}
+
+static NSArray<NSXMLElement *> *XFChildElements(NSXMLNode *node)
+{
+    NSMutableArray *out = [NSMutableArray array];
+    for (NSXMLNode *c in [node children]) {
+        if ([c kind] == NSXMLElementKind) {
+            [out addObject:c];
+        }
+    }
+    return out;
+}
+
+static void XFNode2JSONValue(NSXMLElement *el, NSMutableString *out);
+
+/// The members of an object / items of the root: consecutive siblings
+/// sharing a name and exsi:maxOccurs="unbounded" form one array.
+static void XFNode2JSONMembers(NSXMLNode *node, NSMutableString *out, BOOL named)
+{
+    NSArray<NSXMLElement *> *children = XFChildElements(node);
+    NSUInteger i = 0;
+    BOOL first = YES;
+    while (i < children.count) {
+        NSXMLElement *c = children[i];
+        BOOL unbounded = [[[c attributeForLocalName:@"maxOccurs" URI:XFEXINS] stringValue] isEqualToString:@"unbounded"];
+        NSString *name = XFJSONName(c);
+        // plain instance data (no exsi markers): repeated siblings are an array
+        BOOL repeated = i + 1 < children.count && [XFJSONName(children[i + 1]) isEqualToString:name];
+        if (!first) {
+            [out appendString:@","];
+        }
+        first = NO;
+        if (named && !XFJSONIsAnonymous(c)) {
+            [out appendFormat:@"%@:", XFJSONQuote(name)];
+        }
+        if (unbounded || repeated) {
+            [out appendString:@"["];
+            BOOL nilArray = [[[c attributeForLocalName:@"nil" URI:@"http://www.w3.org/2001/XMLSchema-instance"] stringValue] isEqualToString:@"true"];
+            NSUInteger j = i;
+            BOOL firstItem = YES;
+            while (j < children.count && [XFJSONName(children[j]) isEqualToString:name]
+                   && (!unbounded || [[[children[j] attributeForLocalName:@"maxOccurs" URI:XFEXINS] stringValue] isEqualToString:@"unbounded"])) {
+                if (!nilArray) {
+                    if (!firstItem) {
+                        [out appendString:@","];
+                    }
+                    firstItem = NO;
+                    XFNode2JSONValue(children[j], out);
+                }
+                j++;
+            }
+            [out appendString:@"]"];
+            i = j;
+        } else {
+            XFNode2JSONValue(c, out);
+            i++;
+        }
+    }
+}
+
+static void XFNode2JSONValue(NSXMLElement *el, NSMutableString *out)
+{
+    NSString *xsdtype = [[el attributeForLocalName:@"type" URI:@"http://www.w3.org/2001/XMLSchema-instance"] stringValue] ?: @"";
+    NSString *local = [xsdtype componentsSeparatedByString:@":"].lastObject ?: @"";
+    NSString *text = [XFXML stringValueOfNode:el] ?: @"";
+    if ([local isEqualToString:@"string"]) {
+        [out appendString:XFJSONQuote(text)];
+    } else if ([local isEqualToString:@"double"] || [local isEqualToString:@"decimal"] || [local isEqualToString:@"integer"]) {
+        NSString *t = [text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        [out appendString:[[NSScanner scannerWithString:t] scanDouble:NULL] && t.length ? t : @"null"];
+    } else if ([local isEqualToString:@"boolean"]) {
+        [out appendString:[text isEqualToString:@"true"] || [text isEqualToString:@"1"] ? @"true" : @"false"];
+    } else if (XFChildElements(el).count) {
+        [out appendString:@"{"];
+        XFNode2JSONMembers(el, out, YES);
+        [out appendString:@"}"];
+    } else if (xsdtype.length == 0 && text.length == 0) {
+        [out appendString:@"null"];
+    } else {
+        [out appendString:XFJSONQuote(text)];
+    }
+}
+
++ (NSString *)jsonStringFromNode:(NSXMLNode *)node
+{
+    NSXMLElement *root = [node kind] == NSXMLDocumentKind ? [(NSXMLDocument *)node rootElement] : (NSXMLElement *)node;
+    if ([root kind] != NSXMLElementKind) {
+        return @"null";
+    }
+    NSMutableString *out = [NSMutableString string];
+    if (XFJSONIsAnonymous(root)) {
+        // the json2xml wrapper: a typed root is a scalar, else an object
+        // (or an array of anonymous items)
+        NSArray<NSXMLElement *> *children = XFChildElements(root);
+        NSString *xsdtype = [[root attributeForLocalName:@"type" URI:@"http://www.w3.org/2001/XMLSchema-instance"] stringValue];
+        if (children.count == 0 && xsdtype.length) {
+            XFNode2JSONValue(root, out);
+        } else if (children.count && XFJSONIsAnonymous(children.firstObject)) {
+            [out appendString:@"["];
+            XFNode2JSONMembers(root, out, NO);
+            [out appendString:@"]"];
+        } else {
+            [out appendString:@"{"];
+            XFNode2JSONMembers(root, out, YES);
+            [out appendString:@"}"];
+        }
+    } else {
+        [out appendString:@"{"];
+        XFNode2JSONMembers([root parent] ?: root, out, YES);
+        [out appendString:@"}"];
+        if ([root parent] == nil || [[root parent] kind] == NSXMLDocumentKind) {
+            // a plain instance root: {"root": {...}}
+            out = [NSMutableString stringWithFormat:@"{%@:", XFJSONQuote(XFJSONName(root))];
+            XFNode2JSONValue(root, out);
+            [out appendString:@"}"];
+        }
+    }
+    return out;
+}
+
++ (NSString *)csvStringFromNode:(NSXMLNode *)node separator:(NSString *)separator
+{
+    NSXMLElement *root = [node kind] == NSXMLDocumentKind ? [(NSXMLDocument *)node rootElement] : (NSXMLElement *)node;
+    NSArray<NSString *> *seps = [(separator.length ? separator : @",") componentsSeparatedByString:@" "];
+    NSString *fsep = seps.firstObject.length ? seps.firstObject : @",";
+    NSString *decsep = seps.count > 1 ? seps[1] : nil;
+    NSMutableString *r = [NSMutableString string];
+    NSArray<NSXMLElement *> *rows = XFChildElements(root);
+    NSRegularExpression *number = [NSRegularExpression regularExpressionWithPattern:@"^[\\-+]?([0-9]+(\\.[0-9]*)?|\\.[0-9]+)$" options:0 error:NULL];
+    void (^line)(NSArray<NSString *> *) = ^(NSArray<NSString *> *values) {
+        NSMutableArray *cells = [NSMutableArray array];
+        for (NSString *raw in values) {
+            NSString *v = raw;
+            if ([v rangeOfString:@"\n"].location != NSNotFound || [v rangeOfString:fsep].location != NSNotFound) {
+                v = [NSString stringWithFormat:@"\"%@\"", [v stringByReplacingOccurrencesOfString:@"\"" withString:@"\"\""]];
+            } else if (decsep.length && [number numberOfMatchesInString:v options:0 range:NSMakeRange(0, v.length)]) {
+                v = [v stringByReplacingOccurrencesOfString:@"." withString:decsep];
+            }
+            [cells addObject:v];
+        }
+        [r appendString:[cells componentsJoinedByString:fsep]];
+        [r appendString:@"\n"];
+    };
+    if (rows.count) {
+        NSMutableArray *head = [NSMutableArray array];
+        for (NSXMLElement *f in XFChildElements(rows.firstObject)) {
+            [head addObject:XFJSONName(f)];
+        }
+        line(head);
+    }
+    for (NSXMLElement *row in rows) {
+        NSMutableArray *values = [NSMutableArray array];
+        for (NSXMLElement *f in XFChildElements(row)) {
+            [values addObject:[XFXML stringValueOfNode:f] ?: @""];
+        }
+        line(values);
+    }
+    return r;
+}
+
 + (NSString *)xmlStringFromCSV:(NSString *)csv separator:(NSString *)sep header:(BOOL)head
 {
     NSMutableString *r = [NSMutableString stringWithString:
@@ -410,9 +594,37 @@ static void XFJSON2XML(NSString *name, id json, BOOL root, BOOL inarray, NSMutab
     return value ? [value booleanValue] : fallback;
 }
 
+static NSString * const XFXSINS = @"http://www.w3.org/2001/XMLSchema-instance";
+
+/// XsltForms_browser.getType: the bind's type, else the node's own
+/// `xsi:type` (resolved in the node's namespace context) — G-83.
+- (NSString *)typeNameForNode:(NSXMLNode *)node state:(XFNodeState *)state
+{
+    if (state.typeName.length) {
+        return state.typeName;
+    }
+    if ([node kind] != NSXMLElementKind) {
+        return nil;
+    }
+    NSString *qname = [[(NSXMLElement *)node attributeForLocalName:@"type" URI:XFXSINS] stringValue];
+    if (qname.length == 0) {
+        return nil;
+    }
+    XFType *type = [XFType typeForQName:qname inElement:(NSXMLElement *)node targetNamespace:nil];
+    return type ? [NSString stringWithFormat:@"{%@}%@", type.namespaceURI, type.localName] : qname;
+}
+
+/// XsltForms_browser.getNil
+static BOOL XFNodeIsNil(NSXMLNode *node)
+{
+    return [node kind] == NSXMLElementKind
+        && [[[(NSXMLElement *)node attributeForLocalName:@"nil" URI:XFXSINS] stringValue] isEqualToString:@"true"];
+}
+
 - (void)validateNode:(NSXMLNode *)node readonly:(BOOL)readonly notRelevant:(BOOL)notRelevant
 {
     XFNodeState *state = [XFNodeState existingStateOnNode:node];
+    NSString *typeName = [self typeNameForNode:node state:state];
     if (state.bindIdentifiers.count > 0) {
         NSString *value = [XFXML stringValueOfNode:node];
         BOOL relevantFound = NO;
@@ -475,7 +687,8 @@ static void XFJSON2XML(NSString *name, id json, BOOL root, BOOL inarray, NSMutab
             if (!constraintOK) {
                 valid = NO;
             }
-            if (![XFType value:value conformsToTypeNamed:state.typeName]) {
+            // xsi:nil="true": only the empty value is valid (validate_)
+            if (XFNodeIsNil(node) ? !empty : ![XFType value:value conformsToTypeNamed:typeName]) {
                 valid = NO;
             }
         }
@@ -498,10 +711,25 @@ static void XFJSON2XML(NSString *name, id json, BOOL root, BOOL inarray, NSMutab
         // the inherited values, so a subtree becomes relevant / writable
         // again when its bound ancestor does. Only materialise a state
         // object when something differs from the defaults.
-        XFNodeState *inherited = state ?: ((notRelevant || readonly) ? [XFNodeState stateOnNode:node] : nil);
+        // An unbound node typed by xsi:type is still validated (validate_
+        // else-branch: schtyp.validate(value)) — G-83
+        BOOL typed = typeName.length > 0;
+        BOOL valid = YES;
+        if (typed) {
+            NSString *value = [XFXML stringValueOfNode:node];
+            valid = XFNodeIsNil(node) ? value.length == 0 : [XFType value:value conformsToTypeNamed:typeName];
+        }
+        XFNodeState *inherited = state ?: ((notRelevant || readonly || !valid) ? [XFNodeState stateOnNode:node] : nil);
         if (inherited) {
             inherited.relevant = !notRelevant;
             inherited.readonly = readonly;
+            if (typed) {
+                BOOL flipped = inherited.valid != valid;
+                inherited.valid = valid;
+                if (flipped && self.model.ready) {
+                    [self.model addChange:node];
+                }
+            }
         }
     }
 

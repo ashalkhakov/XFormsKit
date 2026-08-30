@@ -66,7 +66,18 @@
 {
     NSError *inner = nil;
     NSString *preferred = [element attributeForName:@"nodeset"] ? @"nodeset" : @"ref";
-    XFBinding *binding = [XFControl bindingOnElement:element preferredAttribute:preferred error:&inner];
+    XFBinding *binding = nil;
+    NSString *from = [[element attributeForName:@"from"] stringValue];
+    NSString *to = [[element attributeForName:@"to"] stringValue];
+    if (from.length && to.length) {
+        // jsgen/repeat.xsl: @from/@to/@step become fromtostep(from, to, step),
+        // a nodeset of detached "repeatitem" nodes holding the numbers (G-91)
+        NSString *step = [[element attributeForName:@"step"] stringValue];
+        NSString *expr = [NSString stringWithFormat:@"fromtostep(%@,%@,%@)", from, to, step.length ? step : @"1"];
+        binding = [XFBinding bindingWithExpression:expr element:element error:&inner];
+    } else {
+        binding = [XFControl bindingOnElement:element preferredAttribute:preferred error:&inner];
+    }
     if (inner) {
         if (error) {
             *error = inner;
@@ -269,9 +280,12 @@
         item.selected = (i == self.index);
         XFExprContext *itemCtx =
             [context cloneWithNode:item.node position:item.position nodeList:self.nodes];
+        XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
+        [du pushVariableScope];
         for (XFControl *control in item.controls) {
             [control refreshInContext:itemCtx error:error];
         }
+        [du popVariableScope];
         i++;
     }
     self.relevant = self.nodes.count > 0;

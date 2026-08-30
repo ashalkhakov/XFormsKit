@@ -27,6 +27,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// XsltForms_browser.json2xml / csv2xml: XML text for foreign data.
 + (nullable NSString *)xmlStringFromJSONData:(NSData *)data error:(NSError **)error;
 + (NSString *)xmlStringFromCSV:(NSString *)csv separator:(NSString *)separator header:(BOOL)header;
+/// Inverse conversions for submission bodies (XsltForms_browser.xml2json /
+/// xml2csv, G-97). `jsonStringFromNode:` is the exact inverse of
+/// `xmlStringFromJSONData:` and emits strict JSON (XSLTForms emits a JS
+/// literal with unquoted keys and `new Date(...)`); `csvStringFromNode:`
+/// writes one line per child element of `node`, the first one's child names
+/// as the header ("field decimal" separators as in @separator).
++ (NSString *)jsonStringFromNode:(NSXMLNode *)node;
++ (NSString *)csvStringFromNode:(NSXMLNode *)node separator:(nullable NSString *)separator;
 @property (nonatomic, copy, nullable) NSURL *baseURL;
 @property (nonatomic, strong, readonly) NSXMLDocument *document;
 @property (nonatomic, strong, readonly) NSXMLDocument *originalDocument;

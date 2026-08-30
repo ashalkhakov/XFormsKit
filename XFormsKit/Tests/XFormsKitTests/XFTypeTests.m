@@ -28,6 +28,28 @@
     XCTAssertTrue([[XFType typeNamed:@"xsd:boolean"] validateValue:@"true"]);
 }
 
+- (void)testXSLTFormsExtraTypes // G-79
+{
+    XCTAssertTrue([[XFType typeNamed:@"xsd:IDREFS"] validateValue:@"a b  c"]);
+    XCTAssertFalse([[XFType typeNamed:@"xsd:IDREFS"] validateValue:@"a 1b"]);
+    XCTAssertTrue([[XFType typeNamed:@"xsd:NMTOKENS"] validateValue:@"1a b-c"]);
+    XCTAssertFalse([[XFType typeNamed:@"xsd:NMTOKENS"] validateValue:@"a,b"]);
+    XCTAssertTrue([[XFType typeNamed:@"xsd:NCName"] validateValue:@"été"]);   // Latin-1 letters
+    XCTAssertFalse([[XFType typeNamed:@"xsd:NCName"] validateValue:@"a:b"]);
+    XCTAssertTrue([[XFType typeNamed:@"xsd:Name"] validateValue:@"a:b"]);
+    XCTAssertTrue([[XFType typeNamed:@"xsd:anyURI"] validateValue:@"http://example.org/a?b=1#c"]);
+    XCTAssertFalse([[XFType typeNamed:@"xsd:anyURI"] validateValue:@"http://exa mple.org/"]);
+    XCTAssertNotNil([XFType typeNamed:@"xf:card-number"]);
+    XCTAssertNotNil([XFType typeNamed:@"xf:HTMLFragment"]);
+    XFType *amount = [XFType typeNamed:@"xf:amount"];
+    XCTAssertTrue([amount validateValue:@"12.5"]);
+    XCTAssertFalse([amount validateValue:@"abc"]);
+    XCTAssertEqualObjects([amount normalizeValue:@"12.5"], @"12.50");
+    XFType *w3cdtf = [XFType typeWithLocalName:@"W3CDTF" namespaceURI:@"http://purl.org/dc/terms/"];
+    XCTAssertTrue([w3cdtf validateValue:@"2026-08-30T10:00:00Z"]);
+    XCTAssertFalse([w3cdtf validateValue:@"2026-08-30"]);
+}
+
 - (void)testDateAndEmail
 {
     XCTAssertTrue([[XFType typeNamed:@"xsd:date"] validateValue:@"2026-08-30"]);
@@ -44,7 +66,10 @@
     XCTAssertTrue([XFType value:@"" conformsToTypeNamed:@"xf:integer"]);
     XCTAssertTrue([XFType value:@"" conformsToTypeNamed:@"xf:date"]);
     XCTAssertTrue([XFType value:@"" conformsToTypeNamed:@"xf:email"]);
-    XCTAssertTrue([XFType value:@"" conformsToTypeNamed:@"xsd:anyURI"]);
+    // XSLTForms: xsd:anyURI has a pattern needing a character, xf:anyURI
+    // does not (G-79)
+    XCTAssertFalse([XFType value:@"" conformsToTypeNamed:@"xsd:anyURI"]);
+    XCTAssertTrue([XFType value:@"" conformsToTypeNamed:@"xf:anyURI"]);
     XCTAssertFalse([XFType value:@"x" conformsToTypeNamed:@"xsd:integer"]);
 }
 

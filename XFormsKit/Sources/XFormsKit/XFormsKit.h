@@ -34,6 +34,9 @@
 #import <XFormsKit/XFGroup.h>
 #import <XFormsKit/XFHostNode.h>
 #import <XFormsKit/XFTableModel.h>
+#import <XFormsKit/XFVarControl.h>
+#import <XFormsKit/XFDialog.h>
+#import <XFormsKit/XFSubform.h>
 #import <XFormsKit/XFRepeat.h>
 #import <XFormsKit/XFSwitch.h>
 #import <XFormsKit/XFProcessor.h>

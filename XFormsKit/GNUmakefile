@@ -50,6 +50,9 @@ XFormsKit_HEADER_FILES = \
 	XFGroup.h \
 	XFHostNode.h \
 	XFTableModel.h \
+	XFVarControl.h \
+	XFDialog.h \
+	XFSubform.h \
 	XFRepeat.h \
 	XFSwitch.h \
 	XFProcessor.h \
@@ -114,6 +117,9 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/XFGroup.m \
 	Sources/XFormsKit/XFHostNode.m \
 	Sources/XFormsKit/XFTableModel.m \
+	Sources/XFormsKit/XFVarControl.m \
+	Sources/XFormsKit/XFDialog.m \
+	Sources/XFormsKit/XFSubform.m \
 	Sources/XFormsKit/XFRepeat.m \
 	Sources/XFormsKit/XFSwitch.m \
 	Sources/XFormsKit/XFProcessor.m \

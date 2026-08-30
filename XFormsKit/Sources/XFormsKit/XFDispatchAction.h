@@ -10,4 +10,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/// `xf:show` / `xf:hide` (show-hide.xsl): a dispatch of xforms-dialog-open /
+/// xforms-dialog-close at the `@dialog` target — G-93.
+@interface XFShowHideAction : XFDispatchAction
+@end
+
 NS_ASSUME_NONNULL_END

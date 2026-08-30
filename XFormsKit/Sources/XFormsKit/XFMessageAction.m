@@ -84,3 +84,36 @@
 }
 
 @end
+
+@interface XFConfirmAction ()
+@property (nonatomic, assign, readwrite) BOOL lastAnswer;
+@end
+
+@implementation XFConfirmAction
+
+- (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+{
+    NSString *text = nil;
+    XFExprContext *ctx = [[XFExprContext alloc] initWithNode:contextNode];
+    ctx.model = self.model;
+    if (self.binding && contextNode) {
+        text = [self.binding stringValueInContext:ctx error:NULL];
+    } else {
+        NSMutableString *built = [NSMutableString string];
+        [self appendTextOf:self.element context:ctx into:built];
+        text = built;
+    }
+    text = [XFXML normalizeSpace:text ?: @""];
+    self.lastText = text;
+    if (text.length == 0) {
+        return;
+    }
+    XFProcessor *processor = [self.model.owner isKindOfClass:[XFProcessor class]] ? (XFProcessor *)self.model.owner : nil;
+    BOOL answer = processor.confirmHandler ? processor.confirmHandler(text) : YES;
+    self.lastAnswer = answer;
+    if (!answer) {
+        [event stopPropagation];
+    }
+}
+
+@end

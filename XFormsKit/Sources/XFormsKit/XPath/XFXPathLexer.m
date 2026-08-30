@@ -109,7 +109,21 @@ static BOOL XFIsNameChar(unichar c)
         return [self token:XFXPathTokenSlash text:@"/"];
     }
     if (c == '@') { _i++; return [self token:XFXPathTokenAt text:@"@"]; }
-    if (c == '*') { _i++; return [self token:XFXPathTokenStar text:@"*"]; }
+    if (c == '*') {
+        // *:name (XPath 2 / XSLTForms xpathexpr) at operand position — a
+        // name test matching the local name in any namespace (G-78)
+        if (!_lastWasOperand && [self peekAt:1] == ':' && [self peekAt:2] != ':' &&
+            XFIsNameStart([self peekAt:2])) {
+            NSUInteger start = _i;
+            _i += 2;
+            while (_i < _n && XFIsNameChar([self peek])) {
+                _i++;
+            }
+            return [self token:XFXPathTokenName text:[_s substringWithRange:NSMakeRange(start, _i - start)]];
+        }
+        _i++;
+        return [self token:XFXPathTokenStar text:@"*"];
+    }
     if (c == '(') { _i++; return [self token:XFXPathTokenLParen text:@"("]; }
     if (c == ')') { _i++; return [self token:XFXPathTokenRParen text:@")"]; }
     if (c == '[') { _i++; return [self token:XFXPathTokenLBrack text:@"["]; }

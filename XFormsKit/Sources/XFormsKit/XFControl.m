@@ -15,6 +15,8 @@
 #import "XFSelectControl.h"
 #import "XFRangeControl.h"
 #import "XFLabelControl.h"
+#import "XFVarControl.h"
+#import "XFDialog.h"
 #import "XFUploadControl.h"
 #import "XFNodeState.h"
 #import "XFModel.h"
@@ -310,7 +312,7 @@
             names = [NSSet setWithObjects:
                      @"input", @"output", @"secret", @"textarea", @"upload",
                      @"trigger", @"submit", @"select", @"select1", @"range",
-                     @"group", @"repeat", @"switch",
+                     @"group", @"repeat", @"switch", @"var", @"dialog", @"component",
                      nil];
         }
     }
@@ -337,7 +339,7 @@
                               @"input", @"output", @"secret", @"textarea",
                               @"trigger", @"submit", @"select", @"select1", @"range",
                               @"upload",
-                              @"group", @"repeat", @"switch", @"case", @"item",
+                              @"group", @"repeat", @"switch", @"case", @"item", @"dialog", @"component",
                               nil];
         }
     }
@@ -379,8 +381,17 @@
     if ([name isEqualToString:@"label"]) {
         return [XFLabelControl labelWithElement:element model:model error:error];
     }
+    if ([name isEqualToString:@"var"]) {
+        return [XFVarControl varWithElement:element model:model error:error];
+    }
     if ([name isEqualToString:@"group"]) {
         return [XFGroup groupWithElement:element model:model error:error];
+    }
+    if ([name isEqualToString:@"dialog"]) {
+        return [XFDialog dialogWithElement:element model:model error:error];
+    }
+    if ([name isEqualToString:@"component"]) {
+        return [XFComponentControl componentWithElement:element model:model error:error];
     }
     if ([name isEqualToString:@"repeat"]) {
         return [XFRepeat repeatWithElement:element model:model error:error];
@@ -562,6 +573,11 @@
 
 - (void)refreshInContext:(XFExprContext *)context error:(NSError **)error
 {
+    // subform content evaluates against the subform's own model (G-90)
+    XFProcessor *processor = [self processor];
+    if (processor) {
+        context = [processor contextForControl:self inherited:context];
+    }
     self.inScopeContextNode = context.contextNode;
     [self refreshWithContext:context error:error];
     // label/hint/help/alert bindings follow the control (every subclass)

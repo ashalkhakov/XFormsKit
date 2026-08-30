@@ -9,7 +9,9 @@
 #import <XFormsKit/XFSetindexAction.h>
 #import <XFormsKit/XFXML.h>
 #import <XFormsKit/XFAbstractAction.h>
+#import <XFormsKit/XFNamespaces.h>
 #import <math.h>
+#import <unistd.h>
 
 @interface XFRepeatGroupTests : XCTestCase
 @end
@@ -458,6 +460,157 @@
     XCTAssertEqualObjects(outs[0].stringValue, @"Bob");
     XCTAssertEqualObjects(outs[1].stringValue, @"y");
     XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"chg"] invocationCount], (NSInteger)1);
+}
+
+- (void)testRepeatFromToStep // G-91
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><n>2</n></data></xf:instance>"
+                      extra:
+                      @"<xf:repeat id=\"r\" from=\"1\" to=\"7\" step=\"3\">"
+                      @"  <xf:output value=\".\"><xf:label>N</xf:label></xf:output>"
+                      @"  <xf:output value=\". * 2\"><xf:label>D</xf:label></xf:output>"
+                      @"</xf:repeat>"
+                      @"<xf:repeat id=\"r2\" from=\"1\" to=\"n\">"
+                      @"  <xf:output value=\".\"><xf:label>N</xf:label></xf:output>"
+                      @"</xf:repeat>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFRepeat *r = [p repeatWithIdentifier:@"r"];
+    XCTAssertEqual(r.items.count, (NSUInteger)3);
+    XCTAssertEqualObjects([(XFOutputControl *)r.items[0].controls[0] stringValue], @"1");
+    XCTAssertEqualObjects([(XFOutputControl *)r.items[1].controls[0] stringValue], @"4");
+    XCTAssertEqualObjects([(XFOutputControl *)r.items[2].controls[0] stringValue], @"7");
+    XCTAssertEqualObjects([(XFOutputControl *)r.items[2].controls[1] stringValue], @"14");
+    // @to may be an expression over the instance
+    XCTAssertEqual([p repeatWithIdentifier:@"r2"].items.count, (NSUInteger)2);
+}
+
+- (void)testIncludeSrcInlinesDocument // G-92
+{
+    NSString *dir = [NSTemporaryDirectory() stringByAppendingPathComponent:
+                     [NSString stringWithFormat:@"xfinc-%d", (int)getpid()]];
+    [[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:NULL];
+    NSString *part =
+        @"<div xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xf=\"http://www.w3.org/2002/xforms\">"
+        @"<xf:output id=\"inc\" ref=\"n\"><xf:label>N</xf:label></xf:output></div>";
+    [part writeToFile:[dir stringByAppendingPathComponent:@"part.xml"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+    NSString *xml =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xf=\"http://www.w3.org/2002/xforms\""
+        @" xmlns:ev=\"http://www.w3.org/2001/xml-events\">"
+        @"<head><xf:model><xf:instance><data xmlns=\"\"><n>42</n></data></xf:instance>"
+        @"<xf:action id=\"link\" ev:event=\"xforms-link-exception\"/></xf:model></head>"
+        @"<body><xf:include src=\"part.xml\"/><xf:include src=\"missing.xml\"/></body></html>";
+    NSString *main = [dir stringByAppendingPathComponent:@"main.xhtml"];
+    [xml writeToFile:main atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+    NSError *error = nil;
+    XFProcessor *p = [XFProcessor processorWithContentsOfURL:[NSURL fileURLWithPath:main] error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XCTAssertEqual(p.outputControls.count, (NSUInteger)1);
+    XCTAssertEqualObjects(p.outputControls.firstObject.stringValue, @"42");
+    XCTAssertEqual([XFXML elementsWithLocalName:@"include" namespaceURI:XFXFormsNamespaceURI inNode:p.hostDocument].count, (NSUInteger)0);
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"link"] invocationCount], (NSInteger)1);
+    [[NSFileManager defaultManager] removeItemAtPath:dir error:NULL];
+}
+
+- (void)testSubformLoadEmbedAndUnload // G-90
+{
+    NSString *dir = [NSTemporaryDirectory() stringByAppendingPathComponent:
+                     [NSString stringWithFormat:@"xfsub-%d", (int)getpid()]];
+    [[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:NULL];
+    NSString *sub =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xf=\"http://www.w3.org/2002/xforms\""
+        @" xmlns:ev=\"http://www.w3.org/2001/xml-events\">"
+        @"<head><xf:model id=\"subm\"><xf:instance><sdata xmlns=\"\"><s>sub</s><ctx/></sdata></xf:instance>"
+        @"  <xf:action id=\"subready\" ev:event=\"xforms-subform-ready\">"
+        @"    <xf:setvalue ref=\"ctx\" value=\"subform-context()\"/></xf:action>"
+        @"  <xf:action id=\"second\" ev:event=\"xforms-subform-ready\"/>"
+        @"</xf:model></head>"
+        @"<body><xf:output id=\"so\" ref=\"s\"><xf:label>S</xf:label></xf:output>"
+        @"<xf:output id=\"si\" value=\"name(subform-instance())\"><xf:label>I</xf:label></xf:output>"
+        @"<xf:output id=\"sc\" ref=\"ctx\"><xf:label>C</xf:label></xf:output>"
+        @"<xf:trigger id=\"bye\"><xf:label>Bye</xf:label><xf:unload ev:event=\"DOMActivate\"/></xf:trigger></body></html>";
+    [sub writeToFile:[dir stringByAppendingPathComponent:@"sub.xhtml"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+    NSString *main =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xf=\"http://www.w3.org/2002/xforms\""
+        @" xmlns:ev=\"http://www.w3.org/2001/xml-events\">"
+        @"<head><xf:model><xf:instance><data xmlns=\"\"><n>main</n><slot>here</slot></data></xf:instance>"
+        @"</xf:model></head>"
+        @"<body><xf:output id=\"mo\" ref=\"n\"><xf:label>N</xf:label></xf:output>"
+        @"<xf:group id=\"slot\" ref=\"slot\"><xf:label>Slot</xf:label><xf:output id=\"old\" ref=\".\"><xf:label>O</xf:label></xf:output></xf:group>"
+        @"<xf:trigger id=\"go\"><xf:label>Go</xf:label><xf:load ev:event=\"DOMActivate\" show=\"embed\" targetid=\"slot\" resource=\"sub.xhtml\"/></xf:trigger>"
+        @"<xf:trigger id=\"bad\"><xf:label>Bad</xf:label><xf:load ev:event=\"DOMActivate\" show=\"embed\" targetid=\"slot\" resource=\"nope.xhtml\"/></xf:trigger>"
+        @"<xf:action id=\"loaded\" ev:event=\"xforms-load-done\" ev:observer=\"slot\"/>"
+        @"<xf:action id=\"linkerr\" ev:event=\"xforms-link-exception\" ev:observer=\"slot\"/>"
+        @"</body></html>";
+    NSString *path = [dir stringByAppendingPathComponent:@"main.xhtml"];
+    [main writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+    NSError *error = nil;
+    XFProcessor *p = [XFProcessor processorWithContentsOfURL:[NSURL fileURLWithPath:path] error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XCTAssertEqual(p.models.count, (NSUInteger)1);
+    XCTAssertEqual(p.outputControls.count, (NSUInteger)2);
+
+    [(XFTriggerControl *)[p controlWithIdentifier:@"go"] activate];
+    XCTAssertEqual(p.subforms.count, (NSUInteger)1);
+    XCTAssertEqual(p.models.count, (NSUInteger)2);
+    XFSubform *sf = p.subforms.firstObject;
+    XCTAssertTrue(sf.ready);
+    XCTAssertEqualObjects(sf.defaultModel.identifier, @"subm");
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"subready"] invocationCount], (NSInteger)1);
+    // Listener.js: only the first xforms-subform-ready listener per observer
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"second"] invocationCount], (NSInteger)0);
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"loaded"] invocationCount], (NSInteger)1);
+    XCTAssertNil([p controlWithIdentifier:@"old"], @"the target's previous content is replaced");
+    XCTAssertEqualObjects([p controlWithIdentifier:@"mo"].stringValue, @"main");
+    XCTAssertEqualObjects([p controlWithIdentifier:@"so"].stringValue, @"sub", @"subform control binds to the subform model");
+    XCTAssertEqualObjects([p controlWithIdentifier:@"si"].stringValue, @"sdata");
+    XCTAssertEqualObjects([p controlWithIdentifier:@"sc"].stringValue, @"here", @"subform-context() is the target's bound node");
+    XCTAssertEqual([(XFGroup *)[p controlWithIdentifier:@"slot"] children].count, (NSUInteger)4);
+
+    // loading again replaces the subform; a missing document is a link exception
+    [(XFTriggerControl *)[p controlWithIdentifier:@"go"] activate];
+    XCTAssertEqual(p.subforms.count, (NSUInteger)1);
+    XCTAssertEqual(p.models.count, (NSUInteger)2);
+    [(XFTriggerControl *)[p controlWithIdentifier:@"bad"] activate];
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"linkerr"] invocationCount], (NSInteger)1);
+
+    // xf:unload from inside the subform
+    [(XFTriggerControl *)[p controlWithIdentifier:@"bye"] activate];
+    XCTAssertEqual(p.subforms.count, (NSUInteger)0);
+    XCTAssertEqual(p.models.count, (NSUInteger)1);
+    XCTAssertNil([p controlWithIdentifier:@"so"]);
+    XCTAssertEqual([(XFGroup *)[p controlWithIdentifier:@"slot"] children].count, (NSUInteger)0);
+    [[NSFileManager defaultManager] removeItemAtPath:dir error:NULL];
+}
+
+- (void)testComponentResourceEmbedsSubform // G-95 (xf:component)
+{
+    NSString *dir = [NSTemporaryDirectory() stringByAppendingPathComponent:
+                     [NSString stringWithFormat:@"xfcomp-%d", (int)getpid()]];
+    [[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:NULL];
+    NSString *comp =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xf=\"http://www.w3.org/2002/xforms\">"
+        @"<head><xf:model><xf:instance><c xmlns=\"\"><v>component</v></c></xf:instance></xf:model></head>"
+        @"<body><xf:output id=\"cv\" ref=\"v\"><xf:label>V</xf:label></xf:output>"
+        @"<xf:output id=\"cc\" value=\"subform-context()\"><xf:label>C</xf:label></xf:output></body></html>";
+    [comp writeToFile:[dir stringByAppendingPathComponent:@"comp.xhtml"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+    NSString *main =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xf=\"http://www.w3.org/2002/xforms\">"
+        @"<head><xf:model><xf:instance><data xmlns=\"\"><n>bound</n></data></xf:instance></xf:model></head>"
+        @"<body><xf:component id=\"k\" ref=\"n\" resource=\"comp.xhtml\"><xf:label>K</xf:label></xf:component></body></html>";
+    NSString *path = [dir stringByAppendingPathComponent:@"main.xhtml"];
+    [main writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+    NSError *error = nil;
+    XFProcessor *p = [XFProcessor processorWithContentsOfURL:[NSURL fileURLWithPath:path] error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XCTAssertEqual(p.subforms.count, (NSUInteger)1);
+    XCTAssertEqual(p.subforms.firstObject.targetElement, [p controlWithIdentifier:@"k"].element);
+    XCTAssertEqualObjects([p controlWithIdentifier:@"k"].label, @"K");
+    XCTAssertEqualObjects([p controlWithIdentifier:@"cv"].stringValue, @"component");
+    XCTAssertEqualObjects([p controlWithIdentifier:@"cc"].stringValue, @"bound");
+    [[NSFileManager defaultManager] removeItemAtPath:dir error:NULL];
 }
 
 @end

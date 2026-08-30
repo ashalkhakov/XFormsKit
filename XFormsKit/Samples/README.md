@@ -61,6 +61,7 @@ Open any `.xhtml` file with **XFormsViewer** (File ▸ Open Sample lists them).
 | uploads.xhtml | Uploads and types | XSLTForms | upload, bind/@type base64/hex, submission |
 | wikipediasearch.xhtml | WIKIPEDIA OpenSearch | XSLTForms | submission GET replace="instance", input/@delay (needs network) |
 | writers.xhtml | Writers (Subforms) | XSLTForms | xforms:load show="embed" / xforms:unload subforms (`xforms:` prefix) |
+| dialog.xhtml | Dialog, variables, itext, numeric repeat | XFormsKit extra | xf:dialog + show/hide, xf:var, itext(), repeat @from/@to |
 | xf.xhtml | Template | XSLTForms | switch/case, toggle, message |
 | xpath.xhtml | XPath | XSLTForms | XPath 1.0 / XForms function coverage |
 
@@ -75,10 +76,11 @@ elements used by the samples that the engine does not yet interpret:
   box, headings, pre, lists, br/hr); every `<table>` becomes a cell-based
   NSTableView (repeat rows, thead titles, tfoot). Still pending: SVG
   rendering (`[SVG]` placeholder)
-- `xf:include/@src` (flags.xhtml) — inline SVG include
+- `xf:include/@src` (flags.xhtml) — the included SVG is inlined (G-92) but SVG rendering is pending
 - `xf:itemset/@model` (select-from-file, select-multi-col) — itemset bound to another model
-- `xf:repeat/@from` / `@to` (gantt.xhtml) — numeric repeat (XSLTForms extension)
-- `xforms:load/@show="embed"` + `xforms:unload` (writers.xhtml) — subforms; note the `xforms:` prefix
+- `xf:repeat/@from` / `@to` (gantt.xhtml) — done (G-91); gantt still waits for SVG
+- `xforms:load/@show="embed"` + `xforms:unload` (writers.xhtml) — done (G-90): selecting a
+  writer embeds books.xhtml into the `subform` group, deselecting unloads it
 - `xf:select/@selection="open"` (select.xhtml)
 - `xf:input/@delay` (wikipediasearch.xhtml) — XSLTForms incremental delay
 - `@class` on controls (input-width, textarea-styled, colors) — CSS

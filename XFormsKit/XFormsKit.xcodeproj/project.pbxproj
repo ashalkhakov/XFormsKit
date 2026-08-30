@@ -94,6 +94,12 @@
 		AA0000010000000000000110 /* XFHostNode.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000111 /* XFHostNode.m */; };
 		AA0000010000000000000112 /* XFTableModel.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000113 /* XFTableModel.m */; };
 		AA0000010000000000000113 /* XFTableModel.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000112 /* XFTableModel.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000115 /* XFVarControl.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000115 /* XFVarControl.m */; };
+		AA0000010000000000000114 /* XFVarControl.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000114 /* XFVarControl.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000117 /* XFDialog.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000117 /* XFDialog.m */; };
+		AA0000010000000000000116 /* XFDialog.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000116 /* XFDialog.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000119 /* XFSubform.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000119 /* XFSubform.m */; };
+		AA0000010000000000000118 /* XFSubform.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000118 /* XFSubform.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0000010000000000000111 /* XFHostNode.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000110 /* XFHostNode.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA00000100000000000000C1 /* XFGroup.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000C0 /* XFGroup.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA00000100000000000000C2 /* XFRepeat.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000C3 /* XFRepeat.m */; };
@@ -247,6 +253,12 @@
 		BB0000010000000000000111 /* XFHostNode.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFHostNode.m; sourceTree = "<group>"; };
 		BB0000010000000000000112 /* XFTableModel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFTableModel.h; sourceTree = "<group>"; };
 		BB0000010000000000000113 /* XFTableModel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFTableModel.m; sourceTree = "<group>"; };
+		BB0000010000000000000114 /* XFVarControl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFVarControl.h; sourceTree = "<group>"; };
+		BB0000010000000000000115 /* XFVarControl.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFVarControl.m; sourceTree = "<group>"; };
+		BB0000010000000000000116 /* XFDialog.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDialog.h; sourceTree = "<group>"; };
+		BB0000010000000000000117 /* XFDialog.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDialog.m; sourceTree = "<group>"; };
+		BB0000010000000000000118 /* XFSubform.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFSubform.h; sourceTree = "<group>"; };
+		BB0000010000000000000119 /* XFSubform.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFSubform.m; sourceTree = "<group>"; };
 		BB00000100000000000000C2 /* XFRepeat.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFRepeat.h; sourceTree = "<group>"; };
 		BB00000100000000000000C3 /* XFRepeat.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFRepeat.m; sourceTree = "<group>"; };
 		BB00000100000000000000C4 /* XFSetindexAction.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFSetindexAction.h; sourceTree = "<group>"; };
@@ -416,6 +428,12 @@
 				BB0000010000000000000111 /* XFHostNode.m */,
 				BB0000010000000000000112 /* XFTableModel.h */,
 				BB0000010000000000000113 /* XFTableModel.m */,
+				BB0000010000000000000114 /* XFVarControl.h */,
+				BB0000010000000000000115 /* XFVarControl.m */,
+				BB0000010000000000000116 /* XFDialog.h */,
+				BB0000010000000000000117 /* XFDialog.m */,
+				BB0000010000000000000118 /* XFSubform.h */,
+				BB0000010000000000000119 /* XFSubform.m */,
 				BB00000100000000000000C2 /* XFRepeat.h */,
 				BB00000100000000000000C3 /* XFRepeat.m */,
 				BB00000100000000000000D8 /* XFSwitch.h */,
@@ -584,6 +602,9 @@
 				AA00000100000000000000C1 /* XFGroup.h in Headers */,
 				AA0000010000000000000111 /* XFHostNode.h in Headers */,
 				AA0000010000000000000113 /* XFTableModel.h in Headers */,
+				AA0000010000000000000114 /* XFVarControl.h in Headers */,
+				AA0000010000000000000116 /* XFDialog.h in Headers */,
+				AA0000010000000000000118 /* XFSubform.h in Headers */,
 				AA00000100000000000000C3 /* XFRepeat.h in Headers */,
 				AA00000100000000000000D9 /* XFSwitch.h in Headers */,
 				AA000001000000000000001D /* XFProcessor.h in Headers */,
@@ -767,6 +788,9 @@
 				AA00000100000000000000C0 /* XFGroup.m in Sources */,
 				AA0000010000000000000110 /* XFHostNode.m in Sources */,
 				AA0000010000000000000112 /* XFTableModel.m in Sources */,
+				AA0000010000000000000115 /* XFVarControl.m in Sources */,
+				AA0000010000000000000117 /* XFDialog.m in Sources */,
+				AA0000010000000000000119 /* XFSubform.m in Sources */,
 				AA00000100000000000000C2 /* XFRepeat.m in Sources */,
 				AA00000100000000000000D8 /* XFSwitch.m in Sources */,
 				AA000001000000000000000D /* XFProcessor.m in Sources */,

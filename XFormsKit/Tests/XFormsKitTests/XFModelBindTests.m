@@ -376,4 +376,42 @@
     XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"link"] invocationCount], (NSInteger)1);
 }
 
+- (void)testDuplicateSchemaNamespaceAndXsiTypeNil // G-82, G-83
+{
+    [[[XFXMLEvents sharedEvents] exceptionMessages] removeAllObjects];
+    NSString *xml =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xf=\"http://www.w3.org/2002/xforms\""
+        @"      xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">"
+        @"<head><xf:model id=\"m\">"
+        @"  <xs:schema targetNamespace=\"urn:dup\"><xs:simpleType name=\"a\"><xs:restriction base=\"xs:string\"/></xs:simpleType></xs:schema>"
+        @"  <xs:schema targetNamespace=\"urn:dup\"><xs:simpleType name=\"b\"><xs:restriction base=\"xs:string\"/></xs:simpleType></xs:schema>"
+        @"  <xf:instance><data xmlns=\"\">"
+        @"    <n xsi:type=\"xs:integer\">12</n><bad xsi:type=\"xs:integer\">zz</bad>"
+        @"    <nil xsi:nil=\"true\"/><notnil xsi:nil=\"true\">x</notnil>"
+        @"    <bn xsi:nil=\"true\">3</bn>"
+        @"  </data></xf:instance>"
+        @"  <xf:bind nodeset=\"bn\" type=\"xs:integer\"/>"
+        @"  <xf:action id=\"link\" ev:event=\"xforms-link-exception\" xmlns:ev=\"http://www.w3.org/2001/xml-events\"/>"
+        @"</xf:model></head><body/></html>";
+    NSError *error = nil;
+    XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"link"] invocationCount], (NSInteger)1);
+    BOOL dup = NO;
+    for (NSString *m in [[XFXMLEvents sharedEvents] exceptionMessages]) {
+        if ([m containsString:@"More than one schema"]) dup = YES;
+    }
+    XCTAssertTrue(dup);
+    NSXMLElement *root = [[p defaultInstance] documentElement];
+    BOOL (^valid)(NSString *) = ^BOOL(NSString *name) {
+        XFNodeState *st = [XFNodeState existingStateOnNode:[root elementsForName:name].firstObject];
+        return st == nil || st.valid;
+    };
+    XCTAssertTrue(valid(@"n"));
+    XCTAssertFalse(valid(@"bad"));      // unbound, typed by xsi:type
+    XCTAssertTrue(valid(@"nil"));
+    XCTAssertTrue(valid(@"notnil"));    // unbound: validate_ else-branch ignores xsi:nil
+    XCTAssertFalse(valid(@"bn"));       // bound + nil: only empty is valid
+}
+
 @end

@@ -89,9 +89,12 @@
     if (!self.selected) {
         return;
     }
+    XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
+    [du pushVariableScope];
     for (XFControl *child in self.mutableChildren) {
         [child refreshInContext:context error:error];
     }
+    [du popVariableScope];
 }
 
 @end

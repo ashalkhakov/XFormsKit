@@ -46,6 +46,8 @@
 @property (nonatomic, copy) NSString *restoreIdentifier;
 @property (nonatomic, strong) NSMutableArray<NSDictionary *> *inspectorBindings;
 @property (nonatomic, assign) BOOL windowBuilt;
+/// Open xf:dialog panels by control identifier (G-93).
+@property (nonatomic, strong) NSMutableDictionary<NSString *, NSPanel *> *dialogPanels;
 @end
 
 @implementation XFDocumentWindowController
@@ -562,6 +564,97 @@
     }
 }
 
+#pragma mark - xf:dialog (G-93)
+
+- (NSString *)dialogKey:(XFDialog *)dialog
+{
+    return dialog.identifier.length ? dialog.identifier : [NSString stringWithFormat:@"%p", dialog];
+}
+
+- (void)presentDialog:(XFDialog *)dialog
+{
+    if (self.dialogPanels == nil) {
+        self.dialogPanels = [NSMutableDictionary dictionary];
+    }
+    NSString *key = [self dialogKey:dialog];
+    if (self.dialogPanels[key]) {
+        return;
+    }
+    XFFormDocument *doc = [self formDocument];
+    XFFormView *view = [[XFFormView alloc] initWithProcessor:doc.processor rootGroup:dialog];
+    __weak XFDocumentWindowController *weakSelf = self;
+    view.instanceChangedHandler = ^{
+        // edits inside the dialog show in the main form and the tree
+        [weakSelf.formView rebuildWidgets];
+        [weakSelf refreshInstanceTree];
+    };
+    NSRect content = [view frame];
+    content.size.width = MAX(content.size.width, 320);
+    content.size.height = MIN(MAX(content.size.height, 80), 600);
+    NSPanel *panel = [[NSPanel alloc] initWithContentRect:content
+                                                styleMask:(NSWindowStyleMaskTitled | NSWindowStyleMaskClosable)
+                                                  backing:NSBackingStoreBuffered
+                                                    defer:NO];
+    [panel setTitle:dialog.label ?: @""];
+    NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:content];
+    [scroll setHasVerticalScroller:YES];
+    [scroll setDocumentView:view];
+    [scroll setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+    [panel setContentView:scroll];
+    [panel setReleasedWhenClosed:NO];
+    self.dialogPanels[key] = panel;
+    // the window close button acts like xf:hide
+    [[NSNotificationCenter defaultCenter] addObserverForName:NSWindowWillCloseNotification
+                                                      object:panel
+                                                       queue:nil
+                                                  usingBlock:^(NSNotification *note) {
+        (void)note;
+        XFDocumentWindowController *strong = weakSelf;
+        if (strong && strong.dialogPanels[key] && dialog.shown) {
+            [XFXMLEvents dispatch:dialog name:@"xforms-dialog-close"];
+        }
+    }];
+    if ([self window] && [[self window] respondsToSelector:@selector(beginSheet:completionHandler:)]) {
+        [[self window] beginSheet:panel completionHandler:nil];
+    } else if ([self window]) {
+        [NSApp beginSheet:panel modalForWindow:[self window] modalDelegate:nil didEndSelector:NULL contextInfo:NULL];
+    } else {
+        [panel makeKeyAndOrderFront:nil];
+    }
+}
+
+- (void)dismissDialog:(XFDialog *)dialog
+{
+    NSString *key = [self dialogKey:dialog];
+    NSPanel *panel = self.dialogPanels[key];
+    if (panel == nil) {
+        return;
+    }
+    [self.dialogPanels removeObjectForKey:key];
+    [self endSheetPanel:panel];
+}
+
+- (void)endSheetPanel:(NSPanel *)panel
+{
+    NSWindow *window = [self window];
+    if (window && [window respondsToSelector:@selector(endSheet:)]) {
+        [window performSelector:@selector(endSheet:) withObject:panel];
+    } else if (window) {
+        [NSApp endSheet:panel];
+    }
+    [panel orderOut:nil];
+}
+
+- (void)reloadDialogViews
+{
+    for (NSPanel *panel in [self.dialogPanels allValues]) {
+        NSView *doc = [(NSScrollView *)[panel contentView] documentView];
+        if ([doc isKindOfClass:[XFFormView class]]) {
+            [(XFFormView *)doc rebuildWidgets];
+        }
+    }
+}
+
 - (void)showHelpForControl:(XFControl *)control
 {
     if (control.helpHref.length) {
@@ -587,6 +680,10 @@
     // NSClipView keeps an unretained _documentView pointer and would later
     // message the freed view (use-after-free on the next setDocumentView:).
     [self.formScroll setDocumentView:nil];
+    for (NSPanel *panel in [self.dialogPanels allValues]) {
+        [self endSheetPanel:panel];
+    }
+    [self.dialogPanels removeAllObjects];
     self.formView = nil;
     if (doc.processor) {
         XFFormView *form = [[XFFormView alloc] initWithProcessor:doc.processor];
@@ -601,6 +698,7 @@
         };
         form.instanceChangedHandler = ^{
             [weakSelf refreshInstanceTree];
+            [weakSelf reloadDialogViews];
         };
         // host hooks: xf:message levels (G-51), xf:load show="new|replace"
         // (G-50), xforms-help (G-62)
@@ -613,6 +711,20 @@
         };
         doc.processor.helpRequestHandler = ^(XFControl *control) {
             [weakSelf showHelpForControl:control];
+        };
+        doc.processor.confirmHandler = ^BOOL(NSString *text) {
+            NSAlert *alert = [[NSAlert alloc] init];
+            [alert setMessageText:text];
+            [alert addButtonWithTitle:@"OK"];
+            [alert addButtonWithTitle:@"Cancel"];
+            return [alert runModal] == NSAlertFirstButtonReturn;
+        };
+        doc.processor.dialogRequestHandler = ^(XFDialog *dialog, BOOL show) {
+            if (show) {
+                [weakSelf presentDialog:dialog];
+            } else {
+                [weakSelf dismissDialog:dialog];
+            }
         };
         self.formView = form;
         [self.formScroll setDocumentView:form];

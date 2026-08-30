@@ -222,6 +222,18 @@ static NSString *XFHexFromData(NSData *data)
     return out;
 }
 
+static BOOL XFDigestAlgorithmKnown(NSString *alg)
+{
+    NSString *a = [alg uppercaseString];
+    return [@[ @"MD5", @"SHA-1", @"SHA1", @"SHA-256", @"SHA256", @"SHA-384", @"SHA384", @"SHA-512", @"SHA512" ] containsObject:a];
+}
+
+static BOOL XFDigestEncodingKnown(NSString *enc)
+{
+    NSString *e = [enc lowercaseString];
+    return [e isEqualToString:@"base64"] || [e isEqualToString:@"hex"];
+}
+
 static NSString *XFDigestString(NSString *data, NSString *alg, NSString *enc, NSString *key)
 {
     NSData *inData = [data dataUsingEncoding:NSUTF8StringEncoding];
@@ -628,14 +640,35 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
                 (void)ctx; (void)args; (void)err;
                 return [XFXPathValue number:(double)arc4random() / (double)UINT32_MAX];
             }],
-            @"property": [XFXPathFunction acceptContext:NO defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
-                (void)ctx; (void)err;
+            @"property": [XFXPathFunction acceptContext:YES defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
+                (void)err;
                 NSString *name = [XFArg(args, 0) stringValue];
                 if ([name isEqualToString:@"version"]) {
                     return [XFXPathValue string:@"1.1"];
                 }
                 if ([name isEqualToString:@"conformance-level"]) {
                     return [XFXPathValue string:@"full"];
+                }
+                // XSLTForms extras (G-75); xsl:* vendor properties have no
+                // XSLT engine behind them here
+                if ([name isEqualToString:@"xsltforms:debug-mode"]) {
+                    return [XFXPathValue string:@"off"];
+                }
+                if ([name isEqualToString:@"xsltforms:version"]) {
+                    return [XFXPathValue string:@"XFormsKit"];
+                }
+                if ([name isEqualToString:@"xsltforms:version-number"]) {
+                    return [XFXPathValue string:@"1"];
+                }
+                if ([name hasPrefix:@"xsl:"]) {
+                    if ([name isEqualToString:@"xsl:vendor"]) {
+                        return [XFXPathValue string:@"XFormsKit"];
+                    }
+                    return [XFXPathValue string:@""];
+                }
+                if (name.length && [name rangeOfCharacterFromSet:[[NSCharacterSet characterSetWithCharactersInString:
+                        @"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-.:"] invertedSet]].location != NSNotFound) {
+                    [XFXMLEvents raise:@"xforms-binding-exception" on:ctx.model message:@"Invalid NCNAME"];
                 }
                 return [XFXPathValue string:@""];
             }],
@@ -769,20 +802,36 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
                 (void)ctx; (void)err;
                 return [XFXPathValue boolean:XFLuhn([XFArg(args, 0) stringValue])];
             }],
-            @"digest": [XFXPathFunction acceptContext:NO defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
+            @"digest": [XFXPathFunction acceptContext:YES defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)ctx; (void)err;
                 NSString *data = [XFArg(args, 0) stringValue] ?: @"";
                 NSString *alg = args.count > 1 ? [XFArg(args, 1) stringValue] : @"MD5";
                 NSString *enc = args.count > 2 ? [XFArg(args, 2) stringValue] : @"base64";
+                if (!XFDigestAlgorithmKnown(alg)) {
+                    [XFXMLEvents raise:@"xforms-binding-exception" on:ctx.model message:@"Invalid crypting method"];
+                    return [XFXPathValue string:@""];
+                }
+                if (!XFDigestEncodingKnown(enc)) {
+                    [XFXMLEvents raise:@"xforms-binding-exception" on:ctx.model message:@"Invalid encoding method"];
+                    return [XFXPathValue string:@""];
+                }
                 NSString *out = XFDigestString(data, alg, enc, nil);
                 return [XFXPathValue string:out ?: @""];
             }],
-            @"hmac": [XFXPathFunction acceptContext:NO defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
+            @"hmac": [XFXPathFunction acceptContext:YES defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)ctx; (void)err;
                 NSString *key = [XFArg(args, 0) stringValue] ?: @"";
                 NSString *data = [XFArg(args, 1) stringValue] ?: @"";
                 NSString *alg = args.count > 2 ? [XFArg(args, 2) stringValue] : @"MD5";
                 NSString *enc = args.count > 3 ? [XFArg(args, 3) stringValue] : @"base64";
+                if (!XFDigestAlgorithmKnown(alg)) {
+                    [XFXMLEvents raise:@"xforms-binding-exception" on:ctx.model message:@"Invalid crypting method"];
+                    return [XFXPathValue string:@""];
+                }
+                if (!XFDigestEncodingKnown(enc)) {
+                    [XFXMLEvents raise:@"xforms-binding-exception" on:ctx.model message:@"Invalid encoding method"];
+                    return [XFXPathValue string:@""];
+                }
                 NSString *out = XFDigestString(data, alg, enc, key);
                 return [XFXPathValue string:out ?: @""];
             }],

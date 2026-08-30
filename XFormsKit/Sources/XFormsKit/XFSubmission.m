@@ -367,6 +367,28 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
 
 - (NSString *)serializeNode:(NSXMLNode *)node method:(NSString *)method
 {
+    NSString *xml = [self serializeNodeAsXML:node method:method];
+    // XsltForms_submission.xml2data: a JSON / CSV @mediatype converts the
+    // (relevance-pruned) XML serialization (G-97)
+    NSString *mt = [[[self.mediatype componentsSeparatedByString:@";"].firstObject lowercaseString]
+                    stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+    BOOL urlencoded = [self.serialization isEqualToString:@"application/x-www-form-urlencoded"]
+        || [method isEqualToString:@"urlencoded-post"] || [method isEqualToString:@"get"] || [method isEqualToString:@"delete"];
+    if (!urlencoded && xml.length && node
+        && ([mt isEqualToString:@"application/json"] || [mt isEqualToString:@"text/json"] || [mt isEqualToString:@"text/csv"])) {
+        NSXMLDocument *doc = [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
+        if ([doc rootElement]) {
+            if ([mt isEqualToString:@"text/csv"]) {
+                return [XFInstance csvStringFromNode:[doc rootElement] separator:self.separator];
+            }
+            return [XFInstance jsonStringFromNode:[doc rootElement]];
+        }
+    }
+    return xml;
+}
+
+- (NSString *)serializeNodeAsXML:(NSXMLNode *)node method:(NSString *)method
+{
     if ([self.serialization isEqualToString:@"none"]) {
         return @"";
     }

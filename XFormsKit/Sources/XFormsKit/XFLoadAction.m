@@ -10,6 +10,7 @@
 #import "XFEvent.h"
 #import "XFDeferredUpdates.h"
 #import "XFSubmissionTransport.h"
+#import "XFSubform.h"
 #import "XFNamespaces.h"
 
 @interface XFLoadAction ()
@@ -112,10 +113,38 @@
     }
 
     if (self.instanceID.length == 0) {
-        // show="new" | "replace": the host opens the URL (G-50); "embed"
-        // (subforms) is not supported yet
         XFProcessor *processor = [self.model.owner isKindOfClass:[XFProcessor class]] ? (XFProcessor *)self.model.owner : nil;
         NSURL *url = [NSURL URLWithString:href relativeToURL:processor.baseURL] ?: [NSURL URLWithString:href];
+        NSString *tid = [self.targetID hasPrefix:@"#"] ? [self.targetID substringFromIndex:1] : self.targetID;
+        // XFLoad.js order: show="new" / targetid="_blank" open a window,
+        // then show="embed" or any other targetid embeds
+        BOOL newWindow = [self.show isEqualToString:@"new"] || [tid isEqualToString:@"_blank"];
+        BOOL embed = !newWindow && ([self.show isEqualToString:@"embed"]
+            || (tid.length && ![tid isEqualToString:@"_self"]));
+        if (embed && processor) {
+            // XFLoad.js: a subform is loaded into the target (G-90);
+            // failure is an xforms-link-exception on the target with
+            // error-type resource-error (issueLoadException_)
+            XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
+            [du openAction:@"XsltForms_load.prototype.run"];
+            NSError *err = nil;
+            XFSubform *sf = tid.length ? [processor loadSubformAtURL:url intoTargetID:tid error:&err] : nil;
+            [du closeAction:@"XsltForms_load.prototype.run"];
+            if (sf == nil) {
+                evcontext[@"error-type"] = @"resource-error";
+                evcontext[@"message"] = [err localizedDescription] ?: @"";
+                self.lastEventContext = evcontext;
+                [XFXMLEvents dispatch:[self eventTarget] name:@"xforms-link-exception" context:evcontext];
+                return;
+            }
+            self.lastEventContext = evcontext;
+            id targetXF = [[XFXMLEvents sharedEvents] xfElementForElement:sf.targetElement];
+            if (targetXF) {
+                [XFXMLEvents dispatch:targetXF name:@"xforms-load-done" context:evcontext];
+            }
+            return;
+        }
+        // show="new" | "replace": the host opens the URL (G-50)
         BOOL handled = YES;
         if (processor.loadRequestHandler) {
             handled = processor.loadRequestHandler(url, self.show ?: @"replace");
@@ -171,6 +200,36 @@
     self.lastEventContext = evcontext;
     [XFXMLEvents dispatch:self name:@"xforms-load-done" context:evcontext];
     [du closeAction:@"load"];
+}
+
+@end
+
+@implementation XFUnloadAction
+
+- (instancetype)initWithElement:(NSXMLElement *)element
+                          model:(XFModel *)model
+                          error:(NSError **)error
+{
+    self = [super initWithElement:element model:model error:error];
+    if (self) {
+        _targetID = [[element attributeForName:@"targetid"] stringValue];
+    }
+    return self;
+}
+
+- (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+{
+    (void)contextNode; (void)event;
+    XFProcessor *processor = [self.model.owner isKindOfClass:[XFProcessor class]] ? (XFProcessor *)self.model.owner : nil;
+    NSString *tid = [self.targetID hasPrefix:@"#"] ? [self.targetID substringFromIndex:1] : self.targetID;
+    if (tid.length == 0) {
+        // XFUnload.js: the subform holding the action
+        XFSubform *own = [processor subformContainingElement:self.element];
+        tid = [[own.targetElement attributeForName:@"id"] stringValue];
+    }
+    if (tid.length) {
+        [processor unloadSubformAtTargetID:tid];
+    }
 }
 
 @end

@@ -22,4 +22,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/// Translation of XsltForms_unload (G-90): removes the subform loaded into
+/// `@targetid` (default: the subform the action belongs to).
+@interface XFUnloadAction : XFAbstractAction
+@property (nonatomic, copy, readonly, nullable) NSString *targetID;
+@end
+
 NS_ASSUME_NONNULL_END

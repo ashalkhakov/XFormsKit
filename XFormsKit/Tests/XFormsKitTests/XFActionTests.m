@@ -215,4 +215,98 @@
     XCTAssertEqual(helped, p.inputControls.firstObject);
 }
 
+- (void)testVarAndSetvarVariables // G-77
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><a>3</a><b/><c/></data></xf:instance>"
+                      @"<xf:action id=\"grp\" ev:event=\"xforms-ready\">"
+                      @"  <xf:setvar name=\"twice\" value=\"a * 2\"/>"
+                      @"  <xf:setvalue ref=\"b\" value=\"$twice + 1\"/>"
+                      @"  <xf:action>"
+                      @"    <xf:var name=\"inner\" value=\"'in'\"/>"
+                      @"    <xf:setvalue ref=\"c\" value=\"concat($twice, $inner)\"/>"
+                      @"  </xf:action>"
+                      @"</xf:action>"
+                          extra:
+                      @"<xf:group>"
+                      @"  <xf:var name=\"x\" value=\"a\"/>"
+                      @"  <xf:output id=\"o\" value=\"$x * 10\"><xf:label>O</xf:label></xf:output>"
+                      @"</xf:group>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    NSXMLElement *root = [[p.model defaultInstance] documentElement];
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"b"].firstObject], @"7");
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"c"].firstObject], @"6in");
+    XCTAssertEqualObjects(p.outputControls.firstObject.stringValue, @"30");
+    // the variable is scoped to the group: it is gone once refresh has left it
+    XCTAssertNil([[XFDeferredUpdates sharedUpdates] variableNamed:@"x"]);
+}
+
+- (void)testDialogShowHide // G-93
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><n>1</n></data></xf:instance>"
+                          extra:
+                      @"<xf:dialog id=\"d\"><xf:label>Details</xf:label>"
+                      @"  <xf:input ref=\"n\"><xf:label>N</xf:label></xf:input>"
+                      @"  <xf:trigger id=\"ok\"><xf:label>OK</xf:label><xf:hide dialog=\"d\" ev:event=\"DOMActivate\"/></xf:trigger>"
+                      @"</xf:dialog>"
+                      @"<xf:trigger id=\"open\"><xf:label>Open</xf:label><xf:show dialog=\"d\" ev:event=\"DOMActivate\"/></xf:trigger>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFDialog *dialog = (XFDialog *)[p controlWithIdentifier:@"d"];
+    XCTAssertTrue([dialog isKindOfClass:[XFDialog class]]);
+    XCTAssertEqualObjects(dialog.label, @"Details");
+    XCTAssertEqual(dialog.children.count, (NSUInteger)2);
+    XCTAssertFalse(dialog.shown);
+    __block NSMutableArray *calls = [NSMutableArray array];
+    p.dialogRequestHandler = ^(XFDialog *d, BOOL show) {
+        [calls addObject:[NSString stringWithFormat:@"%@:%d", d.identifier, show]];
+    };
+    [(XFTriggerControl *)[p controlWithIdentifier:@"open"] activate];
+    XCTAssertTrue(dialog.shown);
+    [(XFTriggerControl *)[p controlWithIdentifier:@"open"] activate];   // no reopen of the top dialog
+    [(XFTriggerControl *)[p controlWithIdentifier:@"ok"] activate];
+    XCTAssertFalse(dialog.shown);
+    XCTAssertEqualObjects(calls, (@[ @"d:1", @"d:0" ]));
+}
+
+- (void)testSetnodeAndConfirm // G-95
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><a><old/></a><b>1</b><c/><d>x</d></data></xf:instance>"
+                      @"<xf:setnode ev:event=\"inner\" ref=\"a\" inner=\"concat('&lt;n&gt;', ../b, '&lt;/n&gt;&lt;m/&gt;')\"/>"
+                      @"<xf:setnode ev:event=\"outer\" ref=\"c\" outer=\"'&lt;z&gt;Z&lt;/z&gt;'\"/>"
+                      @"<xf:action ev:event=\"ask\" xmlns:ajx=\"http://www.ajaxforms.net/2006/ajx\">"
+                      @"  <ajx:confirm id=\"cf\">Sure?</ajx:confirm>"
+                      @"  <xf:setvalue ref=\"d\" value=\"'done'\"/>"
+                      @"</xf:action>"
+                          extra:@"<xf:output id=\"o\" value=\"count(a/*)\"><xf:label>N</xf:label></xf:output>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    NSXMLElement *root = [[p.model defaultInstance] documentElement];
+    [XFXMLEvents dispatch:p.model name:@"inner"];
+    NSXMLElement *a = [root elementsForName:@"a"].firstObject;
+    XCTAssertEqual([a childCount], (NSUInteger)2);
+    XCTAssertEqualObjects([[a childAtIndex:0] name], @"n");
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[a childAtIndex:0]], @"1");
+    XCTAssertEqualObjects(p.outputControls.firstObject.stringValue, @"2");
+    [XFXMLEvents dispatch:p.model name:@"outer"];
+    XCTAssertEqual([root elementsForName:@"c"].count, (NSUInteger)0);
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"z"].firstObject], @"Z");
+
+    __block NSString *asked = nil;
+    __block BOOL answer = NO;
+    p.confirmHandler = ^BOOL(NSString *text) { asked = text; return answer; };
+    [XFXMLEvents dispatch:p.model name:@"ask"];
+    XCTAssertEqualObjects(asked, @"Sure?");
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"d"].firstObject], @"x", @"refused: the following action is skipped");
+    answer = YES;
+    [XFXMLEvents dispatch:p.model name:@"ask"];
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"d"].firstObject], @"done");
+}
+
 @end

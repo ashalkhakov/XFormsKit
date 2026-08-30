@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xf="http://www.w3.org/2002/xforms"
+      xmlns:ev="http://www.w3.org/2001/xml-events">
+  <head>
+    <title>Dialog, variables, itext, numeric repeat</title>
+    <xf:model>
+      <xf:instance>
+        <data xmlns="">
+          <name>Ada</name>
+          <count>4</count>
+          <note/>
+        </data>
+      </xf:instance>
+      <xf:itext>
+        <xf:translation lang="en">
+          <xf:text id="greeting"><xf:value>Hello</xf:value></xf:text>
+          <xf:text id="edit"><xf:value>Edit the note</xf:value></xf:text>
+        </xf:translation>
+        <xf:translation lang="fr">
+          <xf:text id="greeting"><xf:value>Bonjour</xf:value></xf:text>
+          <xf:text id="edit"><xf:value>Modifier la note</xf:value></xf:text>
+        </xf:translation>
+      </xf:itext>
+    </xf:model>
+  </head>
+  <body>
+    <h1>Dialog, variables, itext, numeric repeat</h1>
+    <xf:var name="who" value="name"/>
+    <xf:output value="concat(itext('greeting'), ', ', $who, '!')"><xf:label>Greeting</xf:label></xf:output>
+    <xf:input ref="name"><xf:label>Name</xf:label></xf:input>
+    <xf:input ref="count"><xf:label>How many rows</xf:label></xf:input>
+    <table>
+      <thead><tr><th>n</th><th>n²</th></tr></thead>
+      <xf:repeat from="1" to="count">
+        <tr><td><xf:output value="."/></td><td><xf:output value=". * ."/></td></tr>
+      </xf:repeat>
+    </table>
+    <xf:output ref="note"><xf:label>Note</xf:label></xf:output>
+    <xf:trigger>
+      <xf:label>Edit note…</xf:label>
+      <xf:show dialog="note-dialog" ev:event="DOMActivate"/>
+    </xf:trigger>
+    <xf:dialog id="note-dialog">
+      <xf:label>Note</xf:label>
+      <xf:output value="itext('edit')"><xf:label>Task</xf:label></xf:output>
+      <xf:textarea ref="note"><xf:label>Note</xf:label></xf:textarea>
+      <xf:trigger>
+        <xf:label>Done</xf:label>
+        <xf:hide dialog="note-dialog" ev:event="DOMActivate"/>
+      </xf:trigger>
+    </xf:dialog>
+  </body>
+</html>

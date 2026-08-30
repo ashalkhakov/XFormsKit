@@ -1,6 +1,8 @@
 #import "XFExprContext.h"
 #import "XFXPathPriv.h"
 #import "XFModel.h"
+#import "XFRepeat.h"
+#import "XFNodeState.h"
 #import <Foundation/NSXMLNode.h>
 #import <Foundation/NSXMLDocument.h>
 
@@ -47,7 +49,12 @@
 
 @end
 
-@implementation XFExprContext
+@implementation XFExprContext {
+    BOOL _autoPosition;
+    NSUInteger _position;
+}
+
+@synthesize position = _position;
 
 - (instancetype)init
 {
@@ -62,6 +69,7 @@
         _currentNode = node;
         _nodeList = node ? @[ node ] : @[];
         _position = 1;
+        _autoPosition = YES;
         _size = _nodeList.count;
         _dependencies = [NSHashTable weakObjectsHashTable];
         _depElements = [NSHashTable weakObjectsHashTable];
@@ -79,6 +87,7 @@
     copy.currentNode = self.currentNode ?: copy.contextNode;
     copy.nodeList = nodeList ?: self.nodeList;
     copy.position = position > 0 ? position : self.position;
+    copy->_autoPosition = position > 0 ? NO : self->_autoPosition;
     copy.size = copy.nodeList.count;
     copy.model = self.model;
     copy.nsResolver = self.nsResolver;
@@ -111,6 +120,29 @@
 {
     (void)zone;
     return [self cloneWithNode:self.contextNode position:self.position nodeList:self.nodeList];
+}
+
+/// XsltForms_exprContext: with no explicit position, a node that belongs to
+/// a repeat's nodeset takes its position in that repeat (G-76).
+- (NSUInteger)position
+{
+    if (_autoPosition && _position == 1 && self.contextNode && self.model) {
+        NSString *rid = [XFNodeState existingStateOnNode:self.contextNode].repeatIdentifier;
+        if (rid.length) {
+            XFRepeat *repeat = [self.model repeatWithIdentifier:rid];
+            NSUInteger at = [repeat.nodes indexOfObjectIdenticalTo:self.contextNode];
+            if (at != NSNotFound) {
+                return at + 1;
+            }
+        }
+    }
+    return _position;
+}
+
+- (void)setPosition:(NSUInteger)position
+{
+    _position = position;
+    _autoPosition = NO;
 }
 
 @end

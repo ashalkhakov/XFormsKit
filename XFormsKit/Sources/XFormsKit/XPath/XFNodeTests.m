@@ -83,7 +83,11 @@
         return NO;
     }
     NSString *ns = [node URI];
-    if (self.prefix.length > 0 && ![self.prefix isEqualToString:@"*"]) {
+    if ([self.prefix isEqualToString:@"*"]) {
+        // *:name — local name in any namespace (G-78)
+        return [local isEqualToString:self.name];
+    }
+    if (self.prefix.length > 0) {
         NSString *uri = [resolver lookupNamespaceURI:self.prefix];
         if (uri == nil) {
             // Not registered from the host element: fall back to the

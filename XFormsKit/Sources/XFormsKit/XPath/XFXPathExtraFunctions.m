@@ -10,6 +10,8 @@
 #import "XFModel.h"
 #import "XFControl.h"
 #import "XFProcessor.h"
+#import "XFSubform.h"
+#import "XFInstance.h"
 #import <Foundation/NSXMLElement.h>
 #import <Foundation/NSXMLDocument.h>
 #import <math.h>
@@ -439,6 +441,47 @@ NSDictionary<NSString *, XFXPathFunction *> *XFXPathExtraFunctionTable(void)
                 (void)ctx; (void)err;
                 if (args.count == 0) return [XFXPathValue string:@""];
                 return [XFXPathValue string:XFAdjustToLocal(XFStr(args, 0))];
+            }),
+            @"subform-instance": XF_FN(YES, XFXPathFnDefaultNone, ^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
+                (void)err; (void)args;
+                // the root of the first instance of the subform's first model;
+                // the main form is its own subform (G-90)
+                XFModel *model = ctx.model.subform ? [ctx.model.subform defaultModel] : nil;
+                if (model == nil && [ctx.model.owner isKindOfClass:[XFProcessor class]]) {
+                    model = [(XFProcessor *)ctx.model.owner model];
+                }
+                NSXMLElement *root = [[model defaultInstance] documentElement];
+                if (root) [ctx addDependency:root];
+                return [XFXPathValue nodeSet:root ? @[ root ] : @[]];
+            }),
+            @"subform-context": XF_FN(YES, XFXPathFnDefaultNone, ^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
+                (void)err; (void)args;
+                // the bound node of the control the subform was loaded into
+                XFSubform *sf = ctx.model.subform;
+                id owner = ctx.model.owner;
+                XFControl *control = (sf && [owner isKindOfClass:[XFProcessor class]])
+                    ? [(XFProcessor *)owner controlForElement:sf.targetElement] : nil;
+                NSXMLNode *node = control.boundNode;
+                if (control) [ctx addDepElement:control];
+                if (node) [ctx addDependency:node];
+                return [XFXPathValue nodeSet:node ? @[ node ] : @[]];
+            }),
+            @"itext": XF_FN(YES, XFXPathFnDefaultNone, ^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
+                // itext(id): the translation of the model's xf:itext for the
+                // current language (G-94)
+                if (args.count != 1) {
+                    if (err) *err = [NSError errorWithDomain:XFErrorDomain code:XFErrorXPathEvaluation
+                                                    userInfo:@{ NSLocalizedDescriptionKey: @"itext() function must have one argument" }];
+                    return nil;
+                }
+                XFModel *model = ctx.model;
+                id owner = model.owner;
+                NSString *language = [owner isKindOfClass:[XFProcessor class]] ? [(XFProcessor *)owner effectiveLanguage] : nil;
+                if (model == nil && [owner isKindOfClass:[XFProcessor class]]) {
+                    model = [(XFProcessor *)owner model];
+                }
+                if (model) [ctx addDepElement:model];
+                return [XFXPathValue string:[model itextForIdentifier:XFStr(args, 0) language:language] ?: @""];
             }),
             @"nodeindex": XF_FN(YES, XFXPathFnDefaultNone, ^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)err;

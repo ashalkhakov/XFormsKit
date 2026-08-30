@@ -10,7 +10,9 @@
 @property (nonatomic, strong, readwrite) NSMutableArray<NSString *> *messages;
 @end
 
-@implementation XFDeferredUpdates
+@implementation XFDeferredUpdates {
+    NSMutableArray<NSMutableDictionary *> *_variableScopes;
+}
 
 + (instancetype)sharedUpdates
 {
@@ -75,6 +77,56 @@
     if (self.cont > 0) {
         self.cont -= 1;
     }
+}
+
+#pragma mark - variable scopes (G-77)
+
+- (NSMutableArray<NSMutableDictionary *> *)variableScopes
+{
+    if (_variableScopes == nil) {
+        _variableScopes = [NSMutableArray array];
+    }
+    return _variableScopes;
+}
+
+- (void)pushVariableScope
+{
+    [[self variableScopes] addObject:[NSMutableDictionary dictionary]];
+}
+
+- (void)popVariableScope
+{
+    if ([self variableScopes].count) {
+        [[self variableScopes] removeLastObject];
+    }
+}
+
+- (void)setVariable:(XFXPathValue *)value named:(NSString *)name
+{
+    if (name.length == 0) {
+        return;
+    }
+    if ([self variableScopes].count == 0) {
+        [self pushVariableScope];
+    }
+    NSMutableDictionary *scope = [self variableScopes].lastObject;
+    if (value) {
+        scope[name] = value;
+    } else {
+        [scope removeObjectForKey:name];
+    }
+}
+
+- (XFXPathValue *)variableNamed:(NSString *)name
+{
+    NSArray *scopes = [self variableScopes];
+    for (NSInteger i = (NSInteger)scopes.count - 1; i >= 0; i--) {
+        XFXPathValue *v = scopes[(NSUInteger)i][name];
+        if (v) {
+            return v;
+        }
+    }
+    return nil;
 }
 
 - (void)closeChanges

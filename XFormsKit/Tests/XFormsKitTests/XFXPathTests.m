@@ -37,6 +37,22 @@
     return value;
 }
 
+- (void)testStarPrefixNameTest // G-78
+{
+    NSString *xml = @"<data xmlns=\"\"><a:name xmlns:a=\"urn:a\">A</a:name>"
+                    @"<b:name xmlns:b=\"urn:b\">B</b:name><name>N</name><other>O</other></data>";
+    _doc = [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
+    XFExprContext *ctx = [[XFExprContext alloc] initWithNode:[_doc rootElement]];
+    NSError *error = nil;
+    XFXPath *xp = [XFXPath xpathWithString:@"count(*:name)" error:&error];
+    XCTAssertNotNil(xp, @"%@", error);
+    XCTAssertEqualObjects([xp stringValueInContext:ctx error:&error], @"3");
+    xp = [XFXPath xpathWithString:@"string(*:name[2])" error:&error];
+    XCTAssertEqualObjects([xp stringValueInContext:ctx error:&error], @"B");
+    // '*' stays multiplication after an operand
+    XCTAssertEqualObjects([self eval:@"count(*)*2"], @"4");
+}
+
 - (void)testChildPath
 {
     XCTAssertEqualObjects([self eval:@"name"], @"World");
@@ -353,6 +369,33 @@
         [[XFXMLEvents eventContexts] removeLastObject];
         [[XFXMLEvents eventContexts] removeLastObject];
     }
+}
+
+- (void)testItextTranslations // G-94
+{
+    NSString *xml =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xf=\"http://www.w3.org/2002/xforms\">"
+        @"<head><xf:model>"
+        @"  <xf:instance><data xmlns=\"\"><n/></data></xf:instance>"
+        @"  <xf:itext>"
+        @"    <xf:translation lang=\"en\"><xf:text id=\"hello\"><xf:value>Hello</xf:value></xf:text></xf:translation>"
+        @"    <xf:translation lang=\"fr-FR\"><xf:text id=\"hello\"><xf:value>Bonjour</xf:value></xf:text></xf:translation>"
+        @"  </xf:itext>"
+        @"</xf:model></head><body>"
+        @"<xf:output value=\"itext('hello')\"><xf:label>H</xf:label></xf:output>"
+        @"</body></html>";
+    NSError *error = nil;
+    XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XCTAssertEqualObjects(p.model.defaultLanguage, @"en");
+    p.language = @"fr";          // primary-subtag match
+    [p refresh:NULL];
+    XCTAssertEqualObjects(p.outputControls.firstObject.stringValue, @"Bonjour");
+    p.language = @"de";          // unknown → default language
+    [p refresh:NULL];
+    XCTAssertEqualObjects(p.outputControls.firstObject.stringValue, @"Hello");
+    XCTAssertEqualObjects([p.model itextForIdentifier:@"hello" language:@"fr-FR"], @"Bonjour");
+    XCTAssertNil([p.model itextForIdentifier:@"nope" language:nil]);
 }
 
 @end

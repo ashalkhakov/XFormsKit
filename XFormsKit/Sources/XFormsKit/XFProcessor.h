@@ -3,6 +3,9 @@
 
 @class XFInstance;
 @class XFControl;
+@class XFDialog;
+@class XFSubform;
+@class XFExprContext;
 @class XFInputControl;
 @class XFOutputControl;
 @class XFSelectControl;
@@ -56,6 +59,33 @@ NS_ASSUME_NONNULL_BEGIN
 /// Host hook for xforms-help (G-62): show the control's help (help/@href
 /// when set).
 @property (nonatomic, copy, nullable) void (^helpRequestHandler)(XFControl *control);
+/// Subforms embedded with `xf:load show="embed"` (G-90), load order.
+@property (nonatomic, copy, readonly) NSArray<XFSubform *> *subforms;
+/// XsltForms_load.run (embed): fetch the XForms document at `url` and embed
+/// it into the host element with id `targetID`, replacing its content (and
+/// a subform previously loaded there). The subform's models join `models`
+/// and get xforms-model-construct(-done) and xforms-subform-ready. nil with
+/// an error when the document cannot be loaded or the target is unknown.
+- (nullable XFSubform *)loadSubformAtURL:(NSURL *)url intoTargetID:(NSString *)targetID error:(NSError **)error;
+/// XsltForms_subform.dispose (xf:unload): remove the subform loaded into the
+/// element with id `targetID`. Returns NO when none is loaded there.
+- (BOOL)unloadSubformAtTargetID:(NSString *)targetID;
+/// The subform whose imported content holds `element` (nil = main form).
+- (nullable XFSubform *)subformContainingElement:(NSXMLNode *)element;
+/// The context a control inside a subform refreshes with (its subform's
+/// default model) when the inherited one belongs to another form.
+- (XFExprContext *)contextForControl:(XFControl *)control inherited:(XFExprContext *)context;
+/// XsltForms_globals.language: the language used by itext() (G-94). nil =
+/// the user's preferred language (NSLocale).
+@property (nonatomic, copy, nullable) NSString *language;
+/// The language itext() resolves against: `language`, else the first
+/// preferred language of the user.
+- (NSString *)effectiveLanguage;
+/// Host hook for ajx:confirm (G-95): return NO to stop the event.
+@property (nonatomic, copy, nullable) BOOL (^confirmHandler)(NSString *text);
+/// Host hook for xf:dialog (G-93): present (`show` = YES) or dismiss the
+/// dialog's content when xforms-dialog-open / -close reach it.
+@property (nonatomic, copy, nullable) void (^dialogRequestHandler)(XFDialog *dialog, BOOL show);
 /// XsltForms_control.focus: blur the previous control (DOMFocusOut), set the
 /// repeat index of every repeat item the control sits in, dispatch
 /// DOMFocusIn. `fromUI` = the widget already has the keyboard focus (no
@@ -70,6 +100,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (nullable XFAbstractAction *)actionWithIdentifier:(NSString *)identifier;
 - (nullable XFRepeat *)repeatWithIdentifier:(NSString *)identifier;
+/// The control whose element has this id (any depth; the template control
+/// for repeat content).
+- (nullable XFControl *)controlWithIdentifier:(NSString *)identifier;
 
 + (nullable instancetype)processorWithContentsOfURL:(NSURL *)url
                                               error:(NSError **)error;

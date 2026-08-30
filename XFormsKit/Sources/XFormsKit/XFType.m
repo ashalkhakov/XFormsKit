@@ -279,7 +279,13 @@ static NSString * const XFXSDNS = @"http://www.w3.org/2001/XMLSchema";
         [self define:@"gDay" ns:xsd base:nil patterns:@[@"^---(0[1-9]|[12][0-9]|3[01])$"] whitespace:XFWhitespaceCollapse];
         [self define:@"gMonth" ns:xsd base:nil patterns:@[@"^--(0[1-9]|1[012])$"] whitespace:XFWhitespaceCollapse];
 
-        [self define:@"anyURI" ns:xsd base:token patterns:nil whitespace:XFWhitespaceCollapse];
+        // XSLTForms TypeDefs.js: anyURI pattern, and Name characters that
+        // include the Latin-1 letters (ctes.i / ctes.c) — G-79
+        [self define:@"anyURI" ns:xsd base:token
+            patterns:@[@"^(([^ :\\/?#]+)://)?[^ /\\?#]+([^ \\?#]*)(\\?([^ #]*))?(#([^ :#\\[\\]@!$&\\\\'()*+,;=]*))?$"]
+         whitespace:XFWhitespaceCollapse];
+        NSString *nameStart = @"A-Za-z_\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF";
+        NSString *nameChar = @"A-Za-z_\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF\\-.0-9\u00B7";
         [self define:@"base64Binary" ns:xsd base:nil
             patterns:@[@"^[A-Za-z0-9+/=\r\n ]+$"] whitespace:XFWhitespaceCollapse];
         [self define:@"hexBinary" ns:xsd base:nil
@@ -287,13 +293,21 @@ static NSString * const XFXSDNS = @"http://www.w3.org/2001/XMLSchema";
         [self define:@"language" ns:xsd base:token
             patterns:@[@"^[a-zA-Z]{1,8}(-[a-zA-Z0-9]{1,8})*$"] whitespace:XFWhitespaceCollapse];
         [self define:@"Name" ns:xsd base:token
-            patterns:@[@"^[A-Za-z_:][A-Za-z0-9_.:-]*$"] whitespace:XFWhitespaceCollapse];
-        [self define:@"NCName" ns:xsd base:token
-            patterns:@[@"^[A-Za-z_][A-Za-z0-9_.-]*$"] whitespace:XFWhitespaceCollapse];
-        [self define:@"ID" ns:xsd base:token patterns:@[@"^[A-Za-z_][A-Za-z0-9_.-]*$"] whitespace:XFWhitespaceCollapse];
-        [self define:@"IDREF" ns:xsd base:token patterns:@[@"^[A-Za-z_][A-Za-z0-9_.-]*$"] whitespace:XFWhitespaceCollapse];
-        [self define:@"NMTOKEN" ns:xsd base:token patterns:@[@"^[A-Za-z0-9._:-]+$"] whitespace:XFWhitespaceCollapse];
-        [self define:@"QName" ns:xsd base:token patterns:@[@"^([A-Za-z_][A-Za-z0-9_.-]*:)?[A-Za-z_][A-Za-z0-9_.-]*$"] whitespace:XFWhitespaceCollapse];
+            patterns:@[[NSString stringWithFormat:@"^[%@:][%@:]*$", nameStart, nameChar]] whitespace:XFWhitespaceCollapse];
+        XFType *ncname = [self define:@"NCName" ns:xsd base:token
+            patterns:@[[NSString stringWithFormat:@"^[%@][%@]*$", nameStart, nameChar]] whitespace:XFWhitespaceCollapse];
+        [self define:@"ID" ns:xsd base:ncname patterns:nil whitespace:XFWhitespaceCollapse];
+        [self define:@"IDREF" ns:xsd base:ncname patterns:nil whitespace:XFWhitespaceCollapse];
+        [self define:@"IDREFS" ns:xsd base:token
+            patterns:@[[NSString stringWithFormat:@"^[%@][%@]*( +[%@][%@]*)*$", nameStart, nameChar, nameStart, nameChar]]
+         whitespace:XFWhitespaceCollapse];
+        [self define:@"NMTOKEN" ns:xsd base:token
+            patterns:@[[NSString stringWithFormat:@"^[%@]+$", nameChar]] whitespace:XFWhitespaceCollapse];
+        [self define:@"NMTOKENS" ns:xsd base:token
+            patterns:@[[NSString stringWithFormat:@"^[%@]+( [%@]+)*$", nameChar, nameChar]] whitespace:XFWhitespaceCollapse];
+        [self define:@"QName" ns:xsd base:token
+            patterns:@[[NSString stringWithFormat:@"^([%@][%@]*:)?[%@][%@]*$", nameStart, nameChar, nameStart, nameChar]]
+         whitespace:XFWhitespaceCollapse];
 
         // XForms library mirrors the XSD primitives plus extras.
         NSArray *copy = @[ @"string", @"boolean", @"decimal", @"float", @"double",
@@ -303,7 +317,7 @@ static NSString * const XFXSDNS = @"http://www.w3.org/2001/XMLSchema";
                            @"byte", @"short", @"int", @"long",
                            @"unsignedByte", @"unsignedShort", @"unsignedInt", @"unsignedLong",
                            @"normalizedString", @"token", @"language", @"anyURI",
-                           @"Name", @"NCName", @"QName", @"ID", @"IDREF", @"NMTOKEN",
+                           @"Name", @"NCName", @"QName", @"ID", @"IDREF", @"IDREFS", @"NMTOKEN", @"NMTOKENS",
                            @"base64Binary", @"hexBinary", @"gDay", @"gMonth",
                            @"gMonthDay", @"gYear", @"gYearMonth" ];
         for (NSString *n in copy) {
@@ -321,6 +335,13 @@ static NSString * const XFXSDNS = @"http://www.w3.org/2001/XMLSchema";
         [self define:@"card-number" ns:xf base:xsdString
             patterns:@[@"^[0-9]*$"] whitespace:XFWhitespaceCollapse];
         [self define:@"url" ns:xf base:token patterns:nil whitespace:XFWhitespaceCollapse];
+        // xf:amount (a decimal shown with 2 fraction digits in XSLTForms),
+        // xf:HTMLFragment (a string), dcterms:W3CDTF (a dateTime) — G-79
+        XFType *amount = [self define:@"amount" ns:xf base:decimal patterns:nil whitespace:XFWhitespaceCollapse];
+        amount.fractionDigits = @2;
+        [self define:@"HTMLFragment" ns:xf base:xsdString patterns:nil whitespace:XFWhitespacePreserve];
+        [self define:@"W3CDTF" ns:@"http://purl.org/dc/terms/" base:XFTypeTable()[XFTypeKey(xsd, @"dateTime")]
+            patterns:nil whitespace:XFWhitespaceCollapse];
         [self define:@"dayTimeDuration" ns:xf base:nil
             patterns:@[@"^-?P((([0-9]+D)?(T(?!$)(([0-9]+H)|([0-9]+H)?[0-9]+M|[0-9]+H?([0-9]+M)?[0-9]+(\\.[0-9]+)?S))?)|T(?!$)(([0-9]+H)|([0-9]+H)?[0-9]+M|[0-9]+H?([0-9]+M)?[0-9]+(\\.[0-9]+)?S)))$"]
          whitespace:XFWhitespaceCollapse];

@@ -8,5 +8,7 @@ extern NSString * const XFXMLEventsNamespaceURI;
 extern NSString * const XFXMLNamespaceURI;
 extern NSString * const XFXMLSchemaNamespaceURI;
 extern NSString * const XFXMLSchemaInstanceNamespaceURI;
+/// XSLTForms extensions (ajx:confirm, …): http://www.ajaxforms.net/2006/ajx
+extern NSString * const XFAJXNamespaceURI;
 
 NS_ASSUME_NONNULL_END

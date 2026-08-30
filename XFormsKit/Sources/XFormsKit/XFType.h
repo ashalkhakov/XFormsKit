@@ -38,6 +38,10 @@ typedef NS_ENUM(NSInteger, XFWhitespace) {
 /// jsgen/simpleType.xsl: restrictions with facets, lists, unions) under its
 /// targetNamespace (G-56). Returns the number of types defined.
 + (NSUInteger)registerSchemaElement:(NSXMLElement *)schema;
+/// Resolve a `prefix:local` type name in the namespace context of
+/// `element` (unprefixed names fall back to `targetNamespace`, then to the
+/// xsd:/xf: conventions of `typeNamed:`).
++ (nullable XFType *)typeForQName:(NSString *)qname inElement:(NSXMLElement *)element targetNamespace:(nullable NSString *)targetNamespace;
 /// XsltForms_atomicType.normalize: numbers rounded to `fractionDigits`.
 - (NSString *)normalizeValue:(NSString *)value;
 

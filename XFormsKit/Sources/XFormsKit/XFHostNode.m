@@ -72,6 +72,15 @@ static NSString * const XFSVGNamespaceURI = @"http://www.w3.org/2000/svg";
     return out;
 }
 
+/// Identity key for `existing`: the element's address. (Not
+/// valueWithNonretainedObject: — on GNUstep two NSXMLElements with the
+/// same content compare equal, so a re-imported copy would match the
+/// control of the element it replaced.)
+static NSNumber *XFElementKey(NSXMLElement *element)
+{
+    return @((unsigned long long)(uintptr_t)element);
+}
+
 + (NSArray<XFHostNode *> *)hostNodesForChildrenOf:(NSXMLElement *)element
                                             model:(id)model
                                          controls:(NSMutableArray<XFControl *> *)controls
@@ -181,7 +190,7 @@ static NSString * const XFSVGNamespaceURI = @"http://www.w3.org/2000/svg";
             // their control (or are handlers), never to the layout tree
             return nil;
         }
-        XFControl *control = existing[[NSValue valueWithNonretainedObject:el]];
+        XFControl *control = existing[XFElementKey(el)];
         if (control == nil) {
             NSError *inner = nil;
             control = [XFControl controlWithElement:el model:model error:&inner];
@@ -275,7 +284,7 @@ static NSString * const XFSVGNamespaceURI = @"http://www.w3.org/2000/svg";
     NSMutableDictionary *map = [NSMutableDictionary dictionary];
     for (XFControl *c in controls) {
         if (c.element) {
-            map[[NSValue valueWithNonretainedObject:c.element]] = c;
+            map[XFElementKey(c.element)] = c;
         }
     }
     return map;

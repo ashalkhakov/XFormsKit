@@ -44,6 +44,7 @@
                      @"rebuild", @"recalculate", @"revalidate", @"refresh", @"reset",
                      @"send", @"load", @"setindex",
                      @"insert", @"delete", @"toggle", @"setfocus",
+                     @"setvar", @"var", @"show", @"hide", @"unload", @"setnode",
                      nil];
         }
     }
@@ -52,8 +53,23 @@
 
 + (BOOL)isActionElement:(NSXMLElement *)element
 {
-    return [XFXML element:element hasLocalName:[element localName] namespaceURI:XFXFormsNamespaceURI]
-        && [[self actionNames] containsObject:[element localName]];
+    if ([XFXML element:element hasLocalName:@"confirm" namespaceURI:XFAJXNamespaceURI]) {
+        return YES;   // ajx:confirm (message-confirm.xsl, G-95)
+    }
+    if (![XFXML element:element hasLocalName:[element localName] namespaceURI:XFXFormsNamespaceURI]
+        || ![[self actionNames] containsObject:[element localName]]) {
+        return NO;
+    }
+    if ([[element localName] isEqualToString:@"var"]) {
+        // xf:var is an action only inside an action (XFVar.js otherwise:
+        // a control published to the UI scope)
+        NSXMLNode *parent = [element parent];
+        return [parent kind] == NSXMLElementKind
+            && [[(NSXMLElement *)parent URI] isEqualToString:XFXFormsNamespaceURI]
+            && [[self actionNames] containsObject:[(NSXMLElement *)parent localName]]
+            && ![[(NSXMLElement *)parent localName] isEqualToString:@"var"];
+    }
+    return YES;
 }
 
 + (instancetype)actionWithElement:(NSXMLElement *)element
@@ -69,8 +85,16 @@
         cls = [XFSetvalueAction class];
     } else if ([name isEqualToString:@"dispatch"]) {
         cls = [XFDispatchAction class];
+    } else if ([name isEqualToString:@"show"] || [name isEqualToString:@"hide"]) {
+        cls = [XFShowHideAction class];
+    } else if ([name isEqualToString:@"unload"]) {
+        cls = [XFUnloadAction class];
+    } else if ([name isEqualToString:@"setnode"]) {
+        cls = [XFSetnodeAction class];
     } else if ([name isEqualToString:@"message"]) {
         cls = [XFMessageAction class];
+    } else if ([name isEqualToString:@"confirm"] && [[element URI] isEqualToString:XFAJXNamespaceURI]) {
+        cls = [XFConfirmAction class];
     } else if ([name isEqualToString:@"rebuild"] ||
                [name isEqualToString:@"recalculate"] ||
                [name isEqualToString:@"revalidate"] ||
@@ -91,6 +115,8 @@
         cls = [XFToggleAction class];
     } else if ([name isEqualToString:@"setfocus"]) {
         cls = [XFSetfocusAction class];
+    } else if ([name isEqualToString:@"setvar"] || [name isEqualToString:@"var"]) {
+        cls = [XFSetvarAction class];
     }
     return [[cls alloc] initWithElement:element model:model error:error];
 }

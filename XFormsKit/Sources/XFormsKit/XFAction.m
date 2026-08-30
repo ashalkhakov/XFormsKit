@@ -1,5 +1,6 @@
 #import "XFAction.h"
 #import "XFEvent.h"
+#import "XFDeferredUpdates.h"
 
 @implementation XFAction
 
@@ -31,12 +32,15 @@
 
 - (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
 {
+    XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
+    [du pushVariableScope];   // setvar / var children publish here (G-77)
     for (XFAbstractAction *child in self.children) {
         [child executeWithContextNode:contextNode event:event];
         if (event.stopped) {
             break;
         }
     }
+    [du popVariableScope];
 }
 
 @end

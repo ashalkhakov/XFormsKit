@@ -5,6 +5,7 @@
 #import "XFXML.h"
 #import "XFDeferredUpdates.h"
 #import "XFControl.h"
+#import "XFDialog.h"
 #import "XFProcessor.h"
 #import "XFInstance.h"
 #import "XFModel.h"
@@ -474,6 +475,8 @@ static const void *kXFElementKey   = &kXFElementKey;
     }];
     [self define:@"xforms-model-construct-done" bubbles:YES cancelable:NO defaultAction:nil];
     [self define:@"xforms-ready" bubbles:YES cancelable:NO defaultAction:nil];
+    // XsltForms_subform.construct (not in XMLEvents.js' table; G-90)
+    [self define:@"xforms-subform-ready" bubbles:YES cancelable:NO defaultAction:nil];
     [self define:@"xforms-model-destruct" bubbles:YES cancelable:NO defaultAction:nil];
     [self define:@"xforms-rebuild" bubbles:YES cancelable:YES defaultAction:^(id xf, XFEvent *ev) {
         (void)ev;
@@ -587,8 +590,18 @@ static const void *kXFElementKey   = &kXFElementKey;
         }
     }];
     [self define:@"ajx-time" bubbles:YES cancelable:YES defaultAction:nil];
-    [self define:@"xforms-dialog-open" bubbles:YES cancelable:YES defaultAction:nil];
-    [self define:@"xforms-dialog-close" bubbles:YES cancelable:YES defaultAction:nil];
+    [self define:@"xforms-dialog-open" bubbles:YES cancelable:YES defaultAction:^(id xf, XFEvent *ev) {
+        (void)ev;
+        if ([xf isKindOfClass:[XFDialog class]]) {
+            [(XFDialog *)xf show];
+        }
+    }];
+    [self define:@"xforms-dialog-close" bubbles:YES cancelable:YES defaultAction:^(id xf, XFEvent *ev) {
+        (void)ev;
+        if ([xf isKindOfClass:[XFDialog class]]) {
+            [(XFDialog *)xf hide];
+        }
+    }];
     [self define:@"xforms-scroll-first" bubbles:YES cancelable:NO defaultAction:nil];
     [self define:@"xforms-scroll-last" bubbles:YES cancelable:NO defaultAction:nil];
     [self define:@"xforms-load-done" bubbles:YES cancelable:NO defaultAction:nil];

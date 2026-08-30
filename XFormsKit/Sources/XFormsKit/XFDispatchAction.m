@@ -153,3 +153,20 @@
 }
 
 @end
+
+@implementation XFShowHideAction
+
+- (instancetype)initWithElement:(NSXMLElement *)element
+                          model:(XFModel *)model
+                          error:(NSError **)error
+{
+    self = [super initWithElement:element model:model error:error];
+    if (self == nil) {
+        return nil;
+    }
+    self.name = [[element localName] isEqualToString:@"show"] ? @"xforms-dialog-open" : @"xforms-dialog-close";
+    self.targetID = [[element attributeForName:@"dialog"] stringValue];
+    return self;
+}
+
+@end

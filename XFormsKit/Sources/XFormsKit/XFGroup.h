@@ -26,4 +26,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/// `xf:component/@resource` (XFComponent.js, G-95): a bound group whose
+/// content is the XForms document at `resource`, embedded as a subform
+/// (G-90) once the main form is ready; `subform-context()` inside it is the
+/// component's bound node.
+@interface XFComponentControl : XFGroup
+@property (nonatomic, copy, readonly, nullable) NSString *resource;
++ (nullable instancetype)componentWithElement:(NSXMLElement *)element
+                                        model:(nullable id)model
+                                        error:(NSError **)error;
+@end
+
 NS_ASSUME_NONNULL_END

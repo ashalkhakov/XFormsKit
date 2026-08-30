@@ -13,6 +13,8 @@ static const void *kXFBoundControlKey = &kXFBoundControlKey;
 #import "XFSelectControl.h"
 #import "XFRangeControl.h"
 #import "XFLabelControl.h"
+#import "XFVarControl.h"
+#import "XFDialog.h"
 #import "XFUploadControl.h"
 #import "XFGroup.h"
 #import "XFRepeat.h"
@@ -128,21 +130,34 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
 
 - (instancetype)initWithProcessor:(XFProcessor *)processor
 {
+    return [self initWithProcessor:processor rootGroup:nil];
+}
+
+- (instancetype)initWithProcessor:(XFProcessor *)processor rootGroup:(XFGroup *)rootGroup
+{
     self = [super initWithFrame:NSMakeRect(0, 0, 620, 240)];
     if (self) {
         _processor = processor;
+        _rootGroup = rootGroup;
         _widgets = [NSMutableArray array];
         _tables = [NSMutableArray array];
         _listBoxes = [NSMutableArray array];
         [self setAutoresizingMask:NSViewNotSizable];
-        __weak XFFormView *weakSelf = self;
-        // xf:setfocus / xforms-focus → first responder (G-24)
-        processor.focusRequestHandler = ^(XFControl *control) {
-            [weakSelf makeControlFirstResponder:control];
-        };
+        if (rootGroup == nil) {
+            __weak XFFormView *weakSelf = self;
+            // xf:setfocus / xforms-focus → first responder (G-24)
+            processor.focusRequestHandler = ^(XFControl *control) {
+                [weakSelf makeControlFirstResponder:control];
+            };
+        }
         [self rebuild];
     }
     return self;
+}
+
+- (void)rebuildWidgets
+{
+    [self rebuild];
 }
 
 - (BOOL)isFlipped
@@ -587,6 +602,9 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
 /// XFormsKit default for a control that stands on its own line.
 - (CGFloat)layoutControl:(XFControl *)control atY:(CGFloat)y indent:(CGFloat)indent
 {
+    if ([control isKindOfClass:[XFVarControl class]] || [control isKindOfClass:[XFDialog class]]) {
+        return y;   // xf:var has no widget; xf:dialog is presented by the host (G-93)
+    }
     if (!control.relevant) {
         // XSLTForms marks a non-relevant control xforms-disabled, which is
         // display:none for the whole control incl. its label, so it takes no
@@ -953,7 +971,8 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
         }
         if (atom.kind == XFAtomControl) {
             flush();
-            if (!atom.control.relevant) {
+            if (!atom.control.relevant || [atom.control isKindOfClass:[XFVarControl class]]
+                || [atom.control isKindOfClass:[XFDialog class]]) {
                 continue;
             }
             if ([atom.control isBlockLevel]) {
@@ -1228,8 +1247,8 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     self.maxRight = 0;
     self.wrapRight = MAX(kWrapWidth, [self frame].size.width) - kMargin;
     CGFloat y = kMargin;
-    y = [self layoutNodes:self.processor.hostNodes atY:y indent:0 font:nil];
-    if (self.widgets.count == 0 && self.processor.controls.count == 0) {
+    y = [self layoutNodes:self.rootGroup ? self.rootGroup.hostNodes : self.processor.hostNodes atY:y indent:0 font:nil];
+    if (self.rootGroup == nil && self.widgets.count == 0 && self.processor.controls.count == 0) {
         NSTextField *empty = [self makeLabel:@"No XForms controls in the host body."];
         [empty setFrame:NSMakeRect(kMargin, y, 400, 40)];
         [self addSubview:empty];

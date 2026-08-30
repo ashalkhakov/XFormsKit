@@ -5,6 +5,7 @@
 #import "XFXML.h"
 #import "XFNamespaces.h"
 #import "XFHostNode.h"
+#import "XFDeferredUpdates.h"
 
 @interface XFGroup ()
 @property (nonatomic, strong) NSMutableArray<XFControl *> *mutableChildren;
@@ -150,9 +151,27 @@
     // keep being built/refreshed (their own relevance comes from the
     // node inheritance), so MIP state and events stay current while the
     // group is hidden (G-29)
+    XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
+    [du pushVariableScope];   // xf:var children publish here (G-77)
     for (XFControl *child in self.mutableChildren) {
         [child refreshInContext:childCtx error:error];
     }
+    [du popVariableScope];
+}
+
+@end
+
+@interface XFComponentControl ()
+@property (nonatomic, copy, readwrite) NSString *resource;
+@end
+
+@implementation XFComponentControl
+
++ (instancetype)componentWithElement:(NSXMLElement *)element model:(id)model error:(NSError **)error
+{
+    XFComponentControl *c = [self groupWithElement:element model:model error:error];
+    c.resource = [[element attributeForName:@"resource"] stringValue];
+    return c;
 }
 
 @end
