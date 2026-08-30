@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xf="http://www.w3.org/2002/xforms">
+  <head>
+    <title>Select1</title>
+    <xf:model>
+      <xf:instance>
+        <data xmlns="">
+          <color>red</color>
+        </data>
+      </xf:instance>
+    </xf:model>
+  </head>
+  <body>
+    <xf:group>
+      <xf:label>Color</xf:label>
+      <xf:select1 ref="color">
+        <xf:label>Pick a color</xf:label>
+        <xf:item><xf:label>Red</xf:label><xf:value>red</xf:value></xf:item>
+        <xf:item><xf:label>Green</xf:label><xf:value>green</xf:value></xf:item>
+        <xf:item><xf:label>Blue</xf:label><xf:value>blue</xf:value></xf:item>
+      </xf:select1>
+      <xf:output ref="color">
+        <xf:label>Selected</xf:label>
+      </xf:output>
+    </xf:group>
+  </body>
+</html>

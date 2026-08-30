@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xf="http://www.w3.org/2002/xforms">
+  <head>
+    <title>Readonly MIP</title>
+    <xf:model>
+      <xf:instance>
+        <data xmlns="">
+          <lock>true</lock>
+          <name>Ada</name>
+        </data>
+      </xf:instance>
+      <xf:bind nodeset="name" readonly="../lock = 'true'"/>
+    </xf:model>
+  </head>
+  <body>
+    <xf:group>
+      <xf:label>Lock</xf:label>
+      <xf:select1 ref="lock">
+        <xf:label>Locked</xf:label>
+        <xf:item><xf:label>Yes</xf:label><xf:value>true</xf:value></xf:item>
+        <xf:item><xf:label>No</xf:label><xf:value>false</xf:value></xf:item>
+      </xf:select1>
+      <xf:input ref="name">
+        <xf:label>Name</xf:label>
+      </xf:input>
+    </xf:group>
+  </body>
+</html>

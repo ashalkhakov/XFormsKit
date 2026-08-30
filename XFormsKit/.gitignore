@@ -1,0 +1,28 @@
+# GNUstep
+obj/
+shared_obj/
+*.framework/
+*.bundle/
+*.debug
+*.profile
+
+# Xcode
+build/
+DerivedData/
+*.xcuserdata
+*.xcuserstate
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Misc
+.DS_Store
+*~
+*.o
+*.lo
+*.la
+*.a
+core

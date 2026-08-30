@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xf="http://www.w3.org/2002/xforms"
+      xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <head>
+    <title>upload</title>
+    <xf:model>
+      <xf:instance>
+        <data xmlns="">
+          <file/>
+          <filename/>
+          <mediatype/>
+        </data>
+      </xf:instance>
+      <xf:bind ref="file" type="xsd:base64Binary"/>
+      <xf:submission id="save" method="post" resource="http://example.test/upload"
+                     serialization="multipart/form-data" replace="none"/>
+    </xf:model>
+  </head>
+  <body>
+    <xf:upload ref="file">
+      <xf:label>File</xf:label>
+      <xf:filename ref="../filename"/>
+      <xf:mediatype ref="../mediatype"/>
+    </xf:upload>
+    <xf:output ref="filename"><xf:label>Name</xf:label></xf:output>
+    <xf:output ref="mediatype"><xf:label>Type</xf:label></xf:output>
+    <xf:submit submission="save"><xf:label>Send</xf:label></xf:submit>
+  </body>
+</html>

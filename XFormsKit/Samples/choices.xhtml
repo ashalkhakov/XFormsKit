@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xf="http://www.w3.org/2002/xforms">
+  <head>
+    <title>choices / itemset</title>
+    <xf:model>
+      <xf:instance>
+        <data xmlns="">
+          <picked/>
+          <palette>
+            <color><n>Red</n><hex>ff0000</hex></color>
+            <color><n>Green</n><hex>00ff00</hex></color>
+            <color><n>Blue</n><hex>0000ff</hex></color>
+          </palette>
+        </data>
+      </xf:instance>
+    </xf:model>
+  </head>
+  <body>
+    <xf:select1 ref="picked" appearance="minimal">
+      <xf:label>Color</xf:label>
+      <xf:choices>
+        <xf:label>Palette</xf:label>
+        <xf:itemset nodeset="palette/color">
+          <xf:label ref="n"/>
+          <xf:value ref="hex"/>
+        </xf:itemset>
+      </xf:choices>
+      <xf:choices>
+        <xf:label>Other</xf:label>
+        <xf:item>
+          <xf:label>None</xf:label>
+          <xf:value></xf:value>
+        </xf:item>
+      </xf:choices>
+    </xf:select1>
+    <xf:output ref="picked">
+      <xf:label>Hex</xf:label>
+    </xf:output>
+  </body>
+</html>
