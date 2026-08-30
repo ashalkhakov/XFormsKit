@@ -111,6 +111,7 @@
         if ([uri isEqualToString:namespaceURI]) {
             return [attr stringValue];
         }
+        // Accept ev:foo even when the parser dropped the attribute namespace.
         NSString *name = [attr name];
         if ([name hasPrefix:@"ev:"] && [namespaceURI isEqualToString:@"http://www.w3.org/2001/xml-events"]) {
             return [attr stringValue];
@@ -148,6 +149,23 @@
     return nil;
 }
 
++ (NSArray<NSXMLElement *> *)childElementsWithLocalName:(NSString *)localName
+                                          namespaceURI:(NSString *)namespaceURI
+                                             ofElement:(NSXMLElement *)element
+{
+    NSMutableArray<NSXMLElement *> *out = [NSMutableArray array];
+    for (NSXMLNode *child in [element children]) {
+        if ([child kind] != NSXMLElementKind) {
+            continue;
+        }
+        NSXMLElement *el = (NSXMLElement *)child;
+        if ([self element:el hasLocalName:localName namespaceURI:namespaceURI]) {
+            [out addObject:el];
+        }
+    }
+    return out;
+}
+
 + (void)setStringValue:(NSString *)value ofNode:(NSXMLNode *)node
 {
     if ([node kind] == NSXMLAttributeKind) {
@@ -172,3 +190,25 @@
 }
 
 @end
+
+NSString *XFPercentEncode(NSString *string)
+{
+    if (string.length == 0) {
+        return @"";
+    }
+    const unsigned char *utf8 = (const unsigned char *)[string UTF8String];
+    if (utf8 == NULL) {
+        return @"";
+    }
+    NSMutableString *out = [NSMutableString string];
+    for (const unsigned char *p = utf8; *p; p++) {
+        unsigned char c = *p;
+        if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+            (c >= '0' && c <= '9') || c == '-' || c == '_' || c == '.' || c == '~') {
+            [out appendFormat:@"%c", c];
+        } else {
+            [out appendFormat:@"%%%02X", c];
+        }
+    }
+    return out;
+}

@@ -46,6 +46,7 @@
     }
     NSString *resolved = phase.length ? phase : @"default";
     if (![resolved isEqualToString:@"default"] && ![resolved isEqualToString:@"capture"]) {
+        // XsltForms_globals.error(..., "xforms-compute-exception", "Unknown event-phase...")
         NSLog(@"XFormsKit: unknown event-phase(%@) for event(%@)%@",
               resolved, name,
               observer ? [NSString stringWithFormat:@" on element(%@)",
@@ -83,6 +84,8 @@
 
 - (void)attach
 {
+    // XSLTForms also registers with the DOM. We have no DOM; the
+    // observer.listeners list (associated object) is the subscription.
     if ([self.name isEqualToString:@"xforms-model-destruct"]) {
         [[XFListener destructs] addObject:self];
     }
@@ -114,6 +117,7 @@
 
 - (void)invoke:(XFEvent *)event
 {
+    // XsltForms_listener.callback, minus the IE / UIEvent / FF2 branches.
     if (event.phase.length && ![event.phase isEqualToString:self.phase]) {
         return;
     }
@@ -125,6 +129,10 @@
     if (self.evtTarget && event.target != self.evtTarget) {
         effectiveTarget = NO;
     }
+    // XSLTForms skips bubble-phase when target === currentTarget and the
+    // target already has an xfElement (avoids double-firing on the target
+    // after the capture/target pass). We fire target "default" separately
+    // from bubble, so that check is not applied here.
 
     if (effectiveTarget && self.handler) {
         self.handler(event);

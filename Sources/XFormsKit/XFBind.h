@@ -10,6 +10,11 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /// Translation of XsltForms_bind.
+///
+/// `refresh` re-evaluates the nodeset, records XPath dependencies, tags
+/// each selected node with this bind, applies `@type`, and walks child
+/// binds. `recalculate` writes `@calculate`. Boolean MIPs are applied
+/// during instance `revalidate` (XsltForms_instance.validate_).
 @interface XFBind : NSObject
 
 @property (nonatomic, copy, nullable) NSString *identifier;

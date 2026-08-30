@@ -22,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL focused;
 @property (nonatomic, copy, nullable) NSString *hint;
 @property (nonatomic, copy, nullable) NSString *appearance;
-@property (nonatomic, weak, nullable) id owner;
+@property (nonatomic, weak, nullable) id owner; // XFProcessor
 @property (nonatomic, weak, nullable) XFControl *parentControl;
 
 - (instancetype)initWithElement:(NSXMLElement *)element

@@ -5,6 +5,14 @@
 #import "XFControl.h"
 #import "XFInputControl.h"
 #import "XFOutputControl.h"
+#import "XFGroup.h"
+#import "XFRepeat.h"
+#import "XFSwitch.h"
+#import "XFTriggerControl.h"
+#import "XFAction.h"
+#import "XFAbstractAction.h"
+#import "XFDeferredUpdates.h"
+#import "XFSubmission.h"
 #import "XFExprContext.h"
 #import "XFNamespaces.h"
 #import "XFXML.h"
@@ -17,6 +25,7 @@
 @property (nonatomic, strong, readwrite) NSXMLDocument *hostDocument;
 @property (nonatomic, strong, readwrite) XFModel *model;
 @property (nonatomic, copy, readwrite) NSArray<XFControl *> *controls;
+@property (nonatomic, copy, readwrite) NSArray<XFAbstractAction *> *actions;
 @end
 
 @implementation XFProcessor
@@ -100,59 +109,147 @@
     _model = model;
     model.owner = self;
     [[XFXMLEvents sharedEvents] registerElement:model.element xfElement:model];
-
-    NSMutableArray<XFControl *> *controls = [NSMutableArray array];
-    NSArray<NSXMLElement *> *inputs =
-        [XFXML elementsWithLocalName:@"input"
-                       namespaceURI:XFXFormsNamespaceURI
-                             inNode:document];
-    for (NSXMLElement *el in inputs) {
-        XFControl *control = [self controlFromElement:el
-                                            class:[XFInputControl class]
-                                       bindingAttribute:@"ref"
-                                            error:&inner];
-        if (control == nil) {
-            if (error) {
-                *error = inner;
-            }
-            return nil;
+    for (XFInstance *instance in model.instances) {
+        if (instance.element) {
+            [[XFXMLEvents sharedEvents] registerElement:instance.element xfElement:instance];
         }
-        [controls addObject:control];
+    }
+    for (XFSubmission *submission in model.submissions) {
+        [[XFXMLEvents sharedEvents] registerElement:submission.element xfElement:submission];
     }
 
-    NSArray<NSXMLElement *> *outputs =
-        [XFXML elementsWithLocalName:@"output"
-                       namespaceURI:XFXFormsNamespaceURI
-                             inNode:document];
-    for (NSXMLElement *el in outputs) {
-        NSString *attr = [el attributeForName:@"value"] ? @"value" : @"ref";
-        XFControl *control = [self controlFromElement:el
-                                            class:[XFOutputControl class]
-                                       bindingAttribute:attr
-                                            error:&inner];
-        if (control == nil) {
-            if (error) {
-                *error = inner;
-            }
-            return nil;
+    NSMutableArray<XFControl *> *controls = [NSMutableArray array];
+    if (![self collectControlsUnder:document.rootElement
+                            into:controls
+                           error:&inner]) {
+        if (error) {
+            *error = inner;
         }
-        [controls addObject:control];
+        return nil;
     }
 
     _controls = controls;
     for (XFControl *control in controls) {
-        [[XFXMLEvents sharedEvents] registerElement:control.element xfElement:control];
+        [self registerControlTree:control];
     }
+
+    [[XFDeferredUpdates sharedUpdates] reset];
+    NSMutableArray<XFAbstractAction *> *actions = [NSMutableArray array];
+    [self collectActionsUnder:document.rootElement
+                       parent:nil
+                      actions:actions
+                        error:&inner];
+    if (inner) {
+        if (error) {
+            *error = inner;
+        }
+        return nil;
+    }
+    _actions = actions;
+
     [[XFXMLEvents sharedEvents] installListenersInDocument:document];
 
     [XFXMLEvents dispatch:model name:@"xforms-model-construct"];
     [XFXMLEvents dispatch:model name:@"xforms-model-construct-done"];
+    [self refreshControls];
+    model.ready = YES;
     [XFXMLEvents dispatch:model name:@"xforms-ready"];
-
-    if (self.outputControls.count > 0 && self.outputControls.firstObject.stringValue.length == 0) {
-        [self refreshControls];
-    }
+    [self refreshControls];
     return self;
+}
+
+- (BOOL)collectActionsUnder:(NSXMLNode *)node
+                     parent:(XFAction *)parent
+                    actions:(NSMutableArray<XFAbstractAction *> *)actions
+                      error:(NSError **)error
+{
+    if ([node kind] != NSXMLElementKind) {
+        return YES;
+    }
+    NSXMLElement *element = (NSXMLElement *)node;
+    XFAction *nextParent = parent;
+    if ([XFAbstractAction isActionElement:element]) {
+        NSError *inner = nil;
+        XFAbstractAction *action = [XFAbstractAction actionWithElement:element
+                                                                model:self.model
+                                                                error:&inner];
+        if (action == nil) {
+            if (error) {
+                *error = inner;
+            }
+            return NO;
+        }
+        [actions addObject:action];
+        [[XFXMLEvents sharedEvents] registerElement:element xfElement:action];
+        if (parent) {
+            [parent addChild:action];
+        }
+        if ([action isKindOfClass:[XFAction class]]) {
+            nextParent = (XFAction *)action;
+        }
+    }
+    for (NSXMLNode *child in [element children]) {
+        if (![self collectActionsUnder:child parent:nextParent actions:actions error:error]) {
+            return NO;
+        }
+    }
+    return YES;
+}
+
+- (void)registerControlTree:(XFControl *)control
+{
+    if (control == nil) {
+        return;
+    }
+    [[XFXMLEvents sharedEvents] registerElement:control.element xfElement:control];
+    if ([control isKindOfClass:[XFRepeat class]]) {
+        [self.model addRepeat:(XFRepeat *)control];
+    }
+    if ([control isKindOfClass:[XFGroup class]]) {
+        for (XFControl *child in [(XFGroup *)control children]) {
+            [self registerControlTree:child];
+        }
+    }
+    if ([control isKindOfClass:[XFSwitch class]]) {
+        for (XFCase *caze in [(XFSwitch *)control cases]) {
+            [self registerControlTree:caze];
+            for (XFControl *child in caze.children) {
+                [self registerControlTree:child];
+            }
+        }
+    }
+}
+
+- (BOOL)collectControlsUnder:(NSXMLNode *)node
+                        into:(NSMutableArray<XFControl *> *)controls
+                       error:(NSError **)error
+{
+    if ([node kind] != NSXMLElementKind) {
+        return YES;
+    }
+    NSXMLElement *element = (NSXMLElement *)node;
+    if ([XFXML element:element hasLocalName:@"model" namespaceURI:XFXFormsNamespaceURI]) {
+        return YES;
+    }
+    if ([XFControl shouldInstantiateElement:element]) {
+        NSError *inner = nil;
+        XFControl *control = [XFControl controlWithElement:element model:self.model error:&inner];
+        if (control == nil) {
+            if (error) {
+                *error = inner;
+            }
+            return NO;
+        }
+        control.owner = self;
+        [controls addObject:control];
+        return YES;
+    }
+    for (NSXMLNode *child in [element children]) {
+        if (![self collectControlsUnder:child into:controls error:error]) {
+            return NO;
+        }
+    }
+    return YES;
 }
 
 - (NSString *)labelForElement:(NSXMLElement *)element
@@ -189,24 +286,68 @@
     return [self.model defaultInstance];
 }
 
+- (void)collectControlsOfClass:(Class)cls
+                        from:(XFControl *)control
+                        into:(NSMutableArray *)out
+{
+    if ([control isKindOfClass:cls]) {
+        [out addObject:control];
+    }
+    if ([control isKindOfClass:[XFGroup class]]) {
+        for (XFControl *child in [(XFGroup *)control children]) {
+            [self collectControlsOfClass:cls from:child into:out];
+        }
+    }
+}
+
 - (NSArray<XFInputControl *> *)inputControls
 {
     NSMutableArray *out = [NSMutableArray array];
     for (XFControl *c in self.controls) {
-        if ([c isKindOfClass:[XFInputControl class]]) {
+        [self collectControlsOfClass:[XFInputControl class] from:c into:out];
+    }
+    return out;
+}
+
+- (XFAbstractAction *)actionWithIdentifier:(NSString *)identifier
+{
+    if (identifier.length == 0) {
+        return nil;
+    }
+    for (XFAbstractAction *action in self.actions) {
+        if ([action.identifier isEqualToString:identifier]) {
+            return action;
+        }
+    }
+    return nil;
+}
+
+- (NSArray<XFGroup *> *)groups
+{
+    NSMutableArray *out = [NSMutableArray array];
+    for (XFControl *c in self.controls) {
+        if ([c isKindOfClass:[XFGroup class]]) {
             [out addObject:c];
         }
     }
     return out;
 }
 
+- (NSArray<XFRepeat *> *)repeats
+{
+    return self.model.repeats;
+}
+
+- (XFRepeat *)repeatWithIdentifier:(NSString *)identifier
+{
+    return [self.model repeatWithIdentifier:identifier];
+}
+
 - (NSArray<XFOutputControl *> *)outputControls
 {
     NSMutableArray *out = [NSMutableArray array];
     for (XFControl *c in self.controls) {
-        if ([c isKindOfClass:[XFOutputControl class]]) {
-            [out addObject:c];
-        }
+        [self collectControlsOfClass:[XFOutputControl class] from:c into:out];
     }
     return out;
 }
@@ -242,13 +383,77 @@
     return YES;
 }
 
-- (BOOL)setValue:(NSString *)value ofControl:(XFInputControl *)control error:(NSError **)error
+- (void)activateControl:(XFTriggerControl *)control
+{
+    [control activate];
+    [self refreshControls];
+}
+
+- (XFControl *)matchControl:(XFControl *)control element:(NSXMLElement *)element
+{
+    if (control.element == element) {
+        return control;
+    }
+    if ([control isKindOfClass:[XFGroup class]]) {
+        for (XFControl *child in [(XFGroup *)control children]) {
+            XFControl *found = [self matchControl:child element:element];
+            if (found) {
+                return found;
+            }
+        }
+    }
+    if ([control isKindOfClass:[XFRepeat class]]) {
+        for (XFRepeatItem *item in [(XFRepeat *)control items]) {
+            for (XFControl *child in item.controls) {
+                XFControl *found = [self matchControl:child element:element];
+                if (found) {
+                    return found;
+                }
+            }
+        }
+    }
+    if ([control isKindOfClass:[XFSwitch class]]) {
+        for (XFCase *caze in [(XFSwitch *)control cases]) {
+            XFControl *found = [self matchControl:caze element:element];
+            if (found) {
+                return found;
+            }
+            for (XFControl *child in caze.children) {
+                found = [self matchControl:child element:element];
+                if (found) {
+                    return found;
+                }
+            }
+        }
+    }
+    return nil;
+}
+
+- (XFControl *)controlForElement:(NSXMLElement *)element
+{
+    if (element == nil) {
+        return nil;
+    }
+    for (XFControl *control in self.controls) {
+        XFControl *found = [self matchControl:control element:element];
+        if (found) {
+            return found;
+        }
+    }
+    return nil;
+}
+
+- (BOOL)setValue:(NSString *)value ofControl:(XFControl *)control error:(NSError **)error
 {
     if (![control commitStringValue:value error:error]) {
         return NO;
     }
+    XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
+    [du openAction:@"setValue"];
+    [self.model addChange:control.boundNode];
+    [du addChangedModel:self.model];
     [XFXMLEvents dispatch:control name:@"xforms-value-changed"];
-    [XFXMLEvents dispatch:self.model name:@"xforms-recalculate"];
+    [du closeAction:@"setValue"];
     return YES;
 }
 

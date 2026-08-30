@@ -62,6 +62,7 @@
             return (XFSwitch *)parent;
         }
     }
+    // Walk up to xf:switch and use its xfElement.
     NSXMLNode *n = [caseEl parent];
     while (n) {
         if ([n kind] == NSXMLElementKind) {

@@ -35,6 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)executeWithContextNode:(nullable NSXMLNode *)contextNode event:(nullable XFEvent *)event;
 - (BOOL)execWithContextNode:(nullable NSXMLNode *)contextNode event:(nullable XFEvent *)event;
+/// Override point (XsltForms_abstractAction.run).
 - (void)runWithContextNode:(nullable NSXMLNode *)contextNode event:(nullable XFEvent *)event;
 
 - (BOOL)wasInvokedForEvent:(NSString *)name;

@@ -39,6 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)refresh:(NSError **)error;
 - (void)refreshControls;
 
+/// Writes `value` into the control's bound node and refreshes the form.
 - (BOOL)setValue:(NSString *)value
       ofControl:(XFControl *)control
           error:(NSError **)error;

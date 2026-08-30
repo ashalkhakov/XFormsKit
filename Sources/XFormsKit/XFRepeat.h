@@ -6,7 +6,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface XFRepeatItem : NSObject
 @property (nonatomic, strong, nullable) NSXMLNode *node;
-@property (nonatomic, assign) NSUInteger position;
+@property (nonatomic, assign) NSUInteger position; // 1-based
 @property (nonatomic, assign) BOOL selected;
 @property (nonatomic, copy, readonly) NSArray<XFControl *> *controls;
 - (void)addControl:(XFControl *)control;
@@ -17,8 +17,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface XFRepeat : XFControl
 
 @property (nonatomic, copy, readonly) NSArray<NSXMLNode *> *nodes;
-@property (nonatomic, assign, readonly) NSUInteger index;
-@property (nonatomic, assign) NSUInteger startIndex;
+@property (nonatomic, assign, readonly) NSUInteger index;      // 1-based; 0 if empty
+@property (nonatomic, assign) NSUInteger startIndex; // default 1
 @property (nonatomic, copy, readonly) NSArray<XFRepeatItem *> *items;
 @property (nonatomic, copy, readonly) NSArray<NSXMLElement *> *templateElements;
 

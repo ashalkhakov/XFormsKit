@@ -82,11 +82,13 @@
     if (![self needsRebuild:entry model:model] && entry.result) {
         return entry.result;
     }
+
     XFExprContext *eval = [context cloneWithNode:node
                                         position:context.position
                                         nodeList:context.nodeList];
     [entry.depsN removeAllObjects];
     [entry.deps removeAllObjects];
+
     NSError *inner = nil;
     XFXPathValue *value = [self.binding evaluateInContext:eval error:&inner];
     if (inner && error) {

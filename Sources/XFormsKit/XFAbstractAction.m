@@ -113,7 +113,9 @@
     if (ifattr.length) {
         _ifExpr = [XFXPath xpathWithString:ifattr error:&inner];
         if (_ifExpr == nil) {
-            if (error) { *error = inner; }
+            if (error) {
+                *error = inner;
+            }
             return nil;
         }
     }
@@ -121,7 +123,9 @@
     if (whileattr.length) {
         _whileExpr = [XFXPath xpathWithString:whileattr error:&inner];
         if (_whileExpr == nil) {
-            if (error) { *error = inner; }
+            if (error) {
+                *error = inner;
+            }
             return nil;
         }
     }
@@ -129,7 +133,9 @@
     if (iterate.length) {
         _iterateExpr = [XFXPath xpathWithString:iterate error:&inner];
         if (_iterateExpr == nil) {
-            if (error) { *error = inner; }
+            if (error) {
+                *error = inner;
+            }
             return nil;
         }
     }
@@ -216,8 +222,10 @@
 
 - (BOOL)execWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
 {
-    if (self.ifExpr && ![self booleanExpr:self.ifExpr contextNode:contextNode]) {
-        return NO;
+    if (self.ifExpr) {
+        if (![self booleanExpr:self.ifExpr contextNode:contextNode]) {
+            return NO;
+        }
     }
     [self runWithContextNode:contextNode event:event];
     return YES;

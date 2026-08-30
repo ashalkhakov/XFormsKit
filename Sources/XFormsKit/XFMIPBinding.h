@@ -19,6 +19,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable instancetype)mipBindingWithExpression:(NSString *)expression
                                             error:(NSError **)error;
 
+/// Evaluate against `node` (XPath context item). Rebuilds when the model
+/// is rebuilded or any recorded dependency is in `model.nodesChanged`.
 - (nullable XFXPathValue *)evaluateInContext:(XFExprContext *)context
                                         node:(NSXMLNode *)node
                                        model:(nullable XFModel *)model

@@ -23,6 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
                                            error:(NSError **)error;
 @end
 
+/// In-memory transport for tests: map URL (+ method) → canned response.
 @interface XFMapSubmissionTransport : NSObject <XFSubmissionTransport>
 @property (nonatomic, strong, readonly) XFSubmissionRequest *lastRequest;
 - (void)setResponse:(XFSubmissionResponse *)response forURL:(NSString *)url;
@@ -30,6 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setStatus:(NSInteger)status body:(nullable NSString *)body forURL:(NSString *)url;
 @end
 
+/// GET/POST/PUT/DELETE via NSURLConnection (synchronous).
 @interface XFHTTPSubmissionTransport : NSObject <XFSubmissionTransport>
 @end
 

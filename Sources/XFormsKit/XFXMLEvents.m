@@ -176,6 +176,7 @@ static const void *kXFElementKey   = &kXFElementKey;
         }
         return target;
     }
+    // XsltForms: target = target.element || target
     if ([target respondsToSelector:@selector(element)]) {
         NSXMLElement *el = [target element];
         [self registerElement:el xfElement:target];
@@ -197,7 +198,7 @@ static const void *kXFElementKey   = &kXFElementKey;
    defaultAction:(XFEventDefaultAction)defaultAction
          context:(NSDictionary *)evcontext
 {
-    (void)type;
+    (void)type; // XSLTForms accepts `type` then overwrites from `name` in makeEventContext
     if (target == nil) {
         NSLog(@"XFormsKit: cannot dispatch event %@ as the target is null", name);
         return;
@@ -243,6 +244,7 @@ static const void *kXFElementKey   = &kXFElementKey;
             }
         }
 
+        // Capture phase (root → parent), then capture on the target.
         event.eventPhase = XFEventPhaseCapture;
         event.phase = @"capture";
         if (!event.stopped) {
@@ -257,6 +259,7 @@ static const void *kXFElementKey   = &kXFElementKey;
             [self fire:event on:element];
         }
 
+        // Default phase on the target (XML Events "default" = target + bubble).
         if (!event.stopped) {
             event.eventPhase = XFEventPhaseTarget;
             event.phase = @"default";
@@ -274,6 +277,7 @@ static const void *kXFElementKey   = &kXFElementKey;
             }
         }
 
+        // XSLTForms: if ((res && !event.stopped) || !cancelable) defaultAction.call(xfElement, event)
         BOOL res = event.returnValue && !event.defaultPrevented;
         if ((res && !event.stopped) || !cancelable) {
             defaultAction(xfElement, event);
@@ -327,6 +331,9 @@ static const void *kXFElementKey   = &kXFElementKey;
         NSString *eventName = [self ev:@"event" on:element];
         if (eventName.length &&
             !([XFXML element:element hasLocalName:@"listener" namespaceURI:XFXMLEventsNamespaceURI])) {
+            // XML Events attribute module: observer defaults to the parent
+            // of the element bearing ev:event (XForms actions under model,
+            // setvalue under trigger, etc.).
             NSXMLElement *parent = nil;
             if ([element parent].kind == NSXMLElementKind) {
                 parent = (NSXMLElement *)[element parent];
@@ -372,6 +379,9 @@ static const void *kXFElementKey   = &kXFElementKey;
 
     NSXMLElement *observer = observerDefault;
     if (observerID.length) {
+        if ([observerID hasPrefix:@"#"]) {
+            observerID = [observerID substringFromIndex:1];
+        }
         observer = [self elementWithID:observerID inDocument:document] ?: observer;
     }
     NSXMLElement *evtTarget = nil;
@@ -505,6 +515,8 @@ static const void *kXFElementKey   = &kXFElementKey;
     [self define:@"ajx-time" bubbles:YES cancelable:YES defaultAction:nil];
     [self define:@"xforms-dialog-open" bubbles:YES cancelable:YES defaultAction:nil];
     [self define:@"xforms-dialog-close" bubbles:YES cancelable:YES defaultAction:nil];
+    [self define:@"xforms-scroll-first" bubbles:YES cancelable:NO defaultAction:nil];
+    [self define:@"xforms-scroll-last" bubbles:YES cancelable:NO defaultAction:nil];
     [self define:@"xforms-load-done" bubbles:YES cancelable:NO defaultAction:nil];
     [self define:@"xforms-load-error" bubbles:YES cancelable:NO defaultAction:nil];
     [self define:@"xforms-unload-done" bubbles:YES cancelable:NO defaultAction:nil];

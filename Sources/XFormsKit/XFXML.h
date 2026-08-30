@@ -31,12 +31,14 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable NSXMLElement *)elementWithID:(NSString *)identifier
                                   inNode:(NSXMLNode *)node;
 
+/// Direct children only (nested `xf:bind` must be walked via the parent bind).
 + (NSArray<NSXMLElement *> *)childElementsWithLocalName:(NSString *)localName
                                           namespaceURI:(NSString *)namespaceURI
                                              ofElement:(NSXMLElement *)element;
 
 @end
 
+/// RFC 3986 unreserved percent-encoding (XsltForms_submission.toUrl_).
 NSString *XFPercentEncode(NSString *string);
 
 NS_ASSUME_NONNULL_END

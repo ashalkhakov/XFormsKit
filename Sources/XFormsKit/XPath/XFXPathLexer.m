@@ -87,6 +87,11 @@ static BOOL XFIsNameChar(unichar c)
     if (c == ',') { _i++; return [self token:XFXPathTokenComma text:@","]; }
     if (c == '+') { _i++; return [self token:XFXPathTokenPlus text:@"+"]; }
     if (c == '|') { _i++; return [self token:XFXPathTokenUnion text:@"|"]; }
+    if (c == '$') { _i++; return [self token:XFXPathTokenDollar text:@"$"]; }
+    if (c == ':' && [self peekAt:1] == ':') {
+        _i += 2;
+        return [self token:XFXPathTokenColonColon text:@"::"];
+    }
     if (c == '=') { _i++; return [self token:XFXPathTokenEq text:@"="]; }
     if (c == '!') {
         if ([self peekAt:1] == '=') {
@@ -119,6 +124,7 @@ static BOOL XFIsNameChar(unichar c)
             _i++;
             return [self token:XFXPathTokenDot text:@"."];
         }
+        // fall through to number
     }
     if (c == '-' && !isdigit([self peekAt:1]) && [self peekAt:1] != '.') {
         _i++;
@@ -166,10 +172,17 @@ static BOOL XFIsNameChar(unichar c)
         while (_i < _n && XFIsNameChar([self peek])) {
             _i++;
         }
-        if ([self peek] == ':' && XFIsNameStart([self peekAt:1])) {
-            _i++;
-            while (_i < _n && XFIsNameChar([self peek])) {
+        // qname prefix:name or ncname:* — but not axis '::'
+        if ([self peek] == ':' && [self peekAt:1] != ':') {
+            if (XFIsNameStart([self peekAt:1]) || [self peekAt:1] == '*') {
                 _i++;
+                if ([self peek] == '*') {
+                    _i++;
+                } else {
+                    while (_i < _n && XFIsNameChar([self peek])) {
+                        _i++;
+                    }
+                }
             }
         }
         NSString *text = [_s substringWithRange:NSMakeRange(start, _i - start)];
@@ -182,6 +195,7 @@ static BOOL XFIsNameChar(unichar c)
         return [self token:XFXPathTokenName text:text];
     }
 
+    // Unknown character: consume and treat as name so the parser can fail clearly.
     _i++;
     return [self token:XFXPathTokenName text:[NSString stringWithCharacters:&c length:1]];
 }

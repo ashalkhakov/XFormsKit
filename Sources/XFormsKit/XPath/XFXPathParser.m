@@ -2,30 +2,6 @@
 #import "XFXPathValue.h"
 #import "XFErrors.h"
 
-@implementation XFExpr
-- (XFXPathValue *)eval:(XFExprContext *)ctx error:(NSError **)error
-{
-    (void)ctx;
-    if (error) {
-        *error = [NSError errorWithDomain:XFErrorDomain
-                                     code:XFErrorXPathEvaluation
-                                 userInfo:@{ NSLocalizedDescriptionKey: @"abstract expression" }];
-    }
-    return nil;
-}
-@end
-
-@implementation XFLiteralExpr
-- (XFXPathValue *)eval:(XFExprContext *)ctx error:(NSError **)error
-{
-    (void)ctx; (void)error;
-    return self.value;
-}
-@end
-
-@implementation XFStep
-@end
-
 @implementation XFXPathParser {
     XFXPathLexer *_lexer;
     XFXPathToken *_token;
@@ -77,14 +53,22 @@
                            userInfo:@{ NSLocalizedDescriptionKey: message }];
 }
 
+- (BOOL)isDivOrMod
+{
+    return _token.kind == XFXPathTokenName &&
+           ([_token.text isEqualToString:@"div"] || [_token.text isEqualToString:@"mod"]);
+}
+
 - (XFExpr *)parseExpression:(NSError **)error
 {
-    XFExpr *expr = [self parseOr:error];
-    if (*error) {
+    NSError *local = nil;
+    NSError **err = error ? error : &local;
+    XFExpr *expr = [self parseOr:err];
+    if (*err) {
         return nil;
     }
     if (_token.kind != XFXPathTokenEOF) {
-        *error = [self error:[NSString stringWithFormat:@"unexpected token '%@'", _token.text]];
+        *err = [self error:[NSString stringWithFormat:@"unexpected token '%@'", _token.text]];
         return nil;
     }
     return expr;
@@ -95,11 +79,7 @@
     XFExpr *left = [self parseAnd:error];
     while (!*error && _token.kind == XFXPathTokenOr) {
         [self advance];
-        XFBinaryExpr *bin = [[XFBinaryExpr alloc] init];
-        bin.op = @"or";
-        bin.left = left;
-        bin.right = [self parseAnd:error];
-        left = bin;
+        left = [XFBinaryExpr expr1:left op:@"or" expr2:[self parseAnd:error]];
     }
     return left;
 }
@@ -109,11 +89,7 @@
     XFExpr *left = [self parseEquality:error];
     while (!*error && _token.kind == XFXPathTokenAnd) {
         [self advance];
-        XFBinaryExpr *bin = [[XFBinaryExpr alloc] init];
-        bin.op = @"and";
-        bin.left = left;
-        bin.right = [self parseEquality:error];
-        left = bin;
+        left = [XFBinaryExpr expr1:left op:@"and" expr2:[self parseEquality:error]];
     }
     return left;
 }
@@ -124,11 +100,7 @@
     while (!*error && (_token.kind == XFXPathTokenEq || _token.kind == XFXPathTokenNe)) {
         NSString *op = _token.kind == XFXPathTokenEq ? @"=" : @"!=";
         [self advance];
-        XFBinaryExpr *bin = [[XFBinaryExpr alloc] init];
-        bin.op = op;
-        bin.left = left;
-        bin.right = [self parseRelational:error];
-        left = bin;
+        left = [XFBinaryExpr expr1:left op:op expr2:[self parseRelational:error]];
     }
     return left;
 }
@@ -140,28 +112,40 @@
                        _token.kind == XFXPathTokenLe || _token.kind == XFXPathTokenGe)) {
         NSString *op = _token.text;
         [self advance];
-        XFBinaryExpr *bin = [[XFBinaryExpr alloc] init];
-        bin.op = op;
-        bin.left = left;
-        bin.right = [self parseAdditive:error];
-        left = bin;
+        left = [XFBinaryExpr expr1:left op:op expr2:[self parseAdditive:error]];
     }
     return left;
 }
 
 - (XFExpr *)parseAdditive:(NSError **)error
 {
-    XFExpr *left = [self parseUnion:error];
+    XFExpr *left = [self parseMultiplicative:error];
     while (!*error && (_token.kind == XFXPathTokenPlus || _token.kind == XFXPathTokenMinus)) {
         NSString *op = _token.text;
         [self advance];
-        XFBinaryExpr *bin = [[XFBinaryExpr alloc] init];
-        bin.op = op;
-        bin.left = left;
-        bin.right = [self parseUnion:error];
-        left = bin;
+        left = [XFBinaryExpr expr1:left op:op expr2:[self parseMultiplicative:error]];
     }
     return left;
+}
+
+- (XFExpr *)parseMultiplicative:(NSError **)error
+{
+    XFExpr *left = [self parseUnary:error];
+    while (!*error && (_token.kind == XFXPathTokenStar || [self isDivOrMod])) {
+        NSString *op = _token.kind == XFXPathTokenStar ? @"*" : _token.text;
+        [self advance];
+        left = [XFBinaryExpr expr1:left op:op expr2:[self parseUnary:error]];
+    }
+    return left;
+}
+
+- (XFExpr *)parseUnary:(NSError **)error
+{
+    if (_token.kind == XFXPathTokenMinus) {
+        [self advance];
+        return [XFUnaryMinusExpr expr:[self parseUnary:error]];
+    }
+    return [self parseUnion:error];
 }
 
 - (XFExpr *)parseUnion:(NSError **)error
@@ -169,47 +153,89 @@
     XFExpr *left = [self parsePath:error];
     while (!*error && _token.kind == XFXPathTokenUnion) {
         [self advance];
-        XFBinaryExpr *bin = [[XFBinaryExpr alloc] init];
-        bin.op = @"|";
-        bin.left = left;
-        bin.right = [self parsePath:error];
-        left = bin;
+        left = [XFUnionExpr expr1:left expr2:[self parsePath:error]];
     }
     return left;
 }
 
+- (BOOL)startsLocationPath
+{
+    if (_token.kind == XFXPathTokenSlash || _token.kind == XFXPathTokenSlashSlash ||
+        _token.kind == XFXPathTokenDot || _token.kind == XFXPathTokenDotDot ||
+        _token.kind == XFXPathTokenAt || _token.kind == XFXPathTokenStar) {
+        return YES;
+    }
+    if (_token.kind == XFXPathTokenName) {
+        XFXPathToken *peek = [self peekToken];
+        if (peek.kind == XFXPathTokenLParen) {
+            return NO; // function call
+        }
+        return YES;
+    }
+    return NO;
+}
+
 - (XFExpr *)parsePath:(NSError **)error
 {
-    if (_token.kind == XFXPathTokenSlash || _token.kind == XFXPathTokenSlashSlash) {
+    if (_token.kind == XFXPathTokenSlash || _token.kind == XFXPathTokenSlashSlash ||
+        [self startsLocationPath]) {
         return [self parseLocationPath:error];
     }
-    if (_token.kind == XFXPathTokenName && [self peekToken].kind == XFXPathTokenLParen) {
-        XFExpr *fn = [self parseFunction:error];
+    XFExpr *filter = [self parseFilter:error];
+    if (*error) {
+        return nil;
+    }
+    if (_token.kind == XFXPathTokenSlash || _token.kind == XFXPathTokenSlashSlash) {
+        XFExpr *rel = [self parseRelativeAfterSlash:error];
         if (*error) {
             return nil;
         }
-        return fn;
+        return [XFPathExpr filter:filter rel:rel];
     }
-    if (_token.kind == XFXPathTokenString || _token.kind == XFXPathTokenNumber ||
-        _token.kind == XFXPathTokenLParen) {
-        return [self parsePrimary:error];
+    return filter;
+}
+
+- (XFExpr *)parseFilter:(NSError **)error
+{
+    XFExpr *primary = [self parsePrimary:error];
+    if (*error) {
+        return nil;
     }
-    return [self parseLocationPath:error];
+    NSArray *preds = [self parsePredicateList:error];
+    if (*error) {
+        return nil;
+    }
+    if (preds.count == 0) {
+        return primary;
+    }
+    NSMutableArray *wrapped = [NSMutableArray array];
+    for (XFExpr *p in preds) {
+        [wrapped addObject:[XFPredicateExpr expr:p]];
+    }
+    return [XFFilterExpr expr:primary predicates:wrapped];
 }
 
 - (XFExpr *)parsePrimary:(NSError **)error
 {
     if (_token.kind == XFXPathTokenString) {
-        XFLiteralExpr *lit = [[XFLiteralExpr alloc] init];
-        lit.value = [XFXPathValue string:_token.text];
+        XFExpr *lit = [XFCteExpr string:_token.text];
         [self advance];
         return lit;
     }
     if (_token.kind == XFXPathTokenNumber) {
-        XFLiteralExpr *lit = [[XFLiteralExpr alloc] init];
-        lit.value = [XFXPathValue number:_token.number];
+        XFExpr *lit = [XFCteExpr number:_token.number];
         [self advance];
         return lit;
+    }
+    if (_token.kind == XFXPathTokenDollar) {
+        [self advance];
+        if (_token.kind != XFXPathTokenName) {
+            *error = [self error:@"expected variable name"];
+            return nil;
+        }
+        XFVarRef *v = [XFVarRef name:_token.text];
+        [self advance];
+        return v;
     }
     if (_token.kind == XFXPathTokenLParen) {
         [self advance];
@@ -220,7 +246,7 @@
         }
         return inner;
     }
-    if (_token.kind == XFXPathTokenName) {
+    if (_token.kind == XFXPathTokenName && [self peekToken].kind == XFXPathTokenLParen) {
         return [self parseFunction:error];
     }
     *error = [self error:@"expected primary expression"];
@@ -229,10 +255,6 @@
 
 - (XFExpr *)parseFunction:(NSError **)error
 {
-    if (_token.kind != XFXPathTokenName) {
-        *error = [self error:@"expected function name"];
-        return nil;
-    }
     NSString *name = _token.text;
     [self advance];
     if (![self accept:XFXPathTokenLParen]) {
@@ -256,45 +278,30 @@
         *error = [self error:@"expected ')' after function arguments"];
         return nil;
     }
-    XFFunctionExpr *fn = [[XFFunctionExpr alloc] init];
-    fn.name = name;
-    fn.args = args;
-    return fn;
+    return [XFFunctionCallExpr name:name args:args];
 }
 
 - (XFExpr *)parseLocationPath:(NSError **)error
 {
-    XFPathExpr *path = [[XFPathExpr alloc] init];
+    BOOL absolute = NO;
     NSMutableArray *steps = [NSMutableArray array];
 
     if (_token.kind == XFXPathTokenSlash) {
-        path.absolute = YES;
+        absolute = YES;
         [self advance];
-        if (_token.kind == XFXPathTokenEOF ||
-            _token.kind == XFXPathTokenRParen ||
-            _token.kind == XFXPathTokenRBrack ||
-            _token.kind == XFXPathTokenComma ||
-            _token.kind == XFXPathTokenOr ||
-            _token.kind == XFXPathTokenAnd ||
-            _token.kind == XFXPathTokenUnion ||
-            _token.kind == XFXPathTokenEq ||
-            _token.kind == XFXPathTokenNe ||
-            _token.kind == XFXPathTokenLt ||
-            _token.kind == XFXPathTokenGt ||
-            _token.kind == XFXPathTokenLe ||
-            _token.kind == XFXPathTokenGe ||
-            _token.kind == XFXPathTokenPlus ||
-            _token.kind == XFXPathTokenMinus) {
-            path.steps = @[];
-            return path;
+        if (![self startsStep]) {
+            return [XFLocationExpr absolute:YES steps:@[]];
         }
     } else if (_token.kind == XFXPathTokenSlashSlash) {
-        path.absolute = YES;
-        path.descendantOrSelfFirst = YES;
+        absolute = YES;
         [self advance];
+        XFStepExpr *dos = [XFStepExpr axis:XFAxisDescendantOrSelf
+                                      test:[XFNodeTestType anyNode]
+                                predicates:@[]];
+        [steps addObject:dos];
     }
 
-    XFStep *step = [self parseStep:error];
+    XFStepExpr *step = [self parseStep:error];
     if (*error) {
         return nil;
     }
@@ -304,88 +311,172 @@
         BOOL desc = (_token.kind == XFXPathTokenSlashSlash);
         [self advance];
         if (desc) {
-            XFStep *dos = [[XFStep alloc] init];
-            dos.axis = @"descendant-or-self";
-            dos.test = @"node";
-            dos.predicates = @[];
-            [steps addObject:dos];
+            [steps addObject:[XFStepExpr axis:XFAxisDescendantOrSelf
+                                         test:[XFNodeTestType anyNode]
+                                   predicates:@[]]];
         }
-        XFStep *next = [self parseStep:error];
+        XFStepExpr *next = [self parseStep:error];
         if (*error) {
             return nil;
         }
         [steps addObject:next];
     }
-    path.steps = steps;
-    return path;
+    return [XFLocationExpr absolute:absolute steps:steps];
 }
 
-- (XFStep *)parseStep:(NSError **)error
+- (XFExpr *)parseRelativeAfterSlash:(NSError **)error
 {
-    XFStep *step = [[XFStep alloc] init];
-    step.predicates = @[];
-
-    if (_token.kind == XFXPathTokenDot) {
-        step.axis = @"self";
-        step.test = @"node";
+    // Current token is / or //. Build a relative location path.
+    NSMutableArray *steps = [NSMutableArray array];
+    if (_token.kind == XFXPathTokenSlashSlash) {
         [self advance];
-        return [self parsePredicatesOnto:step error:error];
-    }
-    if (_token.kind == XFXPathTokenDotDot) {
-        step.axis = @"parent";
-        step.test = @"node";
-        [self advance];
-        return [self parsePredicatesOnto:step error:error];
-    }
-    if (_token.kind == XFXPathTokenAt) {
-        step.axis = @"attribute";
-        [self advance];
-        if (_token.kind == XFXPathTokenStar) {
-            step.test = @"*";
-            [self advance];
-        } else if (_token.kind == XFXPathTokenName) {
-            step.test = _token.text;
-            [self advance];
-        } else {
-            *error = [self error:@"expected attribute name"];
-            return nil;
-        }
-        return [self parsePredicatesOnto:step error:error];
-    }
-
-    step.axis = @"child";
-    if (_token.kind == XFXPathTokenStar) {
-        step.test = @"*";
-        [self advance];
-    } else if (_token.kind == XFXPathTokenName) {
-        NSString *name = _token.text;
-        [self advance];
-        if (_token.kind == XFXPathTokenLParen &&
-            ([name isEqualToString:@"text"] ||
-             [name isEqualToString:@"node"] ||
-             [name isEqualToString:@"comment"])) {
-            [self advance];
-            if (![self accept:XFXPathTokenRParen]) {
-                *error = [self error:@"expected ')' after node test"];
-                return nil;
-            }
-            step.test = name;
-        } else if (_token.kind == XFXPathTokenLParen) {
-            *error = [self error:[NSString stringWithFormat:
-                                  @"function '%@' cannot start a location step; wrap it or use it as a primary",
-                                  name]];
-            return nil;
-        } else {
-            step.test = name;
-        }
+        [steps addObject:[XFStepExpr axis:XFAxisDescendantOrSelf
+                                     test:[XFNodeTestType anyNode]
+                               predicates:@[]]];
     } else {
-        *error = [self error:@"expected location step"];
+        [self advance];
+    }
+    XFStepExpr *step = [self parseStep:error];
+    if (*error) {
         return nil;
     }
-    return [self parsePredicatesOnto:step error:error];
+    [steps addObject:step];
+    while (_token.kind == XFXPathTokenSlash || _token.kind == XFXPathTokenSlashSlash) {
+        BOOL desc = (_token.kind == XFXPathTokenSlashSlash);
+        [self advance];
+        if (desc) {
+            [steps addObject:[XFStepExpr axis:XFAxisDescendantOrSelf
+                                         test:[XFNodeTestType anyNode]
+                                   predicates:@[]]];
+        }
+        XFStepExpr *next = [self parseStep:error];
+        if (*error) {
+            return nil;
+        }
+        [steps addObject:next];
+    }
+    return [XFLocationExpr absolute:NO steps:steps];
 }
 
-- (XFStep *)parsePredicatesOnto:(XFStep *)step error:(NSError **)error
+- (BOOL)startsStep
+{
+    return _token.kind == XFXPathTokenDot || _token.kind == XFXPathTokenDotDot ||
+           _token.kind == XFXPathTokenAt || _token.kind == XFXPathTokenStar ||
+           _token.kind == XFXPathTokenName;
+}
+
+- (XFStepExpr *)parseStep:(NSError **)error
+{
+    if (_token.kind == XFXPathTokenDot) {
+        [self advance];
+        NSArray *preds = [self parsePredicateList:error];
+        return [XFStepExpr axis:XFAxisSelf test:[XFNodeTestType anyNode] predicates:[self wrapPreds:preds]];
+    }
+    if (_token.kind == XFXPathTokenDotDot) {
+        [self advance];
+        NSArray *preds = [self parsePredicateList:error];
+        return [XFStepExpr axis:XFAxisParent test:[XFNodeTestType anyNode] predicates:[self wrapPreds:preds]];
+    }
+
+    NSString *axis = XFAxisChild;
+    if (_token.kind == XFXPathTokenAt) {
+        axis = XFAxisAttribute;
+        [self advance];
+    } else if (_token.kind == XFXPathTokenName && [self peekToken].kind == XFXPathTokenColonColon) {
+        axis = [self axisForName:_token.text];
+        if (axis == nil) {
+            *error = [self error:[NSString stringWithFormat:@"unknown axis %@", _token.text]];
+            return nil;
+        }
+        [self advance];
+        [self advance]; // ::
+    }
+
+    XFNodeTest *test = [self parseNodeTest:error];
+    if (*error) {
+        return nil;
+    }
+    NSArray *preds = [self parsePredicateList:error];
+    if (*error) {
+        return nil;
+    }
+    return [XFStepExpr axis:axis test:test predicates:[self wrapPreds:preds]];
+}
+
+- (NSArray *)wrapPreds:(NSArray<XFExpr *> *)preds
+{
+    NSMutableArray *out = [NSMutableArray array];
+    for (XFExpr *p in preds) {
+        [out addObject:[XFPredicateExpr expr:p]];
+    }
+    return out;
+}
+
+- (NSString *)axisForName:(NSString *)name
+{
+    static NSSet *axes;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        axes = [NSSet setWithObjects:
+                XFAxisAncestorOrSelf, XFAxisAncestor, XFAxisAttribute, XFAxisChild,
+                XFAxisDescendantOrSelf, XFAxisDescendant, XFAxisFollowingSibling,
+                XFAxisFollowing, XFAxisNamespace, XFAxisParent, XFAxisPrecedingSibling,
+                XFAxisPreceding, XFAxisSelf, nil];
+    });
+    return [axes containsObject:name] ? name : nil;
+}
+
+- (XFNodeTest *)parseNodeTest:(NSError **)error
+{
+    if (_token.kind == XFXPathTokenStar) {
+        [self advance];
+        return [[XFNodeTestAny alloc] init];
+    }
+    if (_token.kind != XFXPathTokenName) {
+        *error = [self error:@"expected node test"];
+        return nil;
+    }
+    NSString *name = _token.text;
+    [self advance];
+
+    if (_token.kind == XFXPathTokenLParen &&
+        ([name isEqualToString:@"text"] ||
+         [name isEqualToString:@"node"] ||
+         [name isEqualToString:@"comment"] ||
+         [name isEqualToString:@"processing-instruction"])) {
+        [self advance];
+        NSString *pi = nil;
+        if ([name isEqualToString:@"processing-instruction"] && _token.kind == XFXPathTokenString) {
+            pi = _token.text;
+            [self advance];
+        }
+        if (![self accept:XFXPathTokenRParen]) {
+            *error = [self error:@"expected ')' after node test"];
+            return nil;
+        }
+        if ([name isEqualToString:@"node"]) {
+            return [XFNodeTestType anyNode];
+        }
+        if ([name isEqualToString:@"text"]) {
+            return [XFNodeTestType kind:NSXMLTextKind];
+        }
+        if ([name isEqualToString:@"comment"]) {
+            return [XFNodeTestType kind:NSXMLCommentKind];
+        }
+        return [XFNodeTestType processingInstruction:pi];
+    }
+
+    NSString *prefix = nil;
+    NSString *local = name;
+    NSRange colon = [name rangeOfString:@":"];
+    if (colon.location != NSNotFound) {
+        prefix = [name substringToIndex:colon.location];
+        local = [name substringFromIndex:colon.location + 1];
+    }
+    return [XFNodeTestName prefix:prefix name:local];
+}
+
+- (NSArray<XFExpr *> *)parsePredicateList:(NSError **)error
 {
     NSMutableArray *preds = [NSMutableArray array];
     while (_token.kind == XFXPathTokenLBrack) {
@@ -400,8 +491,7 @@
         }
         [preds addObject:pred];
     }
-    step.predicates = preds;
-    return step;
+    return preds;
 }
 
 @end

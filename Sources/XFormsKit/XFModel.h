@@ -26,6 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSArray<XFRepeat *> *repeats;
 @property (nonatomic, strong, nullable) id<XFSubmissionTransport> transport;
 
+/// After `xforms-ready`. Matches XsltForms_globals.ready for this model.
 @property (nonatomic, assign) BOOL ready;
 @property (nonatomic, assign) BOOL rebuilded;
 @property (nonatomic, assign) BOOL newRebuilded;

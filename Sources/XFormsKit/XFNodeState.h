@@ -11,11 +11,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) NSMutableArray<NSString *> *bindIdentifiers;
 @property (nonatomic, copy, nullable) NSString *typeName;
 @property (nonatomic, copy, nullable) NSString *repeatIdentifier;
-@property (nonatomic, assign) BOOL relevant;
-@property (nonatomic, assign) BOOL readonly;
-@property (nonatomic, assign) BOOL required;
-@property (nonatomic, assign) BOOL valid;
-@property (nonatomic, assign) BOOL constraint;
+@property (nonatomic, assign) BOOL relevant;   // default YES
+@property (nonatomic, assign) BOOL readonly;   // default NO
+@property (nonatomic, assign) BOOL required;   // default NO
+@property (nonatomic, assign) BOOL valid;      // default YES
+@property (nonatomic, assign) BOOL constraint; // default YES
 
 + (instancetype)stateOnNode:(NSXMLNode *)node;
 + (nullable instancetype)existingStateOnNode:(NSXMLNode *)node;
