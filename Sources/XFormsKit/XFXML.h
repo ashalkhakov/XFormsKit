@@ -31,6 +31,12 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable NSXMLElement *)elementWithID:(NSString *)identifier
                                   inNode:(NSXMLNode *)node;
 
++ (NSArray<NSXMLElement *> *)childElementsWithLocalName:(NSString *)localName
+                                          namespaceURI:(NSString *)namespaceURI
+                                             ofElement:(NSXMLElement *)element;
+
 @end
+
+NSString *XFPercentEncode(NSString *string);
 
 NS_ASSUME_NONNULL_END
