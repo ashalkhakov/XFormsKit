@@ -1,5 +1,8 @@
 #import <XCTest/XCTest.h>
 #import <XFormsKit/XFormsKit.h>
+#import <XFormsKit/XFAbstractAction.h>
+#import <XFormsKit/XFTriggerControl.h>
+#import <XFormsKit/XFSubmitControl.h>
 #import <XFormsKit/XFSubmission.h>
 #import <XFormsKit/XFSubmissionTransport.h>
 #import <XFormsKit/XFSendAction.h>
@@ -527,6 +530,105 @@
     XCTAssertEqualObjects(h[@"X-Token"], @"abc");
     XCTAssertEqualObjects(h[@"X-Key"], @"zero,one,two");
     XCTAssertEqualObjects(h[@"X-Multi"], @"c");
+}
+
+#pragma mark - P2
+
+- (void)testSubmitControlIfGuardAndTriggerSilence // G-47
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><ok>no</ok><n>1</n></data></xf:instance>"
+                      @"<xf:bind nodeset=\"n\" readonly=\"true()\"/>"
+                      @"<xf:submission id=\"s\" resource=\"http://example.test/s\" method=\"post\" replace=\"none\"/>"
+                      @"<xf:action id=\"done\" ev:event=\"xforms-submit-done\"/>"
+                      @"<xf:setvalue ev:event=\"allow\" ref=\"ok\" value=\"'yes'\"/>"
+                      extra:
+                      @"<xf:submit id=\"sb\" submission=\"s\" if=\"ok = 'yes'\"><xf:label>Go</xf:label></xf:submit>"
+                      @"<xf:trigger id=\"t\" ref=\"n\"><xf:label>T</xf:label><xf:action id=\"ro\" ev:event=\"xforms-readonly\"/></xf:trigger>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFMapSubmissionTransport *map = [[XFMapSubmissionTransport alloc] init];
+    [map setStatus:204 body:@"" forURL:@"http://example.test/s"];
+    p.model.transport = map;
+    XFTriggerControl *submit = nil, *trigger = nil;
+    for (XFControl *c in p.controls) {
+        if ([c isKindOfClass:[XFSubmitControl class]]) submit = (XFTriggerControl *)c;
+        else if ([c isKindOfClass:[XFTriggerControl class]]) trigger = (XFTriggerControl *)c;
+    }
+    XCTAssertTrue([submit isTrigger]);
+    // triggers never get MIP events
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"ro"] invocationCount], (NSInteger)0);
+    XCTAssertEqual(trigger.mipEvents.count, (NSUInteger)0);
+    [p activateControl:submit];
+    XCTAssertNil(map.lastRequest);
+    [XFXMLEvents dispatch:p.model name:@"allow"];
+    [p activateControl:submit];
+    XCTAssertNotNil(map.lastRequest);
+    XCTAssertTrue([[p actionWithIdentifier:@"done"] wasInvokedForEvent:@"xforms-submit-done"]);
+}
+
+- (void)testSubmissionSerializationOptions // G-58, G-59
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><a keep=\"1\" drop=\"2\">x &amp; y</a><b>hidden</b><t>old</t></data></xf:instance>"
+                      @"<xf:bind nodeset=\"b\" relevant=\"false()\"/>"
+                      @"<xf:bind nodeset=\"a/@drop\" relevant=\"false()\"/>"
+                      @"<xf:submission id=\"s\" resource=\"http://example.test/x\" method=\"post\" replace=\"none\""
+                      @"  mediatype=\"text/xml; action=urn:do-it\" cdata-section-elements=\"a\"/>"
+                      @"<xf:submission id=\"none\" resource=\"http://example.test/n\" method=\"post\" serialization=\"none\" replace=\"none\"/>"
+                      @"<xf:submission id=\"txt\" resource=\"http://example.test/t\" method=\"get\" replace=\"text\"/>"
+                      @"<xf:send id=\"go\" submission=\"s\"/>"
+                      @"<xf:send id=\"go-txt\" submission=\"txt\"/>"
+                      @"<xf:action id=\"done\" ev:event=\"xforms-submit-done\"/>"
+                      @"<xf:action id=\"err\" ev:event=\"xforms-submit-error\"/>"
+                      extra:nil error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFSubmission *none = [p.model submissionWithIdentifier:@"none"];
+    XCTAssertFalse(none.validate);
+    XCTAssertFalse(none.relevant);
+    XFMapSubmissionTransport *map = [[XFMapSubmissionTransport alloc] init];
+    [map setStatus:204 body:@"" forURL:@"http://example.test/x"];
+    [map setStatus:200 body:@"plain" forURL:@"http://example.test/t"];
+    p.model.transport = map;
+    [self send:p identifier:@"go"];
+    NSString *body = map.lastRequest.body;
+    XCTAssertTrue([body containsString:@"<![CDATA[x & y]]>"], @"%@", body);
+    XCTAssertFalse([body containsString:@"drop="], @"%@", body);
+    XCTAssertTrue([body containsString:@"keep=\"1\""], @"%@", body);
+    XCTAssertFalse([body containsString:@"hidden"], @"%@", body);
+    XCTAssertEqualObjects(map.lastRequest.headers[@"SOAPAction"], @"urn:do-it");
+    // replace="text" without targetref: no-op + submit-done (G-59)
+    [self send:p identifier:@"go-txt"];
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"done"] invocationCount], (NSInteger)2);
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"err"] invocationCount], (NSInteger)0);
+}
+
+- (void)testJSONResponseReplacesInstanceAsXML // G-55
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance id=\"r\"><data xmlns=\"\"/></xf:instance>"
+                      @"<xf:submission id=\"s\" resource=\"http://example.test/j\" method=\"get\" replace=\"instance\" instance=\"r\"/>"
+                      @"<xf:send id=\"go\" submission=\"s\"/>"
+                      extra:nil error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFMapSubmissionTransport *map = [[XFMapSubmissionTransport alloc] init];
+    XFSubmissionResponse *resp = [[XFSubmissionResponse alloc] init];
+    resp.statusCode = 200;
+    resp.body = @"{\"name\":\"Ada\",\"tags\":[\"a\",\"b\"],\"n\":3,\"ok\":true,\"odd key\":1}";
+    resp.mediaType = @"application/json; charset=utf-8";
+    [map setResponse:resp forURL:@"http://example.test/j"];
+    p.model.transport = map;
+    [self send:p identifier:@"go"];
+    NSXMLElement *root = [[p.model instanceWithIdentifier:@"r"] documentElement];
+    XCTAssertEqualObjects([root localName], @"anonymous");
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"name"].firstObject], @"Ada");
+    XCTAssertEqual([root elementsForName:@"tags"].count, (NSUInteger)2);
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"ok"].firstObject], @"true");
+    XCTAssertEqualObjects([[[root elementsForName:@"n"].firstObject attributeForLocalName:@"type" URI:@"http://www.w3.org/2001/XMLSchema-instance"] stringValue], @"xsd:double");
+    XCTAssertEqualObjects([[[root elementsForName:@"________"].firstObject attributeForLocalName:@"fullname" URI:@"http://www.agencexml.com/exml"] stringValue], @"odd key");
 }
 
 @end

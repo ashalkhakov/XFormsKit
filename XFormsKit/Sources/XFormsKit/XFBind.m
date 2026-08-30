@@ -9,6 +9,8 @@
 #import "XFNodeState.h"
 #import "XFXML.h"
 #import "XFNamespaces.h"
+#import "XFType.h"
+#import "XFXMLEvents.h"
 #import <Foundation/NSXMLElement.h>
 #import <Foundation/NSXMLNode.h>
 
@@ -63,7 +65,21 @@ static NSInteger XFNextDepsId(void)
         }
     }
 
-    bind.typeName = [[element attributeForName:@"type"] stringValue];
+    // @type resolved with the in-scope namespaces of the bind element
+    // (XsltForms_schema.getType through the document prefixes): stored as
+    // {ns}local so user schema types are found (G-57)
+    NSString *typeName = [[element attributeForName:@"type"] stringValue];
+    if (typeName.length) {
+        NSRange colon = [typeName rangeOfString:@":"];
+        if (colon.location != NSNotFound) {
+            NSString *prefix = [typeName substringToIndex:colon.location];
+            NSString *ns = [[element resolveNamespaceForName:[prefix stringByAppendingString:@":x"]] stringValue];
+            if (ns.length) {
+                typeName = [NSString stringWithFormat:@"{%@}%@", ns, [typeName substringFromIndex:colon.location + 1]];
+            }
+        }
+    }
+    bind.typeName = typeName;
 
     NSError *inner = nil;
     NSString *calculate = [[element attributeForName:@"calculate"] stringValue];
@@ -187,7 +203,15 @@ static NSInteger XFNextDepsId(void)
     for (NSXMLNode *node in [self.nodes copy]) {
         [XFNodeState attachBind:self.identifier toNode:node];
         if (self.typeName.length) {
-            [XFNodeState stateOnNode:node].typeName = self.typeName;
+            // XFBind.js: a node typed by xsi:type cannot also be typed by a bind
+            NSXMLNode *xsi = [node kind] == NSXMLElementKind
+                ? [(NSXMLElement *)node attributeForLocalName:@"type" URI:@"http://www.w3.org/2001/XMLSchema-instance"] : nil;
+            if (xsi) {
+                [XFXMLEvents raise:@"xforms-binding-exception" on:self.element
+                           message:@"Type especified in xsi:type attribute"];
+            } else {
+                [XFNodeState stateOnNode:node].typeName = self.typeName;
+            }
         }
         if (self.calculate) {
             [XFNodeState stateOnNode:node].readonly = YES;
@@ -209,6 +233,11 @@ static NSInteger XFNextDepsId(void)
                                               nodeList:self.nodes];
             NSError *inner = nil;
             NSString *value = [self.calculate stringValueInContext:ctx error:&inner] ?: @"";
+            // XFBind.js recalculate: type.normalize(value) (G-57)
+            XFType *type = [XFType typeNamed:[XFNodeState existingStateOnNode:node].typeName ?: self.typeName];
+            if (type) {
+                value = [type normalizeValue:value];
+            }
             [XFXML setStringValue:value ofNode:node];
             [self.model addChange:node];
             i++;

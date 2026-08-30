@@ -534,4 +534,46 @@
     XCTAssertEqual(sel.items.count, (NSUInteger)4);
 }
 
+- (void)testInputModeHostAttributesAndUploadMediaTypes // G-41, G-46, G-63
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><n>x</n><d/><f/><t/></data></xf:instance>"
+                      @"<xf:bind nodeset=\"f\" type=\"xsd:base64Binary\"/>"
+                      extra:
+                      @"<xf:input ref=\"n\" inputmode=\"upperCase\" navindex=\"2\" accesskey=\"n\" placeholder=\"Name\"><xf:label>N</xf:label>"
+                      @"  <xf:help href=\"help.html\">H</xf:help></xf:input>"
+                      @"<xf:input ref=\"d\" inputmode=\"digits\"><xf:label>D</xf:label></xf:input>"
+                      @"<xf:textarea ref=\"t\" rows=\"6\" cols=\"40\"><xf:label>T</xf:label></xf:textarea>"
+                      @"<xf:upload ref=\"f\" mediatype=\"image/*\"><xf:label>F</xf:label>"
+                      @"  <xf:action id=\"up-done\" ev:event=\"xforms-upload-done\"/>"
+                      @"  <xf:action id=\"up-err\" ev:event=\"xforms-upload-error\"/></xf:upload>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    NSArray<XFInputControl *> *ins = p.inputControls;
+    XCTAssertEqual(ins[0].navindex, (NSInteger)2);
+    XCTAssertEqualObjects(ins[0].accesskey, @"n");
+    XCTAssertEqualObjects(ins[0].placeholder, @"Name");
+    XCTAssertEqualObjects(ins[0].helpHref, @"help.html");
+    XCTAssertTrue([p setValue:@"ada" ofControl:ins[0] error:NULL]);
+    XCTAssertEqualObjects(ins[0].stringValue, @"ADA");
+    XCTAssertTrue([p setValue:@"a1b2" ofControl:ins[1] error:NULL]);
+    XCTAssertEqualObjects(ins[1].stringValue, @"12");
+    XFControl *ta = nil; XFUploadControl *up = nil;
+    for (XFControl *c in p.controls) {
+        if ([c isKindOfClass:[XFTextareaControl class]]) ta = c;
+        if ([c isKindOfClass:[XFUploadControl class]]) up = (XFUploadControl *)c;
+    }
+    XCTAssertEqual(ta.rows, (NSInteger)6);
+    XCTAssertEqual(ta.cols, (NSInteger)40);
+    XCTAssertEqualObjects(up.acceptedMediaTypes, @[ @"image/*" ]);
+    XCTAssertTrue([up acceptsMediaType:@"image/png"]);
+    XCTAssertFalse([up acceptsMediaType:@"application/pdf"]);
+    NSData *bytes = [@"XYZ" dataUsingEncoding:NSUTF8StringEncoding];
+    XCTAssertFalse([up commitFileData:bytes fileName:@"a.pdf" mediaType:@"application/pdf" error:NULL]);
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"up-err"] invocationCount], (NSInteger)1);
+    XCTAssertTrue([up commitFileData:bytes fileName:@"a.png" mediaType:@"image/png" error:&error], @"%@", error);
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"up-done"] invocationCount], (NSInteger)1);
+}
+
 @end

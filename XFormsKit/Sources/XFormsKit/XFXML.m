@@ -202,6 +202,18 @@
     }
 }
 
++ (NSString *)normalizeSpace:(NSString *)string
+{
+    NSArray *parts = [string componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSMutableArray *words = [NSMutableArray array];
+    for (NSString *w in parts) {
+        if (w.length) {
+            [words addObject:w];
+        }
+    }
+    return [words componentsJoinedByString:@" "];
+}
+
 @end
 
 NSString *XFPercentEncode(NSString *string)

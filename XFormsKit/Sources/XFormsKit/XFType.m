@@ -49,9 +49,166 @@ static NSString *XFTypeKey(NSString *ns, NSString *name)
         t.totalDigits = base.totalDigits;
         t.minInclusive = base.minInclusive;
         t.maxInclusive = base.maxInclusive;
+        t.minExclusive = base.minExclusive;
+        t.maxExclusive = base.maxExclusive;
+        t.length = base.length;
+        t.minLength = base.minLength;
+        t.maxLength = base.maxLength;
+        t.enumeration = base.enumeration;
+        t.itemType = base.itemType;
+        t.memberTypes = base.memberTypes;
     }
     XFTypeTable()[XFTypeKey(ns, name)] = t;
     return t;
+}
+
+#pragma mark - user schemas (G-56)
+
+static NSString * const XFXSDNS = @"http://www.w3.org/2001/XMLSchema";
+
++ (XFType *)typeForQName:(NSString *)qname inElement:(NSXMLElement *)element targetNamespace:(NSString *)tns
+{
+    if (qname.length == 0) {
+        return nil;
+    }
+    NSRange colon = [qname rangeOfString:@":"];
+    NSString *prefix = colon.location == NSNotFound ? @"" : [qname substringToIndex:colon.location];
+    NSString *local = colon.location == NSNotFound ? qname : [qname substringFromIndex:colon.location + 1];
+    NSString *ns = [[element resolveNamespaceForName:prefix.length ? [prefix stringByAppendingString:@":x"] : @"x"] stringValue];
+    if (ns.length == 0) {
+        ns = prefix.length ? nil : tns;
+    }
+    if (ns.length) {
+        XFType *t = [self typeWithLocalName:local namespaceURI:ns];
+        if (t) {
+            return t;
+        }
+    }
+    return [self typeNamed:qname];
+}
+
++ (NSUInteger)registerSchemaElement:(NSXMLElement *)schema
+{
+    [self installBuiltins];
+    NSString *tns = [[schema attributeForName:@"targetNamespace"] stringValue] ?: @"";
+    NSUInteger count = 0;
+    // two passes so a restriction can name a type defined later
+    for (int pass = 0; pass < 2; pass++) {
+        for (NSXMLNode *child in [schema children]) {
+            if ([child kind] != NSXMLElementKind) {
+                continue;
+            }
+            NSXMLElement *st = (NSXMLElement *)child;
+            if (![[st localName] isEqualToString:@"simpleType"]) {
+                continue;
+            }
+            NSString *name = [[st attributeForName:@"name"] stringValue];
+            if (name.length == 0) {
+                continue;
+            }
+            if ([self defineSimpleType:st name:name targetNamespace:tns]) {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
++ (BOOL)defineSimpleType:(NSXMLElement *)st name:(NSString *)name targetNamespace:(NSString *)tns
+{
+    NSXMLElement *def = nil;
+    for (NSXMLNode *c in [st children]) {
+        if ([c kind] == NSXMLElementKind) {
+            def = (NSXMLElement *)c;
+            break;
+        }
+    }
+    if (def == nil) {
+        return NO;
+    }
+    NSString *kind = [def localName];
+    if ([kind isEqualToString:@"restriction"]) {
+        NSString *baseName = [[def attributeForName:@"base"] stringValue];
+        XFType *base = [self typeForQName:baseName inElement:def targetNamespace:tns];
+        if (base == nil) {
+            base = [self typeWithLocalName:@"string" namespaceURI:XFXSDNS];
+        }
+        NSMutableArray *patterns = [NSMutableArray array];
+        NSMutableArray *enumeration = [NSMutableArray array];
+        XFType *t = [self define:name ns:tns base:base patterns:nil whitespace:base.whitespace];
+        for (NSXMLNode *fc in [def children]) {
+            if ([fc kind] != NSXMLElementKind) {
+                continue;
+            }
+            NSString *facet = [fc localName];
+            NSString *v = [[(NSXMLElement *)fc attributeForName:@"value"] stringValue] ?: @"";
+            if ([facet isEqualToString:@"pattern"]) {
+                [patterns addObject:[NSString stringWithFormat:@"^(?:%@)$", v]];
+            } else if ([facet isEqualToString:@"enumeration"]) {
+                [enumeration addObject:v];
+            } else if ([facet isEqualToString:@"length"]) {
+                t.length = @([v integerValue]);
+            } else if ([facet isEqualToString:@"minLength"]) {
+                t.minLength = @([v integerValue]);
+            } else if ([facet isEqualToString:@"maxLength"]) {
+                t.maxLength = @([v integerValue]);
+            } else if ([facet isEqualToString:@"minInclusive"]) {
+                t.minInclusive = @([v doubleValue]);
+            } else if ([facet isEqualToString:@"maxInclusive"]) {
+                t.maxInclusive = @([v doubleValue]);
+            } else if ([facet isEqualToString:@"minExclusive"]) {
+                t.minExclusive = @([v doubleValue]);
+            } else if ([facet isEqualToString:@"maxExclusive"]) {
+                t.maxExclusive = @([v doubleValue]);
+            } else if ([facet isEqualToString:@"totalDigits"]) {
+                t.totalDigits = @([v integerValue]);
+            } else if ([facet isEqualToString:@"fractionDigits"]) {
+                t.fractionDigits = @([v integerValue]);
+            } else if ([facet isEqualToString:@"whiteSpace"]) {
+                t.whitespace = [v isEqualToString:@"preserve"] ? XFWhitespacePreserve
+                    : [v isEqualToString:@"replace"] ? XFWhitespaceReplace : XFWhitespaceCollapse;
+            }
+        }
+        if (patterns.count) {
+            t.patterns = [(t.patterns ?: @[]) arrayByAddingObjectsFromArray:patterns];
+        }
+        if (enumeration.count) {
+            t.enumeration = enumeration;
+        }
+        return YES;
+    }
+    if ([kind isEqualToString:@"list"]) {
+        XFType *item = [self typeForQName:[[def attributeForName:@"itemType"] stringValue] inElement:def targetNamespace:tns];
+        XFType *t = [self define:name ns:tns base:nil patterns:nil whitespace:XFWhitespaceCollapse];
+        t.itemType = item ?: [self typeWithLocalName:@"string" namespaceURI:XFXSDNS];
+        return YES;
+    }
+    if ([kind isEqualToString:@"union"]) {
+        NSMutableArray *members = [NSMutableArray array];
+        for (NSString *m in [[[def attributeForName:@"memberTypes"] stringValue] componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceCharacterSet]]) {
+            XFType *mt = m.length ? [self typeForQName:m inElement:def targetNamespace:tns] : nil;
+            if (mt) {
+                [members addObject:mt];
+            }
+        }
+        XFType *t = [self define:name ns:tns base:nil patterns:nil whitespace:XFWhitespaceCollapse];
+        t.memberTypes = members;
+        return YES;
+    }
+    return NO;
+}
+
+- (NSString *)normalizeValue:(NSString *)value
+{
+    if (self.fractionDigits == nil || value == nil) {
+        return value;
+    }
+    NSInteger digits = [self.fractionDigits integerValue];
+    if (![[NSScanner scannerWithString:value] scanDouble:NULL]) {
+        return @"NaN";
+    }
+    double number = [value doubleValue];
+    return [NSString stringWithFormat:@"%.*f", (int)MAX(0, digits), number];
 }
 
 + (void)installBuiltins
@@ -288,7 +445,7 @@ static NSString *XFTypeKey(NSString *ns, NSString *name)
             }
         }
     }
-    if (self.minInclusive || self.maxInclusive) {
+    if (self.minInclusive || self.maxInclusive || self.minExclusive || self.maxExclusive) {
         double n = [canon doubleValue];
         if (self.minInclusive && n < [self.minInclusive doubleValue]) {
             return NO;
@@ -296,6 +453,39 @@ static NSString *XFTypeKey(NSString *ns, NSString *name)
         if (self.maxInclusive && n > [self.maxInclusive doubleValue]) {
             return NO;
         }
+        if (self.minExclusive && n <= [self.minExclusive doubleValue]) {
+            return NO;
+        }
+        if (self.maxExclusive && n >= [self.maxExclusive doubleValue]) {
+            return NO;
+        }
+    }
+    if (self.length && (NSInteger)canon.length != [self.length integerValue]) {
+        return NO;
+    }
+    if (self.minLength && (NSInteger)canon.length < [self.minLength integerValue]) {
+        return NO;
+    }
+    if (self.maxLength && (NSInteger)canon.length > [self.maxLength integerValue]) {
+        return NO;
+    }
+    if (self.enumeration.count && ![self.enumeration containsObject:canon]) {
+        return NO;
+    }
+    if (self.itemType) {
+        for (NSString *item in [canon componentsSeparatedByString:@" "]) {
+            if (item.length && ![self.itemType validateValue:item]) {
+                return NO;
+            }
+        }
+    }
+    if (self.memberTypes.count) {
+        for (XFType *m in self.memberTypes) {
+            if ([m validateValue:canon]) {
+                return YES;
+            }
+        }
+        return NO;
     }
     return YES;
 }

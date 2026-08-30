@@ -39,7 +39,9 @@
     XFBind *bind = [p.model bindWithIdentifier:@"bn"];
     XCTAssertEqual(bind.nodes.count, (NSUInteger)1);
     XCTAssertEqualObjects([XFXML stringValueOfNode:bind.nodes.firstObject], @"3");
-    XCTAssertEqualObjects([XFNodeState existingStateOnNode:bind.nodes.firstObject].typeName, @"xf:integer");
+    // the type name is stored resolved against the bind's namespaces (G-57)
+    XCTAssertEqualObjects([XFNodeState existingStateOnNode:bind.nodes.firstObject].typeName,
+                          @"{http://www.w3.org/2002/xforms}integer");
 }
 
 - (void)testCalculateRunsDuringConstruct
@@ -301,6 +303,77 @@
     XCTAssertEqual([root elementsForName:@"a"].count, (NSUInteger)0);
     XCTAssertEqualObjects(p.inputControls.firstObject.stringValue, @"Ada");
     XCTAssertEqualObjects(p.inputControls[1].stringValue, @"Ada");
+}
+
+- (void)testInstanceResourceReadonlyAndForeignData // G-55
+{
+    NSString *csv = [XFInstance xmlStringFromCSV:@"name,age\n\"Ada, B\",36\nBob,40\n" separator:@"," header:YES];
+    XCTAssertTrue([csv containsString:@"<exml:anonymous><name>Ada, B</name><age>36</age></exml:anonymous>"], @"%@", csv);
+    NSString *json = [XFInstance xmlStringFromJSONData:[@"[1,2]" dataUsingEncoding:NSUTF8StringEncoding] error:NULL];
+    XCTAssertTrue([json containsString:@"<exml:anonymous exsi:maxOccurs=\"unbounded\" xsi:type=\"xsd:double\">1</exml:anonymous>"], @"%@", json);
+
+    NSError *error = nil;
+    XFProcessor *p = [self processor:
+                      @"<xf:instance><data xmlns=\"\"><n/></data></xf:instance>"
+                      @"<xf:instance id=\"ro\" readonly=\"true\"><d xmlns=\"\"><v>x</v></d></xf:instance>"
+                      @"<xf:instance id=\"res\" resource=\"file:///nonexistent/xfk.xml\" mediatype=\"text/csv; header=present; separator=%3B\"/>"
+                      @"<xf:bind nodeset=\"instance('ro')/v\" required=\"true()\" constraint=\"false()\"/>"
+                      extra:nil error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFInstance *ro = [p.model instanceWithIdentifier:@"ro"];
+    XCTAssertTrue(ro.readonly);
+    // readonly instances are not validated: no state from the bind's MIPs
+    XCTAssertTrue([XFNodeState existingStateOnNode:[[ro documentElement] elementsForName:@"v"].firstObject].valid);
+    XFInstance *res = [p.model instanceWithIdentifier:@"res"];
+    XCTAssertEqualObjects(res.src, @"file:///nonexistent/xfk.xml");
+    XCTAssertEqualObjects(res.mediatype, @"text/csv");
+    XCTAssertTrue(res.csvHeader);
+    XCTAssertEqualObjects(res.csvSeparator, @";");
+}
+
+- (void)testInlineSchemaTypesAndBindTypeResolution // G-56, G-57
+{
+    [[[XFXMLEvents sharedEvents] exceptionMessages] removeAllObjects];
+    NSString *xml =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xf=\"http://www.w3.org/2002/xforms\""
+        @"      xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:my=\"urn:my\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">"
+        @"<head><xf:model id=\"m\" schema=\"#sch missing.xsd\">"
+        @"  <xs:schema id=\"sch\" targetNamespace=\"urn:my\" xmlns=\"urn:my\">"
+        @"    <xs:simpleType name=\"color\"><xs:restriction base=\"xs:string\"><xs:enumeration value=\"red\"/><xs:enumeration value=\"blue\"/></xs:restriction></xs:simpleType>"
+        @"    <xs:simpleType name=\"short\"><xs:restriction base=\"xs:string\"><xs:maxLength value=\"3\"/></xs:restriction></xs:simpleType>"
+        @"    <xs:simpleType name=\"money\"><xs:restriction base=\"xs:decimal\"><xs:fractionDigits value=\"2\"/><xs:minExclusive value=\"0\"/></xs:restriction></xs:simpleType>"
+        @"    <xs:simpleType name=\"colors\"><xs:list itemType=\"color\"/></xs:simpleType>"
+        @"  </xs:schema>"
+        @"  <xf:instance><data xmlns=\"\"><c>green</c><s>abcd</s><price>1</price><total/><cs>red blue</cs><typed xsi:type=\"xs:string\">x</typed></data></xf:instance>"
+        @"  <xf:bind nodeset=\"c\" type=\"my:color\"/>"
+        @"  <xf:bind nodeset=\"s\" type=\"my:short\"/>"
+        @"  <xf:bind nodeset=\"price\" type=\"my:money\"/>"
+        @"  <xf:bind nodeset=\"total\" type=\"my:money\" calculate=\"../price * 2\"/>"
+        @"  <xf:bind nodeset=\"cs\" type=\"my:colors\"/>"
+        @"  <xf:bind nodeset=\"typed\" type=\"xs:integer\"/>"
+        @"  <xf:action id=\"link\" ev:event=\"xforms-link-exception\" xmlns:ev=\"http://www.w3.org/2001/xml-events\"/>"
+        @"</xf:model></head><body/></html>";
+    NSError *error = nil;
+    XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    NSXMLElement *root = [[p defaultInstance] documentElement];
+    XFNodeState *(^state)(NSString *) = ^XFNodeState *(NSString *name) {
+        return [XFNodeState existingStateOnNode:[root elementsForName:name].firstObject];
+    };
+    XCTAssertFalse(state(@"c").valid);      // not in the enumeration
+    XCTAssertFalse(state(@"s").valid);      // maxLength 3
+    XCTAssertTrue(state(@"price").valid);
+    XCTAssertTrue(state(@"cs").valid);      // list of colors
+    XCTAssertEqualObjects(state(@"c").typeName, @"{urn:my}color");
+    // calculate result normalised to the type's fractionDigits (G-57)
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"total"].firstObject], @"2.00");
+    // xsi:type on a bind-typed node is a binding exception; missing schema a link exception
+    BOOL bindingEx = NO;
+    for (NSString *m in [[XFXMLEvents sharedEvents] exceptionMessages]) {
+        if ([m containsString:@"xsi:type"]) bindingEx = YES;
+    }
+    XCTAssertTrue(bindingEx);
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"link"] invocationCount], (NSInteger)1);
 }
 
 @end

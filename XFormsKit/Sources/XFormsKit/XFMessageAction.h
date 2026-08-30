@@ -5,6 +5,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// Translation of XsltForms_message. Records the text instead of alerting.
 @interface XFMessageAction : XFAbstractAction
 
+/// `level`: modal (default) | modeless | ephemeral (G-51).
 @property (nonatomic, copy, readonly, nullable) NSString *level;
 @property (nonatomic, copy, readonly, nullable) NSString *lastText;
 

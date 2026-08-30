@@ -27,7 +27,26 @@
     NSXMLNode *idAttr = [instanceElement attributeForName:@"id"];
     instance.identifier = idAttr ? [idAttr stringValue] : nil;
     instance.element = instanceElement;
-    instance.src = [[instanceElement attributeForName:@"src"] stringValue];
+    // @resource is the XForms 1.1 alias of @src (G-55)
+    instance.src = [[instanceElement attributeForName:@"src"] stringValue]
+        ?: [[instanceElement attributeForName:@"resource"] stringValue];
+    instance.readonly = [[[instanceElement attributeForName:@"readonly"] stringValue] isEqualToString:@"true"];
+    instance.csvSeparator = @",";
+    NSString *mediatype = [[instanceElement attributeForName:@"mediatype"] stringValue];
+    if (mediatype.length) {
+        NSArray *parts = [mediatype componentsSeparatedByString:@";"];
+        instance.mediatype = [parts.firstObject stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+        for (NSString *param in [parts subarrayWithRange:NSMakeRange(1, parts.count - 1)]) {
+            NSArray *kv = [param componentsSeparatedByString:@"="];
+            NSString *k = [kv.firstObject stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+            NSString *v = kv.count > 1 ? [kv[1] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]] : @"";
+            if ([k isEqualToString:@"header"]) {
+                instance.csvHeader = [v isEqualToString:@"present"];
+            } else if ([k isEqualToString:@"separator"]) {
+                instance.csvSeparator = [v stringByRemovingPercentEncoding] ?: v;
+            }
+        }
+    }
 
     NSXMLElement *dataRoot = nil;
     for (NSXMLNode *child in [instanceElement children]) {
@@ -88,7 +107,19 @@
         }
         return NO;
     }
-    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithData:data options:0 error:&inner];
+    NSXMLDocument *doc = nil;
+    NSString *mt = self.mediatype ?: @"";
+    if ([mt isEqualToString:@"application/json"] || [mt isEqualToString:@"text/json"]) {
+        NSString *xml = [[self class] xmlStringFromJSONData:data error:&inner];
+        doc = xml ? [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:&inner] : nil;
+    } else if ([mt isEqualToString:@"text/csv"]) {
+        NSString *csv = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]
+            ?: [[NSString alloc] initWithData:data encoding:NSISOLatin1StringEncoding];
+        NSString *xml = [[self class] xmlStringFromCSV:csv ?: @"" separator:self.csvSeparator ?: @"," header:self.csvHeader];
+        doc = [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:&inner];
+    } else {
+        doc = [[NSXMLDocument alloc] initWithData:data options:0 error:&inner];
+    }
     if (doc == nil || [doc rootElement] == nil) {
         if (error) {
             *error = inner ?: [NSError errorWithDomain:XFErrorDomain
@@ -176,8 +207,185 @@
     return YES;
 }
 
+#pragma mark - foreign data (G-55)
+
+static NSString *XFXMLEscape(NSString *s)
+{
+    NSMutableString *out = [s mutableCopy] ?: [NSMutableString string];
+    [out replaceOccurrencesOfString:@"&" withString:@"&amp;" options:0 range:NSMakeRange(0, out.length)];
+    [out replaceOccurrencesOfString:@"<" withString:@"&lt;" options:0 range:NSMakeRange(0, out.length)];
+    [out replaceOccurrencesOfString:@">" withString:@"&gt;" options:0 range:NSMakeRange(0, out.length)];
+    return out;
+}
+
+static BOOL XFIsJSONName(NSString *name)
+{
+    if (name.length == 0) {
+        return NO;
+    }
+    NSCharacterSet *start = [NSCharacterSet characterSetWithCharactersInString:
+        @"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"];
+    NSCharacterSet *rest = [NSCharacterSet characterSetWithCharactersInString:
+        @"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-.0123456789"];
+    if (![start characterIsMember:[name characterAtIndex:0]]) {
+        return NO;
+    }
+    return [[name substringFromIndex:1] rangeOfCharacterFromSet:[rest invertedSet]].location == NSNotFound;
+}
+
+/// XsltForms_browser.json2xml(name, json, root, inarray)
+static void XFJSON2XML(NSString *name, id json, BOOL root, BOOL inarray, NSMutableString *ret)
+{
+    NSString *fullname = @"";
+    if ([name isEqualToString:@"________"] || (name.length && ![name hasPrefix:@"exml:"] && !XFIsJSONName(name))) {
+        fullname = [NSString stringWithFormat:@" exml:fullname=\"%@\"", XFXMLEscape(name)];
+        name = @"________";
+    }
+    if (root) {
+        [ret appendString:@"<exml:anonymous xmlns:exml=\"http://www.agencexml.com/exml\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:exsi=\"http://www.agencexml.com/exi\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns=\"\">"];
+    }
+    if ([json isKindOfClass:[NSArray class]]) {
+        NSArray *arr = json;
+        NSString *n = name.length ? name : @"exml:anonymous";
+        if (inarray) {
+            [ret appendString:@"<exml:anonymous exsi:maxOccurs=\"unbounded\">"];
+        }
+        if (arr.count == 0) {
+            [ret appendFormat:@"<%@%@ exsi:maxOccurs=\"unbounded\" xsi:nil=\"true\"/>", n, fullname];
+        } else {
+            for (id item in arr) {
+                XFJSON2XML(n, item, NO, YES, ret);
+            }
+        }
+        if (inarray) {
+            [ret appendString:@"</exml:anonymous>"];
+        }
+    } else {
+        NSString *xsdtype = @"";
+        BOOL isObject = [json isKindOfClass:[NSDictionary class]];
+        if ([json isKindOfClass:[NSString class]]) {
+            xsdtype = @" xsi:type=\"xsd:string\"";
+        } else if ([json isKindOfClass:[NSNumber class]]) {
+            const char *t = [json objCType];
+            xsdtype = (strcmp(t, @encode(BOOL)) == 0 || strcmp(t, "c") == 0 || strcmp(t, "B") == 0)
+                ? @" xsi:type=\"xsd:boolean\"" : @" xsi:type=\"xsd:double\"";
+        }
+        if (name.length == 0) {
+            if (root && xsdtype.length) {
+                [ret deleteCharactersInRange:NSMakeRange(ret.length - 1, 1)];
+                [ret appendFormat:@"%@>", xsdtype];
+            }
+        } else {
+            [ret appendFormat:@"<%@%@%@%@>", name, fullname, inarray ? @" exsi:maxOccurs=\"unbounded\"" : @"", xsdtype];
+        }
+        if (isObject) {
+            NSDictionary *dict = json;
+            for (NSString *key in dict) {
+                XFJSON2XML(key, dict[key], NO, NO, ret);
+            }
+        } else if ([json isKindOfClass:[NSNull class]]) {
+            // null → empty element
+        } else if ([json isKindOfClass:[NSNumber class]]) {
+            const char *t = [json objCType];
+            if (strcmp(t, @encode(BOOL)) == 0 || strcmp(t, "c") == 0 || strcmp(t, "B") == 0) {
+                [ret appendString:[json boolValue] ? @"true" : @"false"];
+            } else {
+                [ret appendString:[json stringValue]];
+            }
+        } else {
+            [ret appendString:XFXMLEscape([json description])];
+        }
+        if (name.length) {
+            [ret appendFormat:@"</%@>", name];
+        }
+    }
+    if (root) {
+        [ret appendString:@"</exml:anonymous>"];
+    }
+}
+
++ (NSString *)xmlStringFromJSONData:(NSData *)data error:(NSError **)error
+{
+    id json = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:error];
+    if (json == nil) {
+        return nil;
+    }
+    NSMutableString *ret = [NSMutableString string];
+    XFJSON2XML(@"", json, YES, NO, ret);
+    return ret;
+}
+
++ (NSString *)xmlStringFromCSV:(NSString *)csv separator:(NSString *)sep header:(BOOL)head
+{
+    NSMutableString *r = [NSMutableString stringWithString:
+        @"<exml:anonymous xmlns:exml=\"http://www.agencexml.com/exml\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:exsi=\"http://www.agencexml.com/exi\" xmlns=\"\">"];
+    NSString *s = [[csv stringByReplacingOccurrencesOfString:@"\r\n" withString:@"\n"]
+                   stringByReplacingOccurrencesOfString:@"\r" withString:@"\n"];
+    if (![s hasSuffix:@"\n"]) {
+        s = [s stringByAppendingString:@"\n"];
+    }
+    if (sep.length == 0) {
+        sep = @",";
+    }
+    NSMutableArray *headers = [NSMutableArray array];
+    BOOL first = head;
+    NSUInteger col = 0;
+    NSMutableString *rowcat = [NSMutableString string];
+    NSMutableString *row = [NSMutableString string];
+    NSUInteger i = 0, l = s.length;
+    while (i < l) {
+        NSMutableString *v = [NSMutableString string];
+        if ([s characterAtIndex:i] == '"') {
+            i++;
+            while (i < l) {
+                if ([s characterAtIndex:i] != '"') {
+                    [v appendFormat:@"%C", [s characterAtIndex:i]];
+                    i++;
+                } else if (i + 1 < l && [s characterAtIndex:i + 1] == '"') {
+                    [v appendString:@"\""];
+                    i += 2;
+                } else {
+                    i++;
+                    break;
+                }
+            }
+        } else {
+            while (i < l && [s characterAtIndex:i] != '\n'
+                   && !(i + sep.length <= l && [[s substringWithRange:NSMakeRange(i, sep.length)] isEqualToString:sep])) {
+                [v appendFormat:@"%C", [s characterAtIndex:i]];
+                i++;
+            }
+        }
+        if (first) {
+            [headers addObject:[v copy]];
+        } else {
+            [rowcat appendString:v];
+            NSString *tag = (head && col < headers.count && XFIsJSONName(headers[col])) ? headers[col] : @"exml:anonymous";
+            [row appendFormat:@"<%@>%@</%@>", tag, XFXMLEscape(v), tag];
+        }
+        if (i < l && [s characterAtIndex:i] == '\n') {
+            if (!first && rowcat.length) {
+                [r appendFormat:@"<exml:anonymous>%@</exml:anonymous>", row];
+            }
+            first = NO;
+            col = 0;
+            [row setString:@""];
+            [rowcat setString:@""];
+            i++;
+        } else {
+            col++;
+            i += sep.length;
+        }
+    }
+    [r appendString:@"</exml:anonymous>"];
+    return r;
+}
+
 - (void)revalidate
 {
+    if (self.readonly) {
+        return;   // XsltForms_instance.revalidate: readonly instances are not validated
+    }
     NSXMLElement *root = [self documentElement];
     if (root) {
         [self validateNode:root readonly:NO notRelevant:NO];

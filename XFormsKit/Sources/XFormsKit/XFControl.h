@@ -29,6 +29,21 @@ NS_ASSUME_NONNULL_BEGIN
 /// `incremental="true"`: the host UI commits on every keystroke (XForms 1.1
 /// 8.1.2 / XSLTForms incremental), not only on Return / focus loss.
 @property (nonatomic, assign) BOOL incremental;
+/// Pass-through host attributes (G-63): navindex, accesskey, placeholder
+/// (xf:input/@placeholder or the XSLTForms hint placeholder), rows/cols.
+@property (nonatomic, assign) NSInteger navindex;
+@property (nonatomic, copy, nullable) NSString *accesskey;
+@property (nonatomic, copy, nullable) NSString *placeholder;
+@property (nonatomic, assign) NSInteger rows;
+@property (nonatomic, assign) NSInteger cols;
+/// `xf:help/@href` (G-62).
+@property (nonatomic, copy, nullable) NSString *helpHref;
+/// `inputmode` (XsltForms_input.InputMode): lowerCase | upperCase |
+/// titleCase | digits, applied to committed values (G-41).
+@property (nonatomic, copy, nullable) NSString *inputmode;
+/// `delay="ms"` (XSLTForms): incremental commits are debounced by this
+/// many milliseconds (G-40).
+@property (nonatomic, assign) NSTimeInterval delay;
 @property (nonatomic, weak, nullable) id owner; // XFProcessor
 /// The in-scope evaluation context node of the last refresh (XSLTForms
 /// `element.node` for unbound elements): the context handlers run in.
@@ -47,6 +62,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// The processor owning this control (directly or through its model).
 - (nullable XFProcessor *)processor;
 - (BOOL)commitStringValue:(nullable NSString *)value error:(NSError **)error;
+/// XsltForms_input.InputMode transformation of a UI value (G-41).
+- (NSString *)applyInputMode:(NSString *)value;
 - (void)applyMIPsFromBoundNode;
 
 /// Refresh in `context` and, like XsltForms_control.refresh, dispatch
@@ -59,6 +76,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// textarea, full-appearance selects); NO for controls that flow inline
 /// with surrounding host text like XSLTForms' `<span>` wrappers (G-20).
 - (BOOL)isBlockLevel;
+/// XsltForms_control.isTrigger: triggers/submits never emit MIP or
+/// value-changed events (G-47).
+- (BOOL)isTrigger;
 /// The context the control's children (label, hint, items, itemsets)
 /// evaluate in: the bound node when there is one, else `ctx`.
 - (XFExprContext *)childContextFrom:(XFExprContext *)ctx;

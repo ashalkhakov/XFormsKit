@@ -57,6 +57,8 @@
         _identifier = [[element attributeForName:@"id"] stringValue];
         _appearance = [[element attributeForName:@"appearance"] stringValue];
         _incremental = [[[element attributeForName:@"incremental"] stringValue] isEqualToString:@"true"];
+        _delay = [[[element attributeForName:@"delay"] stringValue] doubleValue] / 1000.0;
+        [self loadHostAttributes];
         _mipEvents = @[];
         [self loadSupportChildren];
     }
@@ -171,6 +173,41 @@
     return [text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
 }
 
+- (void)loadHostAttributes
+{
+    NSXMLElement *element = self.element;
+    self.navindex = [[[element attributeForName:@"navindex"] stringValue] integerValue];
+    self.accesskey = [[element attributeForName:@"accesskey"] stringValue];
+    self.placeholder = [[element attributeForName:@"placeholder"] stringValue];
+    self.rows = [[[element attributeForName:@"rows"] stringValue] integerValue];
+    self.cols = [[[element attributeForName:@"cols"] stringValue] integerValue];
+    self.inputmode = [[element attributeForName:@"inputmode"] stringValue];
+    NSXMLElement *help = [XFXML childElementWithLocalName:@"help" namespaceURI:XFXFormsNamespaceURI ofElement:element];
+    self.helpHref = [[help attributeForName:@"href"] stringValue];
+}
+
+/// XsltForms_input.InputMode
+- (NSString *)applyInputMode:(NSString *)value
+{
+    NSString *mode = self.inputmode;
+    if (mode.length == 0 || value == nil) {
+        return value;
+    }
+    if ([mode isEqualToString:@"lowerCase"]) {
+        return [value lowercaseString];
+    }
+    if ([mode isEqualToString:@"upperCase"]) {
+        return [value uppercaseString];
+    }
+    if ([mode isEqualToString:@"titleCase"]) {
+        return value.length ? [[[value substringToIndex:1] uppercaseString] stringByAppendingString:[[value substringFromIndex:1] lowercaseString]] : value;
+    }
+    if ([mode isEqualToString:@"digits"]) {
+        return [[value componentsSeparatedByCharactersInSet:[[NSCharacterSet decimalDigitCharacterSet] invertedSet]] componentsJoinedByString:@""];
+    }
+    return value;
+}
+
 - (void)loadSupportChildren
 {
     [self loadLabelParts];
@@ -218,6 +255,9 @@
 
 - (void)recordMIP:(NSString *)name
 {
+    if ([self isTrigger]) {
+        return;   // XsltForms_control.eventDispatch: !this.isTrigger
+    }
     NSMutableArray *evs = [self.mipEvents mutableCopy] ?: [NSMutableArray array];
     [evs addObject:name];
     self.mipEvents = evs;
@@ -233,6 +273,8 @@
     self.identifier = [[element attributeForName:@"id"] stringValue];
     self.appearance = [[element attributeForName:@"appearance"] stringValue];
     self.incremental = [[[element attributeForName:@"incremental"] stringValue] isEqualToString:@"true"];
+    self.delay = [[[element attributeForName:@"delay"] stringValue] doubleValue] / 1000.0;
+    [self loadHostAttributes];
     self.label = [[self class] labelForElement:element];
     [self loadSupportChildren];
     NSString *preferred = [[element localName] isEqualToString:@"output"]
@@ -509,6 +551,11 @@
 }
 
 - (BOOL)isBlockLevel
+{
+    return NO;
+}
+
+- (BOOL)isTrigger
 {
     return NO;
 }

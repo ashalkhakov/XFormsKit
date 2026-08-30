@@ -22,6 +22,7 @@
 @interface XFSubmission ()
 @property (nonatomic, strong, readwrite) NSXMLElement *element;
 @property (nonatomic, copy) NSArray<NSDictionary *> *headers;
+@property (nonatomic, strong) NSMutableArray<NSString *> *cdataTexts;
 @end
 
 @implementation XFSubmission
@@ -56,8 +57,20 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     sub.targetref = [[element attributeForName:@"targetref"] stringValue];
     sub.serialization = [[element attributeForName:@"serialization"] stringValue] ?: @"application/xml";
     sub.mediatype = [[element attributeForName:@"mediatype"] stringValue];
-    sub.validate = XFBoolAttr(element, @"validate", YES);
-    sub.relevant = XFBoolAttr(element, @"relevant", YES);
+    // XForms 1.1: validate / relevant default to false with serialization="none" (G-58)
+    BOOL noSerialization = [sub.serialization isEqualToString:@"none"];
+    sub.validate = XFBoolAttr(element, @"validate", !noSerialization);
+    sub.relevant = XFBoolAttr(element, @"relevant", !noSerialization);
+    NSString *cdata = [[element attributeForName:@"cdata-section-elements"] stringValue];
+    if (cdata.length) {
+        NSMutableArray *names = [NSMutableArray array];
+        for (NSString *n in [cdata componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]) {
+            if (n.length) {
+                [names addObject:[[n componentsSeparatedByString:@":"] lastObject]];
+            }
+        }
+        sub.cdataSectionElements = names;
+    }
     NSString *mode = [[[element attributeForName:@"mode"] stringValue] lowercaseString];
     sub.asynchronous = ![mode isEqualToString:@"synchronous"];
     if (mode.length == 0) {
@@ -368,9 +381,20 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
         }
         return pair;
     }
-    if (self.relevant && [node kind] == NSXMLElementKind) {
+    if ((self.relevant || self.cdataSectionElements.count) && [node kind] == NSXMLElementKind) {
+        self.cdataTexts = [NSMutableArray array];
         NSXMLElement *copy = [self relevantCopy:(NSXMLElement *)node];
-        return copy ? [copy XMLString] : @"";
+        NSString *xml = copy ? [copy XMLString] : @"";
+        NSUInteger i = 0;
+        for (NSString *text in self.cdataTexts) {
+            NSString *section = [NSString stringWithFormat:@"<![CDATA[%@]]>",
+                                 [text stringByReplacingOccurrencesOfString:@"]]>" withString:@"]]]]><![CDATA[>"]];
+            xml = [xml stringByReplacingOccurrencesOfString:[NSString stringWithFormat:@"XFCDATASECTION%lu", (unsigned long)i]
+                                                 withString:section];
+            i++;
+        }
+        self.cdataTexts = nil;
+        return xml;
     }
     if ([node isKindOfClass:[NSXMLElement class]]) {
         return [(NSXMLElement *)node XMLString];
@@ -381,22 +405,40 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
 - (NSXMLElement *)relevantCopy:(NSXMLElement *)element
 {
     XFNodeState *state = [XFNodeState existingStateOnNode:element];
-    if (state && !state.relevant) {
+    if (self.relevant && state && !state.relevant) {
         return nil;
     }
     NSXMLElement *copy = [[NSXMLElement alloc] initWithName:[element name] URI:[element URI]];
+    for (NSXMLNode *ns in [element namespaces]) {
+        [copy addNamespace:[ns copy]];
+    }
     for (NSXMLNode *attr in [element attributes]) {
+        // non-relevant attributes are pruned too (XSLTForms, G-58)
+        XFNodeState *as = [XFNodeState existingStateOnNode:attr];
+        if (self.relevant && as && !as.relevant) {
+            continue;
+        }
         NSXMLNode *ac = [attr copy];
         [copy addAttribute:ac];
     }
+    BOOL cdata = [self.cdataSectionElements containsObject:[element localName] ?: @""];
     for (NSXMLNode *child in [element children]) {
         if ([child kind] == NSXMLElementKind) {
-            NSXMLElement *cc = [self relevantCopy:(NSXMLElement *)child];
+            NSXMLElement *cc = self.relevant ? [self relevantCopy:(NSXMLElement *)child] : [self relevantCopy:(NSXMLElement *)child];
             if (cc) {
                 [copy addChild:cc];
             }
         } else if ([child kind] == NSXMLTextKind) {
-            [copy addChild:[child copy]];
+            if (cdata) {
+                // @cdata-section-elements (G-58): GNUstep ignores
+                // NSXMLNodeIsCDATA, so the text is swapped for a token that
+                // serializeNode: replaces with a CDATA section
+                NSString *token = [NSString stringWithFormat:@"XFCDATASECTION%lu", (unsigned long)self.cdataTexts.count];
+                [self.cdataTexts addObject:[child stringValue] ?: @""];
+                [copy addChild:[NSXMLNode textWithStringValue:token]];
+            } else {
+                [copy addChild:[child copy]];
+            }
         }
     }
     return copy;
@@ -409,6 +451,13 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
         return NO;
     }
     if ([node kind] == NSXMLElementKind) {
+        // attributes carry MIPs too (XsltForms_instance.validation_), G-58
+        for (NSXMLNode *attr in [(NSXMLElement *)node attributes]) {
+            XFNodeState *as = [XFNodeState existingStateOnNode:attr];
+            if (as && !as.valid && as.relevant) {
+                return NO;
+            }
+        }
         for (NSXMLNode *child in [node children]) {
             if ([child kind] == NSXMLElementKind && ![self nodeIsValid:child]) {
                 return NO;
@@ -421,6 +470,10 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
 - (void)fail:(NSMutableDictionary *)ctx type:(NSString *)type
 {
     ctx[@"error-type"] = type;
+    if (ctx[@"message"] == nil) {
+        ctx[@"message"] = [NSString stringWithFormat:@"%@%@", type,
+                           ctx[@"response-reason-phrase"] ? [NSString stringWithFormat:@": %@", ctx[@"response-reason-phrase"]] : @""];
+    }
     self.lastEventContext = ctx;
     [XFXMLEvents dispatch:self name:@"xforms-submit-error" context:ctx];
 }
@@ -522,6 +575,15 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     // joined with ",", same-named headers combined per @combine (G-17).
     NSMutableDictionary *hdrs = [NSMutableDictionary dictionary];
     NSMutableArray<NSString *> *hdrOrder = [NSMutableArray array];
+    // mediatype="…;action=urn:x" → SOAPAction header (XSLTForms, G-58)
+    NSArray *mtParts = [self.mediatype componentsSeparatedByString:@";"];
+    for (NSString *param in (mtParts.count > 1 ? [mtParts subarrayWithRange:NSMakeRange(1, mtParts.count - 1)] : @[])) {
+        NSArray *kv = [param componentsSeparatedByString:@"="];
+        if (kv.count == 2 && [[kv[0] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]] isEqualToString:@"action"]) {
+            hdrs[@"SOAPAction"] = [kv[1] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+            [hdrOrder addObject:@"SOAPAction"];
+        }
+    }
     XFExprContext *hctx = [self rootContext];
     for (NSDictionary *h in self.headers) {
         NSArray<NSXMLNode *> *hnodes = @[];
@@ -615,7 +677,9 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
 {
     evcontext[@"response-status-code"] = @(resp ? resp.statusCode : 0);
     evcontext[@"response-body"] = resp.body ?: @"";
-    evcontext[@"response-reason-phrase"] = resp.errorType ?: (resp.statusCode >= 200 && resp.statusCode < 300 ? @"OK" : @"");
+    // XSLTForms synthesises the reason phrase from the status code (G-58)
+    evcontext[@"response-reason-phrase"] = resp.errorType
+        ?: (resp.statusCode > 0 ? [NSHTTPURLResponse localizedStringForStatusCode:resp.statusCode] : @"");
     if (resp.headers.count) {
         evcontext[@"response-headers"] = resp.headers;
     }
@@ -651,18 +715,35 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     NSError *parse = nil;
     if ([replace isEqualToString:@"text"]) {
         if (target == nil) {
-            [self fail:evcontext type:@"target-error"];
-            return NO;
+            // XFSubmission.js: replace="text" without a target is a no-op
+            // followed by xforms-submit-done (G-59)
+            return YES;
         }
         [XFXML setStringValue:resp.body ?: @"" ofNode:target];
         [self.model addChange:target];
     } else {
-        // instance
+        // instance; JSON / CSV responses (by Content-Type, else by the
+        // instance's mediatype) are converted like instance @src (G-55)
+        NSString *body = resp.body ?: @"";
+        NSString *ct = [[resp.mediaType componentsSeparatedByString:@";"].firstObject lowercaseString] ?: @"";
+        NSString *mt = ([ct containsString:@"json"] || [ct isEqualToString:@"text/csv"]) ? ct : (inst.mediatype ?: @"");
+        if ([mt containsString:@"json"]) {
+            NSData *data = [body dataUsingEncoding:NSUTF8StringEncoding];
+            NSString *xml = [XFInstance xmlStringFromJSONData:data error:&parse];
+            if (xml == nil) {
+                evcontext[@"error-type"] = @"parse-error";
+                [self fail:evcontext type:@"parse-error"];
+                return NO;
+            }
+            body = xml;
+        } else if ([mt isEqualToString:@"text/csv"]) {
+            body = [XFInstance xmlStringFromCSV:body separator:inst.csvSeparator ?: @"," header:inst.csvHeader];
+        }
         BOOL ok;
         if (target && target != [inst documentElement]) {
-            ok = [inst replaceNode:target withXMLString:resp.body ?: @"" error:&parse];
+            ok = [inst replaceNode:target withXMLString:body error:&parse];
         } else {
-            ok = [inst replaceWithXMLString:resp.body ?: @"" error:&parse];
+            ok = [inst replaceWithXMLString:body error:&parse];
         }
         if (!ok) {
             evcontext[@"error-type"] = @"parse-error";

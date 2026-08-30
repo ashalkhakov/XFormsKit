@@ -22,6 +22,24 @@ typedef NS_ENUM(NSInteger, XFWhitespace) {
 @property (nonatomic, strong, nullable) NSNumber *totalDigits;
 @property (nonatomic, strong, nullable) NSNumber *minInclusive;
 @property (nonatomic, strong, nullable) NSNumber *maxInclusive;
+/// Facets of user schema types (G-56): xs:restriction children.
+@property (nonatomic, strong, nullable) NSNumber *minExclusive;
+@property (nonatomic, strong, nullable) NSNumber *maxExclusive;
+@property (nonatomic, strong, nullable) NSNumber *length;
+@property (nonatomic, strong, nullable) NSNumber *minLength;
+@property (nonatomic, strong, nullable) NSNumber *maxLength;
+@property (nonatomic, copy, nullable) NSArray<NSString *> *enumeration;
+/// xs:list itemType: the value is a whitespace-separated list of items.
+@property (nonatomic, weak, nullable) XFType *itemType;
+/// xs:union memberTypes: valid when any member accepts the value.
+@property (nonatomic, copy, nullable) NSArray<XFType *> *memberTypes;
+
+/// Register the simple types of an `xs:schema` element (XsltForms_schema /
+/// jsgen/simpleType.xsl: restrictions with facets, lists, unions) under its
+/// targetNamespace (G-56). Returns the number of types defined.
++ (NSUInteger)registerSchemaElement:(NSXMLElement *)schema;
+/// XsltForms_atomicType.normalize: numbers rounded to `fractionDigits`.
+- (NSString *)normalizeValue:(NSString *)value;
 
 + (nullable XFType *)typeNamed:(nullable NSString *)name;
 + (nullable XFType *)typeWithLocalName:(NSString *)localName

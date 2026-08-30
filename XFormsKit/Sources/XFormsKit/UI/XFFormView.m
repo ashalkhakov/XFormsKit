@@ -23,6 +23,8 @@ static const void *kXFBoundControlKey = &kXFBoundControlKey;
 #import "XFSubmission.h"
 #import "XFHostNode.h"
 #import "XFTableModel.h"
+#import "XFType.h"
+#import "XFXML.h"
 
 static const CGFloat kLabelWidth = 110.0;
 static const CGFloat kRowHeight = 24.0;
@@ -89,6 +91,13 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
 - (void)refreshInPlace;
 @end
 
+/// Data source / delegate of an appearance="compact" select list box (G-43).
+@interface XFListBoxAdapter : NSObject <NSTableViewDataSource, NSTableViewDelegate>
+@property (nonatomic, strong) XFSelectControl *select;
+@property (nonatomic, weak) XFFormView *formView;
+@property (nonatomic, assign) BOOL selecting;
+@end
+
 @interface XFFormView () <NSTextViewDelegate, NSTextFieldDelegate>
 @property (nonatomic, strong, readwrite) XFProcessor *processor;
 @property (nonatomic, strong) NSMutableArray<XFWidget *> *widgets;
@@ -100,6 +109,14 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
 @property (nonatomic, assign) CGFloat wrapRight;
 /// One adapter per host table in the current layout.
 @property (nonatomic, strong) NSMutableArray<XFTableAdapter *> *tables;
+/// Debounce timer for `delay` on incremental controls (G-40).
+@property (nonatomic, strong) NSTimer *delayTimer;
+/// Adapters of compact select list boxes (G-43).
+@property (nonatomic, strong) NSMutableArray<XFListBoxAdapter *> *listBoxes;
+- (void)listBox:(XFListBoxAdapter *)adapter didSelectRows:(NSIndexSet *)rows;
+/// The control whose Return key ended editing: DOMActivate after the
+/// commit (XsltForms_input.keyUpActivate, G-42).
+@property (nonatomic, weak) XFControl *pendingActivate;
 - (CGFloat)widthOfText:(NSString *)text font:(NSFont *)font;
 - (NSFont *)bodyFont;
 - (void)tableAdapter:(XFTableAdapter *)adapter didCommitControl:(XFControl *)control value:(NSString *)value;
@@ -116,6 +133,7 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
         _processor = processor;
         _widgets = [NSMutableArray array];
         _tables = [NSMutableArray array];
+        _listBoxes = [NSMutableArray array];
         [self setAutoresizingMask:NSViewNotSizable];
         __weak XFFormView *weakSelf = self;
         // xf:setfocus / xforms-focus → first responder (G-24)
@@ -269,6 +287,14 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
         NSButton *button = [[NSButton alloc] initWithFrame:NSZeroRect];
         [button setTitle:control.label ?: @"OK"];
         [button setBezelStyle:NSRoundedBezelStyle];
+        if ([control.appearance isEqualToString:@"minimal"]) {
+            // XSLTForms renders a minimal trigger as a link (G-43)
+            [button setBordered:NO];
+        }
+        if (control.accesskey.length) {
+            [button setKeyEquivalent:[control.accesskey lowercaseString]];
+            [button setKeyEquivalentModifierMask:NSCommandKeyMask];
+        }
         [button setTarget:self];
         [button setAction:@selector(buttonClicked:)];
         return button;
@@ -281,6 +307,8 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
         [slider setMaxValue:range.end];
         [slider setAltIncrementValue:range.step];
         [slider setDoubleValue:range.numericValue];
+        // XFRange.js: the value is committed on release unless incremental (G-45)
+        [slider setContinuous:control.incremental];
         [slider setTarget:self];
         [slider setAction:@selector(sliderChanged:)];
         return slider;
@@ -288,6 +316,13 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
 
     if ([control isKindOfClass:[XFSelectControl class]]) {
         XFSelectControl *select = (XFSelectControl *)control;
+        if ([select.appearance isEqualToString:@"compact"]
+            || (select.multiple && [select.appearance isEqualToString:@"minimal"])) {
+            // select1-select.xsl: compact = a list box (multi-select for
+            // xf:select), G-43
+            *height = MIN(MAX((CGFloat)select.items.count, 3), 8) * 18 + 4;
+            return [self makeListBoxForSelect:select];
+        }
         if (select.multiple || [select.appearance isEqualToString:@"full"]) {
             return nil;
         }
@@ -326,12 +361,13 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
         NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:NSZeroRect];
         [scroll setHasVerticalScroller:YES];
         [scroll setBorderType:NSBezelBorder];
-        NSTextView *tv = [[NSTextView alloc] initWithFrame:NSMakeRect(0, 0, kFieldWidth, kTextareaHeight)];
+        CGFloat h = control.rows > 0 ? control.rows * 16 + 8 : kTextareaHeight;   // @rows (G-63)
+        NSTextView *tv = [[NSTextView alloc] initWithFrame:NSMakeRect(0, 0, kFieldWidth, h)];
         [tv setString:control.stringValue ?: @""];
         [tv setDelegate:self];
         [tv setEditable:!control.readonly];
         [scroll setDocumentView:tv];
-        *height = kTextareaHeight;
+        *height = h;
         return scroll;
     }
 
@@ -391,11 +427,149 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
         }
     }
 
+    if ([control isKindOfClass:[XFOutputControl class]] && [(XFOutputControl *)control displaysHTML]) {
+        // mediatype="application/xhtml+xml": rendered as rich text (G-44)
+        NSTextField *field = [self textFieldEditable:NO secure:NO];
+        NSData *html = [control.stringValue ?: @"" dataUsingEncoding:NSUTF8StringEncoding];
+        NSAttributedString *rich = nil;
+        if ([NSAttributedString instancesRespondToSelector:@selector(initWithHTML:documentAttributes:)]) {
+            rich = [[NSAttributedString alloc] initWithHTML:html documentAttributes:NULL];
+        }
+        if (rich) {
+            [field setAttributedStringValue:rich];
+        } else {
+            [field setStringValue:[self plainTextFromHTML:control.stringValue ?: @""]];
+        }
+        return field;
+    }
+
     BOOL editable = [control isKindOfClass:[XFInputControl class]];
     BOOL secure = [control isKindOfClass:[XFSecretControl class]];
     NSTextField *field = [self textFieldEditable:editable secure:secure];
-    [field setStringValue:control.stringValue ?: @""];
+    [field setStringValue:[self displayValueOf:control]];
+    if (editable) {
+        // @placeholder, numeric right-alignment, @cols (G-41, G-63)
+        if (control.placeholder.length && [[field cell] respondsToSelector:@selector(setPlaceholderString:)]) {
+            [(NSTextFieldCell *)[field cell] setPlaceholderString:control.placeholder];
+        }
+        if ([self isNumericControl:control]) {
+            [field setAlignment:NSRightTextAlignment];
+        }
+    }
     return field;
+}
+
+/// XSLTForms input mode "digits" / numeric types align right (G-41).
+- (BOOL)isNumericControl:(XFControl *)control
+{
+    XFNodeState *state = [XFNodeState existingStateOnNode:control.boundNode];
+    NSString *type = [state.typeName lowercaseString] ?: @"";
+    if ([control.inputmode isEqualToString:@"digits"]) {
+        return YES;
+    }
+    for (NSString *n in @[ @"integer", @"decimal", @"double", @"float", @"int", @"long", @"short", @"byte", @"amount" ]) {
+        if ([type hasSuffix:n]) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
+/// XFOutput.js setValue with type.format: numbers normalised to the type's
+/// fractionDigits (G-44); everything else as stored.
+- (NSString *)displayValueOf:(XFControl *)control
+{
+    NSString *value = control.stringValue ?: @"";
+    if (![control isKindOfClass:[XFOutputControl class]]) {
+        return value;
+    }
+    XFNodeState *state = [XFNodeState existingStateOnNode:control.boundNode];
+    XFType *type = state.typeName.length ? [XFType typeNamed:state.typeName] : nil;
+    if (type.fractionDigits && value.length) {
+        return [type normalizeValue:value];
+    }
+    return value;
+}
+
+- (NSString *)plainTextFromHTML:(NSString *)html
+{
+    NSMutableString *out = [NSMutableString string];
+    BOOL inTag = NO;
+    for (NSUInteger i = 0; i < html.length; i++) {
+        unichar c = [html characterAtIndex:i];
+        if (c == '<') {
+            inTag = YES;
+        } else if (c == '>') {
+            inTag = NO;
+        } else if (!inTag) {
+            [out appendFormat:@"%C", c];
+        }
+    }
+    return [XFXML normalizeSpace:out];
+}
+
+/// appearance="compact": a single-column table listing the items (G-43).
+- (NSView *)makeListBoxForSelect:(XFSelectControl *)select
+{
+    NSTableView *table = [[NSTableView alloc] initWithFrame:NSZeroRect];
+    NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:@"item"];
+    [column setWidth:kFieldWidth - 20];
+    [table addTableColumn:column];
+    [table setHeaderView:nil];
+    [table setRowHeight:16];
+    [table setAllowsMultipleSelection:select.multiple];
+    [table setAllowsEmptySelection:YES];
+    XFListBoxAdapter *adapter = [[XFListBoxAdapter alloc] init];
+    adapter.select = select;
+    adapter.formView = self;
+    [table setDataSource:adapter];
+    [table setDelegate:adapter];
+    [self.listBoxes addObject:adapter];
+    NSMutableIndexSet *selected = [NSMutableIndexSet indexSet];
+    NSUInteger i = 0;
+    for (XFItem *item in select.items) {
+        if (item.selected) {
+            [selected addIndex:i];
+        }
+        i++;
+    }
+    adapter.selecting = YES;
+    [table selectRowIndexes:selected byExtendingSelection:NO];
+    adapter.selecting = NO;
+    NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:NSZeroRect];
+    [scroll setBorderType:NSBezelBorder];
+    [scroll setHasVerticalScroller:YES];
+    [scroll setDocumentView:table];
+    return scroll;
+}
+
+- (void)listBox:(XFListBoxAdapter *)adapter didSelectRows:(NSIndexSet *)rows
+{
+    XFSelectControl *select = adapter.select;
+    NSMutableArray *values = [NSMutableArray array];
+    [rows enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
+        (void)stop;
+        if (idx < select.items.count && select.items[idx].value) {
+            [values addObject:select.items[idx].value];
+        }
+    }];
+    [self.processor focusControl:select fromUI:YES];
+    BOOL changed = NO;
+    if (select.multiple) {
+        NSSet *wanted = [NSSet setWithArray:values];
+        for (XFItem *item in [select.items copy]) {
+            BOOL want = item.value && [wanted containsObject:item.value];
+            if (want != item.selected) {
+                changed = [select toggleItem:item] || changed;
+            }
+        }
+    } else if (values.count) {
+        changed = [select selectValue:values.firstObject];
+    }
+    if (changed) {
+        [self.processor controlDidChangeValue:select];
+    }
+    [self performSelector:@selector(reloadFromProcessor) withObject:nil afterDelay:0];
 }
 
 /// YES when the widget shows the control's label itself (no separate caption).
@@ -490,7 +664,10 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     CGFloat outerRight = self.maxRight;
     self.maxRight = 0;
     inner = [self layoutNodes:group.hostNodes atY:inner indent:indent + kIndent font:nil];
-    CGFloat h = (inner - start) + 12;
+    // the box must enclose the last line of its content: its height runs
+    // from the box top (title included) to the content bottom plus padding
+    (void)start;
+    CGFloat h = (inner - y) + 10;
     // Wide enough to enclose the widest child (children are indented by
     // kIndent, so the box must extend that far past them on the right too),
     // and never narrower than one standard row.
@@ -920,7 +1097,10 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
         CGFloat outerRight = self.maxRight;
         self.maxRight = 0;
         inner = [self layoutNodes:node.children atY:inner indent:indent + kIndent font:font];
-        CGFloat h = (inner - start) + 12;
+        // the box must enclose the last line of its content: its height runs
+    // from the box top (title included) to the content bottom plus padding
+    (void)start;
+    CGFloat h = (inner - y) + 10;
         CGFloat left = kMargin + indent;
         CGFloat right = MAX(self.maxRight + kIndent, left + kIndent + kLabelWidth + 8 + kFieldWidth + kIndent);
         [box setFrame:NSMakeRect(left, y, right - left, MAX(h, 28))];
@@ -1044,6 +1224,7 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
         [t.tableView setDelegate:nil];
     }
     [self.tables removeAllObjects];
+    [self.listBoxes removeAllObjects];
     self.maxRight = 0;
     self.wrapRight = MAX(kWrapWidth, [self frame].size.width) - kMargin;
     CGFloat y = kMargin;
@@ -1057,6 +1238,25 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     self.contentHeight = y + kMargin;
     [self setFrame:NSMakeRect(0, 0, MAX(kWrapWidth, self.maxRight + kMargin), MAX(self.contentHeight, 80))];
     [self setNeedsDisplay:YES];
+    // @navindex: tab order among the widgets that declare one (G-63)
+    NSArray *ordered = [self.widgets sortedArrayUsingComparator:^NSComparisonResult(XFWidget *a, XFWidget *b) {
+        NSInteger na = a.control.navindex, nb = b.control.navindex;
+        if (na == nb) return NSOrderedSame;
+        if (na == 0) return NSOrderedDescending;
+        if (nb == 0) return NSOrderedAscending;
+        return na < nb ? NSOrderedAscending : NSOrderedDescending;
+    }];
+    NSView *previous = nil;
+    for (XFWidget *w in ordered) {
+        if (w.control.navindex <= 0) {
+            break;
+        }
+        NSView *v = [w.view isKindOfClass:[NSScrollView class]] ? [(NSScrollView *)w.view documentView] : w.view;
+        if (previous) {
+            [previous setNextKeyView:v];
+        }
+        previous = v;
+    }
     // the widgets were recreated: give the engine's focused control its
     // first responder back
     if (self.processor.focusedControl && [self window]) {
@@ -1092,6 +1292,26 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     [self reloadFromProcessor];
 }
 
+- (NSArray<NSString *> *)fileTypesForMediaTypes:(NSArray<NSString *> *)mediaTypes
+{
+    NSDictionary *map = @{
+        @"image/png": @[ @"png" ], @"image/jpeg": @[ @"jpg", @"jpeg" ], @"image/gif": @[ @"gif" ],
+        @"image/svg+xml": @[ @"svg" ], @"image/*": @[ @"png", @"jpg", @"jpeg", @"gif", @"tif", @"tiff", @"bmp", @"svg" ],
+        @"application/pdf": @[ @"pdf" ], @"application/xml": @[ @"xml" ], @"text/xml": @[ @"xml" ],
+        @"text/plain": @[ @"txt" ], @"text/csv": @[ @"csv" ], @"text/*": @[ @"txt", @"csv", @"xml", @"html", @"md" ],
+        @"application/json": @[ @"json" ], @"application/zip": @[ @"zip" ],
+    };
+    NSMutableArray *out = [NSMutableArray array];
+    for (NSString *mt in mediaTypes) {
+        NSArray *exts = map[mt];
+        if (exts == nil) {
+            return @[];   // unknown type: no filter rather than a wrong one
+        }
+        [out addObjectsFromArray:exts];
+    }
+    return out;
+}
+
 - (void)uploadClicked:(NSButton *)sender
 {
     XFControl *bound = [self controlForSender:sender];
@@ -1106,6 +1326,11 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     [panel setAllowsMultipleSelection:NO];
     [panel setCanChooseDirectories:NO];
     [panel setCanChooseFiles:YES];
+    // @mediatype → file type filter (G-46)
+    NSArray *types = [self fileTypesForMediaTypes:[upload acceptedMediaTypes]];
+    if (types.count && [panel respondsToSelector:@selector(setAllowedFileTypes:)]) {
+        [panel setAllowedFileTypes:types];
+    }
     NSInteger code = [panel runModal];
     if (code != NSOKButton) {
         return;
@@ -1177,6 +1402,7 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     // focus stays on Return; leaving the field is a blur (DOMFocusOut)
     NSNumber *movement = [note userInfo][@"NSTextMovement"];
     if (movement && [movement integerValue] == NSReturnTextMovement) {
+        self.pendingActivate = [self controlForSender:[note object]];
         return;
     }
     XFControl *control = [self controlForSender:[note object]];
@@ -1200,7 +1426,18 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
 {
     XFControl *control = [self controlForSender:sender];
     if (control) {
-        [self commitControl:control value:[sender stringValue]];
+        [self.delayTimer invalidate];
+        self.delayTimer = nil;
+        BOOL activate = (self.pendingActivate == control);
+        self.pendingActivate = nil;
+        [self.processor setValue:[sender stringValue] ofControl:control error:NULL];
+        if (activate) {
+            // Return in an input: DOMActivate after the value change
+            [XFXMLEvents dispatch:control name:@"DOMActivate"];
+            [self.processor refreshControls];
+        }
+        [self reloadFromProcessor];
+        [self notifyDocumentReplaceIfNeeded];
     }
 }
 
@@ -1211,6 +1448,33 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
 /// refreshed in place; layout changes (relevance) are applied by the rebuild
 /// on the final commit (Return / focus loss).
 - (void)commitIncremental:(XFControl *)control value:(NSString *)value editingView:(NSView *)editing
+{
+    if (control.delay > 0) {
+        // XsltForms_input.keyUpIncremental: with @delay the commit waits
+        // until the keys stop for that long (G-40)
+        [self.delayTimer invalidate];
+        __weak XFFormView *weakSelf = self;
+        NSDictionary *info = @{ @"control": control, @"value": value ?: @"", @"view": editing ?: [NSNull null] };
+        self.delayTimer = [NSTimer scheduledTimerWithTimeInterval:control.delay
+                                                           target:weakSelf
+                                                         selector:@selector(delayedCommit:)
+                                                         userInfo:info
+                                                          repeats:NO];
+        return;
+    }
+    [self commitIncrementalNow:control value:value editingView:editing];
+}
+
+- (void)delayedCommit:(NSTimer *)timer
+{
+    NSDictionary *info = [timer userInfo];
+    self.delayTimer = nil;
+    id view = info[@"view"];
+    [self commitIncrementalNow:info[@"control"] value:info[@"value"]
+                   editingView:[view isKindOfClass:[NSView class]] ? view : nil];
+}
+
+- (void)commitIncrementalNow:(XFControl *)control value:(NSString *)value editingView:(NSView *)editing
 {
     if (![self.processor setValue:value ofControl:control error:NULL]) {
         return;
@@ -1392,7 +1656,12 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     XFControl *control = [self controlForSender:sender];
     [self widgetDidFocus:sender];
     if (control) {
-        [self commitControl:control value:([sender state] == NSOnState) ? @"true" : @"false"];
+        // XSLTForms: a checkbox click is a value change + DOMActivate (G-42)
+        [self.processor setValue:([sender state] == NSOnState) ? @"true" : @"false" ofControl:control error:NULL];
+        [XFXMLEvents dispatch:control name:@"DOMActivate"];
+        [self.processor refreshControls];
+        [self reloadFromProcessor];
+        [self notifyDocumentReplaceIfNeeded];
     }
 }
 
@@ -1765,6 +2034,43 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     if (row >= 0 && (NSUInteger)row < self.model.rows.count) {
         [self.formView tableAdapter:self didSelectRow:self.model.rows[(NSUInteger)row]];
     }
+}
+
+@end
+
+#pragma mark - XFListBoxAdapter
+
+@implementation XFListBoxAdapter
+
+- (NSInteger)numberOfRowsInTableView:(NSTableView *)tableView
+{
+    (void)tableView;
+    return (NSInteger)self.select.items.count;
+}
+
+- (id)tableView:(NSTableView *)tableView objectValueForTableColumn:(NSTableColumn *)column row:(NSInteger)row
+{
+    (void)tableView; (void)column;
+    if (row < 0 || (NSUInteger)row >= self.select.items.count) {
+        return @"";
+    }
+    XFItem *item = self.select.items[(NSUInteger)row];
+    return item.label ?: item.value ?: @"";
+}
+
+- (BOOL)tableView:(NSTableView *)tableView shouldEditTableColumn:(NSTableColumn *)column row:(NSInteger)row
+{
+    (void)tableView; (void)column; (void)row;
+    return NO;
+}
+
+- (void)tableViewSelectionDidChange:(NSNotification *)note
+{
+    if (self.selecting) {
+        return;
+    }
+    NSTableView *table = [note object];
+    [self.formView listBox:self didSelectRows:[table selectedRowIndexes]];
 }
 
 @end

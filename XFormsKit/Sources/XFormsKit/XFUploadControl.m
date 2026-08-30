@@ -47,6 +47,36 @@
     return upload;
 }
 
+- (NSArray<NSString *> *)acceptedMediaTypes
+{
+    NSString *mt = [[self.element attributeForName:@"mediatype"] stringValue] ?: @"";
+    NSMutableArray *out = [NSMutableArray array];
+    for (NSString *t in [mt componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]) {
+        if (t.length) {
+            [out addObject:[t lowercaseString]];
+        }
+    }
+    return out;
+}
+
+- (BOOL)acceptsMediaType:(NSString *)mediaType
+{
+    NSArray *accepted = [self acceptedMediaTypes];
+    if (accepted.count == 0) {
+        return YES;
+    }
+    NSString *mt = [[mediaType lowercaseString] componentsSeparatedByString:@";"].firstObject ?: @"";
+    for (NSString *a in accepted) {
+        if ([a isEqualToString:@"*/*"] || [a isEqualToString:mt]) {
+            return YES;
+        }
+        if ([a hasSuffix:@"/*"] && [mt hasPrefix:[a substringToIndex:a.length - 1]]) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
 - (NSString *)resolvedTypeName
 {
     XFNodeState *state = [XFNodeState existingStateOnNode:self.boundNode];
@@ -123,8 +153,23 @@
         }
         return NO;
     }
+    if (![self acceptsMediaType:mediaType]) {
+        // XFUpload.js: a file of an unexpected type is refused (G-46)
+        NSMutableDictionary *ctx = [NSMutableDictionary dictionary];
+        ctx[@"error-type"] = @"unexpected-type";
+        ctx[@"mediatype"] = mediaType ?: @"";
+        [XFXMLEvents dispatch:self name:@"xforms-upload-error" context:ctx];
+        if (error) {
+            *error = [NSError errorWithDomain:XFErrorDomain
+                                         code:XFErrorBinding
+                                     userInfo:@{ NSLocalizedDescriptionKey:
+                                                     [NSString stringWithFormat:@"upload: unexpected media type %@", mediaType ?: @""] }];
+        }
+        return NO;
+    }
     NSString *encoded = [self encodeData:data ?: [NSData data]];
     if (![self commitStringValue:encoded error:error]) {
+        [XFXMLEvents dispatch:self name:@"xforms-upload-error" context:[@{ @"error-type": @"binding" } mutableCopy]];
         return NO;
     }
     XFNodeState *state = [XFNodeState stateOnNode:self.boundNode];
@@ -138,6 +183,8 @@
     }
     [self writeBinding:self.filenameBinding value:fileName context:ctx];
     [self writeBinding:self.mediatypeBinding value:mediaType context:ctx];
+    [XFXMLEvents dispatch:self name:@"xforms-upload-done"
+                  context:[@{ @"filename": fileName ?: @"", @"mediatype": mediaType ?: @"" } mutableCopy]];
     // xforms-value-changed and the recalculation cycle are driven by
     // -[XFProcessor controlDidChangeValue:].
     return YES;

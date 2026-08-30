@@ -47,6 +47,15 @@ NS_ASSUME_NONNULL_BEGIN
 /// Called when the engine moves the focus (xf:setfocus, xforms-focus):
 /// hosts make the control's widget first responder.
 @property (nonatomic, copy, nullable) void (^focusRequestHandler)(XFControl *control);
+/// Host hook for xf:message (G-51): text and level (modal | modeless |
+/// ephemeral). Without a handler messages queue in XFDeferredUpdates.messages.
+@property (nonatomic, copy, nullable) void (^messageHandler)(NSString *text, NSString *level);
+/// Host hook for xf:load with show="new" | "replace" and no @instance
+/// (G-50): open the URL. Return YES when handled.
+@property (nonatomic, copy, nullable) BOOL (^loadRequestHandler)(NSURL *url, NSString *show);
+/// Host hook for xforms-help (G-62): show the control's help (help/@href
+/// when set).
+@property (nonatomic, copy, nullable) void (^helpRequestHandler)(XFControl *control);
 /// XsltForms_control.focus: blur the previous control (DOMFocusOut), set the
 /// repeat index of every repeat item the control sits in, dispatch
 /// DOMFocusIn. `fromUI` = the widget already has the keyboard focus (no
@@ -54,6 +63,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)focusControl:(XFControl *)control fromUI:(BOOL)fromUI;
 /// XsltForms_globals.blur(true): DOMFocusOut on the focused control.
 - (void)blurFocusedControl;
+/// XsltForms_globals.close: run every xforms-model-destruct listener (one
+/// action) and drop the registrations; the processor is unusable after
+/// this (G-54). Hosts call it when a form document closes.
+- (void)close;
 
 - (nullable XFAbstractAction *)actionWithIdentifier:(NSString *)identifier;
 - (nullable XFRepeat *)repeatWithIdentifier:(NSString *)identifier;

@@ -23,6 +23,11 @@
     return trigger;
 }
 
+- (BOOL)isTrigger
+{
+    return YES;
+}
+
 - (void)activate
 {
     [XFXMLEvents dispatch:self name:@"DOMActivate"];

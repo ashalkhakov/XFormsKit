@@ -18,6 +18,10 @@ NS_ASSUME_NONNULL_BEGIN
                                      model:(nullable id)model
                                      error:(NSError **)error;
 
+/// `xf:upload/@mediatype` tokens ("image/*", "application/pdf", …), G-46.
+@property (nonatomic, copy, readonly) NSArray<NSString *> *acceptedMediaTypes;
+/// YES when `mediaType` matches @mediatype (or there is no restriction).
+- (BOOL)acceptsMediaType:(nullable NSString *)mediaType;
 - (BOOL)commitFileAtURL:(NSURL *)url error:(NSError **)error;
 - (BOOL)commitFileData:(NSData *)data
               fileName:(nullable NSString *)fileName

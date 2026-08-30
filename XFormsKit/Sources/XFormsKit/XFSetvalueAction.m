@@ -12,6 +12,7 @@
 @property (nonatomic, strong, readwrite) XFBinding *binding;
 @property (nonatomic, strong, readwrite) XFXPath *valueExpr;
 @property (nonatomic, copy, readwrite) NSString *literal;
+@property (nonatomic, strong) XFXPath *contextExpr;
 @end
 
 @implementation XFSetvalueAction
@@ -39,7 +40,21 @@
             return nil;
         }
     } else {
-        self.literal = [XFXML stringValueOfNode:element];
+        // setvalue.xsl: normalize-space(text()) (G-49)
+        NSMutableString *text = [NSMutableString string];
+        for (NSXMLNode *c in [element children]) {
+            if ([c kind] == NSXMLTextKind) {
+                [text appendString:[c stringValue] ?: @""];
+            }
+        }
+        self.literal = [XFXML normalizeSpace:text];
+    }
+    NSString *context = [[element attributeForName:@"context"] stringValue];
+    if (context.length) {
+        self.contextExpr = [XFXPath xpathWithString:context element:element error:error];
+        if (self.contextExpr == nil) {
+            return nil;
+        }
     }
     return self;
 }
@@ -58,7 +73,13 @@
     }
     NSString *value = self.literal ?: @"";
     if (self.valueExpr) {
-        XFExprContext *valueCtx = [[XFExprContext alloc] initWithNode:node];
+        // XFSetvalue.js: @value evaluates against the bound node, or against
+        // the @context node when there is one (G-49)
+        NSXMLNode *valueNode = node;
+        if (self.contextExpr) {
+            valueNode = [self.contextExpr evaluateInContext:ctx error:NULL].firstNode ?: node;
+        }
+        XFExprContext *valueCtx = [[XFExprContext alloc] initWithNode:valueNode];
         valueCtx.model = self.model;
         value = [self.valueExpr stringValueInContext:valueCtx error:NULL] ?: @"";
     }

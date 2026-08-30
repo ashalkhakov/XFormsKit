@@ -98,11 +98,21 @@
     return [self reloadProcessor:error];
 }
 
+- (void)close
+{
+    [self.processor close];
+    [super close];
+}
+
 - (BOOL)reloadProcessor:(NSError **)error
 {
     NSError *inner = nil;
     XFProcessor *processor = [XFProcessor processorWithXMLString:self.sourceXML ?: @""
                                                            error:&inner];
+    [self.processor close];   // xforms-model-destruct listeners of the old form (G-54)
+    if (processor) {
+        processor.baseURL = [self fileURL];
+    }
     self.processor = processor;
     self.loadError = inner;
     if (processor == nil) {

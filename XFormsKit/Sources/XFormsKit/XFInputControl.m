@@ -12,6 +12,10 @@
     if (typeName.length == 0) {
         return @"";
     }
+    if ([typeName hasPrefix:@"{"]) {
+        NSRange close = [typeName rangeOfString:@"}"];
+        return close.location == NSNotFound ? typeName : [typeName substringFromIndex:close.location + 1];
+    }
     NSRange colon = [typeName rangeOfString:@":"];
     if (colon.location == NSNotFound) {
         return typeName;

@@ -1,6 +1,9 @@
 #import "XFProcessor.h"
 #import "XFHostNode.h"
 #import "XFXPath.h"
+#import "XFType.h"
+#import "XFListener.h"
+#import "XFEvent.h"
 #import "XFModel.h"
 #import "XFInstance.h"
 #import "XFBinding.h"
@@ -30,6 +33,7 @@
 @property (nonatomic, copy, readwrite) NSArray<XFModel *> *models;
 @property (nonatomic, copy, readwrite) NSArray<XFControl *> *controls;
 @property (nonatomic, weak, readwrite) XFControl *focusedControl;
+@property (nonatomic, assign) BOOL closed;
 @property (nonatomic, copy, readwrite) NSArray<XFAbstractAction *> *actions;
 @end
 
@@ -256,6 +260,38 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
 
     // XsltForms_model.init: xf:model/@functions and @version checks (G-30)
     for (XFModel *m in self.models) {
+        // schemas: inline xs:schema children, and @schema tokens naming an
+        // element id (#id / id) or a URL; a missing one is a link-exception
+        // (XFModel.js: "Schema … not found", G-56)
+        for (NSXMLNode *c in [m.element children]) {
+            if ([c kind] == NSXMLElementKind && [[c localName] isEqualToString:@"schema"]
+                && [[c URI] isEqualToString:@"http://www.w3.org/2001/XMLSchema"]) {
+                [XFType registerSchemaElement:(NSXMLElement *)c];
+            }
+        }
+        NSString *schemas = [[m.element attributeForName:@"schema"] stringValue];
+        for (NSString *ref in [schemas componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]) {
+            if (ref.length == 0) {
+                continue;
+            }
+            NSXMLElement *schemaEl = nil;
+            NSString *sid = [ref hasPrefix:@"#"] ? [ref substringFromIndex:1] : ref;
+            NSXMLElement *byID = [[XFXMLEvents sharedEvents] elementWithID:sid inDocument:document];
+            if (byID && [[byID localName] isEqualToString:@"schema"]) {
+                schemaEl = byID;
+            } else if (![ref hasPrefix:@"#"]) {
+                NSURL *url = [NSURL URLWithString:ref relativeToURL:self.baseURL] ?: [NSURL fileURLWithPath:ref];
+                NSData *data = url ? [NSData dataWithContentsOfURL:url] : nil;
+                NSXMLDocument *sdoc = data ? [[NSXMLDocument alloc] initWithData:data options:0 error:NULL] : nil;
+                schemaEl = [sdoc rootElement];
+            }
+            if (schemaEl) {
+                [XFType registerSchemaElement:schemaEl];
+            } else {
+                [XFXMLEvents raise:@"xforms-link-exception" on:m
+                           message:[NSString stringWithFormat:@"Schema %@ not found", ref]];
+            }
+        }
         NSString *functions = [[m.element attributeForName:@"functions"] stringValue];
         for (NSString *fname in [functions componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]) {
             if (fname.length == 0) {
@@ -645,6 +681,7 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
 
 - (BOOL)setValue:(NSString *)value ofControl:(XFControl *)control error:(NSError **)error
 {
+    value = [control applyInputMode:value];   // G-41
     // XsltForms_control.valueChanged: nothing happens when the value is unchanged
     if (control.boundNode && [[XFXML stringValueOfNode:control.boundNode] isEqualToString:value ?: @""]) {
         control.stringValue = value ?: @"";
@@ -673,6 +710,38 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
             }
         }
     }
+}
+
+#pragma mark - close (G-54)
+
+- (void)close
+{
+    if (self.closed) {
+        return;
+    }
+    self.closed = YES;
+    XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
+    [du openAction:@"close"];
+    for (XFListener *listener in [[XFListener destructs] copy]) {
+        NSXMLElement *observer = listener.observer;
+        if (observer == nil || [observer rootDocument] != self.hostDocument) {
+            continue;
+        }
+        XFEvent *event = [[XFEvent alloc] init];
+        event.type = @"xforms-model-destruct";
+        event.target = observer;
+        event.currentTarget = observer;
+        event.xfElement = [[XFXMLEvents sharedEvents] xfElementForElement:observer];
+        event.phase = @"default";
+        [listener invoke:event];
+    }
+    [du closeAction:@"close"];
+    for (XFListener *listener in [[XFListener destructs] copy]) {
+        if ([listener.observer rootDocument] == self.hostDocument) {
+            [listener detach];
+        }
+    }
+    self.focusRequestHandler = nil;
 }
 
 #pragma mark - focus (G-24)

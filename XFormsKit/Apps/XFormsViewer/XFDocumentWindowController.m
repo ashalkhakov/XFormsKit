@@ -540,6 +540,46 @@
     return nil;
 }
 
+- (void)showMessage:(NSString *)text level:(NSString *)level
+{
+    if ([level isEqualToString:@"ephemeral"]) {
+        // shown briefly in the window title bar area: a tooltip-like status
+        NSString *title = [[self window] title] ?: @"";
+        [[self window] setTitle:[NSString stringWithFormat:@"%@ — %@", title, text]];
+        __weak XFDocumentWindowController *weakSelf = self;
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [[weakSelf window] setTitle:title];
+        });
+        return;
+    }
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:text];
+    if ([level isEqualToString:@"modeless"] && [self window]
+        && [alert respondsToSelector:@selector(beginSheetModalForWindow:completionHandler:)]) {
+        [alert beginSheetModalForWindow:[self window] completionHandler:nil];
+    } else {
+        [alert runModal];
+    }
+}
+
+- (void)showHelpForControl:(XFControl *)control
+{
+    if (control.helpHref.length) {
+        NSURL *url = [NSURL URLWithString:control.helpHref relativeToURL:[[self formDocument] fileURL]];
+        if (url && [[NSWorkspace sharedWorkspace] openURL:url]) {
+            return;
+        }
+    }
+    NSString *text = control.help.length ? control.help : control.hint;
+    if (text.length == 0) {
+        return;
+    }
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:control.label.length ? control.label : @"Help"];
+    [alert setInformativeText:text];
+    [alert runModal];
+}
+
 - (void)rebuildForm
 {
     XFFormDocument *doc = [self formDocument];
@@ -561,6 +601,18 @@
         };
         form.instanceChangedHandler = ^{
             [weakSelf refreshInstanceTree];
+        };
+        // host hooks: xf:message levels (G-51), xf:load show="new|replace"
+        // (G-50), xforms-help (G-62)
+        doc.processor.messageHandler = ^(NSString *text, NSString *level) {
+            [weakSelf showMessage:text level:level];
+        };
+        doc.processor.loadRequestHandler = ^BOOL(NSURL *url, NSString *show) {
+            (void)show;
+            return url ? [[NSWorkspace sharedWorkspace] openURL:url] : NO;
+        };
+        doc.processor.helpRequestHandler = ^(XFControl *control) {
+            [weakSelf showHelpForControl:control];
         };
         self.formView = form;
         [self.formScroll setDocumentView:form];

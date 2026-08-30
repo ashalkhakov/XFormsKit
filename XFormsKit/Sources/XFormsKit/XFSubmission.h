@@ -30,6 +30,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, nullable) NSString *mediatype;
 @property (nonatomic, assign) BOOL validate;
 @property (nonatomic, assign) BOOL relevant;
+/// `cdata-section-elements`: local names whose text is serialised as CDATA (G-58).
+@property (nonatomic, copy, nullable) NSArray<NSString *> *cdataSectionElements;
 @property (nonatomic, assign) BOOL pending;
 @property (nonatomic, strong, nullable) XFBinding *refBinding;
 @property (nonatomic, strong, nullable) id<XFSubmissionTransport> transport;

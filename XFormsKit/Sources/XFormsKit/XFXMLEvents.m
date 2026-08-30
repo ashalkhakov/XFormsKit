@@ -5,6 +5,7 @@
 #import "XFXML.h"
 #import "XFDeferredUpdates.h"
 #import "XFControl.h"
+#import "XFProcessor.h"
 #import "XFInstance.h"
 #import "XFModel.h"
 #import "XFBind.h"
@@ -391,12 +392,19 @@ static const void *kXFElementKey   = &kXFElementKey;
                       inDocument:(NSXMLDocument *)document
                  observerDefault:(NSXMLElement *)observerDefault
 {
-    NSString *observerID = [self ev:@"observer" on:el] ?: [[el attributeForName:@"observer"] stringValue];
-    NSString *targetID = [self ev:@"target" on:el] ?: [[el attributeForName:@"target"] stringValue];
-    NSString *handlerRef = [self ev:@"handler" on:el] ?: [[el attributeForName:@"handler"] stringValue];
-    NSString *phase = [self ev:@"phase" on:el] ?: [[el attributeForName:@"phase"] stringValue];
-    NSString *propagate = [self ev:@"propagate" on:el] ?: [[el attributeForName:@"propagate"] stringValue];
-    NSString *defaultAction = [self ev:@"defaultAction" on:el] ?: [[el attributeForName:@"defaultAction"] stringValue];
+    // unprefixed XML Events attributes only on non-XForms elements
+    // (ev:listener): on xf:load / xf:dispatch a plain `target` is the
+    // action's own attribute (G-50)
+    BOOL xfElement = [[el URI] isEqualToString:XFXFormsNamespaceURI];
+    NSString *(^plain)(NSString *) = ^NSString *(NSString *name) {
+        return xfElement ? nil : [[el attributeForName:name] stringValue];
+    };
+    NSString *observerID = [self ev:@"observer" on:el] ?: plain(@"observer");
+    NSString *targetID = [self ev:@"target" on:el] ?: plain(@"target");
+    NSString *handlerRef = [self ev:@"handler" on:el] ?: plain(@"handler");
+    NSString *phase = [self ev:@"phase" on:el] ?: plain(@"phase");
+    NSString *propagate = [self ev:@"propagate" on:el] ?: plain(@"propagate");
+    NSString *defaultAction = [self ev:@"defaultAction" on:el] ?: plain(@"defaultAction");
 
     NSXMLElement *observer = observerDefault;
     if (observerID.length) {
@@ -514,10 +522,14 @@ static const void *kXFElementKey   = &kXFElementKey;
     }];
     [self define:@"xforms-help" bubbles:YES cancelable:YES defaultAction:^(id xf, XFEvent *ev) {
         (void)ev;
-        if ([xf respondsToSelector:@selector(help)]) {
-            NSString *text = [(XFControl *)xf help];
-            if ([text isKindOfClass:[NSString class]] && text.length) {
-                [[XFDeferredUpdates sharedUpdates].messages addObject:text];
+        if ([xf isKindOfClass:[XFControl class]]) {
+            // the host shows the help (G-62); without a host it is queued
+            XFControl *control = xf;
+            XFProcessor *processor = [control processor];
+            if (processor.helpRequestHandler) {
+                processor.helpRequestHandler(control);
+            } else if (control.help.length) {
+                [[XFDeferredUpdates sharedUpdates].messages addObject:control.help];
             }
         }
     }];
@@ -559,6 +571,8 @@ static const void *kXFElementKey   = &kXFElementKey;
     [self define:@"xforms-compute-exception" bubbles:YES cancelable:NO defaultAction:nil];
     [self define:@"xforms-binding-exception" bubbles:YES cancelable:NO defaultAction:nil];
     [self define:@"xforms-link-exception" bubbles:YES cancelable:NO defaultAction:nil];
+    [self define:@"xforms-upload-done" bubbles:YES cancelable:NO defaultAction:nil];
+    [self define:@"xforms-upload-error" bubbles:YES cancelable:NO defaultAction:nil];
     [self define:@"xforms-version-exception" bubbles:YES cancelable:NO defaultAction:nil];
     [self define:@"ajx-start" bubbles:YES cancelable:YES defaultAction:^(id xf, XFEvent *ev) {
         (void)ev;

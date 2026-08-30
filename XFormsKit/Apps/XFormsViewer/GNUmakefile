@@ -14,6 +14,7 @@ include $(GNUSTEP_MAKEFILES)/common.make
 
 APP_NAME = XFormsViewer
 
+XFormsViewer_LDFLAGS += -ldispatch
 XFormsViewer_OBJC_FILES = \
 	main.m \
 	XFFormDocument.m \

@@ -13,6 +13,20 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, nullable) NSXMLElement *element;
 @property (nonatomic, weak, nullable) XFModel *model;
 @property (nonatomic, copy, nullable) NSString *src;
+/// `readonly="true"`: the instance is never validated (XsltForms_instance
+/// revalidate), G-55.
+@property (nonatomic, assign) BOOL readonly;
+/// `mediatype` (attribute, parameters stripped): application/xml (default),
+/// application/json | text/json, text/csv (`;header=present;separator=,`).
+/// JSON and CSV sources are converted to XML like XsltForms_browser.json2xml
+/// / csv2xml (exml:anonymous documents), G-55.
+@property (nonatomic, copy, nullable) NSString *mediatype;
+@property (nonatomic, assign) BOOL csvHeader;
+@property (nonatomic, copy, nullable) NSString *csvSeparator;
+
+/// XsltForms_browser.json2xml / csv2xml: XML text for foreign data.
++ (nullable NSString *)xmlStringFromJSONData:(NSData *)data error:(NSError **)error;
++ (NSString *)xmlStringFromCSV:(NSString *)csv separator:(NSString *)separator header:(BOOL)header;
 @property (nonatomic, copy, nullable) NSURL *baseURL;
 @property (nonatomic, strong, readonly) NSXMLDocument *document;
 @property (nonatomic, strong, readonly) NSXMLDocument *originalDocument;

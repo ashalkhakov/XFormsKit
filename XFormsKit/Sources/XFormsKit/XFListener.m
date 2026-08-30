@@ -53,11 +53,12 @@
     }
     NSString *resolved = phase.length ? phase : @"default";
     if (![resolved isEqualToString:@"default"] && ![resolved isEqualToString:@"capture"]) {
-        // XsltForms_globals.error(..., "xforms-compute-exception", "Unknown event-phase...")
-        NSLog(@"XFormsKit: unknown event-phase(%@) for event(%@)%@",
-              resolved, name,
-              observer ? [NSString stringWithFormat:@" on element(%@)",
-                          [[observer attributeForName:@"id"] stringValue] ?: @""] : @"");
+        // XsltForms_globals.error(..., "xforms-compute-exception", ...) (G-54)
+        [XFXMLEvents raise:@"xforms-compute-exception" on:nil
+                   message:[NSString stringWithFormat:@"Unknown event-phase(%@) for event(%@)%@!",
+                            resolved, name,
+                            observer ? [NSString stringWithFormat:@" on element(%@)",
+                                        [[observer attributeForName:@"id"] stringValue] ?: @""] : @""]];
         resolved = @"default";
     }
     NSAssert(observer != nil, @"XsltForms_listener requires an observer");

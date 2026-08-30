@@ -1,4 +1,5 @@
 #import "XFLoadAction.h"
+#import "XFProcessor.h"
 #import "XFBinding.h"
 #import "XFXPath.h"
 #import "XFExprContext.h"
@@ -33,7 +34,8 @@
         return nil;
     }
     self.show = [[element attributeForName:@"show"] stringValue] ?: @"replace";
-    self.targetID = [[element attributeForName:@"targetid"] stringValue];
+    self.targetID = [[element attributeForName:@"targetid"] stringValue]
+        ?: [[element attributeForName:@"target"] stringValue];
     self.instanceID = [[element attributeForName:@"instance"] stringValue];
 
     NSString *resource = [[element attributeForName:@"resource"] stringValue];
@@ -78,6 +80,20 @@
     return self.resource ?: @"";
 }
 
+/// XFLoad.js dispatches on document.getElementById(targetid) when there is
+/// a target, else on the action (G-50).
+- (id)eventTarget
+{
+    if (self.targetID.length) {
+        NSString *tid = [self.targetID hasPrefix:@"#"] ? [self.targetID substringFromIndex:1] : self.targetID;
+        NSXMLElement *el = [XFXML elementWithID:tid inNode:self.element.rootDocument];
+        if (el) {
+            return [[XFXMLEvents sharedEvents] xfElementForElement:el] ?: (id)el;
+        }
+    }
+    return self;
+}
+
 - (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
 {
     (void)event;
@@ -96,9 +112,16 @@
     }
 
     if (self.instanceID.length == 0) {
-        // Host navigation is out of scope for the shared engine; record and succeed.
+        // show="new" | "replace": the host opens the URL (G-50); "embed"
+        // (subforms) is not supported yet
+        XFProcessor *processor = [self.model.owner isKindOfClass:[XFProcessor class]] ? (XFProcessor *)self.model.owner : nil;
+        NSURL *url = [NSURL URLWithString:href relativeToURL:processor.baseURL] ?: [NSURL URLWithString:href];
+        BOOL handled = YES;
+        if (processor.loadRequestHandler) {
+            handled = processor.loadRequestHandler(url, self.show ?: @"replace");
+        }
         self.lastEventContext = evcontext;
-        [XFXMLEvents dispatch:self name:@"xforms-load-done" context:evcontext];
+        [XFXMLEvents dispatch:[self eventTarget] name:handled ? @"xforms-load-done" : @"xforms-load-error" context:evcontext];
         return;
     }
 

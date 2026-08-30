@@ -24,6 +24,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSString *)stringValueOfNode:(NSXMLNode *)node;
 
 + (void)setStringValue:(NSString *)value ofNode:(NSXMLNode *)node;
+/// XPath normalize-space().
++ (NSString *)normalizeSpace:(NSString *)string;
 
 + (BOOL)element:(NSXMLElement *)element
    hasLocalName:(NSString *)localName

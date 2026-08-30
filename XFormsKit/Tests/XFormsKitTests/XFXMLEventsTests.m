@@ -521,4 +521,24 @@
     XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"compute"] invocationCount], (NSInteger)2);
 }
 
+- (void)testUnknownPhaseRaisesAndCloseRunsDestructListeners // G-54
+{
+    [[[XFXMLEvents sharedEvents] exceptionMessages] removeAllObjects];
+    XFProcessor *p = [self processorWithBody:
+        @"<xf:model id=\"m\"><xf:instance><data xmlns=\"\"><n>1</n></data></xf:instance>"
+        @"  <xf:action id=\"bye\" ev:event=\"xforms-model-destruct\"/>"
+        @"  <xf:action id=\"odd\" ev:event=\"ping\" ev:phase=\"sideways\"/>"
+        @"</xf:model>"];
+    BOOL saw = NO;
+    for (NSString *m in [[XFXMLEvents sharedEvents] exceptionMessages]) {
+        if ([m containsString:@"Unknown event-phase(sideways)"]) saw = YES;
+    }
+    XCTAssertTrue(saw);
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"bye"] invocationCount], (NSInteger)0);
+    [p close];
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"bye"] invocationCount], (NSInteger)1);
+    [p close];
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"bye"] invocationCount], (NSInteger)1);
+}
+
 @end

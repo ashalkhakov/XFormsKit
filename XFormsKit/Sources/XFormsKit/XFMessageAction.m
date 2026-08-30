@@ -1,4 +1,7 @@
 #import "XFMessageAction.h"
+#import "XFProcessor.h"
+#import "XFNamespaces.h"
+#import "XFBinding.h"
 #import "XFBinding.h"
 #import "XFExprContext.h"
 #import "XFXML.h"
@@ -34,20 +37,48 @@
     return self;
 }
 
+- (void)appendTextOf:(NSXMLElement *)element context:(XFExprContext *)ctx into:(NSMutableString *)out
+{
+    for (NSXMLNode *c in [element children]) {
+        if ([c kind] == NSXMLTextKind) {
+            [out appendString:[c stringValue] ?: @""];
+        } else if ([c kind] == NSXMLElementKind) {
+            NSXMLElement *el = (NSXMLElement *)c;
+            if ([XFXML element:el hasLocalName:@"output" namespaceURI:XFXFormsNamespaceURI]) {
+                NSString *attr = [el attributeForName:@"value"] && ![el attributeForName:@"ref"] ? @"value" : @"ref";
+                XFBinding *b = [XFBinding bindingForElement:el attribute:attr error:NULL];
+                [out appendString:b ? ([b stringValueInContext:ctx error:NULL] ?: @"") : @""];
+            } else {
+                [self appendTextOf:el context:ctx into:out];
+            }
+        }
+    }
+}
+
 - (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
 {
     (void)event;
     NSString *text = nil;
+    XFExprContext *ctx = [[XFExprContext alloc] initWithNode:contextNode];
+    ctx.model = self.model;
     if (self.binding && contextNode) {
-        XFExprContext *ctx = [[XFExprContext alloc] initWithNode:contextNode];
-        ctx.model = self.model;
         text = [self.binding stringValueInContext:ctx error:NULL];
     } else {
-        text = [XFXML stringValueOfNode:self.element];
+        // XFMessage.js builds the message content: inline xf:output
+        // elements are evaluated in place (G-51)
+        NSMutableString *built = [NSMutableString string];
+        [self appendTextOf:self.element context:ctx into:built];
+        text = built;
     }
-    text = [text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    text = [XFXML normalizeSpace:text ?: @""];
     self.lastText = text;
-    if (text.length) {
+    if (text.length == 0) {
+        return;
+    }
+    XFProcessor *processor = [self.model.owner isKindOfClass:[XFProcessor class]] ? (XFProcessor *)self.model.owner : nil;
+    if (processor.messageHandler) {
+        processor.messageHandler(text, self.level ?: @"modal");
+    } else {
         [[XFDeferredUpdates sharedUpdates].messages addObject:text];
     }
 }
