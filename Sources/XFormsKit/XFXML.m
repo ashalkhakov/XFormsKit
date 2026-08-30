@@ -85,6 +85,69 @@
     }
 }
 
++ (NSString *)attributeValue:(NSString *)localName
+               namespaceURI:(NSString *)namespaceURI
+                  onElement:(NSXMLElement *)element
+{
+    if (element == nil || localName.length == 0) {
+        return nil;
+    }
+    for (NSXMLNode *attr in [element attributes]) {
+        NSString *aLocal = [attr localName] ?: [attr name];
+        if (![aLocal isEqualToString:localName]) {
+            NSString *name = [attr name];
+            NSRange colon = [name rangeOfString:@":"];
+            if (colon.location != NSNotFound) {
+                aLocal = [name substringFromIndex:colon.location + 1];
+            }
+            if (![aLocal isEqualToString:localName]) {
+                continue;
+            }
+        }
+        if (namespaceURI.length == 0) {
+            return [attr stringValue];
+        }
+        NSString *uri = [attr URI];
+        if ([uri isEqualToString:namespaceURI]) {
+            return [attr stringValue];
+        }
+        NSString *name = [attr name];
+        if ([name hasPrefix:@"ev:"] && [namespaceURI isEqualToString:@"http://www.w3.org/2001/xml-events"]) {
+            return [attr stringValue];
+        }
+    }
+    if (namespaceURI.length == 0) {
+        return [[element attributeForName:localName] stringValue];
+    }
+    return nil;
+}
+
++ (NSXMLElement *)elementWithID:(NSString *)identifier inNode:(NSXMLNode *)node
+{
+    if (identifier.length == 0 || node == nil) {
+        return nil;
+    }
+    if ([node kind] == NSXMLElementKind) {
+        NSXMLElement *element = (NSXMLElement *)node;
+        NSString *xmlid = [self attributeValue:@"id"
+                                 namespaceURI:@"http://www.w3.org/XML/1998/namespace"
+                                    onElement:element];
+        if (xmlid == nil) {
+            xmlid = [[element attributeForName:@"id"] stringValue];
+        }
+        if ([xmlid isEqualToString:identifier]) {
+            return element;
+        }
+    }
+    for (NSXMLNode *child in [node children]) {
+        NSXMLElement *found = [self elementWithID:identifier inNode:child];
+        if (found) {
+            return found;
+        }
+    }
+    return nil;
+}
+
 + (void)setStringValue:(NSString *)value ofNode:(NSXMLNode *)node
 {
     if ([node kind] == NSXMLAttributeKind) {

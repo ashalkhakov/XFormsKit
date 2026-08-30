@@ -36,7 +36,10 @@ XFormsKit_HEADER_FILES = \
 	XFInputControl.h \
 	XFOutputControl.h \
 	XFProcessor.h \
-	XFFormView.h
+	XFFormView.h \
+	XFEvent.h \
+	XFListener.h \
+	XFXMLEvents.h
 
 XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/XFNamespaces.m \
@@ -46,6 +49,15 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/XFModel.m \
 	Sources/XFormsKit/XPath/XFExprContext.m \
 	Sources/XFormsKit/XPath/XFXPathValue.m \
+	Sources/XFormsKit/XPath/XFExprs.m \
+	Sources/XFormsKit/XPath/XFNodeTests.m \
+	Sources/XFormsKit/XPath/XFLocationExpr.m \
+	Sources/XFormsKit/XPath/XFStepExpr.m \
+	Sources/XFormsKit/XPath/XFPathExpr.m \
+	Sources/XFormsKit/XPath/XFBinaryExpr.m \
+	Sources/XFormsKit/XPath/XFXPathFunction.m \
+	Sources/XFormsKit/XPath/XFXPathCoreFunctions.m \
+	Sources/XFormsKit/XPath/XFFunctionCallExpr.m \
 	Sources/XFormsKit/XPath/XFXPathLexer.m \
 	Sources/XFormsKit/XPath/XFXPathParser.m \
 	Sources/XFormsKit/XPath/XFXPath.m \
@@ -54,6 +66,9 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/XFInputControl.m \
 	Sources/XFormsKit/XFOutputControl.m \
 	Sources/XFormsKit/XFProcessor.m \
+	Sources/XFormsKit/XFEvent.m \
+	Sources/XFormsKit/XFListener.m \
+	Sources/XFormsKit/XFXMLEvents.m \
 	Sources/XFormsKit/UI/XFFormView.m
 
 XFormsKit_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath
@@ -63,7 +78,8 @@ XFormsKitTests_NEEDS_GUI = yes
 XFormsKitTests_OBJC_FILES = \
 	Tests/XFormsKitTests/XFXPathTests.m \
 	Tests/XFormsKitTests/XFInstanceTests.m \
-	Tests/XFormsKitTests/XFHelloFormTests.m
+	Tests/XFormsKitTests/XFHelloFormTests.m \
+	Tests/XFormsKitTests/XFXMLEventsTests.m
 
 XFormsKitTests_RESOURCE_FILES = Tests/Fixtures/hello.xhtml
 XFormsKitTests_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath
