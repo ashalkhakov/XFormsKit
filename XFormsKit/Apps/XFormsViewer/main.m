@@ -1,5 +1,6 @@
 #import <AppKit/AppKit.h>
 #import "XFFormDocument.h"
+#import "XFDocumentWindowController.h"
 
 @interface XFViewerApp : NSObject
 @end
@@ -8,8 +9,9 @@
 
 - (void)applicationWillFinishLaunching:(NSNotification *)note
 {
-    NSDocumentController *dc = [NSDocumentController sharedDocumentController];
-    (void)dc;
+    (void)[XFFormDocument class];
+    (void)[XFDocumentWindowController class];
+    (void)[NSDocumentController sharedDocumentController];
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)note
@@ -157,20 +159,42 @@
     return res;
 }
 
+- (BOOL)openFormURL:(NSURL *)url error:(NSError **)error
+{
+    if (url == nil) {
+        return NO;
+    }
+    NSDocumentController *dc = [NSDocumentController sharedDocumentController];
+    for (NSDocument *existing in [dc documents]) {
+        if ([[existing fileURL] isEqual:url]) {
+            [existing showWindows];
+            return YES;
+        }
+    }
+
+    XFFormDocument *doc = [[XFFormDocument alloc] init];
+    if (![doc readFromURL:url ofType:@"xhtml" error:error]) {
+        return NO;
+    }
+    [doc setFileURL:url];
+    [doc setFileType:@"xhtml"];
+    [dc addDocument:doc];
+    [doc makeWindowControllers];
+    [doc showWindows];
+    return YES;
+}
+
 - (void)openSample:(NSMenuItem *)sender
 {
     NSString *name = [sender representedObject];
     NSURL *url = [[self samplesDirectory] URLByAppendingPathComponent:name];
     NSError *error = nil;
-    id doc = [[NSDocumentController sharedDocumentController] openDocumentWithContentsOfURL:url
-                                                                                    display:YES
-                                                                                      error:&error];
-    if (doc == nil) {
+    if (![self openFormURL:url error:&error]) {
         NSAlert *alert = [[NSAlert alloc] init];
         [alert setMessageText:@"Could not open sample"];
         [alert setInformativeText:[NSString stringWithFormat:@"%@\n%@",
                                    [url path],
-                                   [error localizedDescription] ?: @""]];
+                                   [error localizedDescription] ?: @"No window was created"]];
         [alert runModal];
     }
 }

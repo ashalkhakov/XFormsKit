@@ -32,8 +32,11 @@ XFormsViewer_RESOURCE_FILES = \
 	../../Samples/repeat.xhtml \
 	../../Samples/secret.xhtml \
 	../../Samples/select1.xhtml \
+	../../Samples/choices.xhtml \
 	../../Samples/switch.xhtml \
-	../../Samples/textarea.xhtml
+	../../Samples/textarea.xhtml \
+	../../Samples/upload.xhtml \
+	../../Samples/output-image.xhtml
 
 XFormsViewer_INCLUDE_DIRS = \
 	-I. \

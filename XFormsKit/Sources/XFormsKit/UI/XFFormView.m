@@ -1,5 +1,8 @@
 #import "XFFormView.h"
 #import "XFProcessor.h"
+#import <objc/runtime.h>
+
+static const void *kXFBoundControlKey = &kXFBoundControlKey;
 #import "XFControl.h"
 #import "XFInputControl.h"
 #import "XFOutputControl.h"
@@ -48,10 +51,11 @@ static const CGFloat kFieldWidth = 280.0;
 
 - (instancetype)initWithProcessor:(XFProcessor *)processor
 {
-    self = [super initWithFrame:NSMakeRect(0, 0, 440, 200)];
+    self = [super initWithFrame:NSMakeRect(0, 0, 620, 240)];
     if (self) {
         _processor = processor;
         _widgets = [NSMutableArray array];
+        [self setAutoresizingMask:NSViewNotSizable];
         [self rebuild];
     }
     return self;
@@ -126,8 +130,27 @@ static const CGFloat kFieldWidth = 280.0;
     }
     [self addSubview:view];
     [self.widgets addObject:w];
+    objc_setAssociatedObject(view, kXFBoundControlKey, control, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [self applyEnabled:view control:control];
     return w;
+}
+
+- (XFControl *)controlForSender:(id)sender
+{
+    id walk = sender;
+    while (walk) {
+        XFControl *bound = objc_getAssociatedObject(walk, kXFBoundControlKey);
+        if (bound) {
+            return bound;
+        }
+        if ([walk respondsToSelector:@selector(superview)]) {
+            walk = [walk superview];
+        } else {
+            break;
+        }
+    }
+    XFWidget *w = [self widgetForControlView:sender];
+    return w.control;
 }
 
 - (NSTextField *)textFieldEditable:(BOOL)editable secure:(BOOL)secure
@@ -400,8 +423,15 @@ static const CGFloat kFieldWidth = 280.0;
     for (XFControl *c in top) {
         y = [self layoutControl:c atY:y indent:0];
     }
+    if (top.count == 0) {
+        NSTextField *empty = [self makeLabel:@"No XForms controls in the host body."];
+        [empty setFrame:NSMakeRect(kMargin, kMargin, 400, 40)];
+        [self addSubview:empty];
+        y = kMargin + 48;
+    }
     self.contentHeight = y + kMargin;
-    [self setFrameSize:NSMakeSize(440, MAX(self.contentHeight, 80))];
+    [self setFrame:NSMakeRect(0, 0, 620, MAX(self.contentHeight, 80))];
+    [self setNeedsDisplay:YES];
 }
 
 - (XFWidget *)widgetForView:(id)sender
@@ -434,11 +464,11 @@ static const CGFloat kFieldWidth = 280.0;
 
 - (void)uploadClicked:(NSButton *)sender
 {
-    XFWidget *w = [self widgetForControlView:sender];
-    if (![w.control isKindOfClass:[XFUploadControl class]]) {
+    XFControl *bound = [self controlForSender:sender];
+    if (![bound isKindOfClass:[XFUploadControl class]]) {
         return;
     }
-    XFUploadControl *upload = (XFUploadControl *)w.control;
+    XFUploadControl *upload = (XFUploadControl *)bound;
     if (![NSOpenPanel class]) {
         return;
     }
@@ -465,9 +495,9 @@ static const CGFloat kFieldWidth = 280.0;
 
 - (void)textChanged:(NSTextField *)sender
 {
-    XFWidget *w = [self widgetForControlView:sender];
-    if (w) {
-        [self commitControl:w.control value:[sender stringValue]];
+    XFControl *control = [self controlForSender:sender];
+    if (control) {
+        [self commitControl:control value:[sender stringValue]];
     }
 }
 
@@ -502,9 +532,9 @@ static const CGFloat kFieldWidth = 280.0;
 
 - (void)buttonClicked:(NSButton *)sender
 {
-    XFWidget *w = [self widgetForControlView:sender];
-    if ([w.control isKindOfClass:[XFTriggerControl class]]) {
-        [(XFTriggerControl *)w.control activate];
+    XFControl *control = [self controlForSender:sender];
+    if ([control isKindOfClass:[XFTriggerControl class]]) {
+        [(XFTriggerControl *)control activate];
         [self.processor refreshControls];
         [self reloadFromProcessor];
         [self notifyDocumentReplaceIfNeeded];
@@ -513,9 +543,9 @@ static const CGFloat kFieldWidth = 280.0;
 
 - (void)sliderChanged:(NSSlider *)sender
 {
-    XFWidget *w = [self widgetForControlView:sender];
-    if ([w.control isKindOfClass:[XFRangeControl class]]) {
-        [(XFRangeControl *)w.control commitNumericValue:[sender doubleValue] error:NULL];
+    XFControl *control = [self controlForSender:sender];
+    if ([control isKindOfClass:[XFRangeControl class]]) {
+        [(XFRangeControl *)control commitNumericValue:[sender doubleValue] error:NULL];
         [self.processor refresh:NULL];
         [self reloadFromProcessor];
     }
@@ -523,10 +553,10 @@ static const CGFloat kFieldWidth = 280.0;
 
 - (void)popupChanged:(NSPopUpButton *)sender
 {
-    XFWidget *w = [self widgetForControlView:sender];
-    if ([w.control isKindOfClass:[XFSelectControl class]]) {
+    XFControl *control = [self controlForSender:sender];
+    if ([control isKindOfClass:[XFSelectControl class]]) {
         NSString *value = [[sender selectedItem] representedObject];
-        [(XFSelectControl *)w.control selectValue:value ?: [sender titleOfSelectedItem]];
+        [(XFSelectControl *)control selectValue:value ?: [sender titleOfSelectedItem]];
         [self.processor refresh:NULL];
         [self reloadFromProcessor];
     }
@@ -534,9 +564,9 @@ static const CGFloat kFieldWidth = 280.0;
 
 - (void)checkClicked:(NSButton *)sender
 {
-    XFWidget *w = [self widgetForControlView:sender];
-    if ([w.control isKindOfClass:[XFSelectControl class]]) {
-        [(XFSelectControl *)w.control toggleValue:[sender toolTip] ?: [sender title]];
+    XFControl *control = [self controlForSender:sender];
+    if ([control isKindOfClass:[XFSelectControl class]]) {
+        [(XFSelectControl *)control toggleValue:[sender toolTip] ?: [sender title]];
         [self.processor refresh:NULL];
         [self reloadFromProcessor];
     }
@@ -544,17 +574,17 @@ static const CGFloat kFieldWidth = 280.0;
 
 - (void)boolClicked:(NSButton *)sender
 {
-    XFWidget *w = [self widgetForControlView:sender];
-    if (w) {
-        [self commitControl:w.control value:([sender state] == NSOnState) ? @"true" : @"false"];
+    XFControl *control = [self controlForSender:sender];
+    if (control) {
+        [self commitControl:control value:([sender state] == NSOnState) ? @"true" : @"false"];
     }
 }
 
 - (void)dateChanged:(NSDatePicker *)sender
 {
-    XFWidget *w = [self widgetForControlView:sender];
-    if ([w.control isKindOfClass:[XFInputControl class]]) {
-        [(XFInputControl *)w.control commitDateValue:[sender dateValue] error:NULL];
+    XFControl *control = [self controlForSender:sender];
+    if ([control isKindOfClass:[XFInputControl class]]) {
+        [(XFInputControl *)control commitDateValue:[sender dateValue] error:NULL];
         [self.processor refresh:NULL];
         [self reloadFromProcessor];
     }

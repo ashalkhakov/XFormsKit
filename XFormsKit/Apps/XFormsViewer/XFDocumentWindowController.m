@@ -152,8 +152,30 @@
     return b;
 }
 
+- (instancetype)init
+{
+    self = [super initWithWindow:nil];
+    if (self) {
+        [self loadWindow];
+    }
+    return self;
+}
+
+- (void)showWindow:(id)sender
+{
+    if ([self window] == nil) {
+        [self loadWindow];
+    }
+    [super showWindow:sender];
+    [[[self window] contentView] setNeedsDisplay:YES];
+    [[self window] makeKeyAndOrderFront:sender];
+}
+
 - (void)loadWindow
 {
+    if ([self window] != nil) {
+        return;
+    }
     self.paletteItems = [self buildPalette];
     self.inspectorBindings = [NSMutableArray array];
 

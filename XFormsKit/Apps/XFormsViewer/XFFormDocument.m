@@ -1,4 +1,5 @@
 #import "XFFormDocument.h"
+#import "XFDocumentWindowController.h"
 #import <XFormsKit/XFNamespaces.h>
 #import <XFormsKit/XFXML.h>
 
@@ -49,9 +50,22 @@
 
 - (void)makeWindowControllers
 {
-    Class cls = NSClassFromString(@"XFDocumentWindowController");
-    NSWindowController *wc = [[cls alloc] initWithWindow:nil];
+    XFDocumentWindowController *wc = [[XFDocumentWindowController alloc] init];
     [self addWindowController:wc];
+    [[wc window] makeKeyAndOrderFront:self];
+}
+
+- (void)showWindows
+{
+    if ([[self windowControllers] count] == 0) {
+        [self makeWindowControllers];
+    }
+    for (NSWindowController *wc in [self windowControllers]) {
+        if ([wc window] == nil) {
+            [wc loadWindow];
+        }
+        [wc showWindow:self];
+    }
 }
 
 - (BOOL)readFromURL:(NSURL *)url ofType:(NSString *)typeName error:(NSError **)error
