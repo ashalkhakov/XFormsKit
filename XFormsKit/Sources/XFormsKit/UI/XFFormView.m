@@ -115,6 +115,16 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
 @property (nonatomic, strong) NSTimer *delayTimer;
 /// Adapters of compact select list boxes (G-43).
 @property (nonatomic, strong) NSMutableArray<XFListBoxAdapter *> *listBoxes;
+/// Focusable inner views in layout (document) order — the tab chain (G-63).
+@property (nonatomic, strong) NSMutableArray<NSView *> *keyViews;
+@property (nonatomic, weak) NSView *firstKeyView;
+/// The chain as last built (navindex order applied).
+@property (nonatomic, copy) NSArray<NSView *> *keyChain;
+/// A Tab/Backtab that ended a field's editing: the commit rebuilds every
+/// widget before AppKit can move the focus, so the movement is replayed on
+/// the NEW widgets after the reload (G-63).
+@property (nonatomic, weak) XFControl *pendingTabControl;
+@property (nonatomic, assign) NSInteger pendingTabDirection;
 - (void)listBox:(XFListBoxAdapter *)adapter didSelectRows:(NSIndexSet *)rows;
 /// The control whose Return key ended editing: DOMActivate after the
 /// commit (XsltForms_input.keyUpActivate, G-42).
@@ -142,6 +152,7 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
         _widgets = [NSMutableArray array];
         _tables = [NSMutableArray array];
         _listBoxes = [NSMutableArray array];
+        _keyViews = [NSMutableArray array];
         [self setAutoresizingMask:NSViewNotSizable];
         if (rootGroup == nil) {
             __weak XFFormView *weakSelf = self;
@@ -163,6 +174,24 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
 - (BOOL)isFlipped
 {
     return YES;
+}
+
+/// The view Tab lands on for a widget (the scroll view's document view for
+/// textareas / list boxes / tables).
+static NSView *XFKeyViewOf(NSView *view)
+{
+    return [view isKindOfClass:[NSScrollView class]] ? [(NSScrollView *)view documentView] : view;
+}
+
+- (void)registerKeyView:(NSView *)view control:(XFControl *)control
+{
+    // outputs and standalone labels are not tab stops (HTML: a span is not
+    // focusable), even though a selectable text field would accept focus
+    if (view == nil || [control isKindOfClass:[XFOutputControl class]]
+        || [control isKindOfClass:[XFLabelControl class]]) {
+        return;
+    }
+    [self.keyViews addObject:view];
 }
 
 - (NSTextField *)makeLabel:(NSString *)text
@@ -229,6 +258,7 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     }
     [self addSubview:view];
     [self.widgets addObject:w];
+    [self registerKeyView:XFKeyViewOf(view) control:control];
     objc_setAssociatedObject(view, kXFBoundControlKey, control, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [self applyEnabled:view control:control];
     [self noteRight:NSMaxX([view frame])];
@@ -901,6 +931,7 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     [view setFrame:NSMakeRect(*x, *lineY, width, height)];
     [self addSubview:view];
     [self.widgets addObject:w];
+    [self registerKeyView:XFKeyViewOf(view) control:control];
     objc_setAssociatedObject(view, kXFBoundControlKey, control, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [self applyEnabled:view control:control];
     *x += width + 6;
@@ -1177,6 +1208,9 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     [adapter.scrollView setFrame:NSMakeRect(left, cursor, width, size.height)];
     [self addSubview:adapter.scrollView];
     [self.tables addObject:adapter];
+    if (adapter.tableView) {
+        [self.keyViews addObject:adapter.tableView];
+    }
     [self noteRight:left + width];
     return cursor + size.height + kRowGap;
 }
@@ -1238,6 +1272,7 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
         [view removeFromSuperview];
     }
     [self.widgets removeAllObjects];
+    [self.keyViews removeAllObjects];
     for (XFTableAdapter *t in self.tables) {
         [t.tableView setDataSource:nil];
         [t.tableView setDelegate:nil];
@@ -1257,30 +1292,70 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     self.contentHeight = y + kMargin;
     [self setFrame:NSMakeRect(0, 0, MAX(kWrapWidth, self.maxRight + kMargin), MAX(self.contentHeight, 80))];
     [self setNeedsDisplay:YES];
-    // @navindex: tab order among the widgets that declare one (G-63)
-    NSArray *ordered = [self.widgets sortedArrayUsingComparator:^NSComparisonResult(XFWidget *a, XFWidget *b) {
+    // Tab order (G-63): like HTML/XForms navigation — the widgets with a
+    // positive @navindex first, ascending (stable), then every focusable
+    // view in document order; the chain wraps. AppKit itself skips views
+    // that refuse first responder (labels, disabled fields).
+    NSMutableArray<NSView *> *chain = [NSMutableArray array];
+    NSArray *ordered = [self.widgets sortedArrayWithOptions:NSSortStable
+                                            usingComparator:^NSComparisonResult(XFWidget *a, XFWidget *b) {
         NSInteger na = a.control.navindex, nb = b.control.navindex;
         if (na == nb) return NSOrderedSame;
         if (na == 0) return NSOrderedDescending;
         if (nb == 0) return NSOrderedAscending;
         return na < nb ? NSOrderedAscending : NSOrderedDescending;
     }];
-    NSView *previous = nil;
     for (XFWidget *w in ordered) {
         if (w.control.navindex <= 0) {
             break;
         }
-        NSView *v = [w.view isKindOfClass:[NSScrollView class]] ? [(NSScrollView *)w.view documentView] : w.view;
-        if (previous) {
-            [previous setNextKeyView:v];
+        NSView *v = XFKeyViewOf(w.view);
+        if (v) {
+            [chain addObject:v];
         }
+    }
+    for (NSView *v in self.keyViews) {
+        if (![chain containsObject:v]) {
+            [chain addObject:v];
+        }
+    }
+    NSView *previous = chain.lastObject;   // wrap: last → first
+    for (NSView *v in chain) {
+        [previous setNextKeyView:v];
         previous = v;
     }
+    self.firstKeyView = chain.firstObject;
+    self.keyChain = chain;
+    [self installInitialFirstResponder];
     // the widgets were recreated: give the engine's focused control its
-    // first responder back
-    if (self.processor.focusedControl && [self window]) {
+    // first responder back — unless a Tab movement is about to place the
+    // focus itself (G-63)
+    if (self.processor.focusedControl && [self window] && self.pendingTabDirection == 0) {
         [self makeControlFirstResponder:self.processor.focusedControl];
     }
+}
+
+/// The first Tab press should land in the form: point the window at the
+/// chain's first view (and keep our hand-built loop — macOS would
+/// otherwise recalculate a geometric one over it).
+- (void)installInitialFirstResponder
+{
+    NSWindow *window = [self window];
+    if (window == nil) {
+        return;
+    }
+    if ([window respondsToSelector:@selector(setAutorecalculatesKeyViewLoop:)]) {
+        [window setAutorecalculatesKeyViewLoop:NO];
+    }
+    if (self.firstKeyView) {
+        [window setInitialFirstResponder:self.firstKeyView];
+    }
+}
+
+- (void)viewDidMoveToWindow
+{
+    [super viewDidMoveToWindow];
+    [self installInitialFirstResponder];
 }
 
 - (XFWidget *)widgetForView:(id)sender
@@ -1425,6 +1500,15 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
         return;
     }
     XFControl *control = [self controlForSender:[note object]];
+    // a commit that rebuilds the widgets swallows AppKit's own Tab
+    // movement — remember it so the reload can replay it (G-63)
+    if (movement && [movement integerValue] == NSTabTextMovement) {
+        self.pendingTabControl = control;
+        self.pendingTabDirection = 1;
+    } else if (movement && [movement integerValue] == NSBacktabTextMovement) {
+        self.pendingTabControl = control;
+        self.pendingTabDirection = -1;
+    }
     if (control && control == self.processor.focusedControl) {
         [self.processor blurFocusedControl];
     }
@@ -1449,6 +1533,16 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
         self.delayTimer = nil;
         BOOL activate = (self.pendingActivate == control);
         self.pendingActivate = nil;
+        // No change event without a change (DOM semantics): the widgets
+        // survive, so a Tab that got the action here moves natively
+        if (!activate && [[sender stringValue] isEqualToString:control.stringValue ?: @""]) {
+            if (control == self.pendingTabControl) {
+                // no rebuild: AppKit's own movement machinery handles this Tab
+                self.pendingTabControl = nil;
+                self.pendingTabDirection = 0;
+            }
+            return;
+        }
         [self.processor setValue:[sender stringValue] ofControl:control error:NULL];
         if (activate) {
             // Return in an input: DOMActivate after the value change
@@ -1514,6 +1608,28 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     if (control.incremental) {
         [self commitIncremental:control value:[field stringValue] editingView:field];
     }
+}
+
+/// Textareas: Tab / Shift-Tab move the focus like everywhere else in the
+/// form (the HTML behaviour XSLTForms gets for free).
+- (BOOL)textView:(NSTextView *)textView doCommandBySelector:(SEL)commandSelector
+{
+    if (commandSelector != @selector(insertTab:) && commandSelector != @selector(insertBacktab:)) {
+        return NO;
+    }
+    XFControl *control = nil;
+    for (XFWidget *w in self.widgets) {
+        if ([w.view isKindOfClass:[NSScrollView class]] && [(NSScrollView *)w.view documentView] == textView) {
+            control = w.control;
+        }
+    }
+    self.pendingTabControl = control;
+    self.pendingTabDirection = commandSelector == @selector(insertTab:) ? 1 : -1;
+    // end the editing (commits and may rebuild), then move on the new widgets
+    [[textView window] makeFirstResponder:nil];
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(applyPendingTab) object:nil];
+    [self performSelector:@selector(applyPendingTab) withObject:nil afterDelay:0];
+    return YES;
 }
 
 - (void)textDidChange:(NSNotification *)note
@@ -1700,8 +1816,39 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
 {
     [self.processor refreshControls];
     [self rebuild];
+    if (self.pendingTabDirection != 0) {
+        // after the current event (AppKit's own movement attempt on the
+        // detached old view is a no-op by then)
+        [self performSelector:@selector(applyPendingTab) withObject:nil afterDelay:0];
+    }
     if (self.instanceChangedHandler) {
         self.instanceChangedHandler();
+    }
+}
+
+- (void)applyPendingTab
+{
+    XFControl *from = self.pendingTabControl;
+    NSInteger direction = self.pendingTabDirection;
+    self.pendingTabControl = nil;
+    self.pendingTabDirection = 0;
+    if (direction == 0 || self.keyChain.count == 0 || [self window] == nil) {
+        return;
+    }
+    NSView *fromView = XFKeyViewOf([self widgetForControl:from].view);
+    NSInteger count = (NSInteger)self.keyChain.count;
+    NSInteger at = fromView ? (NSInteger)[self.keyChain indexOfObject:fromView] : NSNotFound;
+    if (at == NSNotFound) {
+        at = direction > 0 ? -1 : 0;   // control gone: start at an end
+    }
+    for (NSInteger step = 1; step <= count; step++) {
+        NSInteger i = ((at + direction * step) % count + count) % count;
+        NSView *v = self.keyChain[(NSUInteger)i];
+        if ([v window] == [self window] && ![v isHiddenOrHasHiddenAncestor] && [v acceptsFirstResponder]) {
+            [self scrollRectToVisible:[self convertRect:[v bounds] fromView:v]];
+            [[self window] makeFirstResponder:v];
+            return;
+        }
     }
 }
 
