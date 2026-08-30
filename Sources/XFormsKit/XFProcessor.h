@@ -5,6 +5,12 @@
 @class XFControl;
 @class XFInputControl;
 @class XFOutputControl;
+@class XFSelectControl;
+@class XFTriggerControl;
+@class XFAction;
+@class XFAbstractAction;
+@class XFGroup;
+@class XFRepeat;
 @class NSXMLDocument;
 
 NS_ASSUME_NONNULL_BEGIN
@@ -16,6 +22,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSArray<XFControl *> *controls;
 @property (nonatomic, copy, readonly) NSArray<XFInputControl *> *inputControls;
 @property (nonatomic, copy, readonly) NSArray<XFOutputControl *> *outputControls;
+@property (nonatomic, copy, readonly) NSArray<XFAbstractAction *> *actions;
+@property (nonatomic, copy, readonly) NSArray<XFGroup *> *groups;
+@property (nonatomic, copy, readonly) NSArray<XFRepeat *> *repeats;
+
+- (nullable XFAbstractAction *)actionWithIdentifier:(NSString *)identifier;
+- (nullable XFRepeat *)repeatWithIdentifier:(NSString *)identifier;
 
 + (nullable instancetype)processorWithContentsOfURL:(NSURL *)url
                                               error:(NSError **)error;
@@ -27,10 +39,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)refresh:(NSError **)error;
 - (void)refreshControls;
 
-/// Writes `value` into the input's bound node and refreshes the form.
 - (BOOL)setValue:(NSString *)value
-      ofControl:(XFInputControl *)control
+      ofControl:(XFControl *)control
           error:(NSError **)error;
+
+- (void)activateControl:(XFTriggerControl *)control;
+
+- (nullable XFControl *)controlForElement:(NSXMLElement *)element;
 
 @end
 
