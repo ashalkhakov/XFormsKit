@@ -200,7 +200,14 @@ typedef XFXPathValue * _Nullable (^XFXPathFnBody)(XFExprContext *ctx, NSArray<XF
 + (nullable XFXPathFunction *)functionNamed:(NSString *)name;
 @end
 
+/// XPath 2 string helpers, aggregates, format-number, EXSLT math, XSLTForms
+/// extras (XFXPathExtraFunctions.m). A plain function rather than a category
+/// so a missing compilation unit fails at link time, not at runtime.
+FOUNDATION_EXPORT NSDictionary<NSString *, XFXPathFunction *> *XFXPathExtraFunctionTable(void);
+
 #pragma mark - Helpers
 
 FOUNDATION_EXPORT NSXMLNode *XFRootNode(NSXMLNode *node);
 FOUNDATION_EXPORT BOOL XFNodeInArray(NSXMLNode *node, NSArray<NSXMLNode *> *array);
+FOUNDATION_EXPORT NSComparisonResult XFCompareDocumentOrder(NSXMLNode *a, NSXMLNode *b);
+FOUNDATION_EXPORT NSArray<NSXMLNode *> *XFSortDocumentOrder(NSArray<NSXMLNode *> *nodes);

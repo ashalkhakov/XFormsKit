@@ -30,7 +30,14 @@
 
 - (void)registerAll:(XFNSResolver *)other
 {
-    [_map addEntriesFromDictionary:other->_map];
+    if (other == nil) {
+        return;
+    }
+    for (NSString *prefix in other->_map) {
+        if (_map[prefix] == nil) {
+            _map[prefix] = other->_map[prefix];
+        }
+    }
 }
 
 - (NSString *)lookupNamespaceURI:(NSString *)prefix
@@ -145,4 +152,57 @@ BOOL XFNodeInArray(NSXMLNode *node, NSArray<NSXMLNode *> *array)
         }
     }
     return NO;
+}
+
+/// Path from the root to `node` as (ancestor..., node); attributes are
+/// ordered before the children of their element (XPath 1.0 §5).
+static NSArray<NSXMLNode *> *XFAncestryOf(NSXMLNode *node)
+{
+    NSMutableArray *path = [NSMutableArray array];
+    for (NSXMLNode *n = node; n; n = [n parent]) {
+        [path insertObject:n atIndex:0];
+    }
+    return path;
+}
+
+static NSInteger XFPositionOf(NSXMLNode *child, NSXMLNode *parent)
+{
+    if ([child kind] == NSXMLAttributeKind) {
+        NSArray *attrs = [(NSXMLElement *)parent attributes];
+        return -(NSInteger)attrs.count + (NSInteger)[attrs indexOfObjectIdenticalTo:child];
+    }
+    return (NSInteger)[child index];
+}
+
+NSComparisonResult XFCompareDocumentOrder(NSXMLNode *a, NSXMLNode *b)
+{
+    if (a == b) {
+        return NSOrderedSame;
+    }
+    NSArray *pa = XFAncestryOf(a);
+    NSArray *pb = XFAncestryOf(b);
+    NSUInteger n = MIN(pa.count, pb.count);
+    for (NSUInteger i = 0; i < n; i++) {
+        if (pa[i] != pb[i]) {
+            if (i == 0) {
+                // different documents: keep a stable but arbitrary order
+                return (uintptr_t)pa[0] < (uintptr_t)pb[0] ? NSOrderedAscending : NSOrderedDescending;
+            }
+            NSInteger ia = XFPositionOf(pa[i], pa[i - 1]);
+            NSInteger ib = XFPositionOf(pb[i], pb[i - 1]);
+            return ia < ib ? NSOrderedAscending : NSOrderedDescending;
+        }
+    }
+    // one is an ancestor of the other: the ancestor comes first
+    return pa.count < pb.count ? NSOrderedAscending : NSOrderedDescending;
+}
+
+NSArray<NSXMLNode *> *XFSortDocumentOrder(NSArray<NSXMLNode *> *nodes)
+{
+    if (nodes.count < 2) {
+        return nodes;
+    }
+    return [nodes sortedArrayUsingComparator:^NSComparisonResult(NSXMLNode *a, NSXMLNode *b) {
+        return XFCompareDocumentOrder(a, b);
+    }];
 }

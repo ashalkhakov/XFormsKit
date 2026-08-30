@@ -66,9 +66,13 @@ XSLTForms compiles expressions in XSLT. We parse at runtime (`xpathWithString:er
 
 XPath 1.0 core: `last`, `position`, `count`, `id`, `local-name`, `namespace-uri`, `name`, `string`, `concat`, `starts-with`, `contains`, `substring-before`/`after`, `substring`, `string-length`, `normalize-space`, `translate`, `boolean`, `not`, `true`, `false`, `lang`, `number`, `sum`, `floor`, `ceiling`, `round`.
 
-XForms 1.1: `instance`, `index`, `context`, `current`, `event`, `if`, `choose`, `boolean-from-string`, `count-non-empty`, `power`, `random`, `property`, `now`, `local-date`, `local-dateTime`, `days-from-date`, `days-to-date`, `seconds-from-dateTime`, `seconds-to-dateTime`, `seconds`, `months`, `is-valid`, `is-card-number`, `digest`, `hmac`.
+XForms 1.1: `instance`, `index`, `context`, `current`, `event`, `if`, `choose`, `boolean-from-string`, `count-non-empty`, `power`, `random`, `property`, `now`, `local-date`, `local-dateTime`, `days-from-date`, `days-to-date`, `seconds-from-dateTime`, `seconds-to-dateTime`, `seconds`, `months`, `is-valid`, `is-card-number`, `digest`, `hmac`, `adjust-dateTime-to-timezone`, `nodeindex`.
 
-Not ported (XSLTForms extras): Fleur/XPath 2–3, EXSLT math, `js-eval`, `transform`, `serialize`, `itext`, `subform-instance`.
+XSLTForms extras (`XPath/XFXPathExtraFunctions.m`): `ends-with`, `compare`, `replace`, `upper-case`, `lower-case`, `string-join`, `tokenize`, `encode-for-uri`, `distinct-values`, `avg`, `min`, `max`, `format-number`, `fromtostep`, EXSLT `math:abs/acos/asin/atan/atan2/constant/cos/exp/log/power/sin/sqrt/tan`. Functions are looked up by local name (the namespace prefix is ignored, as `functionNamed:` strips it).
+
+Not ported: Fleur/XPath 2–3 (`array`, `map`, `entry`, `*:name`), `js-eval`, `transform`, `serialize`, `itext`, `subform-instance`, `subform-context`, `alert`, `invalid-id`.
+
+Semantics: number→string is the shortest round-trip decimal (`XFNumberToString`); comparisons follow XPath 1.0 §3.4 (node-set vs number compares numerically); unions and reverse axes come back in document order; an unbound `$var` is `""` (VarRef.js); `event()` walks the whole `EventContexts` stack and returns node-sets for node arrays, `response-headers` and XML `response-body`. Namespace prefixes are registered per expression from the element that carries it (`xpathWithString:element:error:` = js2ns.xsl), with a fallback to the candidate node's in-scope declarations. `digest`/`hmac` use CommonCrypto on Apple and OpenSSL (`-lcrypto`) on GNUstep.
 
 ---
 

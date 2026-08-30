@@ -57,7 +57,7 @@ static NSInteger XFNextDepsId(void)
         nodeset = [[element attributeForName:@"nodeset"] stringValue];
     }
     if (nodeset.length) {
-        bind.nodesetBinding = [XFBinding bindingWithExpression:nodeset error:error];
+        bind.nodesetBinding = [XFBinding bindingWithExpression:nodeset element:element error:error];
         if (bind.nodesetBinding == nil) {
             return nil;
         }
@@ -68,7 +68,7 @@ static NSInteger XFNextDepsId(void)
     NSError *inner = nil;
     NSString *calculate = [[element attributeForName:@"calculate"] stringValue];
     if (calculate.length) {
-        bind.calculate = [XFXPath xpathWithString:calculate error:&inner];
+        bind.calculate = [XFXPath xpathWithString:calculate element:element error:&inner];
         if (bind.calculate == nil) {
             if (error) {
                 *error = inner;
@@ -88,7 +88,7 @@ static NSInteger XFNextDepsId(void)
         if (expr.length == 0) {
             continue;
         }
-        XFMIPBinding *mip = [XFMIPBinding mipBindingWithExpression:expr error:&inner];
+        XFMIPBinding *mip = [XFMIPBinding mipBindingWithExpression:expr element:element error:&inner];
         if (mip == nil) {
             if (error) {
                 *error = inner;

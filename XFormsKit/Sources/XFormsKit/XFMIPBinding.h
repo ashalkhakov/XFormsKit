@@ -6,6 +6,8 @@
 @class NSXMLNode;
 @class XFModel;
 
+@class NSXMLElement;
+
 NS_ASSUME_NONNULL_BEGIN
 
 /// Translation of XsltForms_mipbinding: a computed MIP expression that
@@ -17,6 +19,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSString *expression;
 
 + (nullable instancetype)mipBindingWithExpression:(NSString *)expression
+                                            error:(NSError **)error;
++ (nullable instancetype)mipBindingWithExpression:(NSString *)expression
+                                          element:(nullable NSXMLElement *)element
                                             error:(NSError **)error;
 
 /// Evaluate against `node` (XPath context item). Rebuilds when the model

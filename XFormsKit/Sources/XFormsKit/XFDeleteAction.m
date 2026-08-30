@@ -45,21 +45,21 @@
         }
     }
     if (nodeset.length) {
-        self.nodesetBinding = [XFBinding bindingWithExpression:nodeset error:error];
+        self.nodesetBinding = [XFBinding bindingWithExpression:nodeset element:element error:error];
         if (self.nodesetBinding == nil) {
             return nil;
         }
     }
     NSString *at = [[element attributeForName:@"at"] stringValue];
     if (at.length) {
-        self.atExpr = [XFXPath xpathWithString:at error:error];
+        self.atExpr = [XFXPath xpathWithString:at element:element error:error];
         if (self.atExpr == nil) {
             return nil;
         }
     }
     NSString *ctx = [[element attributeForName:@"context"] stringValue];
     if (ctx.length) {
-        self.contextExpr = [XFXPath xpathWithString:ctx error:error];
+        self.contextExpr = [XFXPath xpathWithString:ctx element:element error:error];
         if (self.contextExpr == nil) {
             return nil;
         }

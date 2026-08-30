@@ -99,7 +99,9 @@
             [nodes addObject:n];
         }
     }
-    return [XFXPathValue nodeSet:nodes];
+    // A union is in document order (XSLTForms sorts when its `unordered`
+    // flag is set; we always do, which is what callers expect).
+    return [XFXPathValue nodeSet:XFSortDocumentOrder(nodes)];
 }
 
 @end

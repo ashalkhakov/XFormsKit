@@ -171,11 +171,18 @@
     if (_token.kind == XFXPathTokenName) {
         XFXPathToken *peek = [self peekToken];
         if (peek.kind == XFXPathTokenLParen) {
-            return NO; // function call
+            // node type tests are steps, not function calls: text(), node()...
+            return [self isNodeTypeName:_token.text];
         }
         return YES;
     }
     return NO;
+}
+
+- (BOOL)isNodeTypeName:(NSString *)name
+{
+    return [name isEqualToString:@"text"] || [name isEqualToString:@"node"]
+        || [name isEqualToString:@"comment"] || [name isEqualToString:@"processing-instruction"];
 }
 
 - (XFExpr *)parsePath:(NSError **)error
@@ -249,7 +256,8 @@
         }
         return inner;
     }
-    if (_token.kind == XFXPathTokenName && [self peekToken].kind == XFXPathTokenLParen) {
+    if (_token.kind == XFXPathTokenName && [self peekToken].kind == XFXPathTokenLParen
+        && ![self isNodeTypeName:_token.text]) {
         return [self parseFunction:error];
     }
     *error = [self syntaxError:@"expected primary expression"];

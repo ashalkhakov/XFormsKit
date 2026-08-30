@@ -27,7 +27,7 @@
     self.repeatID = [[element attributeForName:@"repeat"] stringValue];
     self.indexExpression = [[element attributeForName:@"index"] stringValue];
     if (self.indexExpression.length) {
-        self.indexExpr = [XFXPath xpathWithString:self.indexExpression error:error];
+        self.indexExpr = [XFXPath xpathWithString:self.indexExpression element:element error:error];
         if (self.indexExpr == nil) {
             return nil;
         }

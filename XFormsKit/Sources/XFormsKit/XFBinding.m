@@ -12,7 +12,14 @@
 
 + (instancetype)bindingWithExpression:(NSString *)expression error:(NSError **)error
 {
-    XFXPath *xp = [XFXPath xpathWithString:expression error:error];
+    return [self bindingWithExpression:expression element:nil error:error];
+}
+
++ (instancetype)bindingWithExpression:(NSString *)expression
+                              element:(NSXMLElement *)element
+                                error:(NSError **)error
+{
+    XFXPath *xp = [XFXPath xpathWithString:expression element:element error:error];
     if (xp == nil) {
         return nil;
     }

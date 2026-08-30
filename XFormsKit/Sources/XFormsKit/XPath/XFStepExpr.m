@@ -150,6 +150,12 @@ static NSXMLNode *XFElementParent(NSXMLNode *input)
         }
         list = newList;
     }
+    // Reverse axes are evaluated in proximity order (for position()); the
+    // resulting node-set is reported in document order.
+    if ([axis isEqualToString:XFAxisAncestor] || [axis isEqualToString:XFAxisAncestorOrSelf] ||
+        [axis isEqualToString:XFAxisPreceding] || [axis isEqualToString:XFAxisPrecedingSibling]) {
+        list = [[[list reverseObjectEnumerator] allObjects] mutableCopy];
+    }
     return [XFXPathValue nodeSet:list];
 }
 

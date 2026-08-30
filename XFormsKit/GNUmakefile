@@ -92,6 +92,7 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/XPath/XFBinaryExpr.m \
 	Sources/XFormsKit/XPath/XFXPathFunction.m \
 	Sources/XFormsKit/XPath/XFXPathCoreFunctions.m \
+	Sources/XFormsKit/XPath/XFXPathExtraFunctions.m \
 	Sources/XFormsKit/XPath/XFFunctionCallExpr.m \
 	Sources/XFormsKit/XPath/XFXPathLexer.m \
 	Sources/XFormsKit/XPath/XFXPathParser.m \
@@ -135,7 +136,7 @@ XFormsKit_OBJC_FILES = \
 
 XFormsKit_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath
 XFormsKit_OBJCFLAGS += -fobjc-arc -Wall -Wextra
-XFormsKit_LIBRARIES_DEPEND_UPON += -ldispatch
+XFormsKit_LIBRARIES_DEPEND_UPON += -ldispatch -lcrypto
 
 XFormsKitTests_NEEDS_GUI = yes
 XFormsKitTests_OBJC_FILES = \

@@ -11,6 +11,63 @@
 @property (nonatomic, assign, readwrite) BOOL boolean;
 @end
 
+/// XPath 1.0 number → string: shortest decimal that round-trips (what JS
+/// `"" + n` gives XSLTForms), never in exponent notation, no trailing zeros.
+NSString *XFNumberToString(double n)
+{
+    if (isnan(n)) {
+        return @"NaN";
+    }
+    if (isinf(n)) {
+        return n > 0 ? @"Infinity" : @"-Infinity";
+    }
+    if (n == 0) {
+        return @"0";
+    }
+    if (n == trunc(n) && fabs(n) < 1e21) {
+        return [NSString stringWithFormat:@"%.0f", n];
+    }
+    char buf[64];
+    for (int prec = 15; prec <= 17; prec++) {
+        snprintf(buf, sizeof buf, "%.*e", prec - 1, n);
+        if (strtod(buf, NULL) == n) {
+            break;
+        }
+    }
+    // buf is d.ddddde[+-]xx: expand to plain decimal notation.
+    NSString *sci = [NSString stringWithUTF8String:buf];
+    BOOL negative = [sci hasPrefix:@"-"];
+    if (negative) {
+        sci = [sci substringFromIndex:1];
+    }
+    NSRange e = [sci rangeOfString:@"e"];
+    NSString *mantissa = [sci substringToIndex:e.location];
+    NSInteger exponent = [[sci substringFromIndex:e.location + 1] integerValue];
+    NSString *digits = [mantissa stringByReplacingOccurrencesOfString:@"." withString:@""];
+    while (digits.length > 1 && [digits hasSuffix:@"0"]) {
+        digits = [digits substringToIndex:digits.length - 1];
+    }
+    NSInteger pointPos = exponent + 1; // digits before the decimal point
+    NSMutableString *out = [NSMutableString string];
+    if (pointPos <= 0) {
+        [out appendString:@"0."];
+        for (NSInteger i = 0; i < -pointPos; i++) {
+            [out appendString:@"0"];
+        }
+        [out appendString:digits];
+    } else if ((NSUInteger)pointPos >= digits.length) {
+        [out appendString:digits];
+        for (NSInteger i = (NSInteger)digits.length; i < pointPos; i++) {
+            [out appendString:@"0"];
+        }
+    } else {
+        [out appendString:[digits substringToIndex:(NSUInteger)pointPos]];
+        [out appendString:@"."];
+        [out appendString:[digits substringFromIndex:(NSUInteger)pointPos]];
+    }
+    return negative ? [@"-" stringByAppendingString:out] : out;
+}
+
 @implementation XFXPathValue
 
 + (instancetype)nodeSet:(NSArray<NSXMLNode *> *)nodes
@@ -72,11 +129,7 @@
             if (isinf(self.number)) {
                 return self.number > 0 ? @"Infinity" : @"-Infinity";
             }
-            if (self.number == trunc(self.number) &&
-                fabs(self.number) < 1e15) {
-                return [NSString stringWithFormat:@"%.0f", self.number];
-            }
-            return [NSString stringWithFormat:@"%g", self.number];
+            return XFNumberToString(self.number);
         }
         case XFXPathValueTypeBoolean:
             return self.boolean ? @"true" : @"false";

@@ -44,7 +44,7 @@
     if (resourceEl) {
         NSString *value = [[resourceEl attributeForName:@"value"] stringValue];
         if (value.length) {
-            self.resourceExpr = [XFXPath xpathWithString:value error:error];
+            self.resourceExpr = [XFXPath xpathWithString:value element:element error:error];
             if (self.resourceExpr == nil) {
                 return nil;
             }
@@ -56,7 +56,7 @@
 
     NSString *ref = [[element attributeForName:@"ref"] stringValue];
     if (ref.length) {
-        self.binding = [XFBinding bindingWithExpression:ref error:error];
+        self.binding = [XFBinding bindingWithExpression:ref element:element error:error];
         if (self.binding == nil) {
             return nil;
         }

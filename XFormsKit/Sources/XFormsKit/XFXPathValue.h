@@ -11,6 +11,9 @@ typedef NS_ENUM(NSInteger, XFXPathValueType) {
     XFXPathValueTypeBoolean
 };
 
+/// XPath 1.0 number-to-string conversion (shortest round-trip decimal).
+FOUNDATION_EXPORT NSString *XFNumberToString(double n);
+
 @interface XFXPathValue : NSObject
 
 @property (nonatomic, readonly) XFXPathValueType type;

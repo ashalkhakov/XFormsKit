@@ -33,7 +33,7 @@
     if (ctrlEl) {
         NSString *v = [[ctrlEl attributeForName:@"value"] stringValue];
         if (v.length) {
-            self.controlExpr = [XFXPath xpathWithString:v error:error];
+            self.controlExpr = [XFXPath xpathWithString:v element:element error:error];
             if (self.controlExpr == nil) {
                 return nil;
             }

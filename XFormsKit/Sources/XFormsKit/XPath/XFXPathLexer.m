@@ -8,6 +8,10 @@
     NSString *_s;
     NSUInteger _i;
     NSUInteger _n;
+    // XPath 1.0 3.7: a token that can end an operand makes a following
+    // '-' (or '*', 'div', 'mod', 'and', 'or') an operator, never the start
+    // of a negative literal / name test (XSLTForms xp2js.xsl does the same).
+    BOOL _lastWasOperand;
 }
 
 - (instancetype)initWithString:(NSString *)string
@@ -63,6 +67,32 @@ static BOOL XFIsNameChar(unichar c)
 }
 
 - (XFXPathToken *)next
+{
+    XFXPathToken *t = [self scan];
+    switch (t.kind) {
+        case XFXPathTokenName:
+            _lastWasOperand = !([t.text isEqualToString:@"div"] || [t.text isEqualToString:@"mod"]);
+            break;
+        case XFXPathTokenNumber:
+        case XFXPathTokenString:
+        case XFXPathTokenRParen:
+        case XFXPathTokenRBrack:
+        case XFXPathTokenDot:
+        case XFXPathTokenDotDot:
+            _lastWasOperand = YES;
+            break;
+        case XFXPathTokenStar:
+            // '*' after an operand is multiplication; otherwise a name test.
+            _lastWasOperand = !_lastWasOperand;
+            break;
+        default:
+            _lastWasOperand = NO;
+            break;
+    }
+    return t;
+}
+
+- (XFXPathToken *)scan
 {
     [self skipSpace];
     if (_i >= _n) {
@@ -126,7 +156,7 @@ static BOOL XFIsNameChar(unichar c)
         }
         // fall through to number
     }
-    if (c == '-' && !isdigit([self peekAt:1]) && [self peekAt:1] != '.') {
+    if (c == '-' && (_lastWasOperand || (!isdigit([self peekAt:1]) && [self peekAt:1] != '.'))) {
         _i++;
         return [self token:XFXPathTokenMinus text:@"-"];
     }
@@ -186,10 +216,12 @@ static BOOL XFIsNameChar(unichar c)
             }
         }
         NSString *text = [_s substringWithRange:NSMakeRange(start, _i - start)];
-        if ([text isEqualToString:@"and"]) {
+        // 'and' / 'or' are operators only after an operand; at operand
+        // position they are ordinary element names (//or).
+        if (_lastWasOperand && [text isEqualToString:@"and"]) {
             return [self token:XFXPathTokenAnd text:text];
         }
-        if ([text isEqualToString:@"or"]) {
+        if (_lastWasOperand && [text isEqualToString:@"or"]) {
             return [self token:XFXPathTokenOr text:text];
         }
         return [self token:XFXPathTokenName text:text];

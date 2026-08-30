@@ -25,7 +25,7 @@
     self.level = [[element attributeForName:@"level"] stringValue] ?: @"modal";
     NSString *ref = [[element attributeForName:@"ref"] stringValue];
     if (ref.length) {
-        self.binding = [XFBinding bindingWithExpression:ref error:error];
+        self.binding = [XFBinding bindingWithExpression:ref element:element error:error];
         if (self.binding == nil) {
             return nil;
         }

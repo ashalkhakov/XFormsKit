@@ -29,14 +29,14 @@
         ref = [[element attributeForName:@"nodeset"] stringValue];
     }
     if (ref.length) {
-        self.binding = [XFBinding bindingWithExpression:ref error:error];
+        self.binding = [XFBinding bindingWithExpression:ref element:element error:error];
         if (self.binding == nil) {
             return nil;
         }
     }
     NSString *value = [[element attributeForName:@"value"] stringValue];
     if (value.length) {
-        self.valueExpr = [XFXPath xpathWithString:value error:error];
+        self.valueExpr = [XFXPath xpathWithString:value element:element error:error];
         if (self.valueExpr == nil) {
             return nil;
         }

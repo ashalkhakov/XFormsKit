@@ -290,7 +290,7 @@
     NSXMLNode *attr = [element attributeForName:attribute];
     XFBinding *binding = nil;
     if (attr && [attr stringValue].length > 0) {
-        binding = [XFBinding bindingWithExpression:[attr stringValue] error:error];
+        binding = [XFBinding bindingWithExpression:[attr stringValue] element:element error:error];
         if (binding == nil) {
             return nil;
         }

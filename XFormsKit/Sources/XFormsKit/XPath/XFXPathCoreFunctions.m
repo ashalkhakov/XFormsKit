@@ -2,6 +2,7 @@
 #import <dispatch/dispatch.h>
 #import "XFXPathPriv.h"
 #import "XFModel.h"
+#import "XFProcessor.h"
 #import "XFInstance.h"
 #import "XFRepeat.h"
 #import "XFXML.h"
@@ -12,10 +13,15 @@
 #import <Foundation/NSXMLDocument.h>
 #import <Foundation/NSXMLElement.h>
 #import <math.h>
+#import <objc/runtime.h>
 #if __has_include(<CommonCrypto/CommonDigest.h>)
 #import <CommonCrypto/CommonDigest.h>
 #import <CommonCrypto/CommonHMAC.h>
 #define XF_HAS_COMMONCRYPTO 1
+#elif __has_include(<openssl/evp.h>)
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
+#define XF_HAS_OPENSSL 1
 #endif
 
 static NSString *XFLocalName(NSString *qname)
@@ -50,73 +56,131 @@ static NSString *XFFormatDateTime(NSDate *date, BOOL utc)
     return [fmt stringFromDate:date];
 }
 
-static NSDate *XFParseDateTime(NSString *s)
+/// xsd:date / xsd:dateTime parser (XSLTForms XPathCoreFunctions.js
+/// pattern): YYYY-MM-DD[THH:MM:SS[.fff]][Z|(+|-)HH:MM]. A trailing timezone
+/// on a date is accepted and ignored (the day is taken as UTC, like
+/// `Date.UTC(y, m, d)` in XSLTForms).
+static NSRegularExpression *XFDateTimeRegex(void)
 {
-    if (s.length < 10) {
-        return nil;
+    static NSRegularExpression *re;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        re = [NSRegularExpression regularExpressionWithPattern:
+              @"^(-?[0-9]{4,})-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])"
+              @"(?:T([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(\\.[0-9]+)?)?"
+              @"(Z|[+\\-][01][0-9]:[0-5][0-9])?$"
+                                                       options:0 error:NULL];
+    });
+    return re;
+}
+
+/// Parses into (secondsSince1970, fraction) honouring the offset. Returns NO
+/// when the string is not a lexical date/dateTime. `hasTime` reports whether
+/// a time part was present.
+static BOOL XFParseXSDDateTime(NSString *s, double *outSeconds, BOOL *hasTime)
+{
+    if (s == nil) {
+        return NO;
     }
-    NSString *core = s;
-    if ([core hasSuffix:@"Z"]) {
-        core = [core substringToIndex:core.length - 1];
+    s = [s stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSTextCheckingResult *m = [XFDateTimeRegex() firstMatchInString:s options:0 range:NSMakeRange(0, s.length)];
+    if (m == nil) {
+        return NO;
     }
-    NSDateFormatter *fmt = [[NSDateFormatter alloc] init];
-    fmt.locale = [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"];
-    fmt.timeZone = [NSTimeZone timeZoneForSecondsFromGMT:0];
-    for (NSString *pat in @[ @"yyyy-MM-dd'T'HH:mm:ss", @"yyyy-MM-dd'T'HH:mm:ss.SSS", @"yyyy-MM-dd" ]) {
-        fmt.dateFormat = pat;
-        NSDate *d = [fmt dateFromString:[core substringToIndex:MIN(core.length, (NSUInteger)[pat length] + 4)]];
-        if (d) {
-            return d;
-        }
-        d = [fmt dateFromString:core];
-        if (d) {
-            return d;
-        }
+    NSString *(^grp)(NSUInteger) = ^NSString *(NSUInteger i) {
+        NSRange r = [m rangeAtIndex:i];
+        return r.location == NSNotFound ? nil : [s substringWithRange:r];
+    };
+    NSDateComponents *c = [[NSDateComponents alloc] init];
+    c.year = [grp(1) integerValue];
+    c.month = [grp(2) integerValue];
+    c.day = [grp(3) integerValue];
+    BOOL time = grp(4) != nil;
+    c.hour = time ? [grp(4) integerValue] : 0;
+    c.minute = time ? [grp(5) integerValue] : 0;
+    c.second = time ? [grp(6) integerValue] : 0;
+    NSCalendar *cal = [NSCalendar calendarWithIdentifier:NSCalendarIdentifierGregorian];
+    cal.timeZone = [NSTimeZone timeZoneForSecondsFromGMT:0];
+    NSDate *d = [cal dateFromComponents:c];
+    if (d == nil) {
+        return NO;
     }
-    if (s.length >= 10) {
-        fmt.dateFormat = @"yyyy-MM-dd";
-        return [fmt dateFromString:[s substringToIndex:10]];
+    // reject invalid calendar dates (2020-02-30) that NSCalendar would roll over
+    NSDateComponents *back = [cal components:NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay fromDate:d];
+    if (back.year != c.year || back.month != c.month || back.day != c.day) {
+        return NO;
     }
-    return nil;
+    double secs = [d timeIntervalSince1970];
+    NSString *frac = grp(7);
+    if (frac.length) {
+        secs += [frac doubleValue];
+    }
+    NSString *tz = grp(8);
+    if (time && tz.length && ![tz isEqualToString:@"Z"]) {
+        NSInteger hh = [[tz substringWithRange:NSMakeRange(1, 2)] integerValue];
+        NSInteger mm = [[tz substringWithRange:NSMakeRange(4, 2)] integerValue];
+        NSInteger offset = (hh * 60 + mm) * 60;
+        secs += [tz hasPrefix:@"+"] ? -offset : offset;
+    }
+    if (outSeconds) *outSeconds = secs;
+    if (hasTime) *hasTime = time;
+    return YES;
 }
 
 static double XFDaysFromDateString(NSString *s)
 {
-    NSDate *d = XFParseDateTime(s);
-    if (d == nil) {
+    double secs = 0;
+    if (!XFParseXSDDateTime(s, &secs, NULL)) {
         return NAN;
     }
-    return floor([d timeIntervalSince1970] / 86400.0);
+    // XSLTForms: Date.UTC(year, month, day) of the date part only.
+    (void)secs;
+    NSTextCheckingResult *m = [XFDateTimeRegex() firstMatchInString:s options:0 range:NSMakeRange(0, s.length)];
+    NSDateComponents *dc = [[NSDateComponents alloc] init];
+    dc.year = [[s substringWithRange:[m rangeAtIndex:1]] integerValue];
+    dc.month = [[s substringWithRange:[m rangeAtIndex:2]] integerValue];
+    dc.day = [[s substringWithRange:[m rangeAtIndex:3]] integerValue];
+    NSCalendar *cal = [NSCalendar calendarWithIdentifier:NSCalendarIdentifierGregorian];
+    cal.timeZone = [NSTimeZone timeZoneForSecondsFromGMT:0];
+    return floor([[cal dateFromComponents:dc] timeIntervalSince1970] / 86400.0 + 0.000001);
+}
+
+/// XSLTForms `seconds()` / `months()`: any lexical xsd:duration; seconds()
+/// ignores the Y/M fields and months() ignores D/T (XForms 1.1 7.10.4/5).
+static NSArray<NSString *> *XFDurationParts(NSString *s)
+{
+    if (s.length == 0) return nil;
+    static NSRegularExpression *re;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        re = [NSRegularExpression regularExpressionWithPattern:
+              @"^(-)?P(?!$)(?:([0-9]+)Y)?(?:([0-9]+)M)?(?:([0-9]+)D)?(?:T(?!$)(?:([0-9]+)H)?(?:([0-9]+)M)?(?:([0-9]+(?:\\.[0-9]+)?)S)?)?$"
+                                                       options:0 error:NULL];
+    });
+    NSTextCheckingResult *m = [re firstMatchInString:s options:0 range:NSMakeRange(0, s.length)];
+    if (m == nil) return nil;
+    NSMutableArray *parts = [NSMutableArray array];
+    for (NSUInteger i = 1; i <= 7; i++) {
+        NSRange r = [m rangeAtIndex:i];
+        [parts addObject:r.location == NSNotFound ? @"" : [s substringWithRange:r]];
+    }
+    return parts;
 }
 
 static double XFDurationSeconds(NSString *s)
 {
-    if (s.length == 0) return NAN;
-    NSRegularExpression *re = [NSRegularExpression regularExpressionWithPattern:
-                               @"^(-)?P(?:([0-9]+)D)?(?:T(?:([0-9]+)H)?(?:([0-9]+)M)?(?:([0-9]+(?:\\.[0-9]+)?)S)?)?$"
-                                                                        options:0 error:NULL];
-    NSTextCheckingResult *m = [re firstMatchInString:s options:0 range:NSMakeRange(0, s.length)];
-    if (m == nil) return NAN;
-    double sign = [m rangeAtIndex:1].location != NSNotFound ? -1.0 : 1.0;
-    double days = ([m rangeAtIndex:2].location != NSNotFound) ? [[s substringWithRange:[m rangeAtIndex:2]] doubleValue] : 0;
-    double hours = ([m rangeAtIndex:3].location != NSNotFound) ? [[s substringWithRange:[m rangeAtIndex:3]] doubleValue] : 0;
-    double mins = ([m rangeAtIndex:4].location != NSNotFound) ? [[s substringWithRange:[m rangeAtIndex:4]] doubleValue] : 0;
-    double secs = ([m rangeAtIndex:5].location != NSNotFound) ? [[s substringWithRange:[m rangeAtIndex:5]] doubleValue] : 0;
-    return sign * (days * 86400.0 + hours * 3600.0 + mins * 60.0 + secs);
+    NSArray *p = XFDurationParts(s);
+    if (p == nil) return NAN;
+    double sign = [p[0] length] ? -1.0 : 1.0;
+    return sign * ((([p[3] doubleValue] * 24 + [p[4] doubleValue]) * 60 + [p[5] doubleValue]) * 60 + [p[6] doubleValue]);
 }
 
 static double XFDurationMonths(NSString *s)
 {
-    if (s.length == 0) return NAN;
-    NSRegularExpression *re = [NSRegularExpression regularExpressionWithPattern:
-                               @"^(-)?P(?:([0-9]+)Y)?(?:([0-9]+)M)?$"
-                                                                        options:0 error:NULL];
-    NSTextCheckingResult *m = [re firstMatchInString:s options:0 range:NSMakeRange(0, s.length)];
-    if (m == nil) return NAN;
-    double sign = [m rangeAtIndex:1].location != NSNotFound ? -1.0 : 1.0;
-    double years = ([m rangeAtIndex:2].location != NSNotFound) ? [[s substringWithRange:[m rangeAtIndex:2]] doubleValue] : 0;
-    double months = ([m rangeAtIndex:3].location != NSNotFound) ? [[s substringWithRange:[m rangeAtIndex:3]] doubleValue] : 0;
-    return sign * (years * 12.0 + months);
+    NSArray *p = XFDurationParts(s);
+    if (p == nil) return NAN;
+    double sign = [p[0] length] ? -1.0 : 1.0;
+    return sign * ([p[1] doubleValue] * 12 + [p[2] doubleValue]);
 }
 
 static BOOL XFLuhn(NSString *s)
@@ -200,6 +264,24 @@ static NSString *XFDigestString(NSString *data, NSString *alg, NSString *enc, NS
         }
         out = [NSData dataWithBytes:buf length:len];
     }
+#elif defined(XF_HAS_OPENSSL)
+    NSString *a = [[alg uppercaseString] stringByReplacingOccurrencesOfString:@"-" withString:@""];
+    const EVP_MD *md = EVP_md5();
+    if ([a isEqualToString:@"SHA1"]) md = EVP_sha1();
+    else if ([a isEqualToString:@"SHA256"]) md = EVP_sha256();
+    else if ([a isEqualToString:@"SHA384"]) md = EVP_sha384();
+    else if ([a isEqualToString:@"SHA512"]) md = EVP_sha512();
+    unsigned char buf[EVP_MAX_MD_SIZE];
+    unsigned int len = 0;
+    if (key) {
+        NSData *k = [key dataUsingEncoding:NSUTF8StringEncoding];
+        if (HMAC(md, k.bytes, (int)k.length, inData.bytes, inData.length, buf, &len) == NULL) {
+            return @"";
+        }
+    } else if (!EVP_Digest(inData.bytes, inData.length, buf, &len, md, NULL)) {
+        return @"";
+    }
+    out = [NSData dataWithBytes:buf length:len];
 #else
     (void)alg; (void)key; (void)inData;
     return @"";
@@ -211,6 +293,78 @@ static NSString *XFDigestString(NSString *data, NSString *alg, NSString *enc, NS
         return XFHexFromData(out);
     }
     return [out base64EncodedStringWithOptions:0];
+}
+
+static BOOL XFSubtreeIsValid(NSXMLNode *n)
+{
+    XFNodeState *st = [XFNodeState existingStateOnNode:n];
+    if (st && !st.valid) {
+        return NO;
+    }
+    if ([n kind] == NSXMLElementKind) {
+        for (NSXMLNode *a in [(NSXMLElement *)n attributes]) {
+            if (!XFSubtreeIsValid(a)) return NO;
+        }
+    }
+    for (NSXMLNode *c in [n children]) {
+        if ([c kind] == NSXMLElementKind && !XFSubtreeIsValid(c)) return NO;
+    }
+    return YES;
+}
+
+/// event() values: strings/numbers → string, nodes → node-set, arrays of
+/// nodes → node-set, dictionaries (response-headers) → <header><name/>
+/// <value/></header> nodes, XML text bodies → parsed root element.
+static XFXPathValue *XFEventValue(NSString *key, id v)
+{
+    if ([v isKindOfClass:[NSString class]]) {
+        if ([key isEqualToString:@"response-body"]) {
+            NSString *t = [v stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+            if ([t hasPrefix:@"<"]) {
+                NSXMLDocument *doc = [[NSXMLDocument alloc] initWithXMLString:t options:0 error:NULL];
+                if (doc.rootElement) {
+                    XFXPathValue *nodes = [XFXPathValue nodeSet:@[ doc.rootElement ]];
+                    // keep the document alive as long as the node-set
+                    objc_setAssociatedObject(doc.rootElement, "XFEventDocument", doc, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+                    return nodes;
+                }
+            }
+        }
+        return [XFXPathValue string:v];
+    }
+    if ([v isKindOfClass:[NSNumber class]]) {
+        return [XFXPathValue number:[v doubleValue]];
+    }
+    if ([v isKindOfClass:[NSXMLNode class]]) {
+        return [XFXPathValue nodeSet:@[ v ]];
+    }
+    if ([v isKindOfClass:[NSArray class]]) {
+        NSMutableArray *nodes = [NSMutableArray array];
+        for (id item in v) {
+            if ([item isKindOfClass:[NSXMLNode class]]) {
+                [nodes addObject:item];
+            }
+        }
+        if (nodes.count == [v count]) {
+            return [XFXPathValue nodeSet:nodes];
+        }
+        return [XFXPathValue string:[v componentsJoinedByString:@" "]];
+    }
+    if ([v isKindOfClass:[NSDictionary class]]) {
+        NSXMLElement *root = [NSXMLElement elementWithName:@"headers"];
+        NSXMLDocument *doc = [[NSXMLDocument alloc] initWithRootElement:root];
+        NSMutableArray *nodes = [NSMutableArray array];
+        for (NSString *name in [[v allKeys] sortedArrayUsingSelector:@selector(compare:)]) {
+            NSXMLElement *h = [NSXMLElement elementWithName:@"header"];
+            [h addChild:[NSXMLElement elementWithName:@"name" stringValue:name]];
+            [h addChild:[NSXMLElement elementWithName:@"value" stringValue:[v[name] description]]];
+            [root addChild:h];
+            [nodes addObject:h];
+        }
+        objc_setAssociatedObject(root, "XFEventDocument", doc, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        return [XFXPathValue nodeSet:nodes];
+    }
+    return [XFXPathValue string:[v description]];
 }
 
 @implementation XFXPathCoreFunctions
@@ -376,7 +530,9 @@ static NSString *XFDigestString(NSString *data, NSString *alg, NSString *enc, NS
             }],
             @"round": [XFXPathFunction acceptContext:NO defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)ctx; (void)err;
-                return [XFXPathValue number:round(XFArg(args, 0).numberValue)];
+                // XPath 1.0: round half towards +infinity (round(-2.5) = -2)
+                double x = XFArg(args, 0).numberValue;
+                return [XFXPathValue number:(isnan(x) || isinf(x)) ? x : floor(x + 0.5)];
             }],
             @"instance": [XFXPathFunction acceptContext:YES defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 XFModel *model = ctx.model;
@@ -390,7 +546,21 @@ static NSString *XFDigestString(NSString *data, NSString *alg, NSString *enc, NS
                     return nil;
                 }
                 NSString *ident = args.count > 0 ? [args[0] stringValue] : nil;
-                XFInstance *inst = ident.length ? [model instanceWithIdentifier:ident] : [model defaultInstance];
+                XFInstance *inst = nil;
+                if (ident.length) {
+                    inst = [model instanceWithIdentifier:ident];
+                    if (inst == nil && [model.owner isKindOfClass:[XFProcessor class]]) {
+                        // instance('id') resolves across all models (XSLTForms uses the DOM id)
+                        for (XFModel *m in [(XFProcessor *)model.owner models]) {
+                            inst = [m instanceWithIdentifier:ident];
+                            if (inst) break;
+                        }
+                    }
+                } else {
+                    // instance() with no argument: the instance holding the context node
+                    inst = ctx.contextNode ? [model instanceContainingNode:ctx.contextNode] : nil;
+                    inst = inst ?: [model defaultInstance];
+                }
                 NSXMLElement *root = [inst documentElement];
                 if (root) {
                     [ctx addDependency:root];
@@ -406,6 +576,7 @@ static NSString *XFDigestString(NSString *data, NSString *alg, NSString *enc, NS
                 if (repeat == nil) {
                     return [XFXPathValue number:NAN];
                 }
+                [ctx addDepElement:repeat];
                 return [XFXPathValue number:(double)repeat.index];
             }],
             @"context": [XFXPathFunction acceptContext:YES defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
@@ -416,6 +587,10 @@ static NSString *XFDigestString(NSString *data, NSString *alg, NSString *enc, NS
             @"current": [XFXPathFunction acceptContext:YES defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)args; (void)err;
                 NSXMLNode *n = ctx.currentNode ?: ctx.contextNode;
+                if (n) {
+                    [ctx addDependency:n];
+                    if (ctx.model) [ctx addDepElement:ctx.model];
+                }
                 return [XFXPathValue nodeSet:n ? @[ n ] : @[]];
             }],
             @"if": [XFXPathFunction acceptContext:NO defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
@@ -467,18 +642,19 @@ static NSString *XFDigestString(NSString *data, NSString *alg, NSString *enc, NS
             @"event": [XFXPathFunction acceptContext:YES defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)ctx; (void)err;
                 NSString *key = [XFArg(args, 0) stringValue];
-                NSDictionary *ev = [XFXMLEvents currentEventContext];
-                id v = key.length ? ev[key] : nil;
-                if ([v isKindOfClass:[NSString class]]) {
-                    return [XFXPathValue string:v];
+                if (key.length == 0) {
+                    return [XFXPathValue string:@""];
                 }
-                if ([v isKindOfClass:[NSNumber class]]) {
-                    return [XFXPathValue string:[v stringValue]];
+                // XSLTForms walks the EventContexts stack innermost first.
+                NSArray *stack = [XFXMLEvents eventContexts];
+                for (NSInteger i = (NSInteger)stack.count - 1; i >= 0; i--) {
+                    id v = stack[(NSUInteger)i][key];
+                    if (v == nil || v == [NSNull null]) {
+                        continue;
+                    }
+                    return XFEventValue(key, v);
                 }
-                if ([v isKindOfClass:[NSXMLNode class]]) {
-                    return [XFXPathValue nodeSet:@[ v ]];
-                }
-                return [XFXPathValue string:v ? [v description] : @""];
+                return [XFXPathValue string:@""];
             }],
             @"id": [XFXPathFunction acceptContext:YES defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)err;
@@ -496,7 +672,9 @@ static NSString *XFDigestString(NSString *data, NSString *alg, NSString *enc, NS
                         if (tok.length) [ids addObject:tok];
                     }
                 }
-                NSXMLNode *root = XFRootNode(ctx.contextNode);
+                // optional second argument: a node whose document is searched
+                NSXMLNode *scope = args.count > 1 ? XFArg(args, 1).firstNode : nil;
+                NSXMLNode *root = XFRootNode(scope ?: ctx.contextNode);
                 NSMutableArray *found = [NSMutableArray array];
                 for (NSString *ident in ids) {
                     NSXMLElement *el = [XFXML elementWithID:ident inNode:root];
@@ -551,8 +729,11 @@ static NSString *XFDigestString(NSString *data, NSString *alg, NSString *enc, NS
             }],
             @"seconds-from-dateTime": [XFXPathFunction acceptContext:NO defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)ctx; (void)err;
-                NSDate *d = XFParseDateTime([XFArg(args, 0) stringValue]);
-                return [XFXPathValue number:d ? [d timeIntervalSince1970] : NAN];
+                double secs = 0; BOOL hasTime = NO;
+                if (!XFParseXSDDateTime([XFArg(args, 0) stringValue], &secs, &hasTime) || !hasTime) {
+                    return [XFXPathValue number:NAN];
+                }
+                return [XFXPathValue number:secs];
             }],
             @"seconds-to-dateTime": [XFXPathFunction acceptContext:NO defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)ctx; (void)err;
@@ -575,9 +756,9 @@ static NSString *XFDigestString(NSString *data, NSString *alg, NSString *enc, NS
                 if (nodes.count == 0 && ctx.contextNode) {
                     nodes = @[ ctx.contextNode ];
                 }
+                // XSLTForms validate_(): the node, its attributes and descendants
                 for (NSXMLNode *n in nodes) {
-                    XFNodeState *st = [XFNodeState existingStateOnNode:n];
-                    if (st && !st.valid) {
+                    if (!XFSubtreeIsValid(n)) {
                         ok = NO;
                         break;
                     }
@@ -613,9 +794,10 @@ static NSString *XFDigestString(NSString *data, NSString *alg, NSString *enc, NS
 + (XFXPathFunction *)functionNamed:(NSString *)name
 {
     NSString *local = XFLocalName(name);
-    XFXPathFunction *fn = [self table][local];
+    XFXPathFunction *fn = [self table][local] ?: [self table][name];
     if (fn == nil) {
-        fn = [self table][name];
+        NSDictionary *extra = XFXPathExtraFunctionTable();
+        fn = extra[local] ?: extra[name];
     }
     return fn;
 }

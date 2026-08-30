@@ -25,7 +25,14 @@
 
 + (instancetype)mipBindingWithExpression:(NSString *)expression error:(NSError **)error
 {
-    XFBinding *binding = [XFBinding bindingWithExpression:expression error:error];
+    return [self mipBindingWithExpression:expression element:nil error:error];
+}
+
++ (instancetype)mipBindingWithExpression:(NSString *)expression
+                                 element:(NSXMLElement *)element
+                                   error:(NSError **)error
+{
+    XFBinding *binding = [XFBinding bindingWithExpression:expression element:element error:error];
     if (binding == nil) {
         return nil;
     }

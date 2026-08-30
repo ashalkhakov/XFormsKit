@@ -111,7 +111,7 @@
     NSError *inner = nil;
     NSString *ifattr = [[element attributeForName:@"if"] stringValue];
     if (ifattr.length) {
-        _ifExpr = [XFXPath xpathWithString:ifattr error:&inner];
+        _ifExpr = [XFXPath xpathWithString:ifattr element:element error:&inner];
         if (_ifExpr == nil) {
             if (error) {
                 *error = inner;
@@ -121,7 +121,7 @@
     }
     NSString *whileattr = [[element attributeForName:@"while"] stringValue];
     if (whileattr.length) {
-        _whileExpr = [XFXPath xpathWithString:whileattr error:&inner];
+        _whileExpr = [XFXPath xpathWithString:whileattr element:element error:&inner];
         if (_whileExpr == nil) {
             if (error) {
                 *error = inner;
@@ -131,7 +131,7 @@
     }
     NSString *iterate = [[element attributeForName:@"iterate"] stringValue];
     if (iterate.length) {
-        _iterateExpr = [XFXPath xpathWithString:iterate error:&inner];
+        _iterateExpr = [XFXPath xpathWithString:iterate element:element error:&inner];
         if (_iterateExpr == nil) {
             if (error) {
                 *error = inner;

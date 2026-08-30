@@ -71,7 +71,7 @@
     if (expr.length == 0) {
         return nil;
     }
-    return [XFBinding bindingWithExpression:expr error:NULL];
+    return [XFBinding bindingWithExpression:expr element:el error:NULL];
 }
 
 - (NSString *)literalFromChild:(NSString *)name
@@ -249,7 +249,7 @@
     if (expr.length == 0) {
         return nil;
     }
-    return [XFBinding bindingWithExpression:expr error:error];
+    return [XFBinding bindingWithExpression:expr element:element error:error];
 }
 
 + (instancetype)controlWithElement:(NSXMLElement *)element

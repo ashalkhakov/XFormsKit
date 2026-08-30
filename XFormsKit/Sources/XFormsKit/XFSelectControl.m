@@ -56,7 +56,7 @@ static XFBinding *XFChildBinding(NSXMLElement *parent, NSString *local, NSError 
     if (expr.length == 0) {
         return nil;
     }
-    return [XFBinding bindingWithExpression:expr error:error];
+    return [XFBinding bindingWithExpression:expr element:el error:error];
 }
 
 static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
@@ -93,7 +93,7 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
         NSString *ns = [[element attributeForName:@"nodeset"] stringValue]
             ?: [[element attributeForName:@"ref"] stringValue];
         if (ns.length) {
-            t.nodeset = [XFBinding bindingWithExpression:ns error:&inner];
+            t.nodeset = [XFBinding bindingWithExpression:ns element:element error:&inner];
             if (t.nodeset == nil) {
                 if (error) { *error = inner; }
                 return nil;

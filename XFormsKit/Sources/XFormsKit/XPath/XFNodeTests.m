@@ -61,10 +61,21 @@
         return NO;
     }
     if (wildcard) {
-        if ([axis isEqualToString:XFAxisAttribute]) {
-            return [node kind] == NSXMLAttributeKind;
+        if ([node kind] != expected) {
+            return NO;
         }
-        return [node kind] == NSXMLElementKind;
+        if (self.prefix.length > 0 && ![self.prefix isEqualToString:@"*"]) {
+            // prefix:* — any local name in that namespace
+            NSString *uri = [resolver lookupNamespaceURI:self.prefix];
+            if (uri == nil) {
+                NSXMLNode *el = [node kind] == NSXMLElementKind ? node : [node parent];
+                if ([el kind] == NSXMLElementKind) {
+                    uri = [[(NSXMLElement *)el resolveNamespaceForName:[self.prefix stringByAppendingString:@":x"]] stringValue];
+                }
+            }
+            return uri.length > 0 && [[node URI] ?: @"" isEqualToString:uri];
+        }
+        return YES;
     }
 
     NSString *local = [node localName] ?: [node name];
@@ -74,7 +85,15 @@
     NSString *ns = [node URI];
     if (self.prefix.length > 0 && ![self.prefix isEqualToString:@"*"]) {
         NSString *uri = [resolver lookupNamespaceURI:self.prefix];
-        return (ns ?: @"") && [ns isEqualToString:uri ?: @""];
+        if (uri == nil) {
+            // Not registered from the host element: fall back to the
+            // declaration in scope at the candidate node itself.
+            NSXMLNode *el = [node kind] == NSXMLElementKind ? node : [node parent];
+            if ([el kind] == NSXMLElementKind) {
+                uri = [[(NSXMLElement *)el resolveNamespaceForName:[self.prefix stringByAppendingString:@":x"]] stringValue];
+            }
+        }
+        return uri.length > 0 && [ns ?: @"" isEqualToString:uri];
     }
     // Unprefixed name: XPath 1.0 says no namespace. Also accept a local-name
     // match so typical un-namespaced instance data works.

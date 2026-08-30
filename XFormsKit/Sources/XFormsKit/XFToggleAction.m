@@ -34,7 +34,7 @@
     if (caseEl) {
         NSString *v = [[caseEl attributeForName:@"value"] stringValue];
         if (v.length) {
-            self.caseExpr = [XFXPath xpathWithString:v error:error];
+            self.caseExpr = [XFXPath xpathWithString:v element:element error:error];
             if (self.caseExpr == nil) {
                 return nil;
             }

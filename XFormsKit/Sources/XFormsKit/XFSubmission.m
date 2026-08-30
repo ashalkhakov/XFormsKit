@@ -77,7 +77,7 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     if (resourceEl) {
         NSString *value = [[resourceEl attributeForName:@"value"] stringValue];
         if (value.length) {
-            sub.resourceExpr = [XFXPath xpathWithString:value error:error];
+            sub.resourceExpr = [XFXPath xpathWithString:value element:element error:error];
             if (sub.resourceExpr == nil && value.length) {
                 return nil;
             }
@@ -94,7 +94,7 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     if (methodEl) {
         NSString *value = [[methodEl attributeForName:@"value"] stringValue];
         if (value.length) {
-            sub.methodExpr = [XFXPath xpathWithString:value error:error];
+            sub.methodExpr = [XFXPath xpathWithString:value element:element error:error];
             if (sub.methodExpr == nil) {
                 return nil;
             }
@@ -107,7 +107,7 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     }
 
     if (sub.targetref.length) {
-        sub.targetrefBinding = [XFBinding bindingWithExpression:sub.targetref error:error];
+        sub.targetrefBinding = [XFBinding bindingWithExpression:sub.targetref element:element error:error];
         if (sub.targetrefBinding == nil) {
             return nil;
         }
@@ -115,7 +115,7 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
 
     NSString *ref = [[element attributeForName:@"ref"] stringValue];
     if (ref.length) {
-        sub.refBinding = [XFBinding bindingWithExpression:ref error:error];
+        sub.refBinding = [XFBinding bindingWithExpression:ref element:element error:error];
         if (sub.refBinding == nil) {
             return nil;
         }
@@ -145,14 +145,14 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
             entry[@"name"] = name;
         }
         if (nameValue.length) {
-            XFXPath *xp = [XFXPath xpathWithString:nameValue error:NULL];
+            XFXPath *xp = [XFXPath xpathWithString:nameValue element:element error:NULL];
             if (xp) entry[@"nameExpr"] = xp;
         }
         if (valueValue.length) {
-            XFXPath *xp = [XFXPath xpathWithString:valueValue error:NULL];
+            XFXPath *xp = [XFXPath xpathWithString:valueValue element:element error:NULL];
             if (xp) entry[@"valueExpr"] = xp;
         } else if (valueAttr.length && valueEl == nil) {
-            XFXPath *xp = [XFXPath xpathWithString:valueAttr error:NULL];
+            XFXPath *xp = [XFXPath xpathWithString:valueAttr element:element error:NULL];
             if (xp) {
                 entry[@"valueExpr"] = xp;
                 value = nil;

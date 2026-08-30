@@ -59,17 +59,13 @@
 }
 - (XFXPathValue *)evaluate:(XFExprContext *)ctx error:(NSError **)error
 {
+    (void)error;
     XFXPathValue *v = ctx.variables[self.name];
     if (v) {
         return v;
     }
-    if (error) {
-        *error = [NSError errorWithDomain:XFErrorDomain
-                                     code:XFErrorXPathEvaluation
-                                 userInfo:@{ NSLocalizedDescriptionKey:
-                                                 [NSString stringWithFormat:@"unbound variable $%@", self.name] }];
-    }
-    return nil;
+    // XSLTForms VarRef.js: an unbound variable evaluates to "".
+    return [XFXPathValue string:@""];
 }
 @end
 

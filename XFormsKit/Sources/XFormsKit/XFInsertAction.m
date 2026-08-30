@@ -33,7 +33,7 @@
     if (expr.length == 0) {
         return nil;
     }
-    return [XFXPath xpathWithString:expr error:error];
+    return [XFXPath xpathWithString:expr element:self.element error:error];
 }
 
 - (instancetype)initWithElement:(NSXMLElement *)element
@@ -56,7 +56,7 @@
         }
     }
     if (nodeset.length) {
-        self.nodesetBinding = [XFBinding bindingWithExpression:nodeset error:error];
+        self.nodesetBinding = [XFBinding bindingWithExpression:nodeset element:element error:error];
         if (self.nodesetBinding == nil) {
             return nil;
         }
