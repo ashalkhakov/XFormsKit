@@ -3,6 +3,11 @@
 #import "XFListener.h"
 #import "XFNamespaces.h"
 #import "XFXML.h"
+#import "XFControl.h"
+#import "XFBind.h"
+#import "XFInstance.h"
+#import "XFModel.h"
+#import "XFSubmission.h"
 #import <Foundation/NSXMLElement.h>
 #import <Foundation/NSXMLDocument.h>
 #import <objc/runtime.h>
@@ -443,14 +448,18 @@ static const void *kXFElementKey   = &kXFElementKey;
     }];
     [self define:@"xforms-recalculate" bubbles:YES cancelable:YES defaultAction:^(id xf, XFEvent *ev) {
         (void)ev;
-        if ([xf respondsToSelector:@selector(recalculate)]) {
-            [xf recalculate];
+        if ([xf isKindOfClass:[XFBind class]]) {
+            [(XFBind *)xf recalculate];
+        } else if ([xf isKindOfClass:[XFModel class]]) {
+            [(XFModel *)xf recalculate];
         }
     }];
     [self define:@"xforms-revalidate" bubbles:YES cancelable:YES defaultAction:^(id xf, XFEvent *ev) {
         (void)ev;
-        if ([xf respondsToSelector:@selector(revalidate)]) {
-            [xf revalidate];
+        if ([xf isKindOfClass:[XFInstance class]]) {
+            [(XFInstance *)xf revalidate];
+        } else if ([xf isKindOfClass:[XFModel class]]) {
+            [(XFModel *)xf revalidate];
         }
     }];
     [self define:@"xforms-reset" bubbles:YES cancelable:YES defaultAction:^(id xf, XFEvent *ev) {
@@ -461,8 +470,8 @@ static const void *kXFElementKey   = &kXFElementKey;
     }];
     [self define:@"xforms-submit" bubbles:YES cancelable:YES defaultAction:^(id xf, XFEvent *ev) {
         (void)ev;
-        if ([xf respondsToSelector:@selector(submit)]) {
-            [xf submit];
+        if ([xf isKindOfClass:[XFSubmission class]]) {
+            [(XFSubmission *)xf submit];
         }
     }];
     [self define:@"xforms-submit-serialize" bubbles:YES cancelable:NO defaultAction:nil];
@@ -474,8 +483,8 @@ static const void *kXFElementKey   = &kXFElementKey;
     }];
     [self define:@"xforms-focus" bubbles:YES cancelable:YES defaultAction:^(id xf, XFEvent *ev) {
         (void)ev;
-        if ([xf respondsToSelector:@selector(focus)]) {
-            [xf focus];
+        if ([xf isKindOfClass:[XFControl class]]) {
+            [(XFControl *)xf focus];
         }
     }];
     [self define:@"DOMActivate" bubbles:YES cancelable:YES defaultAction:nil];

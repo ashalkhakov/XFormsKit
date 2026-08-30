@@ -12,7 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface XFSwitch : XFControl
 
 @property (nonatomic, copy, readonly) NSArray<XFCase *> *cases;
-@property (nonatomic, weak, nullable) XFCase *selectedCase;
+@property (nonatomic, weak, nullable, readonly) XFCase *selectedCase;
 
 + (nullable instancetype)switchWithElement:(NSXMLElement *)element
                                      model:(nullable id)model

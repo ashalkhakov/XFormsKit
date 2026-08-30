@@ -1,3 +1,4 @@
+#import <Foundation/Foundation.h>
 #import "XFDeleteAction.h"
 #import "XFBinding.h"
 #import "XFXPath.h"
@@ -13,8 +14,6 @@
 #import "XFEvent.h"
 #import "XFXML.h"
 #import <math.h>
-#import <Foundation/NSXMLElement.h>
-#import <Foundation/NSXMLNode.h>
 
 @interface XFDeleteAction ()
 @property (nonatomic, strong) XFBinding *nodesetBinding;
@@ -129,7 +128,11 @@
             NSXMLElement *el = (NSXMLElement *)parent;
             if ([el isKindOfClass:[NSXMLElement class]] || [parent kind] == NSXMLDocumentKind) {
                 NSUInteger idx = [node index];
-                [parent removeChildAtIndex:idx];
+                if ([parent kind] == NSXMLElementKind) {
+                    [(NSXMLElement *)parent removeChildAtIndex:idx];
+                } else {
+                    [(NSXMLDocument *)parent removeChildAtIndex:idx];
+                }
                 [deleted addObject:node];
             }
         }

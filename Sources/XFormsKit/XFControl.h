@@ -35,6 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)applyMIPsFromBoundNode;
 
 + (BOOL)isControlElement:(NSXMLElement *)element;
++ (BOOL)shouldInstantiateElement:(NSXMLElement *)element;
 + (nullable NSString *)labelForElement:(NSXMLElement *)element;
 + (nullable XFBinding *)bindingOnElement:(NSXMLElement *)element
                     preferredAttribute:(nullable NSString *)preferred

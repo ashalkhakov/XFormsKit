@@ -221,10 +221,7 @@ static XFXPathValue *XFArg(NSArray<XFXPathValue *> *args, NSUInteger i)
                 return [XFXPathValue nodeSet:n ? @[ n ] : @[]];
             }],
         };
-            }
-        }
-    }
-    (void)lock; (void)onceToken;
+    });
     return table;
 }
 

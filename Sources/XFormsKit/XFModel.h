@@ -33,7 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL building;
 
 @property (nonatomic, strong, readonly) NSMutableArray<NSXMLNode *> *nodesChanged;
-@property (nonatomic, strong, readonly) NSMutableArray<NSXMLNode *> *newNodesChanged;
+@property (nonatomic, strong, readonly) NSMutableArray<NSXMLNode *> *nodesChangedNew;
 
 + (nullable instancetype)modelWithElement:(NSXMLElement *)modelElement
                                     error:(NSError **)error;

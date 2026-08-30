@@ -17,7 +17,7 @@
 @property (nonatomic, strong) NSMutableArray<XFRepeat *> *mutableRepeats;
 @property (nonatomic, strong, readwrite) NSMutableArray<XFBind *> *binds;
 @property (nonatomic, strong, readwrite) NSMutableArray<NSXMLNode *> *nodesChanged;
-@property (nonatomic, strong, readwrite) NSMutableArray<NSXMLNode *> *newNodesChanged;
+@property (nonatomic, strong, readwrite) NSMutableArray<NSXMLNode *> *nodesChangedNew;
 @end
 
 @implementation XFModel
@@ -32,7 +32,7 @@
     model.binds = [NSMutableArray array];
     model.mutableRepeats = [NSMutableArray array];
     model.nodesChanged = [NSMutableArray array];
-    model.newNodesChanged = [NSMutableArray array];
+    model.nodesChangedNew = [NSMutableArray array];
 
     NSArray<NSXMLElement *> *instanceElements =
         [XFXML childElementsWithLocalName:@"instance"
@@ -104,7 +104,7 @@
 - (void)addBind:(XFBind *)bind
 {
     if (bind) {
-        [self.binds addObject:bind];
+        [(NSMutableArray *)self.binds addObject:bind];
     }
 }
 
@@ -207,7 +207,7 @@
     if (node == nil) {
         return;
     }
-    NSMutableArray<NSXMLNode *> *list = self.building ? self.newNodesChanged : self.nodesChanged;
+    NSMutableArray<NSXMLNode *> *list = self.building ? self.nodesChangedNew : self.nodesChanged;
     if ([node kind] == NSXMLAttributeKind) {
         if ([list indexOfObjectIdenticalTo:node] == NSNotFound) {
             [list addObject:node];
@@ -225,17 +225,17 @@
 - (void)setRebuilded:(BOOL)rebuilded
 {
     if (self.building) {
-        self.newRebuilded = rebuilded;
+        _newRebuilded = rebuilded;
     } else {
-        self.rebuilded = rebuilded;
+        _rebuilded = rebuilded;
     }
 }
 
 - (void)swapChangeLists
 {
     [self.nodesChanged removeAllObjects];
-    [self.nodesChanged addObjectsFromArray:self.newNodesChanged];
-    [self.newNodesChanged removeAllObjects];
+    [self.nodesChanged addObjectsFromArray:self.nodesChangedNew];
+    [self.nodesChangedNew removeAllObjects];
     self.rebuilded = self.newRebuilded;
     self.newRebuilded = NO;
 }

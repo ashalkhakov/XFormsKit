@@ -66,7 +66,7 @@
         if ([model.nodesChanged indexOfObjectIdenticalTo:dep] != NSNotFound) {
             return YES;
         }
-        if ([model.newNodesChanged indexOfObjectIdenticalTo:dep] != NSNotFound) {
+        if ([model.nodesChangedNew indexOfObjectIdenticalTo:dep] != NSNotFound) {
             return YES;
         }
     }

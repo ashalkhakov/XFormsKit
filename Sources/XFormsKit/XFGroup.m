@@ -4,6 +4,7 @@
 #import "XFNodeState.h"
 #import "XFXML.h"
 #import "XFNamespaces.h"
+#import "XFControl.h"
 
 @interface XFGroup ()
 @property (nonatomic, strong) NSMutableArray<XFControl *> *mutableChildren;

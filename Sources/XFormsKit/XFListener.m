@@ -3,6 +3,11 @@
 #import "XFEvent.h"
 #import <Foundation/NSXMLElement.h>
 
+// TODO: implement subforms
+@protocol XFSubformProto
+- (NSArray *)listeners;
+@end
+
 @implementation XFListener
 
 + (NSMutableArray *)destructs
