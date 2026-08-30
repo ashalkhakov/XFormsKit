@@ -60,3 +60,92 @@
 		AA0000010000000000000058 /* XFXMLEvents.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000054; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0000010000000000000059 /* XFXMLEventsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000056; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		CC0000010000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DD0000010000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE0000010000000000000001;
+			remoteInfo = XFormsKit;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		BB0000010000000000000001 /* XFNamespaces.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFNamespaces.m; sourceTree = "<group>"; };
+		BB0000010000000000000002 /* XFErrors.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFErrors.m; sourceTree = "<group>"; };
+		BB0000010000000000000003 /* XFXML.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXML.m; sourceTree = "<group>"; };
+		BB0000010000000000000004 /* XFInstance.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFInstance.m; sourceTree = "<group>"; };
+		BB0000010000000000000005 /* XFModel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFModel.m; sourceTree = "<group>"; };
+		BB0000010000000000000006 /* XFExprContext.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFExprContext.m; sourceTree = "<group>"; };
+		BB0000010000000000000007 /* XFXPathValue.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXPathValue.m; sourceTree = "<group>"; };
+		BB0000010000000000000008 /* XFXPath.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXPath.m; sourceTree = "<group>"; };
+		BB0000010000000000000030 /* XFXPathLexer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXPathLexer.m; sourceTree = "<group>"; };
+		BB0000010000000000000031 /* XFXPathParser.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXPathParser.m; sourceTree = "<group>"; };
+		BB0000010000000000000032 /* XFXPathPriv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFXPathPriv.h; sourceTree = "<group>"; };
+		BB0000010000000000000040 /* XFExprs.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFExprs.m; sourceTree = "<group>"; };
+		BB0000010000000000000041 /* XFNodeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFNodeTests.m; sourceTree = "<group>"; };
+		BB0000010000000000000042 /* XFLocationExpr.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFLocationExpr.m; sourceTree = "<group>"; };
+		BB0000010000000000000043 /* XFStepExpr.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFStepExpr.m; sourceTree = "<group>"; };
+		BB0000010000000000000044 /* XFPathExpr.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFPathExpr.m; sourceTree = "<group>"; };
+		BB0000010000000000000045 /* XFBinaryExpr.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFBinaryExpr.m; sourceTree = "<group>"; };
+		BB0000010000000000000046 /* XFXPathFunction.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXPathFunction.m; sourceTree = "<group>"; };
+		BB0000010000000000000047 /* XFXPathCoreFunctions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXPathCoreFunctions.m; sourceTree = "<group>"; };
+		BB0000010000000000000048 /* XFFunctionCallExpr.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFFunctionCallExpr.m; sourceTree = "<group>"; };
+		BB0000010000000000000009 /* XFBinding.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFBinding.m; sourceTree = "<group>"; };
+		BB000001000000000000000A /* XFControl.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFControl.m; sourceTree = "<group>"; };
+		BB000001000000000000000B /* XFInputControl.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFInputControl.m; sourceTree = "<group>"; };
+		BB000001000000000000000C /* XFOutputControl.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFOutputControl.m; sourceTree = "<group>"; };
+		BB000001000000000000000D /* XFProcessor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFProcessor.m; sourceTree = "<group>"; };
+		BB000001000000000000000E /* XFFormView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFFormView.m; sourceTree = "<group>"; };
+		BB0000010000000000000010 /* XFormsKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFormsKit.h; sourceTree = "<group>"; };
+		BB0000010000000000000011 /* XFNamespaces.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFNamespaces.h; sourceTree = "<group>"; };
+		BB0000010000000000000012 /* XFErrors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFErrors.h; sourceTree = "<group>"; };
+		BB0000010000000000000013 /* XFXML.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFXML.h; sourceTree = "<group>"; };
+		BB0000010000000000000014 /* XFInstance.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFInstance.h; sourceTree = "<group>"; };
+		BB0000010000000000000015 /* XFModel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFModel.h; sourceTree = "<group>"; };
+		BB0000010000000000000016 /* XFExprContext.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFExprContext.h; sourceTree = "<group>"; };
+		BB0000010000000000000017 /* XFXPathValue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFXPathValue.h; sourceTree = "<group>"; };
+		BB0000010000000000000018 /* XFXPath.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFXPath.h; sourceTree = "<group>"; };
+		BB0000010000000000000019 /* XFBinding.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFBinding.h; sourceTree = "<group>"; };
+		BB000001000000000000001A /* XFControl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFControl.h; sourceTree = "<group>"; };
+		BB000001000000000000001B /* XFInputControl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFInputControl.h; sourceTree = "<group>"; };
+		BB000001000000000000001C /* XFOutputControl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFOutputControl.h; sourceTree = "<group>"; };
+		BB000001000000000000001D /* XFProcessor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFProcessor.h; sourceTree = "<group>"; };
+		BB000001000000000000001E /* XFFormView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFFormView.h; sourceTree = "<group>"; };
+		BB0000010000000000000020 /* XFXPathTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXPathTests.m; sourceTree = "<group>"; };
+		BB0000010000000000000021 /* XFInstanceTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFInstanceTests.m; sourceTree = "<group>"; };
+		BB0000010000000000000022 /* XFHelloFormTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFHelloFormTests.m; sourceTree = "<group>"; };
+		BB0000010000000000000023 /* hello.xhtml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = hello.xhtml; sourceTree = "<group>"; };
+		BB0000010000000000000100 /* XFormsKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = XFormsKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB0000010000000000000101 /* XFormsKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XFormsKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB0000010000000000000102 /* COPYING.LIB */ = {isa = PBXFileReference; lastKnownFileType = text; path = COPYING.LIB; sourceTree = "<group>"; };
+		BB0000010000000000000105 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		BB0000010000000000000103 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		BB0000010000000000000104 /* GNUmakefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = GNUmakefile; sourceTree = "<group>"; };
+		BB0000010000000000000050 /* XFEvent.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFEvent.h; sourceTree = "<group>"; };
+		BB0000010000000000000051 /* XFEvent.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFEvent.m; sourceTree = "<group>"; };
+		BB0000010000000000000052 /* XFListener.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFListener.h; sourceTree = "<group>"; };
+		BB0000010000000000000053 /* XFListener.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFListener.m; sourceTree = "<group>"; };
+		BB0000010000000000000054 /* XFXMLEvents.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFXMLEvents.h; sourceTree = "<group>"; };
+		BB0000010000000000000055 /* XFXMLEvents.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXMLEvents.m; sourceTree = "<group>"; };
+		BB0000010000000000000056 /* XFXMLEventsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXMLEventsTests.m; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		FF0000010000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FF0000010000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000010000000000000024 /* XFormsKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
