@@ -35,6 +35,10 @@
     XCTAssertEqualObjects(output.label, @"Greeting");
     XCTAssertEqualObjects(input.stringValue, @"World");
     XCTAssertEqualObjects(output.stringValue, @"Hello World");
+    // xf:output/@value yields a string, not a node; it must still be relevant
+    // (its context node is) or the form view hides it.
+    XCTAssertTrue(output.relevant);
+    XCTAssertNil(output.boundNode);
 
     BOOL ok = [processor setValue:@"Ada" ofControl:input error:&error];
     XCTAssertTrue(ok, @"%@", error);

@@ -45,6 +45,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)setValue:(NSString *)value
       ofControl:(XFControl *)control
           error:(NSError **)error;
+/// Run the deferred-update cycle for a control that already wrote its bound
+/// node itself (select/select1, range, date input, upload): records the
+/// change on the model, dispatches `xforms-value-changed`, then
+/// rebuild/recalculate/revalidate/refresh as needed.
+- (void)controlDidChangeValue:(XFControl *)control;
+
 
 - (void)activateControl:(XFTriggerControl *)control;
 

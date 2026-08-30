@@ -93,7 +93,14 @@
     }
     self.boundNode = value.firstNode;
     self.stringValue = [value stringValue] ?: @"";
-    [self applyMIPsFromBoundNode];
+    if (self.boundNode == nil && self.usesValueBinding) {
+        // `value` computes a string, not a node: relevance/readonly follow the
+        // context node the expression was evaluated against (as XSLTForms
+        // does for xf:output/@value), not the empty result node-set.
+        [self applyMIPsFromNode:context.contextNode];
+    } else {
+        [self applyMIPsFromBoundNode];
+    }
 }
 
 @end

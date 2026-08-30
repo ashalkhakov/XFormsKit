@@ -373,4 +373,35 @@
     XCTAssertGreaterThan(out.imageData.length, (NSUInteger)0);
 }
 
+- (void)testSelectChangeRecalculatesDependentMIPs
+{
+    // Samples/readonly.xhtml: name is readonly while lock = 'true'. Picking
+    // "No" in the select1 must run the deferred-update cycle so the bind on
+    // name is recalculated and the input becomes writable.
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><lock>true</lock><name>Ada</name></data></xf:instance>"
+                      @"<xf:bind nodeset=\"name\" readonly=\"../lock = 'true'\"/>"
+                      extra:
+                      @"<xf:select1 id=\"s\" ref=\"lock\">"
+                      @"  <xf:item><xf:label>Yes</xf:label><xf:value>true</xf:value></xf:item>"
+                      @"  <xf:item><xf:label>No</xf:label><xf:value>false</xf:value></xf:item>"
+                      @"</xf:select1>"
+                      @"<xf:input id=\"n\" ref=\"name\"><xf:label>Name</xf:label></xf:input>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFSelectControl *sel = [self firstControlOfClass:[XFSelectControl class] in:p];
+    XFInputControl *name = [self firstControlOfClass:[XFInputControl class] in:p];
+    XCTAssertTrue(name.readonly);
+
+    XCTAssertTrue([sel selectValue:@"false"]);
+    [p controlDidChangeValue:sel];
+    XCTAssertEqualObjects([XFXML stringValueOfNode:sel.boundNode], @"false");
+    XCTAssertFalse(name.readonly, @"readonly MIP must be recalculated after the select change");
+
+    XCTAssertTrue([sel selectValue:@"true"]);
+    [p controlDidChangeValue:sel];
+    XCTAssertTrue(name.readonly);
+}
+
 @end

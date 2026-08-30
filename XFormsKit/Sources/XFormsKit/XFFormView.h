@@ -11,6 +11,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong, readonly) XFProcessor *processor;
 @property (nonatomic, copy, nullable) void (^documentReplaceHandler)(NSString *xml);
+/// Called after any user interaction that went through the processor
+/// (value commit, trigger, selection, ...): the instance data may have
+/// changed, so hosts can refresh live views of it.
+@property (nonatomic, copy, nullable) void (^instanceChangedHandler)(void);
 
 - (instancetype)initWithProcessor:(XFProcessor *)processor;
 

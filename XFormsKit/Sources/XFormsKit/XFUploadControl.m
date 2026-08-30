@@ -138,7 +138,8 @@
     }
     [self writeBinding:self.filenameBinding value:fileName context:ctx];
     [self writeBinding:self.mediatypeBinding value:mediaType context:ctx];
-    [XFXMLEvents dispatch:self name:@"xforms-value-changed"];
+    // xforms-value-changed and the recalculation cycle are driven by
+    // -[XFProcessor controlDidChangeValue:].
     return YES;
 }
 

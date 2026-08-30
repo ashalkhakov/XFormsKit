@@ -309,9 +309,22 @@
     return control;
 }
 
+- (BOOL)usesValueBinding
+{
+    NSXMLElement *element = self.element;
+    return [element attributeForName:@"value"] != nil
+        && [element attributeForName:@"ref"] == nil
+        && [element attributeForName:@"bind"] == nil;
+}
+
 - (void)applyMIPsFromBoundNode
 {
-    XFNodeState *state = [XFNodeState existingStateOnNode:self.boundNode];
+    [self applyMIPsFromNode:self.boundNode];
+}
+
+- (void)applyMIPsFromNode:(NSXMLNode *)node
+{
+    XFNodeState *state = [XFNodeState existingStateOnNode:node];
     BOOL relevant = YES;
     BOOL readonly = NO;
     BOOL required = NO;
@@ -321,7 +334,10 @@
         readonly = state.readonly;
         required = state.required;
         valid = state.valid;
-    } else if (self.boundNode == nil && self.binding != nil) {
+    } else if (node == nil && self.binding != nil) {
+        // A single-node binding that selects nothing makes the control
+        // non-relevant (XForms 1.1 8.1.1). A `value` binding has no node of
+        // its own; callers pass the in-scope evaluation context node instead.
         relevant = NO;
     }
     BOOL known = self.mipKnown;

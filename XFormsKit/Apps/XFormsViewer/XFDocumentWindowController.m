@@ -45,6 +45,7 @@
 @property (nonatomic, strong) NSArray<XFPaletteItem *> *paletteItems;
 @property (nonatomic, copy) NSString *restoreIdentifier;
 @property (nonatomic, strong) NSMutableArray<NSDictionary *> *inspectorBindings;
+@property (nonatomic, assign) BOOL windowBuilt;
 @end
 
 @implementation XFDocumentWindowController
@@ -154,18 +155,15 @@
 
 - (instancetype)init
 {
-    self = [super initWithWindow:nil];
-    if (self) {
-        [self loadWindow];
-    }
-    return self;
+    // Do not build the window here: -[NSDocument addWindowController:] sets
+    // the document afterwards, and a window built now would be populated
+    // from a nil document (an empty form). The first -window call runs
+    // -loadWindow / -windowDidLoad once the document is attached.
+    return [super initWithWindow:nil];
 }
 
 - (void)showWindow:(id)sender
 {
-    if ([self window] == nil) {
-        [self loadWindow];
-    }
     [super showWindow:sender];
     [[[self window] contentView] setNeedsDisplay:YES];
     [[self window] makeKeyAndOrderFront:sender];
@@ -173,13 +171,16 @@
 
 - (void)loadWindow
 {
-    if ([self window] != nil) {
+    // Never call -window from here: it would re-enter -loadWindow.
+    if (self.windowBuilt) {
         return;
     }
+    self.windowBuilt = YES;
     self.paletteItems = [self buildPalette];
     self.inspectorBindings = [NSMutableArray array];
 
-    NSWindow *window = [[NSWindow alloc] initWithContentRect:NSMakeRect(60, 60, 1180, 680)
+    NSRect content = NSMakeRect(0, 0, 1180, 680);
+    NSWindow *window = [[NSWindow alloc] initWithContentRect:NSOffsetRect(content, 60, 60)
                                                    styleMask:(NSTitledWindowMask
                                                               | NSClosableWindowMask
                                                               | NSMiniaturizableWindowMask
@@ -189,7 +190,9 @@
     [window setTitle:@"XForms"];
     [window setMinSize:NSMakeSize(720, 400)];
 
-    NSSplitView *split = [[NSSplitView alloc] initWithFrame:[[window contentView] bounds]];
+    // Use the nominal content size rather than -[contentView bounds]: on
+    // GNUstep the content view is not sized until the window is displayed.
+    NSSplitView *split = [[NSSplitView alloc] initWithFrame:content];
     [split setVertical:YES];
     [split setDividerStyle:NSSplitViewDividerStyleThin];
     [split setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
@@ -285,6 +288,22 @@
     self.inspectorPane = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 260, 800)];
     self.inspectorScroll = [self wrapView:self.inspectorPane];
 
+    // Give every pane a real starting frame: Cocoa's NSSplitView does not lay
+    // out zero-sized subviews until the window is resized, which left the
+    // window blank until the user dragged it.
+    NSRect bounds = content;
+    CGFloat divider = [split dividerThickness];
+    CGFloat leftWidth = 250;
+    CGFloat inspectorWidth = 280;
+    CGFloat centerWidth = NSWidth(bounds) - leftWidth - inspectorWidth - 2 * divider;
+    [left setFrame:NSMakeRect(0, 0, leftWidth, NSHeight(bounds))];
+    [tabs setFrame:NSMakeRect(leftWidth + divider, 0, centerWidth, NSHeight(bounds))];
+    [self.inspectorScroll setFrame:NSMakeRect(leftWidth + divider + centerWidth + divider, 0,
+                                              inspectorWidth, NSHeight(bounds))];
+    [paletteBox setFrame:NSMakeRect(0, 0, leftWidth, 220)];
+    [navScroll setFrame:NSMakeRect(0, 220 + [left dividerThickness], leftWidth,
+                                   NSHeight(bounds) - 220 - [left dividerThickness])];
+
     [split addSubview:left];
     [split addSubview:tabs];
     [split addSubview:self.inspectorScroll];
@@ -292,9 +311,14 @@
     [[window contentView] addSubview:split];
     [self setWindow:window];
 
-    [split setPosition:250 ofDividerAtIndex:0];
-    [split setPosition:900 ofDividerAtIndex:1];
+    [split adjustSubviews];
+    [left adjustSubviews];
+    [split setPosition:leftWidth ofDividerAtIndex:0];
+    [split setPosition:leftWidth + divider + centerWidth ofDividerAtIndex:1];
     [left setPosition:220 ofDividerAtIndex:0];
+    if ([split respondsToSelector:@selector(layoutSubtreeIfNeeded)]) {
+        [split layoutSubtreeIfNeeded];
+    }
     [self reloadAll];
 }
 
@@ -385,6 +409,72 @@
     }
 }
 
+- (void)collectExpandedNodes:(XFTreeItem *)item into:(NSMutableArray<NSXMLNode *> *)nodes
+{
+    if ([self.outline isItemExpanded:item] && item.node) {
+        [nodes addObject:item.node];
+    }
+    for (XFTreeItem *kid in item.children) {
+        [self collectExpandedNodes:kid into:nodes];
+    }
+}
+
+- (void)expandItemsForNodes:(NSArray<NSXMLNode *> *)nodes in:(XFTreeItem *)item
+{
+    if ([nodes indexOfObjectIdenticalTo:item.node] != NSNotFound) {
+        [self.outline expandItem:item];
+    }
+    for (XFTreeItem *kid in item.children) {
+        [self expandItemsForNodes:nodes in:kid];
+    }
+}
+
+/// Live update of the instance side of the navigator (and the Instance
+/// source tab) after the form changed instance data. The host tree is not
+/// touched, so selection/expansion there survives; on the instance side,
+/// expansion and selection are restored by node identity (setvalue edits
+/// text in place, so element nodes are stable).
+- (void)refreshInstanceTree
+{
+    XFFormDocument *doc = [self formDocument];
+    NSXMLElement *inst = [[doc.processor defaultInstance] documentElement];
+    XFTreeItem *oldRoot = nil;
+    for (XFTreeItem *root in self.roots) {
+        if (root.instanceSide) {
+            oldRoot = root;
+            break;
+        }
+    }
+    if (inst == nil || oldRoot == nil) {
+        [self rebuildTree];
+        [self reloadSources];
+        return;
+    }
+    NSMutableArray<NSXMLNode *> *expanded = [NSMutableArray array];
+    [self collectExpandedNodes:oldRoot into:expanded];
+    NSXMLNode *selectedNode = self.selectedItem.instanceSide ? self.selectedItem.node : nil;
+
+    XFTreeItem *newRoot = [self itemForNode:inst instanceSide:YES];
+    newRoot.title = [NSString stringWithFormat:@"instance · %@", newRoot.title];
+    [self.roots replaceObjectAtIndex:[self.roots indexOfObjectIdenticalTo:oldRoot] withObject:newRoot];
+    [self.outline reloadData];
+    [self.outline expandItem:newRoot];
+    [self expandItemsForNodes:expanded in:newRoot];
+    if (selectedNode) {
+        XFTreeItem *hit = [self findItem:newRoot withNode:selectedNode];
+        if (hit) {
+            NSInteger row = [self.outline rowForItem:hit];
+            if (row >= 0) {
+                [self.outline selectRowIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)row]
+                          byExtendingSelection:NO];
+            }
+            self.selectedItem = hit;
+            [self rebuildInspector];
+        }
+    }
+    [self.instanceSourceView setString:[doc instanceXMLString] ?: @""];
+}
+
 - (XFTreeItem *)findItem:(XFTreeItem *)item withID:(NSString *)ident
 {
     if ([item.node kind] == NSXMLElementKind) {
@@ -467,6 +557,9 @@
             if ([[strong formDocument] replaceHostWithXMLString:xml error:&err]) {
                 [strong reloadAll];
             }
+        };
+        form.instanceChangedHandler = ^{
+            [weakSelf refreshInstanceTree];
         };
         self.formView = form;
         [self.formScroll setDocumentView:form];

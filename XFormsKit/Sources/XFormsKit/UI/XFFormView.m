@@ -161,6 +161,10 @@ static const CGFloat kFieldWidth = 280.0;
     if (!editable) {
         [field setBezeled:NO];
         [field setDrawsBackground:NO];
+    } else {
+        // Commit when focus leaves the field too, not only on Return
+        // (XSLTForms commits xf:input on the DOM change event).
+        [[field cell] setSendsActionOnEndEditing:YES];
     }
     [field setTarget:self];
     [field setAction:@selector(textChanged:)];
@@ -169,6 +173,12 @@ static const CGFloat kFieldWidth = 280.0;
 
 - (CGFloat)layoutControl:(XFControl *)control atY:(CGFloat)y indent:(CGFloat)indent
 {
+    if (!control.relevant) {
+        // XSLTForms marks a non-relevant control xforms-disabled, which is
+        // display:none for the whole control incl. its label, so it takes no
+        // space. The form is rebuilt on every change, so it reappears later.
+        return y;
+    }
     if ([control isKindOfClass:[XFGroup class]]) {
         return [self layoutGroup:(XFGroup *)control atY:y indent:indent];
     }
@@ -487,7 +497,7 @@ static const CGFloat kFieldWidth = 280.0;
         url = [NSURL fileURLWithPath:[panel filename]];
     }
     if (url && [upload commitFileAtURL:url error:NULL]) {
-        [self.processor refresh:NULL];
+        [self.processor controlDidChangeValue:upload];
         [self reloadFromProcessor];
     }
 }
@@ -544,8 +554,9 @@ static const CGFloat kFieldWidth = 280.0;
 {
     XFControl *control = [self controlForSender:sender];
     if ([control isKindOfClass:[XFRangeControl class]]) {
-        [(XFRangeControl *)control commitNumericValue:[sender doubleValue] error:NULL];
-        [self.processor refresh:NULL];
+        if ([(XFRangeControl *)control commitNumericValue:[sender doubleValue] error:NULL]) {
+            [self.processor controlDidChangeValue:control];
+        }
         [self reloadFromProcessor];
     }
 }
@@ -555,8 +566,9 @@ static const CGFloat kFieldWidth = 280.0;
     XFControl *control = [self controlForSender:sender];
     if ([control isKindOfClass:[XFSelectControl class]]) {
         NSString *value = [[sender selectedItem] representedObject];
-        [(XFSelectControl *)control selectValue:value ?: [sender titleOfSelectedItem]];
-        [self.processor refresh:NULL];
+        if ([(XFSelectControl *)control selectValue:value ?: [sender titleOfSelectedItem]]) {
+            [self.processor controlDidChangeValue:control];
+        }
         [self reloadFromProcessor];
     }
 }
@@ -565,8 +577,9 @@ static const CGFloat kFieldWidth = 280.0;
 {
     XFControl *control = [self controlForSender:sender];
     if ([control isKindOfClass:[XFSelectControl class]]) {
-        [(XFSelectControl *)control toggleValue:[sender toolTip] ?: [sender title]];
-        [self.processor refresh:NULL];
+        if ([(XFSelectControl *)control toggleValue:[sender toolTip] ?: [sender title]]) {
+            [self.processor controlDidChangeValue:control];
+        }
         [self reloadFromProcessor];
     }
 }
@@ -583,8 +596,9 @@ static const CGFloat kFieldWidth = 280.0;
 {
     XFControl *control = [self controlForSender:sender];
     if ([control isKindOfClass:[XFInputControl class]]) {
-        [(XFInputControl *)control commitDateValue:[sender dateValue] error:NULL];
-        [self.processor refresh:NULL];
+        if ([(XFInputControl *)control commitDateValue:[sender dateValue] error:NULL]) {
+            [self.processor controlDidChangeValue:control];
+        }
         [self reloadFromProcessor];
     }
 }
@@ -593,6 +607,9 @@ static const CGFloat kFieldWidth = 280.0;
 {
     [self.processor refreshControls];
     [self rebuild];
+    if (self.instanceChangedHandler) {
+        self.instanceChangedHandler();
+    }
 }
 
 @end

@@ -36,6 +36,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)focus;
 - (BOOL)commitStringValue:(nullable NSString *)value error:(NSError **)error;
 - (void)applyMIPsFromBoundNode;
+/// Apply MIPs from an arbitrary node (nil with a binding = non-relevant).
+- (void)applyMIPsFromNode:(nullable NSXMLNode *)node;
+/// YES for `value="..."` (xf:output) with no `ref` / `bind`.
+@property (nonatomic, assign, readonly) BOOL usesValueBinding;
 /// XsltForms_control.eventDispatch for help/hint default UI.
 - (void)showHelp;
 - (void)showHint;

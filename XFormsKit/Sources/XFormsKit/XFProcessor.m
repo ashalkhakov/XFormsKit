@@ -469,13 +469,23 @@
     if (![control commitStringValue:value error:error]) {
         return NO;
     }
+    [self controlDidChangeValue:control];
+    return YES;
+}
+
+- (void)controlDidChangeValue:(XFControl *)control
+{
+    // XSLTForms: XsltForms_globals.openAction(); model.addChange(node);
+    // xforms-value-changed; closeAction() -> rebuild/recalculate/revalidate/
+    // refresh through the deferred-update queue. Every UI-originated change
+    // must come through here, or dependent MIPs are not recomputed.
+    XFModel *model = [control.owner isKindOfClass:[XFModel class]] ? (XFModel *)control.owner : self.model;
     XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
     [du openAction:@"setValue"];
-    [self.model addChange:control.boundNode];
-    [du addChangedModel:self.model];
+    [model addChange:control.boundNode];
+    [du addChangedModel:model];
     [XFXMLEvents dispatch:control name:@"xforms-value-changed"];
     [du closeAction:@"setValue"];
-    return YES;
 }
 
 - (XFControl *)parentControlForElement:(NSXMLElement *)element
