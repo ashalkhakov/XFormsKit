@@ -36,10 +36,15 @@
     XCTAssertFalse([[XFType typeNamed:@"xf:email"] validateValue:@"not-an-email"]);
 }
 
-- (void)testEmptyIsTypeValid
+- (void)testEmptyValueValidity // G-12: XSLTForms TypeDefs semantics
 {
-    XCTAssertTrue([XFType value:@"" conformsToTypeNamed:@"xsd:integer"]);
-    XCTAssertTrue([XFType value:nil conformsToTypeNamed:@"xsd:date"]);
+    XCTAssertFalse([XFType value:@"" conformsToTypeNamed:@"xsd:integer"]);
+    XCTAssertFalse([XFType value:nil conformsToTypeNamed:@"xsd:date"]);
+    XCTAssertTrue([XFType value:@"" conformsToTypeNamed:@"xsd:string"]);
+    XCTAssertTrue([XFType value:@"" conformsToTypeNamed:@"xf:integer"]);
+    XCTAssertTrue([XFType value:@"" conformsToTypeNamed:@"xf:date"]);
+    XCTAssertTrue([XFType value:@"" conformsToTypeNamed:@"xf:email"]);
+    XCTAssertTrue([XFType value:@"" conformsToTypeNamed:@"xsd:anyURI"]);
     XCTAssertFalse([XFType value:@"x" conformsToTypeNamed:@"xsd:integer"]);
 }
 

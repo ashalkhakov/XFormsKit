@@ -3,6 +3,8 @@
 #import <XFormsKit/XFXMLEvents.h>
 #import <XFormsKit/XFListener.h>
 #import <XFormsKit/XFEvent.h>
+#import <XFormsKit/XFTriggerControl.h>
+#import <XFormsKit/XFXML.h>
 #import <Foundation/NSXMLDocument.h>
 #import <Foundation/NSXMLElement.h>
 
@@ -357,6 +359,134 @@
     XCTAssertGreaterThan(recalc.invocationCount, recalcAtInit);
     XCTAssertGreaterThan(refresh.invocationCount, refreshAtInit);
     XCTAssertEqualObjects(processor.outputControls.firstObject.stringValue, @"Hi Bob");
+}
+
+- (XFProcessor *)processorWithBody:(NSString *)body
+{
+    NSString *xml =
+        [NSString stringWithFormat:
+         @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
+         @"      xmlns:xf=\"http://www.w3.org/2002/xforms\""
+         @"      xmlns:ev=\"http://www.w3.org/2001/xml-events\">%@</html>", body];
+    NSError *error = nil;
+    XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    return p;
+}
+
+- (void)testHandlerRunsInOneDeferredUpdateCycle
+{
+    // XsltForms_browser.run wraps every handler in openAction/closeAction:
+    // two setvalues in one handler produce a single recalculate (G-09)
+    XFProcessor *p = [self processorWithBody:
+        @"<xf:model id=\"m\">"
+        @"  <xf:instance><data xmlns=\"\"><a/><b/><sum/></data></xf:instance>"
+        @"  <xf:bind ref=\"sum\" calculate=\"concat(../a, ../b)\"/>"
+        @"  <xf:action id=\"on-recalc\" ev:event=\"xforms-recalculate\"/>"
+        @"  <xf:action ev:event=\"ping\">"
+        @"    <xf:setvalue ref=\"a\" value=\"'1'\"/>"
+        @"    <xf:setvalue ref=\"b\" value=\"'2'\"/>"
+        @"  </xf:action>"
+        @"</xf:model>"
+        @"<xf:output id=\"o\" ref=\"sum\"><xf:label>S</xf:label></xf:output>"];
+    XFAction *recalc = (XFAction *)[p actionWithIdentifier:@"on-recalc"];
+    NSInteger before = recalc.invocationCount;
+    [XFXMLEvents dispatch:p.model name:@"ping"];
+    XCTAssertEqual(recalc.invocationCount - before, (NSInteger)1);
+    XCTAssertEqualObjects(p.outputControls.firstObject.stringValue, @"12");
+}
+
+- (void)testHandlerContextIsObserverInScopeNode
+{
+    // XsltForms_browser.run: the handler evaluates in the observer's node
+    // (element.node) -> a setvalue inside a group-scoped trigger resolves
+    // its ref against the group's context (G-10)
+    XFProcessor *p = [self processorWithBody:
+        @"<xf:model id=\"m\">"
+        @"  <xf:instance><data xmlns=\"\"><g><x>inner</x></g><x>outer</x></data></xf:instance>"
+        @"</xf:model>"
+        @"<xf:group ref=\"g\">"
+        @"  <xf:trigger id=\"t\"><xf:label>Go</xf:label>"
+        @"    <xf:setvalue ev:event=\"DOMActivate\" ref=\"x\" value=\"'hit'\"/>"
+        @"  </xf:trigger>"
+        @"</xf:group>"];
+    XFTriggerControl *trigger = nil;
+    for (XFControl *c in p.controls) {
+        if ([c isKindOfClass:[XFTriggerControl class]]) { trigger = (XFTriggerControl *)c; break; }
+    }
+    if (trigger == nil) {
+        for (XFControl *c in p.controls) {
+            for (XFControl *k in [c valueForKey:@"children"]) {
+                if ([k isKindOfClass:[XFTriggerControl class]]) { trigger = (XFTriggerControl *)k; }
+            }
+        }
+    }
+    XCTAssertNotNil(trigger);
+    [p activateControl:trigger];
+    NSXMLElement *root = [[p.model defaultInstance] documentElement];
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[root nodesForXPath:@"g/x" error:NULL].firstObject], @"hit");
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[root nodesForXPath:@"x" error:NULL].firstObject], @"outer");
+}
+
+- (void)testUnchangedValueDoesNotFireValueChanged
+{
+    // XsltForms_control.valueChanged: nothing happens when the value is the
+    // same; xforms-value-changed comes from refresh only when it differs (G-11)
+    XFProcessor *p = [self processorWithBody:
+        @"<xf:model id=\"m\">"
+        @"  <xf:instance><data xmlns=\"\"><n>Ada</n></data></xf:instance>"
+        @"  <xf:action id=\"on-recalc\" ev:event=\"xforms-recalculate\"/>"
+        @"</xf:model>"
+        @"<xf:input ref=\"n\"><xf:label>N</xf:label>"
+        @"  <xf:action id=\"on-changed\" ev:event=\"xforms-value-changed\"/>"
+        @"</xf:input>"];
+    XFAction *changed = (XFAction *)[p actionWithIdentifier:@"on-changed"];
+    XFAction *recalc = (XFAction *)[p actionWithIdentifier:@"on-recalc"];
+    NSInteger before = recalc.invocationCount;
+    XCTAssertTrue([p setValue:@"Ada" ofControl:p.inputControls.firstObject error:NULL]);
+    XCTAssertEqual(changed.invocationCount, (NSInteger)0);
+    XCTAssertEqual(recalc.invocationCount, before);
+    XCTAssertTrue([p setValue:@"Bob" ofControl:p.inputControls.firstObject error:NULL]);
+    XCTAssertEqual(changed.invocationCount, (NSInteger)1);
+}
+
+- (void)testActionSetvalueFiresValueChangedOnBoundControl
+{
+    // the refresh dispatches xforms-value-changed whenever a control's
+    // displayed value changed, whatever changed the instance (G-11)
+    XFProcessor *p = [self processorWithBody:
+        @"<xf:model id=\"m\">"
+        @"  <xf:instance><data xmlns=\"\"><n>Ada</n></data></xf:instance>"
+        @"  <xf:setvalue ev:event=\"ping\" ref=\"n\" value=\"'Bob'\"/>"
+        @"  <xf:setvalue ev:event=\"same\" ref=\"n\" value=\"'Bob'\"/>"
+        @"</xf:model>"
+        @"<xf:input ref=\"n\"><xf:label>N</xf:label>"
+        @"  <xf:action id=\"on-changed\" ev:event=\"xforms-value-changed\"/>"
+        @"</xf:input>"];
+    XFAction *changed = (XFAction *)[p actionWithIdentifier:@"on-changed"];
+    [XFXMLEvents dispatch:p.model name:@"ping"];
+    XCTAssertEqual(changed.invocationCount, (NSInteger)1);
+    [XFXMLEvents dispatch:p.model name:@"same"];
+    XCTAssertEqual(changed.invocationCount, (NSInteger)1);
+}
+
+- (void)testAllModelsReadyBeforeFirstXFormsReady
+{
+    // XsltForms_globals.init: ready is set for every model before any
+    // xforms-ready handler runs, so a handler in m1 that recalculates m2
+    // goes through m2's event chain (xforms-revalidate) (G-18)
+    XFProcessor *p = [self processorWithBody:
+        @"<xf:model id=\"m1\">"
+        @"  <xf:instance><data xmlns=\"\"><n/></data></xf:instance>"
+        @"  <xf:dispatch ev:event=\"xforms-ready\" name=\"poke\" targetid=\"m2\"/>"
+        @"</xf:model>"
+        @"<xf:model id=\"m2\">"
+        @"  <xf:instance><data xmlns=\"\"><n/></data></xf:instance>"
+        @"  <xf:recalculate ev:event=\"poke\" model=\"m2\"/>"
+        @"  <xf:action id=\"reval\" ev:event=\"xforms-revalidate\"/>"
+        @"</xf:model>"];
+    XCTAssertEqual(p.models.count, (NSUInteger)2);
+    XCTAssertTrue([[p actionWithIdentifier:@"reval"] wasInvokedForEvent:@"xforms-revalidate"]);
 }
 
 @end

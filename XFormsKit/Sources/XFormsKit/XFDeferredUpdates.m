@@ -6,6 +6,7 @@
 @property (nonatomic, strong) NSMutableArray<NSString *> *openActions;
 @property (nonatomic, assign) NSInteger cont;
 @property (nonatomic, strong, readwrite) NSMutableArray *changedModels;
+@property (nonatomic, strong) NSMutableArray *pendingChangedModels;
 @property (nonatomic, strong, readwrite) NSMutableArray<NSString *> *messages;
 @end
 
@@ -28,6 +29,7 @@
     if (self) {
         _openActions = [NSMutableArray array];
         _changedModels = [NSMutableArray array];
+        _pendingChangedModels = [NSMutableArray array];
         _messages = [NSMutableArray array];
     }
     return self;
@@ -37,8 +39,10 @@
 {
     [self.openActions removeAllObjects];
     [self.changedModels removeAllObjects];
+    [self.pendingChangedModels removeAllObjects];
     [self.messages removeAllObjects];
     self.cont = 0;
+    self.building = NO;
 }
 
 - (void)openAction:(NSString *)name
@@ -52,8 +56,10 @@
     if (model == nil) {
         return;
     }
-    if ([self.changedModels indexOfObjectIdenticalTo:model] == NSNotFound) {
-        [self.changedModels addObject:model];
+    // XsltForms_globals.addChange: during a refresh the change is queued
+    NSMutableArray *list = self.building ? self.pendingChangedModels : self.changedModels;
+    if ([list indexOfObjectIdenticalTo:model] == NSNotFound) {
+        [list addObject:model];
     }
 }
 
@@ -73,21 +79,42 @@
 
 - (void)closeChanges
 {
+    // XsltForms_globals.closeChanges: rebuild or recalculate every changed
+    // model (each cycle ends with xforms-refresh → the UI refresh, during
+    // which `building` is set), then promote the change lists.
     NSArray *models = [self.changedModels copy];
-    [self.changedModels removeAllObjects];
     for (XFModel *model in models) {
-        if (model.rebuilded || model.pendingRebuild) {
+        if (model.rebuilded) {
             [XFXMLEvents dispatch:model name:@"xforms-rebuild"];
         } else {
             [XFXMLEvents dispatch:model name:@"xforms-recalculate"];
         }
     }
-    for (XFModel *model in models) {
-        [model refresh];
+    if (models.count > 0) {
+        [self finishRefreshForModels:models];
+        if (self.changedModels.count > 0) {
+            [self closeChanges];
+        }
     }
-    if (self.changedModels.count > 0) {
-        [self closeChanges];
+}
+
+- (void)finishRefreshForModels:(NSArray<XFModel *> *)models
+{
+    // XsltForms_globals.refresh (after build): changes = newChanges or empty
+    NSMutableArray *all = [NSMutableArray arrayWithArray:models];
+    for (XFModel *m in self.changedModels) {
+        if ([all indexOfObjectIdenticalTo:m] == NSNotFound) [all addObject:m];
     }
+    for (XFModel *m in self.pendingChangedModels) {
+        if ([all indexOfObjectIdenticalTo:m] == NSNotFound) [all addObject:m];
+    }
+    [self.changedModels removeAllObjects];
+    [self.changedModels addObjectsFromArray:self.pendingChangedModels];
+    [self.pendingChangedModels removeAllObjects];
+    for (XFModel *model in all) {
+        [model swapChangeLists];
+    }
+    self.building = NO;
 }
 
 @end

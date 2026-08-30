@@ -121,6 +121,10 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
         }
     }
 
+    // xf:header (XSLTForms .header(nodeset, combine, name, values)): the
+    // name and each xf:value are literals or @value expressions; @nodeset
+    // repeats the header per node; @combine = append (default) | prepend |
+    // replace. `@name` / `@value` attribute shorthands are also accepted.
     NSMutableArray *headers = [NSMutableArray array];
     NSArray *headerEls =
         [XFXML childElementsWithLocalName:@"header"
@@ -128,39 +132,42 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
                                ofElement:element];
     for (NSXMLElement *h in headerEls) {
         NSMutableDictionary *entry = [NSMutableDictionary dictionary];
-        NSString *name = [[h attributeForName:@"name"] stringValue];
-        NSString *valueAttr = [[h attributeForName:@"value"] stringValue];
-        NSString *value = valueAttr;
+        NSString *nodeset = [[h attributeForName:@"nodeset"] stringValue] ?: [[h attributeForName:@"ref"] stringValue];
+        if (nodeset.length) {
+            XFBinding *b = [XFBinding bindingWithExpression:nodeset element:h error:NULL];
+            if (b) entry[@"nodeset"] = b;
+        }
+        entry[@"combine"] = [[h attributeForName:@"combine"] stringValue] ?: @"append";
         NSXMLElement *nameEl = [XFXML firstElementWithLocalName:@"name" namespaceURI:XFXFormsNamespaceURI inNode:h];
-        NSXMLElement *valueEl = [XFXML firstElementWithLocalName:@"value" namespaceURI:XFXFormsNamespaceURI inNode:h];
         NSString *nameValue = nameEl ? [[nameEl attributeForName:@"value"] stringValue] : nil;
-        NSString *valueValue = valueEl ? [[valueEl attributeForName:@"value"] stringValue] : nil;
-        if (nameEl && nameValue.length == 0) {
-            name = [XFXML stringValueOfNode:nameEl];
-        }
-        if (valueEl && valueValue.length == 0) {
-            value = [XFXML stringValueOfNode:valueEl];
-        }
-        if (name.length) {
-            entry[@"name"] = name;
-        }
         if (nameValue.length) {
-            XFXPath *xp = [XFXPath xpathWithString:nameValue element:element error:NULL];
+            XFXPath *xp = [XFXPath xpathWithString:nameValue element:h error:NULL];
             if (xp) entry[@"nameExpr"] = xp;
+        } else if (nameEl) {
+            entry[@"name"] = [XFXML stringValueOfNode:nameEl] ?: @"";
+        } else {
+            NSString *name = [[h attributeForName:@"name"] stringValue];
+            if (name.length) entry[@"name"] = name;
         }
-        if (valueValue.length) {
-            XFXPath *xp = [XFXPath xpathWithString:valueValue element:element error:NULL];
-            if (xp) entry[@"valueExpr"] = xp;
-        } else if (valueAttr.length && valueEl == nil) {
-            XFXPath *xp = [XFXPath xpathWithString:valueAttr element:element error:NULL];
-            if (xp) {
-                entry[@"valueExpr"] = xp;
-                value = nil;
+        NSMutableArray *values = [NSMutableArray array];
+        NSArray *valueEls = [XFXML childElementsWithLocalName:@"value" namespaceURI:XFXFormsNamespaceURI ofElement:h];
+        for (NSXMLElement *v in valueEls) {
+            NSString *vv = [[v attributeForName:@"value"] stringValue];
+            if (vv.length) {
+                XFXPath *xp = [XFXPath xpathWithString:vv element:h error:NULL];
+                [values addObject:xp ?: (id)@""];
+            } else {
+                [values addObject:[XFXML stringValueOfNode:v] ?: @""];
             }
         }
-        if (value.length) {
-            entry[@"value"] = value;
+        if (valueEls.count == 0) {
+            NSString *valueAttr = [[h attributeForName:@"value"] stringValue];
+            if (valueAttr.length) {
+                XFXPath *xp = [XFXPath xpathWithString:valueAttr element:h error:NULL];
+                [values addObject:xp ?: (id)valueAttr];
+            }
         }
+        entry[@"values"] = values;
         if (entry[@"name"] || entry[@"nameExpr"]) {
             [headers addObject:entry];
         }
@@ -169,12 +176,16 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     return sub;
 }
 
+/// XsltForms_submission: `@instance`, else the instance holding the
+/// submitted node (`ref`), else the model's default instance (G-08).
 - (XFInstance *)targetInstance
 {
     if (self.instanceID.length) {
         return [self.model instanceWithIdentifier:self.instanceID];
     }
-    return [self.model defaultInstance];
+    NSXMLNode *node = [self submissionNode];
+    XFInstance *owning = node ? [self.model instanceContainingNode:node] : nil;
+    return owning ?: [self.model defaultInstance];
 }
 
 - (XFExprContext *)rootContext
@@ -197,7 +208,9 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     if (self.refBinding) {
         return [self.refBinding boundNodeInContext:[self rootContext] error:NULL];
     }
-    return [[self targetInstance] documentElement];
+    // no ref: the default instance root (XSLTForms model.getInstance()),
+    // independent of @instance which only names the replacement target
+    return [[self.model defaultInstance] documentElement];
 }
 
 + (NSString *)urlencodedFromNode:(NSXMLNode *)node separator:(NSString *)sep
@@ -492,29 +505,81 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     }
 
     XFSubmissionRequest *req = [[XFSubmissionRequest alloc] init];
-    req.method = method;
+    // XSLTForms openRequest(method.split("-").pop()): the XForms methods
+    // urlencoded-post / multipart-post / form-data-post are HTTP POST (G-07)
+    req.method = [[method componentsSeparatedByString:@"-"] lastObject] ?: method;
     req.URLString = action;
     req.body = body;
     req.bodyData = bodyData;
-    req.mediaType = mediaType ?:
-        ([self.serialization isEqualToString:@"application/x-www-form-urlencoded"]
-         ? @"application/x-www-form-urlencoded"
-         : @"application/xml");
+    if ([method isEqualToString:@"urlencoded-post"]
+        || [self.serialization isEqualToString:@"application/x-www-form-urlencoded"]) {
+        req.mediaType = @"application/x-www-form-urlencoded";
+    } else {
+        req.mediaType = mediaType ?: @"application/xml";
+    }
+    // XSLTForms submit(): headers are evaluated per @nodeset node, values
+    // joined with ",", same-named headers combined per @combine (G-17).
     NSMutableDictionary *hdrs = [NSMutableDictionary dictionary];
+    NSMutableArray<NSString *> *hdrOrder = [NSMutableArray array];
     XFExprContext *hctx = [self rootContext];
     for (NSDictionary *h in self.headers) {
-        NSString *name = h[@"name"];
-        NSString *value = h[@"value"];
-        XFXPath *nameExpr = h[@"nameExpr"];
-        XFXPath *valueExpr = h[@"valueExpr"];
-        if (nameExpr) {
-            name = [nameExpr stringValueInContext:hctx error:NULL];
+        NSArray<NSXMLNode *> *hnodes = @[];
+        XFBinding *nodeset = h[@"nodeset"];
+        if (nodeset) {
+            hnodes = [nodeset evaluateInContext:hctx error:NULL].nodes ?: @[];
+        } else if (hctx.contextNode) {
+            hnodes = @[ hctx.contextNode ];
         }
-        if (valueExpr) {
-            value = [valueExpr stringValueInContext:hctx error:NULL];
+        for (NSXMLNode *hn in hnodes) {
+            XFExprContext *nctx = [hctx cloneWithNode:hn position:1 nodeList:hnodes];
+            NSString *name = h[@"name"];
+            XFXPath *nameExpr = h[@"nameExpr"];
+            if (nameExpr) {
+                name = [nameExpr stringValueInContext:nctx error:NULL];
+            }
+            if (name.length == 0) {
+                continue;
+            }
+            NSMutableArray *parts = [NSMutableArray array];
+            for (id v in h[@"values"]) {
+                if ([v isKindOfClass:[XFXPath class]]) {
+                    [parts addObject:[(XFXPath *)v stringValueInContext:nctx error:NULL] ?: @""];
+                } else {
+                    [parts addObject:[v description]];
+                }
+            }
+            NSString *hvalue = [parts componentsJoinedByString:@","];
+            NSString *key = nil;
+            for (NSString *k in hdrOrder) {
+                if ([k caseInsensitiveCompare:name] == NSOrderedSame) { key = k; break; }
+            }
+            if (key) {
+                NSString *combine = h[@"combine"];
+                if ([combine isEqualToString:@"prepend"]) {
+                    hdrs[key] = [NSString stringWithFormat:@"%@,%@", hvalue, hdrs[key]];
+                } else if ([combine isEqualToString:@"replace"]) {
+                    hdrs[key] = hvalue;
+                } else {
+                    hdrs[key] = [NSString stringWithFormat:@"%@,%@", hdrs[key], hvalue];
+                }
+            } else {
+                [hdrOrder addObject:name];
+                hdrs[name] = hvalue;
+            }
         }
-        if (name.length) {
-            hdrs[name] = value ?: @"";
+    }
+    // default Accept header (XSLTForms): XML for replace="instance",
+    // text/plain for other GET/DELETE submissions
+    BOOL hasAccept = NO;
+    for (NSString *k in hdrs) {
+        if ([k caseInsensitiveCompare:@"Accept"] == NSOrderedSame) hasAccept = YES;
+    }
+    if (!hasAccept) {
+        BOOL replaceInstance = [[self.replace lowercaseString] isEqualToString:@"instance"];
+        if ([method isEqualToString:@"get"] || [method isEqualToString:@"delete"]) {
+            hdrs[@"Accept"] = replaceInstance ? @"application/xml,text/xml" : @"text/plain";
+        } else if (replaceInstance) {
+            hdrs[@"Accept"] = @"application/xml,text/xml";
         }
     }
     req.headers = hdrs;

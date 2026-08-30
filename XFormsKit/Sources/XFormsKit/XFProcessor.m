@@ -171,8 +171,13 @@
         [XFXMLEvents dispatch:m name:@"xforms-model-construct-done"];
     }
     [self refreshControls];
+    // XsltForms_globals.init: ready is set once for all models, then
+    // xforms-ready is dispatched to every model (G-18). It is synchronous
+    // here (no setTimeout): callers see a ready processor on return.
     for (XFModel *m in self.models) {
         m.ready = YES;
+    }
+    for (XFModel *m in self.models) {
         [XFXMLEvents dispatch:m name:@"xforms-ready"];
     }
     [self refreshControls];
@@ -384,7 +389,7 @@
 {
     XFExprContext *ctx = [self evaluationContext];
     for (XFControl *control in self.controls) {
-        [control refreshWithContext:ctx error:NULL];
+        [control refreshInContext:ctx error:NULL];
     }
 }
 
@@ -393,7 +398,7 @@
     XFExprContext *ctx = [self evaluationContext];
     for (XFControl *control in self.controls) {
         NSError *inner = nil;
-        [control refreshWithContext:ctx error:&inner];
+        [control refreshInContext:ctx error:&inner];
         if (inner) {
             if (error) {
                 *error = inner;
@@ -466,6 +471,11 @@
 
 - (BOOL)setValue:(NSString *)value ofControl:(XFControl *)control error:(NSError **)error
 {
+    // XsltForms_control.valueChanged: nothing happens when the value is unchanged
+    if (control.boundNode && [[XFXML stringValueOfNode:control.boundNode] isEqualToString:value ?: @""]) {
+        control.stringValue = value ?: @"";
+        return YES;
+    }
     if (![control commitStringValue:value error:error]) {
         return NO;
     }
@@ -481,10 +491,11 @@
     // must come through here, or dependent MIPs are not recomputed.
     XFModel *model = [control.owner isKindOfClass:[XFModel class]] ? (XFModel *)control.owner : self.model;
     XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
+    // xforms-value-changed is dispatched by the refresh that follows
+    // (XsltForms_control.refresh), once, and only if the value changed (G-11)
     [du openAction:@"setValue"];
     [model addChange:control.boundNode];
     [du addChangedModel:model];
-    [XFXMLEvents dispatch:control name:@"xforms-value-changed"];
     [du closeAction:@"setValue"];
 }
 
@@ -508,7 +519,7 @@
     if (control == nil) {
         return;
     }
-    [control refreshWithContext:[self evaluationContext] error:NULL];
+    [control refreshInContext:[self evaluationContext] error:NULL];
 }
 
 - (XFControl *)attachElement:(NSXMLElement *)element error:(NSError **)error

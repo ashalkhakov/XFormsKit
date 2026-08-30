@@ -305,12 +305,16 @@ static NSString *XFTypeKey(NSString *ns, NSString *name)
     if (typeName.length == 0) {
         return YES;
     }
-    if (value.length == 0) {
-        return YES;
-    }
     XFType *type = [self typeNamed:typeName];
     if (type == nil) {
         return YES;
+    }
+    if (value.length == 0) {
+        // XSLTForms TypeDefs: the xforms:* types have `(...)?` patterns and
+        // accept the empty string; the xsd:* types only do when they have no
+        // pattern (string family). XForms 1.1 says the same: use xf:date
+        // rather than xsd:date for optional values (G-12).
+        return [type.namespaceURI isEqualToString:XFXFormsNamespaceURI] || type.patterns.count == 0;
     }
     return [type validateValue:value];
 }

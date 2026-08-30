@@ -6,6 +6,11 @@
 
 @implementation XFTriggerControl
 
+- (BOOL)isValueControl
+{
+    return NO;
+}
+
 + (instancetype)triggerWithElement:(NSXMLElement *)element
                              model:(id)model
                              error:(NSError **)error

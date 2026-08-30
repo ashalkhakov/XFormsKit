@@ -219,4 +219,34 @@ static NSInteger XFNextDepsId(void)
     }
 }
 
+
++ (void)disposeNode:(NSXMLNode *)node model:(XFModel *)model
+{
+    if (node == nil) {
+        return;
+    }
+    XFNodeState *state = [XFNodeState existingStateOnNode:node];
+    for (NSString *bindID in state.bindIdentifiers) {
+        XFBind *bind = [model bindWithIdentifier:bindID];
+        for (XFMIPBinding *mip in @[ bind.relevant ?: (id)[NSNull null], bind.required ?: (id)[NSNull null],
+                                     bind.readonly ?: (id)[NSNull null], bind.constraint ?: (id)[NSNull null] ]) {
+            if ([mip isKindOfClass:[XFMIPBinding class]]) {
+                [mip disposeNode:node];
+            }
+        }
+        NSUInteger i = [bind.nodes indexOfObjectIdenticalTo:node];
+        if (i != NSNotFound) {
+            [bind.nodes removeObjectAtIndex:i];
+        }
+    }
+    if ([node kind] == NSXMLElementKind) {
+        for (NSXMLNode *attr in [(NSXMLElement *)node attributes]) {
+            [self disposeNode:attr model:model];
+        }
+    }
+    for (NSXMLNode *child in [node children]) {
+        [self disposeNode:child model:model];
+    }
+}
+
 @end

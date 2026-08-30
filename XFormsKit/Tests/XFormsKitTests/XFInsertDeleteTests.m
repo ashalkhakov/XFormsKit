@@ -7,6 +7,8 @@
 #import <XFormsKit/XFSwitch.h>
 #import <XFormsKit/XFRepeat.h>
 #import <XFormsKit/XFXML.h>
+#import <XFormsKit/XFBind.h>
+#import <XFormsKit/XFNodeState.h>
 
 @interface XFInsertDeleteTests : XCTestCase
 @end
@@ -205,6 +207,68 @@
     XCTAssertNotNil(sf.lastFocused);
     XCTAssertTrue([sf.lastFocused isKindOfClass:[XFInputControl class]]);
     XCTAssertTrue([(XFControl *)sf.lastFocused focused]);
+}
+
+- (void)testInsertIntoEmptyNodesetGoesBeforeFirstChild
+{
+    // XsltForms_insert: empty nodeset + context -> the clone becomes the
+    // FIRST child of the context node, not the last (G-13)
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\">"
+                      @"  <a/><b/><proto>X</proto>"
+                      @"</data></xf:instance>"
+                      @"<xf:insert ev:event=\"xforms-ready\" context=\"/data\" nodeset=\"item\" origin=\"proto\"/>"
+                      extra:nil error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    NSXMLElement *root = [[p.model defaultInstance] documentElement];
+    NSMutableArray *names = [NSMutableArray array];
+    for (NSXMLNode *c in [root children]) {
+        if ([c kind] == NSXMLElementKind) {
+            [names addObject:[c name]];
+        }
+    }
+    XCTAssertEqualObjects(names, (@[@"proto", @"a", @"b", @"proto"]));
+}
+
+- (void)testInsertAtNaNAppendsAfterLast
+{
+    // XForms 1.1 10.3 / XsltForms_insert: a non-numeric `at` means the
+    // insert location is the last node of the nodeset (G-13)
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\">"
+                      @"  <item>Ada</item><item>Bob</item><item>Cid</item>"
+                      @"</data></xf:instance>"
+                      @"<xf:insert ev:event=\"xforms-ready\" nodeset=\"item\" at=\"'x'\" position=\"after\" origin=\"item[1]\"/>"
+                      extra:nil error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    NSArray *items = [self items:p];
+    XCTAssertEqual(items.count, (NSUInteger)4);
+    XCTAssertEqualObjects([XFXML stringValueOfNode:items[3]], @"Ada");
+    XCTAssertEqualObjects([XFXML stringValueOfNode:items[2]], @"Cid");
+}
+
+- (void)testDeleteDisposesBindNodes
+{
+    // XsltForms_delete -> XsltForms_bind.disposeNode: deleted nodes leave
+    // the bind's node list and MIP caches so later recalculations do not
+    // touch detached nodes (G-16)
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\">"
+                      @"  <item>Ada</item><item>Bob</item>"
+                      @"</data></xf:instance>"
+                      @"<xf:bind id=\"b\" nodeset=\"item\" readonly=\"count(../item) = 1\"/>"
+                      @"<xf:delete ev:event=\"xforms-ready\" nodeset=\"item\" at=\"1\"/>"
+                      extra:nil error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFBind *bind = [p.model bindWithIdentifier:@"b"];
+    XCTAssertNotNil(bind);
+    XCTAssertEqual([self items:p].count, (NSUInteger)1);
+    XCTAssertEqual(bind.nodes.count, (NSUInteger)1);
+    XCTAssertEqual([bind.nodes.firstObject parent], [[p.model defaultInstance] documentElement]);
+    XCTAssertTrue([XFNodeState stateOnNode:[self items:p].firstObject].readonly);
 }
 
 @end

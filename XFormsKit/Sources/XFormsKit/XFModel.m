@@ -1,4 +1,5 @@
 #import "XFModel.h"
+#import "XFDeferredUpdates.h"
 #import "XFInstance.h"
 #import "XFBind.h"
 #import "XFSubmission.h"
@@ -291,7 +292,13 @@
     if (node == nil) {
         return;
     }
-    NSMutableArray<NSXMLNode *> *list = self.building ? self.pendingNodesChanged : self.nodesChanged;
+    // XsltForms_model.addChange: pick the list by the global `building`
+    // state and register the model with the deferred-update queue.
+    XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
+    NSMutableArray<NSXMLNode *> *list = du.building ? self.pendingNodesChanged : self.nodesChanged;
+    if ([list indexOfObjectIdenticalTo:node] == NSNotFound) {
+        [du addChangedModel:self];
+    }
     if ([node kind] == NSXMLAttributeKind) {
         if ([list indexOfObjectIdenticalTo:node] == NSNotFound) {
             [list addObject:node];
@@ -306,6 +313,16 @@
     }
 }
 
+- (BOOL)building
+{
+    return [XFDeferredUpdates sharedUpdates].building;
+}
+
+- (void)setBuilding:(BOOL)building
+{
+    [XFDeferredUpdates sharedUpdates].building = building;
+}
+
 - (void)setRebuilded:(BOOL)rebuilded
 {
     if (self.building) {
@@ -317,11 +334,19 @@
 
 - (void)swapChangeLists
 {
-    [self.nodesChanged removeAllObjects];
-    [self.nodesChanged addObjectsFromArray:self.pendingNodesChanged];
-    [self.pendingNodesChanged removeAllObjects];
-    self.rebuilded = self.pendingRebuild;
-    self.pendingRebuild = NO;
+    // XsltForms_globals.refresh: changes recorded during the UI refresh
+    // become the current ones; otherwise the lists are cleared so the MIP
+    // caches (XFMIPBinding) only re-evaluate for the next real change.
+    if (self.pendingNodesChanged.count > 0 || self.pendingRebuild) {
+        [self.nodesChanged removeAllObjects];
+        [self.nodesChanged addObjectsFromArray:self.pendingNodesChanged];
+        [self.pendingNodesChanged removeAllObjects];
+        _rebuilded = self.pendingRebuild;
+        self.pendingRebuild = NO;
+    } else {
+        [self.nodesChanged removeAllObjects];
+        _rebuilded = NO;
+    }
 }
 
 - (void)construct
@@ -338,15 +363,15 @@
 
 - (void)rebuild
 {
+    // XsltForms_model.rebuild: the change lists are NOT swapped here; they
+    // stay visible to recalculate/revalidate and are promoted after the UI
+    // refresh (XFDeferredUpdates finishRefreshForModels:).
     if (self.ready) {
         [self setRebuilded:YES];
     }
-    self.building = YES;
     for (XFBind *bind in self.binds) {
         [bind refresh];
     }
-    self.building = NO;
-    [self swapChangeLists];
     if (self.ready) {
         [XFXMLEvents dispatch:self name:@"xforms-recalculate"];
     } else {
@@ -378,7 +403,13 @@
 
 - (void)refresh
 {
+    // UI refresh (XsltForms_globals.refresh → build). Changes made by
+    // controls while refreshing are queued (`building`).
+    XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
+    BOOL was = du.building;
+    du.building = YES;
     [self.owner refreshControls];
+    du.building = was;
 }
 
 - (void)reset

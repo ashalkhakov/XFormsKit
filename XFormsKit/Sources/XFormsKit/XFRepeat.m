@@ -49,6 +49,11 @@
 
 @implementation XFRepeat
 
+- (BOOL)isValueControl
+{
+    return NO;
+}
+
 + (instancetype)repeatWithElement:(NSXMLElement *)element
                             model:(id)model
                             error:(NSError **)error
@@ -239,7 +244,7 @@
         XFExprContext *itemCtx =
             [context cloneWithNode:item.node position:item.position nodeList:self.nodes];
         for (XFControl *control in item.controls) {
-            [control refreshWithContext:itemCtx error:error];
+            [control refreshInContext:itemCtx error:error];
         }
         i++;
     }

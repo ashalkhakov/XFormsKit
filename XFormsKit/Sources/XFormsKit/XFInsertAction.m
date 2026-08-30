@@ -207,9 +207,14 @@
                 if (self.atExpr) {
                     at = [self.atExpr evaluateInContext:atCtx error:NULL].numberValue;
                 }
-                NSInteger res = isnan(at) ? (NSInteger)nodes.count - 1
-                                          : (NSInteger)lround(at) + (NSInteger)originIndex - 1;
-                NSInteger index = res + pos;
+                // XSLTForms: res = at ? round(at)+i-1 : nodes.length-1;
+                // index = isNaN(res) ? nodes.length : res + pos
+                NSInteger index;
+                if (isnan(at)) {
+                    index = (NSInteger)nodes.count;
+                } else {
+                    index = (NSInteger)lround(at) + (NSInteger)originIndex - 1 + pos;
+                }
                 if (index < 0) {
                     index = 0;
                 }
@@ -221,6 +226,10 @@
                     before = nodes[(NSUInteger)index];
                 }
             }
+        }
+        // empty nodeset + context: XSLTForms inserts before parent.firstChild
+        if (nodes.count == 0 && [parent kind] == NSXMLElementKind) {
+            before = [(NSXMLElement *)parent childCount] ? [parent childAtIndex:0] : nil;
         }
         NSXMLNode *clone = [self insertClone:origin intoParent:parent beforeNode:before];
         if (clone) {

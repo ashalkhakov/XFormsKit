@@ -34,6 +34,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) NSMutableArray<XFBind *> *binds;
 @property (nonatomic, assign) NSInteger depsId;
 
+/// XsltForms_mipbinding.nodedispose: drop the MIP caches of every bind that
+/// selected `node` (and its subtree) before the node is deleted.
++ (void)disposeNode:(NSXMLNode *)node model:(XFModel *)model;
+
 + (nullable instancetype)bindWithElement:(NSXMLElement *)element
                                    model:(XFModel *)model
                                   parent:(nullable XFBind *)parent

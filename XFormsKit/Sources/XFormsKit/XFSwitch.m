@@ -10,6 +10,11 @@
 
 @implementation XFCase
 
+- (BOOL)isValueControl
+{
+    return NO;
+}
+
 - (instancetype)initWithElement:(NSXMLElement *)element
                         binding:(XFBinding *)binding
                           label:(NSString *)label
@@ -51,7 +56,7 @@
         return;
     }
     for (XFControl *child in self.mutableChildren) {
-        [child refreshWithContext:context error:error];
+        [child refreshInContext:context error:error];
     }
 }
 
@@ -63,6 +68,11 @@
 @end
 
 @implementation XFSwitch
+
+- (BOOL)isValueControl
+{
+    return NO;
+}
 
 + (instancetype)switchWithElement:(NSXMLElement *)element
                             model:(id)model
@@ -154,7 +164,7 @@
 
 - (void)refreshWithContext:(XFExprContext *)context error:(NSError **)error
 {
-    [self.selectedCase refreshWithContext:context error:error];
+    [self.selectedCase refreshInContext:context error:error];
 }
 
 @end

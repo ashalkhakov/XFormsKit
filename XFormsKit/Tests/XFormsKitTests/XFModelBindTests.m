@@ -1,5 +1,9 @@
 #import <XCTest/XCTest.h>
 #import <XFormsKit/XFormsKit.h>
+#import <XFormsKit/XFDeferredUpdates.h>
+#import <XFormsKit/XFNodeState.h>
+#import <XFormsKit/XFAbstractAction.h>
+#import <XFormsKit/XFInsertAction.h>
 #import <XFormsKit/XFBind.h>
 #import <XFormsKit/XFNodeState.h>
 #import <XFormsKit/XFXML.h>
@@ -114,16 +118,78 @@
                                           extra:@"<xf:input ref=\"n\"><xf:label>N</xf:label></xf:input>"
                                         error:&error];
     XCTAssertNotNil(p, @"%@", error);
-    [p.model.nodesChanged removeAllObjects];
-    [p setValue:@"Bob" ofControl:p.inputControls.firstObject error:&error];
-    XCTAssertGreaterThan(p.model.nodesChanged.count, (NSUInteger)0);
-    BOOL sawN = NO;
+    XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
+    // Inside an action the change list holds the node and its ancestors
+    // (XsltForms_model.addChange); it is emptied once the deferred update
+    // cycle has refreshed the UI (XsltForms_globals.refresh) — G-01.
+    [du openAction:@"test"];
+    XFControl *input = p.inputControls.firstObject;
+    XCTAssertTrue([input commitStringValue:@"Bob" error:&error]);
+    [p.model addChange:input.boundNode];
+    NSMutableSet *names = [NSMutableSet set];
     for (NSXMLNode *n in p.model.nodesChanged) {
-        if ([[n name] isEqualToString:@"n"]) {
-            sawN = YES;
-        }
+        [names addObject:[n name]];
     }
-    XCTAssertTrue(sawN);
+    XCTAssertTrue([names containsObject:@"n"]);
+    XCTAssertTrue([names containsObject:@"data"]);
+    XCTAssertTrue([du.changedModels containsObject:p.model]);
+    [du closeAction:@"test"];
+    XCTAssertEqual(p.model.nodesChanged.count, (NSUInteger)0);
+    XCTAssertEqual(du.changedModels.count, (NSUInteger)0);
+    XCTAssertFalse(p.model.rebuilded);
+}
+
+- (void)testMIPsOnExistingNodesRecalculateAfterInsert // G-01
+{
+    NSError *error = nil;
+    XFProcessor *p = [self processor:
+                      @"<xf:instance><data xmlns=\"\"><item>a</item></data></xf:instance>"
+                      @"<xf:bind nodeset=\"item\" required=\"count(../item) > 1\" relevant=\"count(../item) &lt; 3\"/>"
+                      @"<xf:insert id=\"ins\" nodeset=\"item\" position=\"after\"/>"
+                                          extra:nil error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    NSXMLElement *root = [[p.model defaultInstance] documentElement];
+    NSXMLNode *first = [root elementsForName:@"item"].firstObject;
+    XCTAssertFalse([XFNodeState existingStateOnNode:first].required);
+
+    XFAbstractAction *insert = [p actionWithIdentifier:@"ins"];
+    [insert runWithContextNode:root event:nil];
+    XCTAssertEqual([root elementsForName:@"item"].count, (NSUInteger)2);
+    // the MIP of the pre-existing first item depends on count(../item): it
+    // must have been re-evaluated in the same rebuild cycle
+    XCTAssertTrue([XFNodeState existingStateOnNode:first].required,
+                  @"required MIP on the existing node must be recalculated after insert");
+    XCTAssertTrue([XFNodeState existingStateOnNode:first].relevant);
+
+    [insert runWithContextNode:root event:nil];
+    XCTAssertEqual([root elementsForName:@"item"].count, (NSUInteger)3);
+    XCTAssertFalse([XFNodeState existingStateOnNode:first].relevant);
+    XCTAssertEqual(p.model.nodesChanged.count, (NSUInteger)0);
+}
+
+- (void)testRelevanceInheritanceIsReversible // G-02
+{
+    NSError *error = nil;
+    XFProcessor *p = [self processor:
+                      @"<xf:instance><data xmlns=\"\"><on>true</on><grp><leaf>x</leaf></grp></data></xf:instance>"
+                      @"<xf:bind nodeset=\"grp\" relevant=\"../on = 'true'\" readonly=\"../on != 'true'\"/>"
+                                          extra:@"<xf:input id=\"i\" ref=\"on\"><xf:label>on</xf:label></xf:input>"
+                                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    NSXMLElement *root = [[p.model defaultInstance] documentElement];
+    NSXMLNode *leaf = [[root elementsForName:@"grp"].firstObject elementsForName:@"leaf"].firstObject;
+    XFNodeState *(^st)(void) = ^{ return [XFNodeState existingStateOnNode:leaf]; };
+    XCTAssertTrue(st() == nil || st().relevant);
+
+    XFControl *input = p.inputControls.firstObject;
+    XCTAssertTrue([p setValue:@"false" ofControl:input error:&error]);
+    XCTAssertNotNil(st());
+    XCTAssertFalse(st().relevant, @"unbound descendant inherits non-relevance");
+    XCTAssertTrue(st().readonly, @"unbound descendant inherits readonly");
+
+    XCTAssertTrue([p setValue:@"true" ofControl:input error:&error]);
+    XCTAssertTrue(st().relevant, @"unbound descendant must become relevant again");
+    XCTAssertFalse(st().readonly, @"unbound descendant must become writable again");
 }
 
 @end

@@ -411,4 +411,30 @@
     [self refreshSupportInContext:context];
 }
 
+
+- (BOOL)isValueControl
+{
+    return YES;
+}
+
+- (void)refreshInContext:(XFExprContext *)context error:(NSError **)error
+{
+    self.inScopeContextNode = context.contextNode;
+    [self refreshWithContext:context error:error];
+    if (![self isValueControl]) {
+        return;
+    }
+    // XsltForms_control.refresh: changed = value !== currentValue; the event
+    // is not sent when the control was rebound to another node (nodeChanged)
+    NSString *value = self.stringValue ?: @"";
+    BOOL known = self.currentValue != nil;
+    BOOL nodeChanged = known && self.currentNode != self.boundNode;
+    BOOL changed = known && ![value isEqualToString:self.currentValue];
+    self.currentValue = value;
+    self.currentNode = self.boundNode;
+    if (changed && !nodeChanged && [self modelIsReady]) {
+        [XFXMLEvents dispatch:self name:@"xforms-value-changed"];
+    }
+}
+
 @end

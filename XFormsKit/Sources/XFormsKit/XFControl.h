@@ -29,6 +29,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// 8.1.2 / XSLTForms incremental), not only on Return / focus loss.
 @property (nonatomic, assign) BOOL incremental;
 @property (nonatomic, weak, nullable) id owner; // XFProcessor
+/// The in-scope evaluation context node of the last refresh (XSLTForms
+/// `element.node` for unbound elements): the context handlers run in.
+@property (nonatomic, strong, nullable) NSXMLNode *inScopeContextNode;
+/// Value displayed by the last refresh (XsltForms_control.currentValue).
+@property (nonatomic, copy, nullable) NSString *currentValue;
+@property (nonatomic, strong, nullable) NSXMLNode *currentNode;
 @property (nonatomic, weak, nullable) XFControl *parentControl;
 
 - (instancetype)initWithElement:(NSXMLElement *)element
@@ -39,6 +45,13 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)focus;
 - (BOOL)commitStringValue:(nullable NSString *)value error:(NSError **)error;
 - (void)applyMIPsFromBoundNode;
+
+/// Refresh in `context` and, like XsltForms_control.refresh, dispatch
+/// `xforms-value-changed` when the displayed value changed while still bound
+/// to the same node. Hosts call this rather than -refreshWithContext:error:.
+- (void)refreshInContext:(XFExprContext *)context error:(NSError **)error;
+/// YES for controls that carry a value (not group/repeat/switch/trigger).
+- (BOOL)isValueControl;
 /// Apply MIPs from an arbitrary node (nil with a binding = non-relevant).
 - (void)applyMIPsFromNode:(nullable NSXMLNode *)node;
 /// YES for `value="..."` (xf:output) with no `ref` / `bind`.

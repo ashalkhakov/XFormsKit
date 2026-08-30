@@ -70,10 +70,17 @@ typedef void (^XFEventDefaultAction)(id _Nullable xfElement, XFEvent *event);
 - (void)installListenersInDocument:(NSXMLDocument *)document;
 - (void)installListenersUnder:(NSXMLNode *)node inDocument:(NSXMLDocument *)document;
 
+/// XSLTForms `element.node` for a host element (bound node, else in-scope
+/// context of the control registered for it); nil when unknown.
+- (nullable NSXMLNode *)inScopeNodeForElement:(NSXMLElement *)element;
+
 @end
 
 @protocol XFXMLEventHandler <NSObject>
 - (void)handleXMLEvent:(XFEvent *)event;
+@optional
+/// Preferred: run with the observer's in-scope node as evaluation context.
+- (void)handleXMLEvent:(XFEvent *)event contextNode:(nullable NSXMLNode *)contextNode;
 @end
 
 NS_ASSUME_NONNULL_END

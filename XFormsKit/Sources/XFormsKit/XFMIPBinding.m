@@ -70,6 +70,11 @@
         return YES;
     }
     for (NSXMLNode *dep in entry.depsN) {
+        // XsltForms_mipbinding.evaluate: a dependency that was deleted
+        // (nodeName === "") forces a re-evaluation
+        if ([dep kind] != NSXMLDocumentKind && [dep parent] == nil) {
+            return YES;
+        }
         if ([model.nodesChanged indexOfObjectIdenticalTo:dep] != NSNotFound) {
             return YES;
         }

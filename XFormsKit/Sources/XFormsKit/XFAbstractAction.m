@@ -179,10 +179,18 @@
 
 - (void)handleXMLEvent:(XFEvent *)event
 {
-    NSXMLNode *ctx = nil;
-    id xf = event.xfElement;
-    if ([xf isKindOfClass:[XFControl class]]) {
-        ctx = [(XFControl *)xf boundNode];
+    [self handleXMLEvent:event contextNode:nil];
+}
+
+- (void)handleXMLEvent:(XFEvent *)event contextNode:(NSXMLNode *)contextNode
+{
+    // XsltForms_abstractAction.execute: ctx = element.node || default root
+    NSXMLNode *ctx = contextNode;
+    if (ctx == nil) {
+        id xf = event.xfElement;
+        if ([xf isKindOfClass:[XFControl class]]) {
+            ctx = [(XFControl *)xf boundNode] ?: [(XFControl *)xf inScopeContextNode];
+        }
     }
     if (ctx == nil) {
         ctx = [[self.model defaultInstance] documentElement];

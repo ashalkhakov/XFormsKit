@@ -114,6 +114,7 @@
     [du openAction:@"delete"];
 
     for (NSXMLNode *node in nodes) {
+        [XFBind disposeNode:node model:self.model]; // XsltForms_mipbinding.nodedispose
         NSString *rid = [XFNodeState existingStateOnNode:node].repeatIdentifier;
         if (rid.length) {
             [repeatIDs addObject:rid];

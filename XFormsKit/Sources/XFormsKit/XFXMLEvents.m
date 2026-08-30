@@ -425,7 +425,16 @@ static const void *kXFElementKey   = &kXFElementKey;
     BOOL performDefault = ![defaultAction isEqualToString:@"cancel"];
     XFEventHandlerBlock handler = ^(XFEvent *event) {
         id xf = [[XFXMLEvents sharedEvents] xfElementForElement:handlerElement];
-        if ([xf respondsToSelector:@selector(handleXMLEvent:)]) {
+        if ([xf respondsToSelector:@selector(handleXMLEvent:contextNode:)]) {
+            // XsltForms_browser.run: one openAction/closeAction around the
+            // whole handler (G-09), evaluated in the observer's in-scope
+            // context (`element.node`, G-10)
+            NSXMLNode *ctx = [[XFXMLEvents sharedEvents] inScopeNodeForElement:observer];
+            XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
+            [du openAction:@"run"];
+            [xf handleXMLEvent:event contextNode:ctx];
+            [du closeAction:@"run"];
+        } else if ([xf respondsToSelector:@selector(handleXMLEvent:)]) {
             [xf handleXMLEvent:event];
         }
         event.context[@"handler-element"] = handlerElement;
@@ -570,6 +579,20 @@ static const void *kXFElementKey   = &kXFElementKey;
     [self define:@"xforms-unload-done" bubbles:YES cancelable:NO defaultAction:nil];
     [self define:@"xforms-upload-done" bubbles:YES cancelable:NO defaultAction:nil];
     [self define:@"xforms-upload-error" bubbles:YES cancelable:NO defaultAction:nil];
+}
+
+
+- (NSXMLNode *)inScopeNodeForElement:(NSXMLElement *)element
+{
+    // XSLTForms: element.node — the bound node of a bound element, the
+    // in-scope context of an unbound one; nil for model-level observers
+    // (the action then falls back to the default instance root).
+    id xf = [self xfElementForElement:element];
+    if ([xf isKindOfClass:[XFControl class]]) {
+        XFControl *c = xf;
+        return c.boundNode ?: c.inScopeContextNode;
+    }
+    return nil;
 }
 
 @end

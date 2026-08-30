@@ -327,6 +327,9 @@
     }
     NSData *bytes = [@"XYZ" dataUsingEncoding:NSUTF8StringEncoding];
     XCTAssertTrue([up commitFileData:bytes fileName:@"x.bin" mediaType:@"application/octet-stream" error:&error], @"%@", error);
+    // the empty xsd:base64Binary node was invalid at init (G-12); a UI commit
+    // always runs the deferred cycle so the node is revalidated before send
+    [p controlDidChangeValue:up];
 
     XFMapSubmissionTransport *map = [[XFMapSubmissionTransport alloc] init];
     [map setStatus:204 body:@"" forURL:@"http://example.test/up"];
@@ -417,6 +420,113 @@
     XCTAssertTrue([sub waitUntilFinished:2.0], @"async submission did not finish");
     NSXMLNode *n = [[[p.model defaultInstance] documentElement] elementsForName:@"n"].firstObject;
     XCTAssertEqualObjects([XFXML stringValueOfNode:n], @"Async");
+}
+
+
+- (void)testCompoundMethodsPostWithProperContentType // G-07
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><n>Ada</n></data></xf:instance>"
+                      @"<xf:submission id=\"u\" resource=\"http://example.test/u\" method=\"urlencoded-post\" replace=\"none\"/>"
+                      @"<xf:submission id=\"m\" resource=\"http://example.test/m\" method=\"multipart-post\" replace=\"none\"/>"
+                      @"<xf:submission id=\"f\" resource=\"http://example.test/f\" method=\"form-data-post\" replace=\"none\"/>"
+                      @"<xf:submission id=\"g\" resource=\"http://example.test/g\" method=\"get\" replace=\"instance\"/>"
+                      @"<xf:submission id=\"t\" resource=\"http://example.test/t\" method=\"get\" replace=\"none\"/>"
+                      @"<xf:submission id=\"a\" resource=\"http://example.test/a\" method=\"get\" replace=\"none\">"
+                      @"  <xf:header><xf:name>Accept</xf:name><xf:value>text/csv</xf:value></xf:header>"
+                      @"</xf:submission>"
+                      @"<xf:send id=\"su\" submission=\"u\"/><xf:send id=\"sm\" submission=\"m\"/>"
+                      @"<xf:send id=\"sf\" submission=\"f\"/><xf:send id=\"sg\" submission=\"g\"/>"
+                      @"<xf:send id=\"st\" submission=\"t\"/><xf:send id=\"sa\" submission=\"a\"/>"
+                      extra:nil error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFMapSubmissionTransport *map = [[XFMapSubmissionTransport alloc] init];
+    for (NSString *u in @[ @"u", @"m", @"f", @"g", @"t", @"a" ]) {
+        [map setXML:@"<data xmlns=\"\"><n>x</n></data>" forURL:[@"http://example.test/" stringByAppendingString:u]];
+    }
+    p.model.transport = map;
+
+    [self send:p identifier:@"su"];
+    XCTAssertEqualObjects(map.lastRequest.method, @"post", @"urlencoded-post is an HTTP POST");
+    XCTAssertEqualObjects(map.lastRequest.mediaType, @"application/x-www-form-urlencoded");
+    XCTAssertEqualObjects(map.lastRequest.body, @"n=Ada");
+
+    [self send:p identifier:@"sm"];
+    XCTAssertEqualObjects(map.lastRequest.method, @"post");
+    XCTAssertTrue([map.lastRequest.mediaType hasPrefix:@"multipart/related"], @"%@", map.lastRequest.mediaType);
+
+    [self send:p identifier:@"sf"];
+    XCTAssertEqualObjects(map.lastRequest.method, @"post");
+    XCTAssertTrue([map.lastRequest.mediaType hasPrefix:@"multipart/form-data"], @"%@", map.lastRequest.mediaType);
+
+    [self send:p identifier:@"sg"];
+    XCTAssertEqualObjects(map.lastRequest.method, @"get");
+    XCTAssertEqualObjects(map.lastRequest.headers[@"Accept"], @"application/xml,text/xml");
+    [self send:p identifier:@"st"];
+    XCTAssertEqualObjects(map.lastRequest.headers[@"Accept"], @"text/plain");
+    [self send:p identifier:@"sa"];
+    XCTAssertEqualObjects(map.lastRequest.headers[@"Accept"], @"text/csv", @"an explicit Accept header wins");
+}
+
+- (void)testReplaceInstanceTargetsInstanceOfSubmittedNode // G-08
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance id=\"main\"><data xmlns=\"\"><n>Ada</n></data></xf:instance>"
+                      @"<xf:instance id=\"other\"><other xmlns=\"\"><v>1</v></other></xf:instance>"
+                      @"<xf:submission id=\"s\" ref=\"instance('other')\" resource=\"http://example.test/o\" method=\"post\" replace=\"instance\"/>"
+                      @"<xf:submission id=\"d\" resource=\"http://example.test/d\" method=\"post\" replace=\"instance\" instance=\"other\"/>"
+                      @"<xf:send id=\"go\" submission=\"s\"/><xf:send id=\"gd\" submission=\"d\"/>"
+                      extra:nil error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFMapSubmissionTransport *map = [[XFMapSubmissionTransport alloc] init];
+    [map setXML:@"<other xmlns=\"\"><v>2</v></other>" forURL:@"http://example.test/o"];
+    [map setXML:@"<other xmlns=\"\"><v>3</v></other>" forURL:@"http://example.test/d"];
+    p.model.transport = map;
+
+    // ref points into instance 'other': that instance is replaced, not the default one
+    [self send:p identifier:@"go"];
+    XCTAssertTrue([map.lastRequest.body containsString:@"<v>1</v>"]);
+    NSXMLElement *other = [[p.model instanceWithIdentifier:@"other"] documentElement];
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[other elementsForName:@"v"].firstObject], @"2");
+    NSXMLElement *main = [[p.model defaultInstance] documentElement];
+    XCTAssertEqualObjects([main name], @"data");
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[main elementsForName:@"n"].firstObject], @"Ada");
+
+    // no ref + @instance: the default instance is submitted, @instance is replaced
+    [self send:p identifier:@"gd"];
+    XCTAssertTrue([map.lastRequest.body containsString:@"<n>Ada</n>"], @"%@", map.lastRequest.body);
+    other = [[p.model instanceWithIdentifier:@"other"] documentElement];
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[other elementsForName:@"v"].firstObject], @"3");
+    XCTAssertEqualObjects([[[p.model defaultInstance] documentElement] name], @"data");
+}
+
+- (void)testHeaderElementsAreEvaluatedAndCombined
+{
+    // XsltForms_submission: xf:header with name/value children, @nodeset
+    // iteration, @combine (G-17)
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><tok>abc</tok><k>one</k><k>two</k></data></xf:instance>"
+                      @"<xf:submission id=\"s\" resource=\"http://example.test/h\" method=\"get\" replace=\"none\">"
+                      @"  <xf:header><xf:name>X-Token</xf:name><xf:value value=\"tok\"/></xf:header>"
+                      @"  <xf:header nodeset=\"k\"><xf:name>X-Key</xf:name><xf:value value=\".\"/></xf:header>"
+                      @"  <xf:header combine=\"prepend\"><xf:name>x-key</xf:name><xf:value>zero</xf:value></xf:header>"
+                      @"  <xf:header><xf:name>X-Multi</xf:name><xf:value>a</xf:value><xf:value>b</xf:value></xf:header>"
+                      @"  <xf:header combine=\"replace\"><xf:name>X-Multi</xf:name><xf:value>c</xf:value></xf:header>"
+                      @"</xf:submission>"
+                      @"<xf:send id=\"go\" submission=\"s\"/>"
+                      extra:nil error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFMapSubmissionTransport *map = [[XFMapSubmissionTransport alloc] init];
+    [map setStatus:204 body:@"" forURL:@"http://example.test/h"];
+    p.model.transport = map;
+    [self send:p identifier:@"go"];
+    NSDictionary *h = map.lastRequest.headers;
+    XCTAssertEqualObjects(h[@"X-Token"], @"abc");
+    XCTAssertEqualObjects(h[@"X-Key"], @"zero,one,two");
+    XCTAssertEqualObjects(h[@"X-Multi"], @"c");
 }
 
 @end

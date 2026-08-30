@@ -260,24 +260,33 @@
             if (!constraintOK) {
                 valid = NO;
             }
-            if (!empty && ![XFType value:value conformsToTypeNamed:state.typeName]) {
+            if (![XFType value:value conformsToTypeNamed:state.typeName]) {
                 valid = NO;
             }
         }
+        // XsltForms_instance.setProperty_: a MIP flip marks the node changed
+        // so dependants re-evaluate in this cycle (G-16)
+        BOOL flipped = state.required != required || state.relevant != relevant
+            || state.readonly != isReadonly || state.valid != valid;
         state.required = required;
         state.relevant = relevant;
         state.readonly = isReadonly;
         state.constraint = constraintOK;
         state.valid = valid;
+        if (flipped && self.model.ready) {
+            [self.model addChange:node];
+        }
         notRelevant = !relevant;
         readonly = isReadonly;
-    } else if (notRelevant || readonly) {
-        XFNodeState *inherited = [XFNodeState stateOnNode:node];
-        if (notRelevant) {
-            inherited.relevant = NO;
-        }
-        if (readonly) {
-            inherited.readonly = YES;
+    } else {
+        // XsltForms_instance.validate_ else-branch: unbound nodes always take
+        // the inherited values, so a subtree becomes relevant / writable
+        // again when its bound ancestor does. Only materialise a state
+        // object when something differs from the defaults.
+        XFNodeState *inherited = state ?: ((notRelevant || readonly) ? [XFNodeState stateOnNode:node] : nil);
+        if (inherited) {
+            inherited.relevant = !notRelevant;
+            inherited.readonly = readonly;
         }
     }
 

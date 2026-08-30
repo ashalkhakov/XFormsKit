@@ -11,6 +11,11 @@
 
 @implementation XFGroup
 
+- (BOOL)isValueControl
+{
+    return NO;
+}
+
 + (instancetype)groupWithElement:(NSXMLElement *)element
                            model:(id)model
                            error:(NSError **)error
@@ -111,7 +116,7 @@
         return;
     }
     for (XFControl *child in self.mutableChildren) {
-        [child refreshWithContext:childCtx error:error];
+        [child refreshInContext:childCtx error:error];
     }
 }
 
