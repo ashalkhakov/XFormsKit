@@ -62,4 +62,43 @@
     XCTAssertGreaterThan(ctx.dependencyNodes.count, (NSUInteger)0);
 }
 
+- (void)testPredicatePosition
+{
+    XCTAssertEqualObjects([self eval:@"name[1]"], @"World");
+    XCTAssertEqualObjects([self eval:@"name[position() = 1]"], @"World");
+}
+
+- (void)testArithmeticAndBoolean
+{
+    XCTAssertEqualObjects([self eval:@"1 + 2"], @"3");
+    XCTAssertEqualObjects([self eval:@"6 div 2"], @"3");
+    XCTAssertEqualObjects([self eval:@"5 mod 2"], @"1");
+    XCTAssertEqualObjects([self eval:@"true() and false()"], @"false");
+    XCTAssertEqualObjects([self eval:@"not(false())"], @"true");
+}
+
+- (void)testStringFunctions
+{
+    XCTAssertEqualObjects([self eval:@"starts-with(name, 'Wo')"], @"true");
+    XCTAssertEqualObjects([self eval:@"substring-before(name, 'r')"], @"Wo");
+    XCTAssertEqualObjects([self eval:@"normalize-space('  a   b ')"], @"a b");
+    XCTAssertEqualObjects([self eval:@"string-length(name)"], @"5");
+}
+
+- (void)testUnionAndParent
+{
+    XCTAssertEqualObjects([self eval:@"count(name | count)"], @"2");
+    XCTAssertEqualObjects([self eval:@"name/parent::*/count"], @"3");
+}
+
+- (void)testAttributeAxis
+{
+    NSString *xml = @"<data xmlns=\"\"><item id=\"a\">x</item></data>";
+    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
+    XFExprContext *ctx = [[XFExprContext alloc] initWithNode:[doc rootElement]];
+    NSError *error = nil;
+    XFXPath *xp = [XFXPath xpathWithString:@"item/@id" error:&error];
+    XCTAssertEqualObjects([xp stringValueInContext:ctx error:&error], @"a");
+}
+
 @end
