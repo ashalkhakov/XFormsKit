@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xf="http://www.w3.org/2002/xforms"
+      xmlns:ev="http://www.w3.org/2001/xml-events">
+  <head>
+    <title>Switch</title>
+    <xf:model>
+      <xf:instance>
+        <data xmlns="">
+          <page>one</page>
+        </data>
+      </xf:instance>
+    </xf:model>
+  </head>
+  <body>
+    <xf:group>
+      <xf:label>Pages</xf:label>
+      <xf:trigger>
+        <xf:label>One</xf:label>
+        <xf:toggle ev:event="DOMActivate" case="c1"/>
+      </xf:trigger>
+      <xf:trigger>
+        <xf:label>Two</xf:label>
+        <xf:toggle ev:event="DOMActivate" case="c2"/>
+      </xf:trigger>
+      <xf:switch>
+        <xf:case id="c1" selected="true">
+          <xf:output value="'First page'"/>
+        </xf:case>
+        <xf:case id="c2">
+          <xf:output value="'Second page'"/>
+        </xf:case>
+      </xf:switch>
+    </xf:group>
+  </body>
+</html>

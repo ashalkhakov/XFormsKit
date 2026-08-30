@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xf="http://www.w3.org/2002/xforms">
+  <head>
+    <title>Boolean input</title>
+    <xf:model>
+      <xf:instance>
+        <data xmlns="">
+          <agree>false</agree>
+        </data>
+      </xf:instance>
+      <xf:bind nodeset="agree" type="boolean"/>
+    </xf:model>
+  </head>
+  <body>
+    <xf:group>
+      <xf:label>Terms</xf:label>
+      <xf:input ref="agree">
+        <xf:label>I agree</xf:label>
+      </xf:input>
+      <xf:output ref="agree">
+        <xf:label>Value</xf:label>
+      </xf:output>
+    </xf:group>
+  </body>
+</html>

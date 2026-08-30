@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xf="http://www.w3.org/2002/xforms"
+      xmlns:ev="http://www.w3.org/2001/xml-events">
+  <head>
+    <title>Button</title>
+    <xf:model>
+      <xf:instance>
+        <data xmlns="">
+          <msg>Idle</msg>
+        </data>
+      </xf:instance>
+    </xf:model>
+  </head>
+  <body>
+    <xf:group>
+      <xf:label>Trigger</xf:label>
+      <xf:trigger>
+        <xf:label>Say hello</xf:label>
+        <xf:setvalue ev:event="DOMActivate" ref="msg" value="'Hello World!'"/>
+      </xf:trigger>
+      <xf:output ref="msg">
+        <xf:label>Message</xf:label>
+      </xf:output>
+    </xf:group>
+  </body>
+</html>

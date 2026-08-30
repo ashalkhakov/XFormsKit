@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xf="http://www.w3.org/2002/xforms">
+  <head>
+    <title>Range</title>
+    <xf:model>
+      <xf:instance>
+        <data xmlns="">
+          <n>4</n>
+        </data>
+      </xf:instance>
+    </xf:model>
+  </head>
+  <body>
+    <xf:group>
+      <xf:label>Slider</xf:label>
+      <xf:range ref="n" start="0" end="10" step="1">
+        <xf:label>Value</xf:label>
+      </xf:range>
+      <xf:output ref="n">
+        <xf:label>Current</xf:label>
+      </xf:output>
+    </xf:group>
+  </body>
+</html>

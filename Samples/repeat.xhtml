@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xf="http://www.w3.org/2002/xforms"
+      xmlns:ev="http://www.w3.org/2001/xml-events">
+  <head>
+    <title>Repeat</title>
+    <xf:model>
+      <xf:instance>
+        <data xmlns="">
+          <item><name>Alpha</name></item>
+          <item><name>Beta</name></item>
+        </data>
+      </xf:instance>
+    </xf:model>
+  </head>
+  <body>
+    <xf:group>
+      <xf:label>Items</xf:label>
+      <xf:repeat id="r" nodeset="item">
+        <xf:input ref="name">
+          <xf:label>Name</xf:label>
+        </xf:input>
+      </xf:repeat>
+      <xf:trigger>
+        <xf:label>Add</xf:label>
+        <xf:insert ev:event="DOMActivate" nodeset="item" at="last()" position="after"/>
+      </xf:trigger>
+      <xf:trigger>
+        <xf:label>Delete</xf:label>
+        <xf:delete ev:event="DOMActivate" nodeset="item" at="index('r')"/>
+      </xf:trigger>
+    </xf:group>
+  </body>
+</html>

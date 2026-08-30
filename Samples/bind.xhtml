@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xf="http://www.w3.org/2002/xforms">
+  <head>
+    <title>Calculate bind</title>
+    <xf:model>
+      <xf:instance>
+        <data xmlns="">
+          <a>2</a>
+          <b>3</b>
+          <sum/>
+        </data>
+      </xf:instance>
+      <xf:bind nodeset="sum" calculate="number(../a) + number(../b)"/>
+    </xf:model>
+  </head>
+  <body>
+    <xf:group>
+      <xf:label>Sum</xf:label>
+      <xf:input ref="a"><xf:label>A</xf:label></xf:input>
+      <xf:input ref="b"><xf:label>B</xf:label></xf:input>
+      <xf:output ref="sum"><xf:label>A + B</xf:label></xf:output>
+    </xf:group>
+  </body>
+</html>
