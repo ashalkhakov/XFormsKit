@@ -28,6 +28,9 @@ XFormsKit_HEADER_FILES = \
 	XFXML.h \
 	XFInstance.h \
 	XFModel.h \
+	XFBind.h \
+	XFNodeState.h \
+	XFMIPBinding.h \
 	XFExprContext.h \
 	XFXPathValue.h \
 	XFXPath.h \
@@ -35,7 +38,33 @@ XFormsKit_HEADER_FILES = \
 	XFControl.h \
 	XFInputControl.h \
 	XFOutputControl.h \
+	XFSecretControl.h \
+	XFTextareaControl.h \
+	XFTriggerControl.h \
+	XFSubmitControl.h \
+	XFSelectControl.h \
+	XFRangeControl.h \
+	XFLabelControl.h \
+	XFGroup.h \
+	XFRepeat.h \
+	XFSwitch.h \
 	XFProcessor.h \
+	XFDeferredUpdates.h \
+	XFAbstractAction.h \
+	XFAction.h \
+	XFSetvalueAction.h \
+	XFDispatchAction.h \
+	XFMessageAction.h \
+	XFModelAction.h \
+	XFSendAction.h \
+	XFLoadAction.h \
+	XFSetindexAction.h \
+	XFInsertAction.h \
+	XFDeleteAction.h \
+	XFToggleAction.h \
+	XFSetfocusAction.h \
+	XFSubmission.h \
+	XFSubmissionTransport.h \
 	XFFormView.h \
 	XFEvent.h \
 	XFListener.h \
@@ -46,6 +75,9 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/XFErrors.m \
 	Sources/XFormsKit/XFXML.m \
 	Sources/XFormsKit/XFInstance.m \
+	Sources/XFormsKit/XFNodeState.m \
+	Sources/XFormsKit/XFMIPBinding.m \
+	Sources/XFormsKit/XFBind.m \
 	Sources/XFormsKit/XFModel.m \
 	Sources/XFormsKit/XPath/XFExprContext.m \
 	Sources/XFormsKit/XPath/XFXPathValue.m \
@@ -65,7 +97,33 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/XFControl.m \
 	Sources/XFormsKit/XFInputControl.m \
 	Sources/XFormsKit/XFOutputControl.m \
+	Sources/XFormsKit/XFSecretControl.m \
+	Sources/XFormsKit/XFTextareaControl.m \
+	Sources/XFormsKit/XFTriggerControl.m \
+	Sources/XFormsKit/XFSubmitControl.m \
+	Sources/XFormsKit/XFSelectControl.m \
+	Sources/XFormsKit/XFRangeControl.m \
+	Sources/XFormsKit/XFLabelControl.m \
+	Sources/XFormsKit/XFGroup.m \
+	Sources/XFormsKit/XFRepeat.m \
+	Sources/XFormsKit/XFSwitch.m \
 	Sources/XFormsKit/XFProcessor.m \
+	Sources/XFormsKit/XFDeferredUpdates.m \
+	Sources/XFormsKit/XFAbstractAction.m \
+	Sources/XFormsKit/XFAction.m \
+	Sources/XFormsKit/XFSetvalueAction.m \
+	Sources/XFormsKit/XFDispatchAction.m \
+	Sources/XFormsKit/XFMessageAction.m \
+	Sources/XFormsKit/XFModelAction.m \
+	Sources/XFormsKit/XFSendAction.m \
+	Sources/XFormsKit/XFLoadAction.m \
+	Sources/XFormsKit/XFSetindexAction.m \
+	Sources/XFormsKit/XFInsertAction.m \
+	Sources/XFormsKit/XFDeleteAction.m \
+	Sources/XFormsKit/XFToggleAction.m \
+	Sources/XFormsKit/XFSetfocusAction.m \
+	Sources/XFormsKit/XFSubmission.m \
+	Sources/XFormsKit/XFSubmissionTransport.m \
 	Sources/XFormsKit/XFEvent.m \
 	Sources/XFormsKit/XFListener.m \
 	Sources/XFormsKit/XFXMLEvents.m \
@@ -79,7 +137,13 @@ XFormsKitTests_OBJC_FILES = \
 	Tests/XFormsKitTests/XFXPathTests.m \
 	Tests/XFormsKitTests/XFInstanceTests.m \
 	Tests/XFormsKitTests/XFHelloFormTests.m \
-	Tests/XFormsKitTests/XFXMLEventsTests.m
+	Tests/XFormsKitTests/XFXMLEventsTests.m \
+	Tests/XFormsKitTests/XFModelBindTests.m \
+	Tests/XFormsKitTests/XFActionTests.m \
+	Tests/XFormsKitTests/XFSubmissionTests.m \
+	Tests/XFormsKitTests/XFRepeatGroupTests.m \
+	Tests/XFormsKitTests/XFInsertDeleteTests.m \
+	Tests/XFormsKitTests/XFUIControlTests.m
 
 XFormsKitTests_RESOURCE_FILES = Tests/Fixtures/hello.xhtml
 XFormsKitTests_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath
@@ -100,3 +164,6 @@ check:: all
 	  echo "xctest not on PATH. Install gnustep/tools-xctest and re-run make check."; \
 	  exit 1; \
 	fi
+
+viewer: all
+	$(MAKE) -C Apps/XFormsViewer
