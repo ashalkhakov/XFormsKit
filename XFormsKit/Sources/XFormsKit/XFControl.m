@@ -51,6 +51,7 @@
         _valid = YES;
         _identifier = [[element attributeForName:@"id"] stringValue];
         _appearance = [[element attributeForName:@"appearance"] stringValue];
+        _incremental = [[[element attributeForName:@"incremental"] stringValue] isEqualToString:@"true"];
         _mipEvents = @[];
         [self loadSupportChildren];
     }
@@ -144,6 +145,7 @@
     }
     self.identifier = [[element attributeForName:@"id"] stringValue];
     self.appearance = [[element attributeForName:@"appearance"] stringValue];
+    self.incremental = [[[element attributeForName:@"incremental"] stringValue] isEqualToString:@"true"];
     self.label = [[self class] labelForElement:element];
     [self loadSupportChildren];
     NSString *preferred = [[element localName] isEqualToString:@"output"]

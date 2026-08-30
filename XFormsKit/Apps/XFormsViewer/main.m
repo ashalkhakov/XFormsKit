@@ -110,24 +110,53 @@
 
 - (NSArray<NSString *> *)sampleNames
 {
+    // Everything in Samples/ (XSLTForms testsuite/samples + XFormsKit extras).
     return @[
-        @"hello.xhtml",
         @"address.xhtml",
+        @"balance-table.xhtml",
+        @"balance.xhtml",
         @"bind.xhtml",
+        @"bookmarks.xhtml",
+        @"books.xhtml",
         @"button.xhtml",
+        @"calculator.xhtml",
         @"checkbox.xhtml",
+        @"choices.xhtml",
+        @"colors.xhtml",
         @"date.xhtml",
+        @"deep-copy.xhtml",
+        @"first-field.xhtml",
+        @"flags.xhtml",
+        @"gantt.xhtml",
+        @"hello.xhtml",
+        @"incremental-textarea.xhtml",
+        @"incremental.xhtml",
+        @"input-width.xhtml",
+        @"input.xhtml",
+        @"output-image.xhtml",
+        @"piechart.xhtml",
         @"range.xhtml",
         @"readonly.xhtml",
         @"relevant.xhtml",
         @"repeat.xhtml",
         @"secret.xhtml",
+        @"select-from-file.xhtml",
+        @"select-model.xhtml",
+        @"select-multi-col.xhtml",
+        @"select.xhtml",
+        @"select1-drop.xhtml",
         @"select1.xhtml",
-        @"choices.xhtml",
+        @"spreadsheet.xhtml",
         @"switch.xhtml",
+        @"textarea-styled.xhtml",
         @"textarea.xhtml",
+        @"tinymce.xhtml",
         @"upload.xhtml",
-        @"output-image.xhtml"
+        @"uploads.xhtml",
+        @"wikipediasearch.xhtml",
+        @"writers.xhtml",
+        @"xf.xhtml",
+        @"xpath.xhtml"
     ];
 }
 

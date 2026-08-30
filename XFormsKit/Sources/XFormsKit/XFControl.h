@@ -25,6 +25,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, nullable) NSString *alert;
 @property (nonatomic, copy, readonly) NSArray<NSString *> *mipEvents;
 @property (nonatomic, copy, nullable) NSString *appearance;
+/// `incremental="true"`: the host UI commits on every keystroke (XForms 1.1
+/// 8.1.2 / XSLTForms incremental), not only on Return / focus loss.
+@property (nonatomic, assign) BOOL incremental;
 @property (nonatomic, weak, nullable) id owner; // XFProcessor
 @property (nonatomic, weak, nullable) XFControl *parentControl;
 

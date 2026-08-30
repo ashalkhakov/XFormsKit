@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xf="http://www.w3.org/2002/xforms">
+  <head>
+    <title>Incremental input</title>
+    <xf:model>
+      <xf:instance>
+        <data xmlns="">
+          <name>World</name>
+          <notes>Type here</notes>
+        </data>
+      </xf:instance>
+      <xf:bind nodeset="notes" relevant="string-length(../name) &gt; 0"/>
+    </xf:model>
+  </head>
+  <body>
+    <xf:group>
+      <xf:label>Incremental</xf:label>
+      <xf:input ref="name" incremental="true">
+        <xf:label>Name (each keystroke)</xf:label>
+      </xf:input>
+      <xf:output value="concat('Hello ', name, '!')">
+        <xf:label>Greeting</xf:label>
+      </xf:output>
+      <xf:output value="string-length(name)">
+        <xf:label>Length</xf:label>
+      </xf:output>
+      <xf:textarea ref="notes" incremental="true">
+        <xf:label>Notes</xf:label>
+      </xf:textarea>
+      <xf:output ref="notes">
+        <xf:label>Notes echo</xf:label>
+      </xf:output>
+    </xf:group>
+  </body>
+</html>

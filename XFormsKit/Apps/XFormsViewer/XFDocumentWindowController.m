@@ -543,10 +543,11 @@
 - (void)rebuildForm
 {
     XFFormDocument *doc = [self formDocument];
-    if (self.formView) {
-        [self.formView removeFromSuperview];
-        self.formView = nil;
-    }
+    // Detach through the scroll view, not -removeFromSuperview: GNUstep's
+    // NSClipView keeps an unretained _documentView pointer and would later
+    // message the freed view (use-after-free on the next setDocumentView:).
+    [self.formScroll setDocumentView:nil];
+    self.formView = nil;
     if (doc.processor) {
         XFFormView *form = [[XFFormView alloc] initWithProcessor:doc.processor];
         __weak XFDocumentWindowController *weakSelf = self;

@@ -40,11 +40,13 @@ static const CGFloat kFieldWidth = 280.0;
 @implementation XFWidget
 @end
 
-@interface XFFormView () <NSTextViewDelegate>
+@interface XFFormView () <NSTextViewDelegate, NSTextFieldDelegate>
 @property (nonatomic, strong, readwrite) XFProcessor *processor;
 @property (nonatomic, strong) NSMutableArray<XFWidget *> *widgets;
 @property (nonatomic, assign) CGFloat nextY;
 @property (nonatomic, assign) CGFloat contentHeight;
+/// Right-most edge laid out so far (group boxes and the form width follow it).
+@property (nonatomic, assign) CGFloat maxRight;
 @end
 
 @implementation XFFormView
@@ -132,7 +134,15 @@ static const CGFloat kFieldWidth = 280.0;
     [self.widgets addObject:w];
     objc_setAssociatedObject(view, kXFBoundControlKey, control, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [self applyEnabled:view control:control];
+    [self noteRight:NSMaxX([view frame])];
     return w;
+}
+
+- (void)noteRight:(CGFloat)right
+{
+    if (right > self.maxRight) {
+        self.maxRight = right;
+    }
 }
 
 - (XFControl *)controlForSender:(id)sender
@@ -168,6 +178,7 @@ static const CGFloat kFieldWidth = 280.0;
     }
     [field setTarget:self];
     [field setAction:@selector(textChanged:)];
+    [field setDelegate:self];
     return field;
 }
 
@@ -243,6 +254,7 @@ static const CGFloat kFieldWidth = 280.0;
                 NSTextField *caption = [self makeLabel:control.label];
                 [caption setFrame:NSMakeRect(kMargin + indent, cursor, kLabelWidth + kFieldWidth, kRowHeight)];
                 [self addSubview:caption];
+                [self noteRight:NSMaxX([caption frame])];
                 cursor += kRowHeight + 4;
             }
             NSString *lastGroup = nil;
@@ -383,11 +395,19 @@ static const CGFloat kFieldWidth = 280.0;
     [box setTitlePosition:group.label.length ? NSAtTop : NSNoTitle];
     CGFloat inner = y + (group.label.length ? 22 : 8);
     CGFloat start = inner;
+    CGFloat outerRight = self.maxRight;
+    self.maxRight = 0;
     for (XFControl *child in group.children) {
         inner = [self layoutControl:child atY:inner indent:indent + kIndent];
     }
     CGFloat h = (inner - start) + 12;
-    [box setFrame:NSMakeRect(kMargin + indent, y, kLabelWidth + kFieldWidth + 20, MAX(h, 28))];
+    // Wide enough to enclose the widest child (children are indented by
+    // kIndent, so the box must extend that far past them on the right too),
+    // and never narrower than one standard row.
+    CGFloat left = kMargin + indent;
+    CGFloat right = MAX(self.maxRight + kIndent, left + kIndent + kLabelWidth + 8 + kFieldWidth + kIndent);
+    [box setFrame:NSMakeRect(left, y, right - left, MAX(h, 28))];
+    self.maxRight = MAX(outerRight, right);
     // Children already added to the form; the box is a visual frame behind them.
     [self addSubview:box positioned:NSWindowBelow relativeTo:nil];
     if (!group.relevant) {
@@ -405,6 +425,7 @@ static const CGFloat kFieldWidth = 280.0;
             NSTextField *cap = [self makeLabel:repeat.label];
             [cap setFrame:NSMakeRect(kMargin + indent, cursor, kLabelWidth + kFieldWidth, kRowHeight)];
             [self addSubview:cap];
+            [self noteRight:NSMaxX([cap frame])];
             cursor += kRowHeight + 4;
         }
         for (XFControl *child in item.controls) {
@@ -421,6 +442,7 @@ static const CGFloat kFieldWidth = 280.0;
         [view removeFromSuperview];
     }
     [self.widgets removeAllObjects];
+    self.maxRight = 0;
     // Layout top-down in view coords after we know height; first measure.
     NSMutableArray *top = [NSMutableArray array];
     for (XFControl *c in self.processor.controls) {
@@ -439,7 +461,7 @@ static const CGFloat kFieldWidth = 280.0;
         y = kMargin + 48;
     }
     self.contentHeight = y + kMargin;
-    [self setFrame:NSMakeRect(0, 0, 620, MAX(self.contentHeight, 80))];
+    [self setFrame:NSMakeRect(0, 0, MAX(620, self.maxRight + kMargin), MAX(self.contentHeight, 80))];
     [self setNeedsDisplay:YES];
 }
 
@@ -507,6 +529,100 @@ static const CGFloat kFieldWidth = 280.0;
     XFControl *control = [self controlForSender:sender];
     if (control) {
         [self commitControl:control value:[sender stringValue]];
+    }
+}
+
+#pragma mark - Incremental commits
+
+/// incremental="true": commit on every keystroke without rebuilding the
+/// form (a rebuild would replace the field being edited). Other widgets are
+/// refreshed in place; layout changes (relevance) are applied by the rebuild
+/// on the final commit (Return / focus loss).
+- (void)commitIncremental:(XFControl *)control value:(NSString *)value editingView:(NSView *)editing
+{
+    if (![self.processor setValue:value ofControl:control error:NULL]) {
+        return;
+    }
+    [self refreshWidgetsInPlaceExcept:editing];
+    if (self.instanceChangedHandler) {
+        self.instanceChangedHandler();
+    }
+}
+
+- (void)controlTextDidChange:(NSNotification *)note
+{
+    NSTextField *field = [note object];
+    if (![field isKindOfClass:[NSTextField class]]) {
+        return;
+    }
+    XFControl *control = [self controlForSender:field];
+    if (control.incremental) {
+        [self commitIncremental:control value:[field stringValue] editingView:field];
+    }
+}
+
+- (void)textDidChange:(NSNotification *)note
+{
+    NSTextView *tv = [note object];
+    for (XFWidget *w in self.widgets) {
+        if ([w.view isKindOfClass:[NSScrollView class]]
+            && [(NSScrollView *)w.view documentView] == tv) {
+            if (w.control.incremental) {
+                [self commitIncremental:w.control value:[tv string] editingView:w.view];
+            }
+            return;
+        }
+    }
+}
+
+- (void)refreshWidgetsInPlaceExcept:(NSView *)editing
+{
+    for (XFWidget *w in self.widgets) {
+        XFControl *control = w.control;
+        NSView *view = w.view;
+        if (view != editing) {
+            if ([view isKindOfClass:[NSPopUpButton class]] && [control isKindOfClass:[XFSelectControl class]]) {
+                NSPopUpButton *popup = (NSPopUpButton *)view;
+                NSString *selected = [(XFSelectControl *)control selectedValues].firstObject;
+                for (NSMenuItem *item in [popup itemArray]) {
+                    if ([[item representedObject] isEqual:selected]) {
+                        [popup selectItem:item];
+                        break;
+                    }
+                }
+            } else if ([view isKindOfClass:[NSButton class]] && [control isKindOfClass:[XFSelectControl class]]) {
+                NSString *value = [view toolTip];
+                BOOL on = value && [[(XFSelectControl *)control selectedValues] containsObject:value];
+                [(NSButton *)view setState:on ? NSOnState : NSOffState];
+            } else if ([view isKindOfClass:[NSButton class]] && [control isKindOfClass:[XFInputControl class]]) {
+                BOOL on = [control.stringValue isEqualToString:@"true"] || [control.stringValue isEqualToString:@"1"];
+                [(NSButton *)view setState:on ? NSOnState : NSOffState];
+            } else if ([view isKindOfClass:[NSSlider class]] && [control isKindOfClass:[XFRangeControl class]]) {
+                [(NSSlider *)view setDoubleValue:[(XFRangeControl *)control numericValue]];
+            } else if ([view isKindOfClass:[NSDatePicker class]] && [control isKindOfClass:[XFInputControl class]]) {
+                NSDate *date = [(XFInputControl *)control dateValue];
+                if (date) {
+                    [(NSDatePicker *)view setDateValue:date];
+                }
+            } else if ([view isKindOfClass:[NSScrollView class]]) {
+                NSTextView *tv = [(NSScrollView *)view documentView];
+                if ([tv isKindOfClass:[NSTextView class]]
+                    && ![[tv string] isEqualToString:control.stringValue ?: @""]) {
+                    [tv setString:control.stringValue ?: @""];
+                }
+            } else if ([view isKindOfClass:[NSTextField class]]
+                       && ![control isKindOfClass:[XFTriggerControl class]]) {
+                NSTextField *field = (NSTextField *)view;
+                if (![[field stringValue] isEqualToString:control.stringValue ?: @""]) {
+                    [field setStringValue:control.stringValue ?: @""];
+                }
+            }
+        }
+        [self applyEnabled:view control:control];
+        [w.labelField setHidden:!control.relevant];
+        if (w.labelField && [w.labelField respondsToSelector:@selector(setTextColor:)]) {
+            [w.labelField setTextColor:control.valid ? [NSColor controlTextColor] : [NSColor redColor]];
+        }
     }
 }
 

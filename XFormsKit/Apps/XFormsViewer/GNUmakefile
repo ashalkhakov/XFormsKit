@@ -20,23 +20,55 @@ XFormsViewer_OBJC_FILES = \
 	XFDocumentWindowController.m
 
 XFormsViewer_RESOURCE_FILES = \
-	../../Samples/hello.xhtml \
+	../../Samples/XMLSchemaTypeCode.xml \
 	../../Samples/address.xhtml \
+	../../Samples/balance-table.xhtml \
+	../../Samples/balance.xhtml \
 	../../Samples/bind.xhtml \
+	../../Samples/bookmarks.xhtml \
+	../../Samples/books.xhtml \
 	../../Samples/button.xhtml \
+	../../Samples/calculator.xhtml \
 	../../Samples/checkbox.xhtml \
+	../../Samples/choices.xhtml \
+	../../Samples/colors.xhtml \
+	../../Samples/counties.xml \
 	../../Samples/date.xhtml \
+	../../Samples/deep-copy.xhtml \
+	../../Samples/first-field.xhtml \
+	../../Samples/flag.svg \
+	../../Samples/flags.xhtml \
+	../../Samples/gantt.xhtml \
+	../../Samples/hello.xhtml \
+	../../Samples/incremental-textarea.xhtml \
+	../../Samples/incremental.xhtml \
+	../../Samples/input-width.xhtml \
+	../../Samples/input.xhtml \
+	../../Samples/output-image.xhtml \
+	../../Samples/piechart.xhtml \
 	../../Samples/range.xhtml \
 	../../Samples/readonly.xhtml \
 	../../Samples/relevant.xhtml \
 	../../Samples/repeat.xhtml \
 	../../Samples/secret.xhtml \
+	../../Samples/select-from-file.xhtml \
+	../../Samples/select-model.xhtml \
+	../../Samples/select-multi-col.xhtml \
+	../../Samples/select.xhtml \
+	../../Samples/select1-drop.xhtml \
 	../../Samples/select1.xhtml \
-	../../Samples/choices.xhtml \
+	../../Samples/spreadsheet.xhtml \
 	../../Samples/switch.xhtml \
+	../../Samples/textarea-styled.xhtml \
+	../../Samples/textarea.css \
 	../../Samples/textarea.xhtml \
+	../../Samples/tinymce.xhtml \
 	../../Samples/upload.xhtml \
-	../../Samples/output-image.xhtml
+	../../Samples/uploads.xhtml \
+	../../Samples/wikipediasearch.xhtml \
+	../../Samples/writers.xhtml \
+	../../Samples/xf.xhtml \
+	../../Samples/xpath.xhtml
 
 XFormsViewer_INCLUDE_DIRS = \
 	-I. \
