@@ -9,6 +9,7 @@
 #import "XFNamespaces.h"
 #import "XFXML.h"
 #import "XFErrors.h"
+#import "XFXMLEvents.h"
 #import <Foundation/NSXMLDocument.h>
 #import <Foundation/NSXMLElement.h>
 
@@ -97,6 +98,8 @@
         return nil;
     }
     _model = model;
+    model.owner = self;
+    [[XFXMLEvents sharedEvents] registerElement:model.element xfElement:model];
 
     NSMutableArray<XFControl *> *controls = [NSMutableArray array];
     NSArray<NSXMLElement *> *inputs =
@@ -137,11 +140,17 @@
     }
 
     _controls = controls;
-    if (![self refresh:&inner]) {
-        if (error) {
-            *error = inner;
-        }
-        return nil;
+    for (XFControl *control in controls) {
+        [[XFXMLEvents sharedEvents] registerElement:control.element xfElement:control];
+    }
+    [[XFXMLEvents sharedEvents] installListenersInDocument:document];
+
+    [XFXMLEvents dispatch:model name:@"xforms-model-construct"];
+    [XFXMLEvents dispatch:model name:@"xforms-model-construct-done"];
+    [XFXMLEvents dispatch:model name:@"xforms-ready"];
+
+    if (self.outputControls.count > 0 && self.outputControls.firstObject.stringValue.length == 0) {
+        [self refreshControls];
     }
     return self;
 }
@@ -209,6 +218,14 @@
     return ctx;
 }
 
+- (void)refreshControls
+{
+    XFExprContext *ctx = [self evaluationContext];
+    for (XFControl *control in self.controls) {
+        [control refreshWithContext:ctx error:NULL];
+    }
+}
+
 - (BOOL)refresh:(NSError **)error
 {
     XFExprContext *ctx = [self evaluationContext];
@@ -230,7 +247,9 @@
     if (![control commitStringValue:value error:error]) {
         return NO;
     }
-    return [self refresh:error];
+    [XFXMLEvents dispatch:control name:@"xforms-value-changed"];
+    [XFXMLEvents dispatch:self.model name:@"xforms-recalculate"];
+    return YES;
 }
 
 @end

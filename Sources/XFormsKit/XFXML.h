@@ -24,6 +24,13 @@ NS_ASSUME_NONNULL_BEGIN
    hasLocalName:(NSString *)localName
   namespaceURI:(NSString *)namespaceURI;
 
++ (nullable NSString *)attributeValue:(NSString *)localName
+                        namespaceURI:(nullable NSString *)namespaceURI
+                           onElement:(NSXMLElement *)element;
+
++ (nullable NSXMLElement *)elementWithID:(NSString *)identifier
+                                  inNode:(NSXMLNode *)node;
+
 @end
 
 NS_ASSUME_NONNULL_END
