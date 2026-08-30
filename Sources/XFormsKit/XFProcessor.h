@@ -9,7 +9,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface XFProcessor : NSObject
+@interface XFProcessor : NSObject <XFModelOwner>
 
 @property (nonatomic, strong, readonly) NSXMLDocument *hostDocument;
 @property (nonatomic, strong, readonly) XFModel *model;
@@ -25,6 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (nullable XFInstance *)defaultInstance;
 - (BOOL)refresh:(NSError **)error;
+- (void)refreshControls;
 
 /// Writes `value` into the input's bound node and refreshes the form.
 - (BOOL)setValue:(NSString *)value

@@ -20,6 +20,9 @@
 #import <XFormsKit/XFInputControl.h>
 #import <XFormsKit/XFOutputControl.h>
 #import <XFormsKit/XFProcessor.h>
+#import <XFormsKit/XFEvent.h>
+#import <XFormsKit/XFListener.h>
+#import <XFormsKit/XFXMLEvents.h>
 
 #if __has_include(<AppKit/AppKit.h>)
 #import <XFormsKit/XFFormView.h>

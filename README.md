@@ -4,9 +4,10 @@ An XForms 1.1 engine for Cocoa and GNUstep. The processor reads an
 XHTML+XForms host document, maintains XML instances, evaluates XPath 1.0
 bindings, and maps controls onto AppKit.
 
-This is an independent implementation. XSLTForms
-(https://github.com/AlainCouthures/xsltforms) is used as a *behavior*
-reference, not as a source to translate.
+XPath evaluation follows the XSLTForms `xpathexpr` object model
+(LocationExpr, StepExpr, node tests, core functions, ExprContext
+dependencies). Expressions are compiled at runtime (XSLTForms compiles
+them in XSLT); the evaluator is an Objective-C translation of that AST.
 
 ## Status
 
@@ -15,9 +16,12 @@ First vertical slice:
 - Load a well-formed XHTML+XForms document
 - One `xf:model` / `xf:instance`
 - `xf:input` (`ref`) and `xf:output` (`value`)
-- XPath 1.0 subset: location paths, string/number literals, `concat()`,
-  `string()`, `name()`, `local-name()`, `instance()`
+- XPath 1.0: location paths and axes, predicates, unions, arithmetic,
+  XPath 1.0 core functions, plus XForms `instance()` / `context()`
 - AppKit host view (`XFFormView`)
+- XML Events (`XFListener` / `XFXMLEvents`), translated from XSLTForms
+  `xmlevtmngt`: registry, EventContexts stack, capture/target/bubble
+  dispatch, `ev:listener` and `ev:*` attributes
 - No schema, no repeats, no submission, no XSLTForms extensions yet
 
 ## Layout
@@ -45,6 +49,6 @@ Requires GNUstep Base, GUI, Make, and [tools-xctest](https://github.com/gnustep/
 
 ## License
 
-GNU Lesser General Public License 2.1. See `LICENSE`.
+GNU Lesser General Public License 2.1. See `COPYING.LIB`.
 The implementation is original so a later relicensing is still possible
 if all contributors agree.

@@ -3,6 +3,7 @@
 #import "XFNamespaces.h"
 #import "XFXML.h"
 #import "XFErrors.h"
+#import "XFXMLEvents.h"
 #import <Foundation/NSXMLElement.h>
 
 @interface XFModel ()
@@ -15,6 +16,7 @@
                            error:(NSError **)error
 {
     XFModel *model = [[self alloc] init];
+    model.element = modelElement;
     NSXMLNode *idAttr = [modelElement attributeForName:@"id"];
     model.identifier = idAttr ? [idAttr stringValue] : nil;
 
@@ -63,6 +65,39 @@
 - (XFInstance *)defaultInstance
 {
     return self.instances.firstObject;
+}
+
+- (void)construct
+{
+    [XFXMLEvents dispatch:self name:@"xforms-rebuild"];
+}
+
+- (void)rebuild
+{
+    [XFXMLEvents dispatch:self name:@"xforms-recalculate"];
+}
+
+- (void)recalculate
+{
+    [XFXMLEvents dispatch:self name:@"xforms-revalidate"];
+}
+
+- (void)revalidate
+{
+    [XFXMLEvents dispatch:self name:@"xforms-refresh"];
+}
+
+- (void)refresh
+{
+    [self.owner refreshControls];
+}
+
+- (void)reset
+{
+    for (XFInstance *instance in self.instances) {
+        [instance reset];
+    }
+    [XFXMLEvents dispatch:self name:@"xforms-rebuild"];
 }
 
 @end
