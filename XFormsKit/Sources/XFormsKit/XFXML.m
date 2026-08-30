@@ -36,6 +36,19 @@
     return out;
 }
 
++ (NSXMLElement *)childElementWithLocalName:(NSString *)localName
+                               namespaceURI:(NSString *)namespaceURI
+                                  ofElement:(NSXMLElement *)element
+{
+    for (NSXMLNode *c in [element children]) {
+        if ([c kind] == NSXMLElementKind
+            && [self element:(NSXMLElement *)c hasLocalName:localName namespaceURI:namespaceURI]) {
+            return (NSXMLElement *)c;
+        }
+    }
+    return nil;
+}
+
 + (NSXMLElement *)firstElementWithLocalName:(NSString *)localName
                               namespaceURI:(NSString *)namespaceURI
                                     inNode:(NSXMLNode *)node

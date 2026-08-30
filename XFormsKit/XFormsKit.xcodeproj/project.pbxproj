@@ -91,6 +91,10 @@
 		AA00000100000000000000B7 /* XFLoadAction.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000B6 /* XFLoadAction.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA00000100000000000000B8 /* XFSubmissionTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000B8 /* XFSubmissionTests.m */; };
 		AA00000100000000000000C0 /* XFGroup.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000C1 /* XFGroup.m */; };
+		AA0000010000000000000110 /* XFHostNode.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000111 /* XFHostNode.m */; };
+		AA0000010000000000000112 /* XFTableModel.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000113 /* XFTableModel.m */; };
+		AA0000010000000000000113 /* XFTableModel.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000112 /* XFTableModel.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000111 /* XFHostNode.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000110 /* XFHostNode.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA00000100000000000000C1 /* XFGroup.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000C0 /* XFGroup.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA00000100000000000000C2 /* XFRepeat.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000C3 /* XFRepeat.m */; };
 		AA00000100000000000000C3 /* XFRepeat.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000C2 /* XFRepeat.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -239,6 +243,10 @@
 		BB00000100000000000000B8 /* XFSubmissionTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFSubmissionTests.m; sourceTree = "<group>"; };
 		BB00000100000000000000C0 /* XFGroup.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFGroup.h; sourceTree = "<group>"; };
 		BB00000100000000000000C1 /* XFGroup.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFGroup.m; sourceTree = "<group>"; };
+		BB0000010000000000000110 /* XFHostNode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFHostNode.h; sourceTree = "<group>"; };
+		BB0000010000000000000111 /* XFHostNode.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFHostNode.m; sourceTree = "<group>"; };
+		BB0000010000000000000112 /* XFTableModel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFTableModel.h; sourceTree = "<group>"; };
+		BB0000010000000000000113 /* XFTableModel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFTableModel.m; sourceTree = "<group>"; };
 		BB00000100000000000000C2 /* XFRepeat.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFRepeat.h; sourceTree = "<group>"; };
 		BB00000100000000000000C3 /* XFRepeat.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFRepeat.m; sourceTree = "<group>"; };
 		BB00000100000000000000C4 /* XFSetindexAction.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFSetindexAction.h; sourceTree = "<group>"; };
@@ -404,6 +412,10 @@
 				BB00000100000000000000FC /* XFUploadControl.m */,
 				BB00000100000000000000C0 /* XFGroup.h */,
 				BB00000100000000000000C1 /* XFGroup.m */,
+				BB0000010000000000000110 /* XFHostNode.h */,
+				BB0000010000000000000111 /* XFHostNode.m */,
+				BB0000010000000000000112 /* XFTableModel.h */,
+				BB0000010000000000000113 /* XFTableModel.m */,
 				BB00000100000000000000C2 /* XFRepeat.h */,
 				BB00000100000000000000C3 /* XFRepeat.m */,
 				BB00000100000000000000D8 /* XFSwitch.h */,
@@ -570,6 +582,8 @@
 				AA00000100000000000000ED /* XFLabelControl.h in Headers */,
 				AA00000100000000000000FB /* XFUploadControl.h in Headers */,
 				AA00000100000000000000C1 /* XFGroup.h in Headers */,
+				AA0000010000000000000111 /* XFHostNode.h in Headers */,
+				AA0000010000000000000113 /* XFTableModel.h in Headers */,
 				AA00000100000000000000C3 /* XFRepeat.h in Headers */,
 				AA00000100000000000000D9 /* XFSwitch.h in Headers */,
 				AA000001000000000000001D /* XFProcessor.h in Headers */,
@@ -751,6 +765,8 @@
 				AA00000100000000000000EE /* XFLabelControl.m in Sources */,
 				AA00000100000000000000FC /* XFUploadControl.m in Sources */,
 				AA00000100000000000000C0 /* XFGroup.m in Sources */,
+				AA0000010000000000000110 /* XFHostNode.m in Sources */,
+				AA0000010000000000000112 /* XFTableModel.m in Sources */,
 				AA00000100000000000000C2 /* XFRepeat.m in Sources */,
 				AA00000100000000000000D8 /* XFSwitch.m in Sources */,
 				AA000001000000000000000D /* XFProcessor.m in Sources */,

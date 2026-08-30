@@ -60,9 +60,9 @@
 
 - (XFBinding *)bindingFromChild:(NSString *)name
 {
-    NSXMLElement *el = [XFXML firstElementWithLocalName:name
+    NSXMLElement *el = [XFXML childElementWithLocalName:name
                                           namespaceURI:XFXFormsNamespaceURI
-                                                inNode:self.element];
+                                             ofElement:self.element];
     if (el == nil) {
         return nil;
     }
@@ -76,9 +76,9 @@
 
 - (NSString *)literalFromChild:(NSString *)name
 {
-    NSXMLElement *el = [XFXML firstElementWithLocalName:name
+    NSXMLElement *el = [XFXML childElementWithLocalName:name
                                           namespaceURI:XFXFormsNamespaceURI
-                                                inNode:self.element];
+                                             ofElement:self.element];
     if (el == nil) {
         return nil;
     }
@@ -222,10 +222,12 @@
 
 + (NSString *)labelForElement:(NSXMLElement *)element
 {
+    // only a direct child: a repeat/group must not borrow the label of the
+    // first control nested in its markup (G-20)
     NSXMLElement *label =
-        [XFXML firstElementWithLocalName:@"label"
+        [XFXML childElementWithLocalName:@"label"
                            namespaceURI:XFXFormsNamespaceURI
-                                 inNode:element];
+                              ofElement:element];
     return label ? [XFXML stringValueOfNode:label] : nil;
 }
 
@@ -415,6 +417,11 @@
 - (BOOL)isValueControl
 {
     return YES;
+}
+
+- (BOOL)isBlockLevel
+{
+    return NO;
 }
 
 - (void)refreshInContext:(XFExprContext *)context error:(NSError **)error

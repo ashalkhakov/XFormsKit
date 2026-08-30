@@ -12,6 +12,11 @@ NS_ASSUME_NONNULL_BEGIN
                                      namespaceURI:(NSString *)namespaceURI
                                            inNode:(NSXMLNode *)node;
 
+/// First DIRECT child element with the given name (label/hint/help/alert
+/// belong to their parent control only, XForms 1.1 8.3).
++ (nullable NSXMLElement *)childElementWithLocalName:(NSString *)localName
+                                        namespaceURI:(nullable NSString *)namespaceURI
+                                           ofElement:(NSXMLElement *)element;
 + (nullable NSXMLElement *)firstElementWithLocalName:(NSString *)localName
                                        namespaceURI:(NSString *)namespaceURI
                                              inNode:(NSXMLNode *)node;

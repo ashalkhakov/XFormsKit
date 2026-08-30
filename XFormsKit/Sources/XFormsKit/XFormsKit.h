@@ -32,6 +32,8 @@
 #import <XFormsKit/XFUploadControl.h>
 #import <XFormsKit/XFLabelControl.h>
 #import <XFormsKit/XFGroup.h>
+#import <XFormsKit/XFHostNode.h>
+#import <XFormsKit/XFTableModel.h>
 #import <XFormsKit/XFRepeat.h>
 #import <XFormsKit/XFSwitch.h>
 #import <XFormsKit/XFProcessor.h>

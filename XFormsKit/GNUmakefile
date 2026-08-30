@@ -48,6 +48,8 @@ XFormsKit_HEADER_FILES = \
 	XFUploadControl.h \
 	XFLabelControl.h \
 	XFGroup.h \
+	XFHostNode.h \
+	XFTableModel.h \
 	XFRepeat.h \
 	XFSwitch.h \
 	XFProcessor.h \
@@ -110,6 +112,8 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/XFUploadControl.m \
 	Sources/XFormsKit/XFLabelControl.m \
 	Sources/XFormsKit/XFGroup.m \
+	Sources/XFormsKit/XFHostNode.m \
+	Sources/XFormsKit/XFTableModel.m \
 	Sources/XFormsKit/XFRepeat.m \
 	Sources/XFormsKit/XFSwitch.m \
 	Sources/XFormsKit/XFProcessor.m \

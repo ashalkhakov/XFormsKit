@@ -8,6 +8,7 @@
 #import "XFNamespaces.h"
 #import "XFDeferredUpdates.h"
 #import "XFModel.h"
+#import "XFHostNode.h"
 
 @interface XFRepeatItem ()
 @property (nonatomic, strong) NSMutableArray<XFControl *> *mutableControls;
@@ -52,6 +53,11 @@
 - (BOOL)isValueControl
 {
     return NO;
+}
+
+- (BOOL)isBlockLevel
+{
+    return YES;
 }
 
 + (instancetype)repeatWithElement:(NSXMLElement *)element
@@ -141,21 +147,29 @@
     XFRepeatItem *item = [[XFRepeatItem alloc] init];
     item.node = node;
     item.position = position;
-    for (NSXMLElement *tmpl in self.templateElements) {
-        NSError *inner = nil;
-        XFControl *control = [XFControl controlWithElement:tmpl model:self.model ?: self.owner error:&inner];
-        if (control == nil) {
-            if (error) {
-                *error = inner;
-            }
-            return nil;
+    // XsltForms_repeat.build_ clones the whole content (host markup
+    // included) per node; controls at any depth are instantiated (G-20)
+    NSMutableArray<XFControl *> *found = [NSMutableArray array];
+    NSError *inner = nil;
+    NSArray *nodes = [XFHostNode hostNodesForChildrenOf:self.element
+                                                  model:self.model ?: self.owner
+                                               controls:found
+                                               existing:nil
+                                                  error:&inner];
+    if (nodes == nil) {
+        if (error) {
+            *error = inner;
         }
+        return nil;
+    }
+    for (XFControl *control in found) {
         control.parentControl = self;
         if ([control isKindOfClass:[XFRepeat class]] && self.model) {
             [self.model addRepeat:(XFRepeat *)control];
         }
         [item addControl:control];
     }
+    item.hostNodes = nodes;
     return item;
 }
 

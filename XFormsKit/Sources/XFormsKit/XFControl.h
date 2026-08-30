@@ -52,6 +52,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)refreshInContext:(XFExprContext *)context error:(NSError **)error;
 /// YES for controls that carry a value (not group/repeat/switch/trigger).
 - (BOOL)isValueControl;
+/// YES for controls laid out as a block of their own (group, repeat, switch,
+/// textarea, full-appearance selects); NO for controls that flow inline
+/// with surrounding host text like XSLTForms' `<span>` wrappers (G-20).
+- (BOOL)isBlockLevel;
 /// Apply MIPs from an arbitrary node (nil with a binding = non-relevant).
 - (void)applyMIPsFromNode:(nullable NSXMLNode *)node;
 /// YES for `value="..."` (xf:output) with no `ref` / `bind`.

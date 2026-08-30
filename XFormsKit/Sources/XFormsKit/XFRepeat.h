@@ -1,6 +1,7 @@
 #import <XFormsKit/XFControl.h>
 
 @class XFModel;
+@class XFHostNode;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -9,6 +10,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) NSUInteger position; // 1-based
 @property (nonatomic, assign) BOOL selected;
 @property (nonatomic, copy, readonly) NSArray<XFControl *> *controls;
+/// Host-markup tree of the item (the repeat's content instantiated for
+/// this node, G-20); `controls` are the controls found in it.
+@property (nonatomic, copy) NSArray<XFHostNode *> *hostNodes;
 - (void)addControl:(XFControl *)control;
 @end
 

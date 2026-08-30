@@ -69,11 +69,12 @@ Open any `.xhtml` file with **XFormsViewer** (File ▸ Open Sample lists them).
 Every sample above loads and lays out in XFormsViewer. Attributes and
 elements used by the samples that the engine does not yet interpret:
 
-- **Controls nested in host markup inside `xf:group` / `xf:repeat` /
-  `xf:case`** (`<p>`, `<td>`, `<div>`, `<svg>` …) are skipped: XFGroup only
-  instantiates direct `xf:` children, while the top-level collector recurses
-  through HTML. Affects incremental, books, writers, colors, gantt,
-  piechart, select-multi-col, wikipediasearch (they show 0–2 widgets)
+- **Host markup** (G-20): controls nested in `<p>`, `<div>`, `<td>`, `<span>` …
+  inside `xf:group` / `xf:repeat` / `xf:case` are instantiated and laid out
+  where the markup puts them (blocks stack, inline runs wrap, fieldset →
+  box, headings, pre, lists, br/hr); every `<table>` becomes a cell-based
+  NSTableView (repeat rows, thead titles, tfoot). Still pending: SVG
+  rendering (`[SVG]` placeholder)
 - `xf:include/@src` (flags.xhtml) — inline SVG include
 - `xf:itemset/@model` (select-from-file, select-multi-col) — itemset bound to another model
 - `xf:repeat/@from` / `@to` (gantt.xhtml) — numeric repeat (XSLTForms extension)
@@ -84,6 +85,4 @@ elements used by the samples that the engine does not yet interpret:
   styling has no AppKit equivalent; widths could map to a hint
 - `xf:submission` `xforms-submit-done` / `-error` handlers exist; `@mode`
   and `@serialization` are parsed but not all combinations are exercised
-- HTML markup around controls (`<p>`, `<fieldset>`, `<table>`, `<svg>`) is
-  ignored: XFFormView lays controls out top-down, so table/SVG based
-  samples (balance-table, gantt, piechart) render as flat lists
+- SVG based samples (gantt, piechart, flags) wait for the SVG phase of G-20

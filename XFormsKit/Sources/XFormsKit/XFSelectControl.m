@@ -43,6 +43,13 @@ typedef NS_ENUM(NSInteger, XFSelectTemplateKind) {
 
 @implementation XFSelectControl
 
+- (BOOL)isBlockLevel
+{
+    // full appearance = a list of check boxes / radio buttons (XSLTForms
+    // renders it as a block of <span>s per item)
+    return self.multiple || [self.appearance isEqualToString:@"full"];
+}
+
 static XFBinding *XFChildBinding(NSXMLElement *parent, NSString *local, NSError **error)
 {
     NSXMLElement *el = [XFXML firstElementWithLocalName:local

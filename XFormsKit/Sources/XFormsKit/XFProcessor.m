@@ -1,4 +1,5 @@
 #import "XFProcessor.h"
+#import "XFHostNode.h"
 #import "XFModel.h"
 #import "XFInstance.h"
 #import "XFBinding.h"
@@ -32,12 +33,99 @@
 
 @implementation XFProcessor
 
+NSString * const XFWhitespaceMarkerComment = @"<!--xf:ws-->";
+NSString * const XFWhitespaceMarkerText = @"xf:ws";
+
+NSString *XFHostXMLString(NSXMLDocument *document, NSUInteger options)
+{
+    NSString *xml = [document XMLStringWithOptions:options] ?: [document XMLString] ?: @"";
+    return [xml stringByReplacingOccurrencesOfString:XFWhitespaceMarkerComment withString:@""];
+}
+
+/// libxml2-based NSXMLDocument implementations drop whitespace-only text
+/// nodes in element-only content: GNUstep at parse time, Apple even hides
+/// them from `children` while still serialising them, whatever the
+/// options. The host tree needs them: "<b>is</b> <xf:output/>" must keep
+/// its space like the browser DOM XSLTForms works on (G-20). Inside <body>,
+/// every whitespace-only gap between two tags gets a marker comment
+/// appended (`<!--xf:ws-->`), which every parser keeps; XFHostNode turns
+/// the marker into the missing text node and XFHostXMLString() strips it
+/// again when the document is serialised. CDATA sections, comments and
+/// processing instructions are left alone.
+static NSData *XFPreserveBodyWhitespace(NSData *data)
+{
+    NSString *text = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    if (text == nil) {
+        return data;
+    }
+    NSRange bodyStart = [text rangeOfString:@"<body" options:NSCaseInsensitiveSearch];
+    if (bodyStart.location == NSNotFound) {
+        return data;
+    }
+    NSRange bodyEnd = [text rangeOfString:@"</body" options:NSCaseInsensitiveSearch | NSBackwardsSearch];
+    NSUInteger end = bodyEnd.location == NSNotFound ? text.length : bodyEnd.location;
+    NSMutableString *out = [NSMutableString stringWithCapacity:text.length + 256];
+    [out appendString:[text substringToIndex:bodyStart.location]];
+    NSUInteger i = bodyStart.location;
+    NSUInteger n = text.length;
+    BOOL changed = NO;
+    while (i < end) {
+        unichar c = [text characterAtIndex:i];
+        if (c == '<') {
+            // skip comments, CDATA sections and processing instructions whole
+            NSString *closer = nil;
+            if ([text compare:@"<!--" options:0 range:NSMakeRange(i, MIN(4, n - i))] == NSOrderedSame) {
+                closer = @"-->";
+            } else if ([text compare:@"<![CDATA[" options:0 range:NSMakeRange(i, MIN(9, n - i))] == NSOrderedSame) {
+                closer = @"]]>";
+            } else if (i + 1 < n && [text characterAtIndex:i + 1] == '?') {
+                closer = @"?>";
+            }
+            if (closer) {
+                NSRange r = [text rangeOfString:closer options:0 range:NSMakeRange(i, n - i)];
+                NSUInteger stop = r.location == NSNotFound ? n : NSMaxRange(r);
+                [out appendString:[text substringWithRange:NSMakeRange(i, stop - i)]];
+                i = stop;
+                continue;
+            }
+        }
+        if (c == '>') {
+            // a run of ASCII whitespace right after a tag and right before
+            // the next one is a whitespace-only text node
+            NSUInteger j = i + 1;
+            while (j < end) {
+                unichar w = [text characterAtIndex:j];
+                if (w != ' ' && w != '\t' && w != '\r' && w != '\n') {
+                    break;
+                }
+                j++;
+            }
+            if (j > i + 1 && j < n && [text characterAtIndex:j] == '<'
+                && [text compare:XFWhitespaceMarkerComment options:0
+                           range:NSMakeRange(j, MIN(XFWhitespaceMarkerComment.length, n - j))] != NSOrderedSame) {
+                [out appendString:[text substringWithRange:NSMakeRange(i, j - i)]];
+                [out appendString:XFWhitespaceMarkerComment];
+                changed = YES;
+                i = j;
+                continue;
+            }
+        }
+        [out appendFormat:@"%C", c];
+        i++;
+    }
+    if (!changed) {
+        return data;
+    }
+    [out appendString:[text substringFromIndex:MIN(i, n)]];
+    return [out dataUsingEncoding:NSUTF8StringEncoding] ?: data;
+}
+
 + (NSXMLDocument *)documentFromData:(NSData *)data error:(NSError **)error
 {
     NSError *inner = nil;
     NSXMLDocument *doc =
-        [[NSXMLDocument alloc] initWithData:data
-                                    options:0
+        [[NSXMLDocument alloc] initWithData:XFPreserveBodyWhitespace(data)
+                                    options:NSXMLNodePreserveWhitespace
                                       error:&inner];
     if (doc == nil) {
         if (error) {
@@ -136,9 +224,7 @@
     _model = model;
 
     NSMutableArray<XFControl *> *controls = [NSMutableArray array];
-    if (![self collectControlsUnder:document.rootElement
-                            into:controls
-                           error:&inner]) {
+    if (![self rebuildHostNodesReusing:nil into:controls error:&inner]) {
         if (error) {
             *error = inner;
         }
@@ -246,6 +332,52 @@
     }
 }
 
+/// The element whose content is the form's UI: the XHTML body when there
+/// is one, else the document element (XSLTForms' body template).
+- (NSXMLElement *)findHostRoot
+{
+    NSXMLElement *root = self.hostDocument.rootElement;
+    for (NSXMLNode *c in [root children]) {
+        if ([c kind] == NSXMLElementKind && [[[c localName] lowercaseString] isEqualToString:@"body"]) {
+            return (NSXMLElement *)c;
+        }
+    }
+    return root;
+}
+
+- (BOOL)rebuildHostNodesReusing:(NSArray<XFControl *> *)existing
+                           into:(NSMutableArray<XFControl *> *)controls
+                          error:(NSError **)error
+{
+    NSXMLElement *hostRoot = [self findHostRoot];
+    NSArray *nodes = [XFHostNode hostNodesForChildrenOf:hostRoot
+                                                  model:self.model
+                                               controls:controls
+                                               existing:existing ? [XFHostNode controlMapFor:existing] : nil
+                                                  error:error];
+    if (nodes == nil) {
+        return NO;
+    }
+    for (XFControl *control in controls) {
+        if (control.owner == nil) {
+            control.owner = self;
+        }
+    }
+    _hostRootElement = hostRoot;
+    _hostNodes = nodes;
+    return YES;
+}
+
+- (BOOL)rebuildHostNodes:(NSError **)error
+{
+    NSMutableArray<XFControl *> *controls = [NSMutableArray array];
+    if (![self rebuildHostNodesReusing:self.controls into:controls error:error]) {
+        return NO;
+    }
+    self.controls = controls;
+    return YES;
+}
+
 - (BOOL)collectControlsUnder:(NSXMLNode *)node
                         into:(NSMutableArray<XFControl *> *)controls
                        error:(NSError **)error
@@ -280,10 +412,12 @@
 
 - (NSString *)labelForElement:(NSXMLElement *)element
 {
+    // only a direct child: a repeat/group must not borrow the label of the
+    // first control nested in its markup (G-20)
     NSXMLElement *label =
-        [XFXML firstElementWithLocalName:@"label"
+        [XFXML childElementWithLocalName:@"label"
                            namespaceURI:XFXFormsNamespaceURI
-                                 inNode:element];
+                              ofElement:element];
     return label ? [XFXML stringValueOfNode:label] : nil;
 }
 
@@ -322,6 +456,18 @@
     if ([control isKindOfClass:[XFGroup class]]) {
         for (XFControl *child in [(XFGroup *)control children]) {
             [self collectControlsOfClass:cls from:child into:out];
+        }
+    } else if ([control isKindOfClass:[XFRepeat class]]) {
+        for (XFRepeatItem *item in [(XFRepeat *)control items]) {
+            for (XFControl *child in item.controls) {
+                [self collectControlsOfClass:cls from:child into:out];
+            }
+        }
+    } else if ([control isKindOfClass:[XFSwitch class]]) {
+        for (XFCase *caze in [(XFSwitch *)control cases]) {
+            for (XFControl *child in caze.children) {
+                [self collectControlsOfClass:cls from:child into:out];
+            }
         }
     }
 }
@@ -589,8 +735,10 @@
     XFControl *parent = [self parentControlForElement:element];
     if ([parent isKindOfClass:[XFGroup class]]) {
         [(XFGroup *)parent addChild:control];
+        [(XFGroup *)parent rebuildHostNodesWithError:NULL];
     } else if ([parent isKindOfClass:[XFCase class]]) {
         [(XFCase *)parent addChild:control];
+        [(XFCase *)parent rebuildHostNodesWithError:NULL];
     } else if ([parent isKindOfClass:[XFRepeat class]]) {
         [(XFRepeat *)parent reloadTemplates];
         [(XFRepeat *)parent rebuildItemsWithContext:[self evaluationContext] error:NULL];
@@ -598,6 +746,7 @@
         NSMutableArray *list = [self.controls mutableCopy] ?: [NSMutableArray array];
         [list addObject:control];
         self.controls = list;
+        [self rebuildHostNodes:NULL];
     }
     [self registerControlTree:control];
     [[XFXMLEvents sharedEvents] installListenersUnder:element inDocument:self.hostDocument];
@@ -633,8 +782,10 @@
     XFControl *parent = control.parentControl ?: [self parentControlForElement:element];
     if ([parent isKindOfClass:[XFGroup class]]) {
         [(XFGroup *)parent removeChild:control];
+        [(XFGroup *)parent rebuildHostNodesWithError:NULL];
     } else if ([parent isKindOfClass:[XFCase class]]) {
         [(XFCase *)parent removeChild:control];
+        [(XFCase *)parent rebuildHostNodesWithError:NULL];
     } else if ([parent isKindOfClass:[XFRepeat class]]) {
         [(XFRepeat *)parent reloadTemplates];
         [(XFRepeat *)parent rebuildItemsWithContext:[self evaluationContext] error:NULL];
@@ -642,6 +793,9 @@
         NSMutableArray *list = [self.controls mutableCopy] ?: [NSMutableArray array];
         [self removeControl:control fromList:list];
         self.controls = list;
+        [self rebuildHostNodes:NULL];
+    } else {
+        [self rebuildHostNodes:NULL];
     }
     if ([control isKindOfClass:[XFRepeat class]]) {
         // drop from model.repeats is best-effort; next rebuild is fine

@@ -3,9 +3,11 @@
 #import "XFNamespaces.h"
 #import "XFXMLEvents.h"
 #import "XFExprContext.h"
+#import "XFHostNode.h"
 
 @interface XFCase ()
 @property (nonatomic, strong) NSMutableArray<XFControl *> *mutableChildren;
+@property (nonatomic, copy, readwrite) NSArray<XFHostNode *> *hostNodes;
 @end
 
 @implementation XFCase
@@ -13,6 +15,11 @@
 - (BOOL)isValueControl
 {
     return NO;
+}
+
+- (BOOL)isBlockLevel
+{
+    return YES;
 }
 
 - (instancetype)initWithElement:(NSXMLElement *)element
@@ -50,6 +57,30 @@
     }
 }
 
+- (BOOL)rebuildHostNodesWithError:(NSError **)error
+{
+    NSMutableArray<XFControl *> *found = [NSMutableArray array];
+    NSArray *nodes = [XFHostNode hostNodesForChildrenOf:self.element
+                                                  model:self.owner
+                                               controls:found
+                                               existing:[XFHostNode controlMapFor:self.mutableChildren]
+                                                  error:error];
+    if (nodes == nil) {
+        return NO;
+    }
+    NSMutableArray *children = [NSMutableArray array];
+    for (XFControl *control in found) {
+        control.parentControl = self;
+        if (control.owner == nil) {
+            control.owner = self.owner;
+        }
+        [children addObject:control];
+    }
+    self.mutableChildren = children;
+    self.hostNodes = nodes;
+    return YES;
+}
+
 - (void)refreshWithContext:(XFExprContext *)context error:(NSError **)error
 {
     if (!self.selected) {
@@ -74,6 +105,11 @@
     return NO;
 }
 
+- (BOOL)isBlockLevel
+{
+    return YES;
+}
+
 + (instancetype)switchWithElement:(NSXMLElement *)element
                             model:(id)model
                             error:(NSError **)error
@@ -92,23 +128,9 @@
         XFCase *caze = [[XFCase alloc] initWithElement:el binding:nil label:[XFControl labelForElement:el]];
         caze.owner = model;
         caze.parentControl = sw;
-        for (NSXMLNode *gc in [el children]) {
-            if ([gc kind] != NSXMLElementKind) {
-                continue;
-            }
-            NSXMLElement *gel = (NSXMLElement *)gc;
-            if (![XFControl isControlElement:gel]) {
-                continue;
-            }
-            NSError *inner = nil;
-            XFControl *control = [XFControl controlWithElement:gel model:model error:&inner];
-            if (control == nil) {
-                if (error) {
-                    *error = inner;
-                }
-                return nil;
-            }
-            [caze addChild:control];
+        // case.xsl copies host markup: controls at any depth (G-20)
+        if (![caze rebuildHostNodesWithError:error]) {
+            return nil;
         }
         [sw.mutableCases addObject:caze];
     }

@@ -13,6 +13,15 @@
 @class XFRepeat;
 @class NSXMLDocument;
 
+@class XFHostNode;
+
+/// Serialise the host document without the whitespace marker comments the
+/// parser pre-pass adds inside <body> (see XFProcessor documentFromData:).
+FOUNDATION_EXPORT NSString *XFHostXMLString(NSXMLDocument *document, NSUInteger options);
+/// The marker comment / its text (`<!--xf:ws-->`).
+FOUNDATION_EXPORT NSString * const XFWhitespaceMarkerComment;
+FOUNDATION_EXPORT NSString * const XFWhitespaceMarkerText;
+
 NS_ASSUME_NONNULL_BEGIN
 
 @interface XFProcessor : NSObject <XFModelOwner>
@@ -22,6 +31,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) XFModel *model;
 @property (nonatomic, copy, readonly) NSArray<XFModel *> *models;
 @property (nonatomic, copy, readonly) NSArray<XFControl *> *controls;
+/// Host-markup tree of the document body (G-20): what the UI lays out.
+/// `controls` are the top-level controls found in it, document order.
+@property (nonatomic, copy, readonly) NSArray<XFHostNode *> *hostNodes;
+/// The element the host tree was built from (`body`, else the root).
+@property (nonatomic, strong, readonly, nullable) NSXMLElement *hostRootElement;
 @property (nonatomic, copy, readonly) NSArray<XFInputControl *> *inputControls;
 @property (nonatomic, copy, readonly) NSArray<XFOutputControl *> *outputControls;
 @property (nonatomic, copy, readonly) NSArray<XFAbstractAction *> *actions;
