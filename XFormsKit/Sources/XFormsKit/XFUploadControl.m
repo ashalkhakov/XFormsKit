@@ -1,3 +1,5 @@
+#import <Foundation/Foundation.h>
+#import <dispatch/dispatch.h>
 #import "XFUploadControl.h"
 #import "XFBinding.h"
 #import "XFExprContext.h"

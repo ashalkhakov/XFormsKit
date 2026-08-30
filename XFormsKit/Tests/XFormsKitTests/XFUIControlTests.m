@@ -197,7 +197,7 @@
     XFRangeControl *r = [self firstControlOfClass:[XFRangeControl class] in:p];
     XCTAssertEqual(r.start, 0);
     XCTAssertEqual(r.end, 10);
-    XCTAssertEqualWithAccuracy(r.numericValue, 3, 0.01);
+    XCTAssertEqualWithAccuracy(r.numericValue, 3.0, 0.01);
     XCTAssertTrue([r commitNumericValue:8 error:&error]);
     XCTAssertEqualObjects(r.stringValue, @"8");
 }

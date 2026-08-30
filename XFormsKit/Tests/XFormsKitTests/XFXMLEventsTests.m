@@ -195,7 +195,7 @@
     XCTAssertTrue(sawReady, @"ev:event on xf:action observes the parent model");
     XCTAssertTrue(sawActivate, @"ev:listener should attach DOMActivate capture on model");
 
-    XFAction *ready = [processor actionWithIdentifier:@"ready-handler"];
+    XFAction *ready = (XFAction *)[processor actionWithIdentifier:@"ready-handler"];
     XCTAssertNotNil(ready);
     XCTAssertTrue([ready wasInvokedForEvent:@"xforms-ready"],
                   @"xforms-ready during init should run the document action: %@",
@@ -293,8 +293,8 @@
     XFProcessor *processor = [XFProcessor processorWithXMLString:xml error:&error];
     XCTAssertNotNil(processor, @"%@", error);
 
-    XFAction *cap = [processor actionWithIdentifier:@"capture-stop"];
-    XFAction *ready = [processor actionWithIdentifier:@"on-ready"];
+    XFAction *cap = (XFAction *)[processor actionWithIdentifier:@"capture-stop"];
+    XFAction *ready = (XFAction *)[processor actionWithIdentifier:@"on-ready"];
     XCTAssertTrue([cap wasInvokedForEvent:@"xforms-ready"]);
     XCTAssertEqualObjects(cap.lastEvent.phase, @"capture");
     XCTAssertFalse([ready wasInvokedForEvent:@"xforms-ready"],
@@ -317,7 +317,7 @@
     XFProcessor *processor = [XFProcessor processorWithXMLString:xml error:&error];
     XCTAssertNotNil(processor, @"%@", error);
 
-    XFAction *handler = [processor actionWithIdentifier:@"ping-handler"];
+    XFAction *handler = (XFAction *)[processor actionWithIdentifier:@"ping-handler"];
     XCTAssertEqual(handler.invocationCount, (NSInteger)0);
     [XFXMLEvents dispatch:processor.model name:@"ping"];
     XCTAssertTrue([handler wasInvokedForEvent:@"ping"]);
@@ -344,9 +344,9 @@
     XFProcessor *processor = [XFProcessor processorWithXMLString:xml error:&error];
     XCTAssertNotNil(processor, @"%@", error);
 
-    XFAction *changed = [processor actionWithIdentifier:@"on-changed"];
-    XFAction *recalc = [processor actionWithIdentifier:@"on-recalculate"];
-    XFAction *refresh = [processor actionWithIdentifier:@"on-refresh"];
+    XFAction *changed = (XFAction *)[processor actionWithIdentifier:@"on-changed"];
+    XFAction *recalc = (XFAction *)[processor actionWithIdentifier:@"on-recalculate"];
+    XFAction *refresh = (XFAction *)[processor actionWithIdentifier:@"on-refresh"];
     NSInteger recalcAtInit = recalc.invocationCount;
     NSInteger refreshAtInit = refresh.invocationCount;
     XCTAssertEqual(changed.invocationCount, (NSInteger)0);

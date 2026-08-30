@@ -1,3 +1,5 @@
+#import <Foundation/Foundation.h>
+#import <dispatch/dispatch.h>
 #import "XFXPathPriv.h"
 #import "XFXPathValue.h"
 #import "XFErrors.h"
@@ -46,7 +48,7 @@
     return NO;
 }
 
-- (NSError *)error:(NSString *)message
+- (NSError *)syntaxError:(NSString *)message
 {
     return [NSError errorWithDomain:XFErrorDomain
                                code:XFErrorXPathSyntax
@@ -68,7 +70,7 @@
         return nil;
     }
     if (_token.kind != XFXPathTokenEOF) {
-        local = [self error:[NSString stringWithFormat:@"unexpected token '%@'", _token.text]];
+        local = [self syntaxError:[NSString stringWithFormat:@"unexpected token '%@'", _token.text]];
         if (error) *error = local;
         return nil;
     }
@@ -231,7 +233,7 @@
     if (_token.kind == XFXPathTokenDollar) {
         [self advance];
         if (_token.kind != XFXPathTokenName) {
-            *error = [self error:@"expected variable name"];
+            *error = [self syntaxError:@"expected variable name"];
             return nil;
         }
         XFVarRef *v = [XFVarRef name:_token.text];
@@ -242,7 +244,7 @@
         [self advance];
         XFExpr *inner = [self parseOr:error];
         if (![self accept:XFXPathTokenRParen]) {
-            *error = [self error:@"expected ')'"];
+            *error = [self syntaxError:@"expected ')'"];
             return nil;
         }
         return inner;
@@ -250,7 +252,7 @@
     if (_token.kind == XFXPathTokenName && [self peekToken].kind == XFXPathTokenLParen) {
         return [self parseFunction:error];
     }
-    *error = [self error:@"expected primary expression"];
+    *error = [self syntaxError:@"expected primary expression"];
     return nil;
 }
 
@@ -259,7 +261,7 @@
     NSString *name = _token.text;
     [self advance];
     if (![self accept:XFXPathTokenLParen]) {
-        *error = [self error:[NSString stringWithFormat:@"expected '(' after %@", name]];
+        *error = [self syntaxError:[NSString stringWithFormat:@"expected '(' after %@", name]];
         return nil;
     }
     NSMutableArray *args = [NSMutableArray array];
@@ -276,7 +278,7 @@
         }
     }
     if (![self accept:XFXPathTokenRParen]) {
-        *error = [self error:@"expected ')' after function arguments"];
+        *error = [self syntaxError:@"expected ')' after function arguments"];
         return nil;
     }
     return [XFFunctionCallExpr name:name args:args];
@@ -386,7 +388,7 @@
     } else if (_token.kind == XFXPathTokenName && [self peekToken].kind == XFXPathTokenColonColon) {
         axis = [self axisForName:_token.text];
         if (axis == nil) {
-            *error = [self error:[NSString stringWithFormat:@"unknown axis %@", _token.text]];
+            *error = [self syntaxError:[NSString stringWithFormat:@"unknown axis %@", _token.text]];
             return nil;
         }
         [self advance];
@@ -434,7 +436,7 @@
         return [[XFNodeTestAny alloc] init];
     }
     if (_token.kind != XFXPathTokenName) {
-        *error = [self error:@"expected node test"];
+        *error = [self syntaxError:@"expected node test"];
         return nil;
     }
     NSString *name = _token.text;
@@ -452,7 +454,7 @@
             [self advance];
         }
         if (![self accept:XFXPathTokenRParen]) {
-            *error = [self error:@"expected ')' after node test"];
+            *error = [self syntaxError:@"expected ')' after node test"];
             return nil;
         }
         if ([name isEqualToString:@"node"]) {
@@ -487,7 +489,7 @@
             return nil;
         }
         if (![self accept:XFXPathTokenRBrack]) {
-            *error = [self error:@"expected ']'"];
+            *error = [self syntaxError:@"expected ']'"];
             return nil;
         }
         [preds addObject:pred];

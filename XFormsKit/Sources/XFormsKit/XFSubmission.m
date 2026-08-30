@@ -1,3 +1,5 @@
+#import <Foundation/Foundation.h>
+#import <dispatch/dispatch.h>
 #import "XFSubmission.h"
 #import "XFSubmissionTransport.h"
 #import "XFModel.h"

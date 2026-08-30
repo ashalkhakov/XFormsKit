@@ -892,7 +892,8 @@
     }
     if ([item.node kind] != NSXMLElementKind) {
         NSXMLNode *parent = [item.node parent];
-        [parent removeChildAtIndex:[item.node index]];
+        // parent is an NSXMLElement or NSXMLDocument; both implement this.
+        [(NSXMLElement *)parent removeChildAtIndex:[item.node index]];
         self.restoreIdentifier = nil;
         [self refreshLiveKeepingNode:parent];
         return;
@@ -905,7 +906,7 @@
     }
     NSXMLNode *parent = [el parent];
     [[[self formDocument] processor] detachElement:el];
-    [parent removeChildAtIndex:[el index]];
+    [(NSXMLElement *)parent removeChildAtIndex:[el index]];
     self.selectedItem = nil;
     self.restoreIdentifier = nil;
     [self refreshLiveKeepingNode:parent];
@@ -927,7 +928,7 @@
     } else {
         [copy addAttribute:[NSXMLNode attributeWithName:@"id" stringValue:ident]];
     }
-    [[el parent] insertChild:copy atIndex:[el index] + 1];
+    [(NSXMLElement *)[el parent] insertChild:copy atIndex:[el index] + 1];
     self.restoreIdentifier = ident;
     [[[self formDocument] processor] attachElement:copy error:NULL];
     [self refreshLiveKeepingNode:copy];

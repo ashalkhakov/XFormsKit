@@ -135,6 +135,7 @@ XFormsKit_OBJC_FILES = \
 
 XFormsKit_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath
 XFormsKit_OBJCFLAGS += -fobjc-arc -Wall -Wextra
+XFormsKit_LIBRARIES_DEPEND_UPON += -ldispatch
 
 XFormsKitTests_NEEDS_GUI = yes
 XFormsKitTests_OBJC_FILES = \
@@ -164,6 +165,7 @@ include $(GNUSTEP_MAKEFILES)/bundle.make
 
 check:: all
 	@if command -v xctest >/dev/null 2>&1; then \
+	  LD_LIBRARY_PATH="$(CURDIR)/XFormsKit.framework/Versions/Current:$$LD_LIBRARY_PATH" \
 	  xctest ./XFormsKitTests.bundle; \
 	else \
 	  echo "xctest not on PATH. Install gnustep/tools-xctest and re-run make check."; \

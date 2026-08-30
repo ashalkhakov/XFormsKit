@@ -476,7 +476,7 @@ static const void *kXFElementKey   = &kXFElementKey;
         if ([xf isKindOfClass:[XFInstance class]]) {
             [(XFInstance *)xf revalidate];
         } else if ([xf isKindOfClass:[XFModel class]]) {
-            [(XFModel *)xf recalculate];
+            [(XFModel *)xf revalidate];
         }
     }];
     [self define:@"xforms-reset" bubbles:YES cancelable:YES defaultAction:^(id xf, XFEvent *ev) {

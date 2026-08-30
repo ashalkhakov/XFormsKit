@@ -15,7 +15,7 @@
 @property (nonatomic, copy, readwrite) NSArray<XFInstance *> *instances;
 @property (nonatomic, copy, readwrite) NSArray<XFSubmission *> *submissions;
 @property (nonatomic, strong) NSMutableArray<XFRepeat *> *mutableRepeats;
-@property (nonatomic, strong, readwrite) NSMutableArray<XFBind *> *binds;
+@property (nonatomic, strong) NSMutableArray<XFBind *> *mutableBinds;
 @property (nonatomic, strong, readwrite) NSMutableArray<NSXMLNode *> *nodesChanged;
 @property (nonatomic, strong, readwrite) NSMutableArray<NSXMLNode *> *pendingNodesChanged;
 @end
@@ -29,7 +29,7 @@
     model.element = modelElement;
     NSXMLNode *idAttr = [modelElement attributeForName:@"id"];
     model.identifier = idAttr ? [idAttr stringValue] : nil;
-    model.binds = [NSMutableArray array];
+    model.mutableBinds = [NSMutableArray array];
     model.mutableRepeats = [NSMutableArray array];
     model.nodesChanged = [NSMutableArray array];
     model.pendingNodesChanged = [NSMutableArray array];
@@ -104,7 +104,7 @@
 - (void)addBind:(XFBind *)bind
 {
     if (bind) {
-        [(NSMutableArray *)self.binds addObject:bind];
+        [self.mutableBinds addObject:bind];
     }
 }
 
@@ -162,7 +162,7 @@
                 [keep addObject:bind];
             }
         }
-        self.binds = keep;
+        self.mutableBinds = keep;
     } else if ([name isEqualToString:@"submission"]) {
         NSMutableArray *keep = [NSMutableArray array];
         for (XFSubmission *sub in self.submissions) {
@@ -232,6 +232,11 @@
         }
     }
     return nil;
+}
+
+- (NSArray<XFBind *> *)binds
+{
+    return [self.mutableBinds copy] ?: @[];
 }
 
 - (NSArray<XFRepeat *> *)repeats

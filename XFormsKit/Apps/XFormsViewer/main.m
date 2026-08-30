@@ -207,9 +207,9 @@ int main(int argc, const char *argv[])
         [NSApplication sharedApplication];
         XFViewerApp *app = [[XFViewerApp alloc] init];
         [NSApp setDelegate:(id)app];
-        if ([NSApp respondsToSelector:@selector(setActivationPolicy:)]) {
-            [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-        }
+#if !defined(GNUSTEP)
+        [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+#endif
         [NSApp activateIgnoringOtherApps:YES];
         return NSApplicationMain(argc, argv);
     }

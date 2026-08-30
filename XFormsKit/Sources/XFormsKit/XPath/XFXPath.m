@@ -1,3 +1,5 @@
+#import <Foundation/Foundation.h>
+#import <dispatch/dispatch.h>
 #import "XFXPath.h"
 #import "XFXPathPriv.h"
 #import "XFXPathValue.h"

@@ -1,3 +1,5 @@
+#import <Foundation/Foundation.h>
+#import <dispatch/dispatch.h>
 #import "XFXPathPriv.h"
 #import "XFModel.h"
 #import "XFInstance.h"

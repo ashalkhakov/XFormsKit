@@ -3,6 +3,12 @@
 #import <Foundation/NSXMLDocument.h>
 
 @interface XFXPathTests : XCTestCase
+{
+    // Keep the document alive: NSXMLNode does not retain its parent, so on
+    // GNUstep a root element whose document has been released loses the
+    // document (and ancestor axis / absolute paths).
+    NSXMLDocument *_doc;
+}
 @end
 
 @implementation XFXPathTests
@@ -10,7 +16,8 @@
 - (NSXMLDocument *)dataDocument
 {
     NSString *xml = @"<data xmlns=\"\"><name>World</name><count>3</count></data>";
-    return [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
+    _doc = [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
+    return _doc;
 }
 
 - (XFExprContext *)context

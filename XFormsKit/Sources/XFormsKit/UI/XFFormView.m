@@ -411,7 +411,6 @@ static const CGFloat kFieldWidth = 280.0;
         [view removeFromSuperview];
     }
     [self.widgets removeAllObjects];
-    CGFloat cursor = kMargin;
     // Layout top-down in view coords after we know height; first measure.
     NSMutableArray *top = [NSMutableArray array];
     for (XFControl *c in self.processor.controls) {

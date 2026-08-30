@@ -72,9 +72,12 @@
                       extra:nil error:&error];
     XCTAssertNotNil(p, @"%@", error);
     NSXMLElement *root = [[p.model defaultInstance] documentElement];
-    XCTAssertEqual([root elementsForName:@"proto"].count, (NSUInteger)1);
+    // nodeset "item" is empty, so the origin (proto) is cloned as a child of
+    // the context node /data (XForms 1.1 10.3, XsltForms_insert). The clone
+    // keeps its name, so there are now two proto elements and still no item.
+    XCTAssertEqual([root elementsForName:@"proto"].count, (NSUInteger)2);
     XCTAssertEqual([root elementsForName:@"item"].count, (NSUInteger)0);
-    // origin proto cloned into context /data because nodeset item is empty
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"proto"][1]], @"X");
     XCTAssertGreaterThanOrEqual([root children].count, (NSUInteger)2);
 }
 

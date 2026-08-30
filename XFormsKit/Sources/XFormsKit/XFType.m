@@ -1,3 +1,5 @@
+#import <Foundation/Foundation.h>
+#import <dispatch/dispatch.h>
 #import "XFType.h"
 #import "XFNamespaces.h"
 #include <limits.h>
