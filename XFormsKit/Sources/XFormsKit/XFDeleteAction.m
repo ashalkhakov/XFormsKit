@@ -129,7 +129,13 @@
             NSXMLElement *el = (NSXMLElement *)parent;
             if ([el isKindOfClass:[NSXMLElement class]] || [parent kind] == NSXMLDocumentKind) {
                 NSUInteger idx = [node index];
-                [parent removeChildAtIndex:idx];
+                if ([parent kind] == NSXMLDocumentKind) {
+                    [(NSXMLDocument *)parent removeChildAtIndex:idx];
+                } else if ([parent kind] == NSXMLElementKind) {
+                    [(NSXMLElement *)parent removeChildAtIndex:idx];
+                } else {
+                    NSLog(@"Unhandled parent kind: %lu", (unsigned long)[parent kind]);
+                }
                 [deleted addObject:node];
             }
         }

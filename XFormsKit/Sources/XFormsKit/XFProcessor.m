@@ -134,7 +134,6 @@
     _models = [models copy];
     XFModel *model = models.firstObject;
     _model = model;
-    }
 
     NSMutableArray<XFControl *> *controls = [NSMutableArray array];
     if (![self collectControlsUnder:document.rootElement

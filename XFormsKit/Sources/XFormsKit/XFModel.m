@@ -104,7 +104,7 @@
 - (void)addBind:(XFBind *)bind
 {
     if (bind) {
-        [self.binds addObject:bind];
+        [(NSMutableArray *)self.binds addObject:bind];
     }
 }
 
@@ -306,7 +306,7 @@
     if (self.building) {
         self.pendingRebuild = rebuilded;
     } else {
-        self.rebuilded = rebuilded;
+        _rebuilded = rebuilded;
     }
 }
 

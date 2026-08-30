@@ -1,6 +1,6 @@
 #import <Foundation/Foundation.h>
+#import "XFModel.h"
 
-@class XFModel;
 @class XFInstance;
 @class XFControl;
 @class XFInputControl;

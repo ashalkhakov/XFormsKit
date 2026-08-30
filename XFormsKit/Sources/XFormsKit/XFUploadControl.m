@@ -8,6 +8,7 @@
 #import "XFType.h"
 #import "XFErrors.h"
 #import "XFXMLEvents.h"
+#import "XFInstance.h"
 
 @implementation XFUploadControl
 

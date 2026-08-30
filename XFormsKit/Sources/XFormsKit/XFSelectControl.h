@@ -6,7 +6,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, nullable) NSString *label;
 @property (nonatomic, copy, nullable) NSString *value;
 @property (nonatomic, copy, nullable) NSString *groupLabel;
-@property (nonatomic, strong, nullable) NSXMLNode *copyNode;
+@property (nonatomic, strong, nullable) NSXMLNode *copiedNode;
 @property (nonatomic, strong, nullable) NSXMLNode *sourceNode;
 @property (nonatomic, assign) BOOL selected;
 @property (nonatomic, assign, readonly) BOOL usesCopy;

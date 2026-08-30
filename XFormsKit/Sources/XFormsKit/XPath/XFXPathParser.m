@@ -62,13 +62,14 @@
 - (XFExpr *)parseExpression:(NSError **)error
 {
     NSError *local = nil;
-    NSError **err = error ? error : &local;
-    XFExpr *expr = [self parseOr:err];
-    if (*err) {
+    XFExpr *expr = [self parseOr:&local];
+    if (local) {
+        if (error) *error = local;
         return nil;
     }
     if (_token.kind != XFXPathTokenEOF) {
-        *err = [self error:[NSString stringWithFormat:@"unexpected token '%@'", _token.text]];
+        local = [self error:[NSString stringWithFormat:@"unexpected token '%@'", _token.text]];
+        if (error) *error = local;
         return nil;
     }
     return expr;

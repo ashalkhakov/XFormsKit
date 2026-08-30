@@ -4,6 +4,11 @@
 #import "XFNamespaces.h"
 #import "XFXML.h"
 #import "XFDeferredUpdates.h"
+#import "XFControl.h"
+#import "XFInstance.h"
+#import "XFModel.h"
+#import "XFBind.h"
+#import "XFSubmission.h"
 #import <Foundation/NSXMLElement.h>
 #import <Foundation/NSXMLDocument.h>
 #import <objc/runtime.h>
@@ -443,8 +448,10 @@ static const void *kXFElementKey   = &kXFElementKey;
 {
     [self define:@"xforms-model-construct" bubbles:YES cancelable:NO defaultAction:^(id xf, XFEvent *ev) {
         (void)ev;
-        if ([xf respondsToSelector:@selector(construct)]) {
-            [xf construct];
+        if ([xf isKindOfClass:[XFInstance class]]) {
+            [(XFInstance *)xf construct];
+        } else if ([xf isKindOfClass:[XFModel class]]) {
+            [(XFModel *)xf construct];
         }
     }];
     [self define:@"xforms-model-construct-done" bubbles:YES cancelable:NO defaultAction:nil];
@@ -452,32 +459,40 @@ static const void *kXFElementKey   = &kXFElementKey;
     [self define:@"xforms-model-destruct" bubbles:YES cancelable:NO defaultAction:nil];
     [self define:@"xforms-rebuild" bubbles:YES cancelable:YES defaultAction:^(id xf, XFEvent *ev) {
         (void)ev;
-        if ([xf respondsToSelector:@selector(rebuild)]) {
-            [xf rebuild];
+        if ([xf isKindOfClass:[XFModel class]]) {
+            [(XFModel *)xf rebuild];
         }
     }];
     [self define:@"xforms-recalculate" bubbles:YES cancelable:YES defaultAction:^(id xf, XFEvent *ev) {
         (void)ev;
-        if ([xf respondsToSelector:@selector(recalculate)]) {
-            [xf recalculate];
+        if ([xf isKindOfClass:[XFBind class]]) {
+            [(XFBind *)xf recalculate];
+        } else if ([xf isKindOfClass:[XFModel class]]) {
+            [(XFModel *)xf recalculate];
         }
     }];
     [self define:@"xforms-revalidate" bubbles:YES cancelable:YES defaultAction:^(id xf, XFEvent *ev) {
         (void)ev;
-        if ([xf respondsToSelector:@selector(revalidate)]) {
-            [xf revalidate];
+        if ([xf isKindOfClass:[XFInstance class]]) {
+            [(XFInstance *)xf revalidate];
+        } else if ([xf isKindOfClass:[XFModel class]]) {
+            [(XFModel *)xf recalculate];
         }
     }];
     [self define:@"xforms-reset" bubbles:YES cancelable:YES defaultAction:^(id xf, XFEvent *ev) {
         (void)ev;
-        if ([xf respondsToSelector:@selector(reset)]) {
-            [xf reset];
+        if ([xf isKindOfClass:[XFInstance class]]) {
+            [(XFInstance *)xf reset];
+        } else if ([xf isKindOfClass:[XFModel class]]) {
+            [(XFModel *)xf reset];
+        } else if ([xf isKindOfClass:[XFDeferredUpdates class]]) {
+            [(XFDeferredUpdates *)xf reset];
         }
     }];
     [self define:@"xforms-submit" bubbles:YES cancelable:YES defaultAction:^(id xf, XFEvent *ev) {
         (void)ev;
-        if ([xf respondsToSelector:@selector(submit)]) {
-            [xf submit];
+        if ([xf isKindOfClass:[XFSubmission class]]) {
+            [(XFSubmission *)xf submit];
         }
     }];
     [self define:@"xforms-submit-serialize" bubbles:YES cancelable:NO defaultAction:nil];
@@ -490,7 +505,7 @@ static const void *kXFElementKey   = &kXFElementKey;
     [self define:@"xforms-help" bubbles:YES cancelable:YES defaultAction:^(id xf, XFEvent *ev) {
         (void)ev;
         if ([xf respondsToSelector:@selector(help)]) {
-            NSString *text = [xf help];
+            NSString *text = [(XFControl *)xf help];
             if ([text isKindOfClass:[NSString class]] && text.length) {
                 [[XFDeferredUpdates sharedUpdates].messages addObject:text];
             }

@@ -22,7 +22,7 @@ typedef NS_ENUM(NSInteger, XFSelectTemplateKind) {
 @property (nonatomic, strong, nullable) XFBinding *nodeset;
 @property (nonatomic, strong, nullable) XFBinding *labelBinding;
 @property (nonatomic, strong, nullable) XFBinding *valueBinding;
-@property (nonatomic, strong, nullable) XFBinding *copyBinding;
+@property (nonatomic, strong, nullable) XFBinding *copiedBinding;
 @property (nonatomic, copy, nullable) NSString *labelLiteral;
 @property (nonatomic, copy, nullable) NSString *valueLiteral;
 @property (nonatomic, copy) NSArray<XFSelectTemplate *> *children;
@@ -32,7 +32,7 @@ typedef NS_ENUM(NSInteger, XFSelectTemplateKind) {
 @end
 
 @implementation XFItem
-- (BOOL)usesCopy { return self.copyNode != nil; }
+- (BOOL)usesCopy { return self.copiedNode != nil; }
 @end
 
 @interface XFSelectControl ()
@@ -85,7 +85,7 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
         t.kind = XFSelectTemplateItem;
         t.labelBinding = XFChildBinding(element, @"label", &inner);
         t.valueBinding = XFChildBinding(element, @"value", &inner);
-        t.copyBinding = XFChildBinding(element, @"copy", &inner);
+        t.copiedBinding = XFChildBinding(element, @"copy", &inner);
         t.labelLiteral = XFChildLiteral(element, @"label");
         t.valueLiteral = XFChildLiteral(element, @"value");
     } else if ([XFXML element:element hasLocalName:@"itemset" namespaceURI:XFXFormsNamespaceURI]) {
@@ -101,7 +101,7 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
         }
         t.labelBinding = XFChildBinding(element, @"label", &inner);
         t.valueBinding = XFChildBinding(element, @"value", &inner);
-        t.copyBinding = XFChildBinding(element, @"copy", &inner);
+        t.copiedBinding = XFChildBinding(element, @"copy", &inner);
         t.labelLiteral = XFChildLiteral(element, @"label");
         t.valueLiteral = XFChildLiteral(element, @"value");
     } else if ([XFXML element:element hasLocalName:@"choices" namespaceURI:XFXFormsNamespaceURI]) {
@@ -192,13 +192,13 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
     } else {
         item.label = @"";
     }
-    if (t.copyBinding) {
-        item.copyNode = [t.copyBinding boundNodeInContext:context error:NULL];
-        if (item.copyNode == nil) {
-            XFXPathValue *v = [t.copyBinding evaluateInContext:context error:NULL];
-            item.copyNode = v.firstNode;
+    if (t.copiedBinding) {
+        item.copiedNode = [t.copiedBinding boundNodeInContext:context error:NULL];
+        if (item.copiedNode == nil) {
+            XFXPathValue *v = [t.copiedBinding evaluateInContext:context error:NULL];
+            item.copiedNode = v.firstNode;
         }
-        item.value = item.copyNode ? [item.copyNode XMLString] : item.label;
+        item.value = item.copiedNode ? [item.copiedNode XMLString] : item.label;
         self.usesCopy = YES;
     } else if (t.valueBinding) {
         item.value = [t.valueBinding stringValueInContext:context error:NULL] ?: @"";
@@ -300,7 +300,7 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
         if (item.usesCopy) {
             BOOL hit = NO;
             for (NSXMLNode *c in boundChildren) {
-                if ([self copyMatches:item.copyNode other:c]) {
+                if ([self copyMatches:item.copiedNode other:c]) {
                     hit = YES;
                     break;
                 }
@@ -347,9 +347,9 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
         if (item.value) {
             [vals addObject:item.value];
         }
-        if (item.copyNode) {
+        if (item.copiedNode) {
             anyCopy = YES;
-            [copies addObject:item.copyNode];
+            [copies addObject:item.copiedNode];
         }
     }
     self.selectedValues = vals;
