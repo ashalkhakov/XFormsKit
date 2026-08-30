@@ -576,4 +576,46 @@
     XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"up-done"] invocationCount], (NSInteger)1);
 }
 
+- (void)testRichTextConverterRoundTrip // rich textarea (TinyMCE sample)
+{
+    // fonts need the AppKit backend
+    [NSApplication sharedApplication];
+    NSArray<NSString *> *stable = @[
+        @"<p>Paragraph <em>number one</em></p>",
+        @"<h1>Title</h1><p>Body with <strong><em>both</em></strong> and <u>lines</u><br/>second line</p>",
+        @"<ul><li>one</li><li><strong>two</strong></li></ul><p>after</p>",
+        @"<ol><li>first</li><li>second</li></ol>",
+        @"<p>a &amp; b &lt; c</p>",
+        @"",
+    ];
+    for (NSString *html in stable) {
+        NSAttributedString *rich = [XFRichText attributedStringFromHTML:html baseFont:nil];
+        XCTAssertEqualObjects([XFRichText htmlFromAttributedString:rich], html);
+    }
+    // canonicalisation: b→strong, i→em, div→p, bare fragments wrapped
+    NSDictionary *canonical = @{
+        @"<div>A <b>bold</b> and <i>ital</i></div>": @"<p>A <strong>bold</strong> and <em>ital</em></p>",
+        @"Hello <strong>World</strong>!": @"<p>Hello <strong>World</strong>!</p>",
+        @"just text": @"<p>just text</p>",
+    };
+    for (NSString *html in canonical) {
+        NSAttributedString *rich = [XFRichText attributedStringFromHTML:html baseFont:nil];
+        XCTAssertEqualObjects([XFRichText htmlFromAttributedString:rich], canonical[html]);
+    }
+    // not well-formed → plain text, fully escaped on the way back
+    NSAttributedString *broken = [XFRichText attributedStringFromHTML:@"<p>broken <em>markup</p>" baseFont:nil];
+    XCTAssertEqualObjects([broken string], @"<p>broken <em>markup</p>");
+    XCTAssertEqualObjects([XFRichText htmlFromAttributedString:broken],
+                          @"<p>&lt;p&gt;broken &lt;em&gt;markup&lt;/p&gt;</p>");
+    // display text: bullets / numbering / line separator
+    NSAttributedString *list = [XFRichText attributedStringFromHTML:@"<ol><li>a</li><li>b</li></ol>" baseFont:nil];
+    XCTAssertEqualObjects([list string], @"1. a\n2. b");
+    NSAttributedString *br = [XFRichText attributedStringFromHTML:@"<p>a<br/>b</p>" baseFont:nil];
+    XCTAssertEqualObjects([br string], ([NSString stringWithFormat:@"a%Cb", (unichar)0x2028]));
+    // markers drive the serialisation (font-independent)
+    NSRange r;
+    NSAttributedString *bold = [XFRichText attributedStringFromHTML:@"<p><strong>x</strong></p>" baseFont:nil];
+    XCTAssertTrue([[bold attribute:XFRichBoldAttributeName atIndex:0 effectiveRange:&r] boolValue]);
+}
+
 @end

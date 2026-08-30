@@ -38,6 +38,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) NSInteger cols;
 /// `xf:help/@href` (G-62).
 @property (nonatomic, copy, nullable) NSString *helpHref;
+/// `@mediatype` (xf:textarea "application/xhtml+xml" = rich text, XForms 1.1 §8.1.5).
+@property (nonatomic, copy, nullable) NSString *mediatype;
 /// `inputmode` (XsltForms_input.InputMode): lowerCase | upperCase |
 /// titleCase | digits, applied to committed values (G-41).
 @property (nonatomic, copy, nullable) NSString *inputmode;

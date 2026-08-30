@@ -62,4 +62,5 @@
 
 #if __has_include(<AppKit/AppKit.h>)
 #import <XFormsKit/XFFormView.h>
+#import <XFormsKit/XFRichText.h>
 #endif

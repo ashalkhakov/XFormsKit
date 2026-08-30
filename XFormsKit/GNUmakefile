@@ -53,6 +53,7 @@ XFormsKit_HEADER_FILES = \
 	XFVarControl.h \
 	XFDialog.h \
 	XFSubform.h \
+	XFRichText.h \
 	XFRepeat.h \
 	XFSwitch.h \
 	XFProcessor.h \
@@ -142,7 +143,8 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/XFEvent.m \
 	Sources/XFormsKit/XFListener.m \
 	Sources/XFormsKit/XFXMLEvents.m \
-	Sources/XFormsKit/UI/XFFormView.m
+	Sources/XFormsKit/UI/XFFormView.m \
+	Sources/XFormsKit/UI/XFRichText.m
 
 XFormsKit_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath
 XFormsKit_OBJCFLAGS += -fobjc-arc -Wall -Wextra

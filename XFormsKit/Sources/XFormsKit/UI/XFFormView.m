@@ -1,4 +1,5 @@
 #import "XFFormView.h"
+#import "XFRichText.h"
 #import "XFProcessor.h"
 #import <objc/runtime.h>
 
@@ -100,6 +101,24 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
 @property (nonatomic, assign) BOOL selecting;
 @end
 
+#pragma mark - XFRichTextEditor (xf:textarea mediatype="application/xhtml+xml", TinyMCE sample)
+
+/// A minimal rich text editor: a toolbar (block popup + B I U S) over an
+/// NSTextView. The instance stores the XHTML subset (XFRichText); the text
+/// view holds the attributed form. No WebKit anywhere.
+@interface XFRichTextEditor : NSView
+@property (nonatomic, strong) NSScrollView *scrollView;
+@property (nonatomic, strong) NSTextView *textView;
+@property (nonatomic, strong) NSPopUpButton *blockPopup;
+@property (nonatomic, strong) NSFont *baseFont;
+- (instancetype)initWithFrame:(NSRect)frame baseFont:(NSFont *)font;
+- (void)setHTML:(NSString *)html;
+- (NSString *)HTML;
+/// Return inside a list continues it (next bullet / number); Return on an
+/// empty item leaves the list. NO = not in a list, insert normally.
+- (BOOL)handleNewline;
+@end
+
 @interface XFFormView () <NSTextViewDelegate, NSTextFieldDelegate>
 @property (nonatomic, strong, readwrite) XFProcessor *processor;
 @property (nonatomic, strong) NSMutableArray<XFWidget *> *widgets;
@@ -180,6 +199,9 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
 /// textareas / list boxes / tables).
 static NSView *XFKeyViewOf(NSView *view)
 {
+    if ([view isKindOfClass:[XFRichTextEditor class]]) {
+        return [(XFRichTextEditor *)view textView];
+    }
     return [view isKindOfClass:[NSScrollView class]] ? [(NSScrollView *)view documentView] : view;
 }
 
@@ -402,6 +424,19 @@ static NSView *XFKeyViewOf(NSView *view)
         return popup;
     }
 
+    if ([control isKindOfClass:[XFTextareaControl class]]
+        && [[control.mediatype lowercaseString] isEqualToString:@"application/xhtml+xml"]) {
+        // rich text editing (XForms 1.1 §8.1.5; the TinyMCE sample, G-45)
+        CGFloat h = (control.rows > 0 ? control.rows * 16 + 8 : kTextareaHeight) + 26;
+        XFRichTextEditor *editor = [[XFRichTextEditor alloc]
+            initWithFrame:NSMakeRect(0, 0, kFieldWidth, h) baseFont:[self bodyFont]];
+        [editor setHTML:control.stringValue ?: @""];
+        [editor.textView setDelegate:self];
+        [editor.textView setEditable:!control.readonly];
+        *height = h;
+        return editor;
+    }
+
     if ([control isKindOfClass:[XFTextareaControl class]]) {
         NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:NSZeroRect];
         [scroll setHasVerticalScroller:YES];
@@ -473,18 +508,12 @@ static NSView *XFKeyViewOf(NSView *view)
     }
 
     if ([control isKindOfClass:[XFOutputControl class]] && [(XFOutputControl *)control displaysHTML]) {
-        // mediatype="application/xhtml+xml": rendered as rich text (G-44)
+        // mediatype="application/xhtml+xml": rendered through the same
+        // converter as the rich textarea — identical on Apple and GNUstep,
+        // no WebKit (G-44)
         NSTextField *field = [self textFieldEditable:NO secure:NO];
-        NSData *html = [control.stringValue ?: @"" dataUsingEncoding:NSUTF8StringEncoding];
-        NSAttributedString *rich = nil;
-        if ([NSAttributedString instancesRespondToSelector:@selector(initWithHTML:documentAttributes:)]) {
-            rich = [[NSAttributedString alloc] initWithHTML:html documentAttributes:NULL];
-        }
-        if (rich) {
-            [field setAttributedStringValue:rich];
-        } else {
-            [field setStringValue:[self plainTextFromHTML:control.stringValue ?: @""]];
-        }
+        [field setAttributedStringValue:
+            [XFRichText attributedStringFromHTML:control.stringValue ?: @"" baseFont:[self bodyFont]]];
         return field;
     }
 
@@ -536,22 +565,6 @@ static NSView *XFKeyViewOf(NSView *view)
     return value;
 }
 
-- (NSString *)plainTextFromHTML:(NSString *)html
-{
-    NSMutableString *out = [NSMutableString string];
-    BOOL inTag = NO;
-    for (NSUInteger i = 0; i < html.length; i++) {
-        unichar c = [html characterAtIndex:i];
-        if (c == '<') {
-            inTag = YES;
-        } else if (c == '>') {
-            inTag = NO;
-        } else if (!inTag) {
-            [out appendFormat:@"%C", c];
-        }
-    }
-    return [XFXML normalizeSpace:out];
-}
 
 /// appearance="compact": a single-column table listing the items (G-43).
 - (NSView *)makeListBoxForSelect:(XFSelectControl *)select
@@ -1358,6 +1371,20 @@ static NSView *XFKeyViewOf(NSView *view)
     [self installInitialFirstResponder];
 }
 
+/// The widget whose textarea / rich editor owns `tv`.
+- (XFWidget *)widgetForTextView:(NSTextView *)tv
+{
+    for (XFWidget *w in self.widgets) {
+        if ([w.view isKindOfClass:[NSScrollView class]] && [(NSScrollView *)w.view documentView] == tv) {
+            return w;
+        }
+        if ([w.view isKindOfClass:[XFRichTextEditor class]] && [(XFRichTextEditor *)w.view textView] == tv) {
+            return w;
+        }
+    }
+    return nil;
+}
+
 - (XFWidget *)widgetForView:(id)sender
 {
     for (XFWidget *w in self.widgets) {
@@ -1467,10 +1494,7 @@ static NSView *XFKeyViewOf(NSView *view)
 - (void)makeControlFirstResponder:(XFControl *)control
 {
     XFWidget *w = [self widgetForControl:control];
-    NSView *view = w.view;
-    if ([view isKindOfClass:[NSScrollView class]]) {
-        view = [(NSScrollView *)view documentView];
-    }
+    NSView *view = XFKeyViewOf(w.view);
     if (view && [view window] && [view acceptsFirstResponder]) {
         [[view window] makeFirstResponder:view];
     }
@@ -1516,12 +1540,9 @@ static NSView *XFKeyViewOf(NSView *view)
 
 - (void)textDidBeginEditing:(NSNotification *)note
 {
-    NSTextView *tv = [note object];
-    for (XFWidget *w in self.widgets) {
-        if ([w.view isKindOfClass:[NSScrollView class]] && [(NSScrollView *)w.view documentView] == tv) {
-            [self.processor focusControl:w.control fromUI:YES];
-            return;
-        }
+    XFWidget *w = [self widgetForTextView:[note object]];
+    if (w) {
+        [self.processor focusControl:w.control fromUI:YES];
     }
 }
 
@@ -1614,15 +1635,17 @@ static NSView *XFKeyViewOf(NSView *view)
 /// form (the HTML behaviour XSLTForms gets for free).
 - (BOOL)textView:(NSTextView *)textView doCommandBySelector:(SEL)commandSelector
 {
+    if (commandSelector == @selector(insertNewline:)) {
+        XFWidget *w = [self widgetForTextView:textView];
+        if ([w.view isKindOfClass:[XFRichTextEditor class]]) {
+            return [(XFRichTextEditor *)w.view handleNewline];
+        }
+        return NO;
+    }
     if (commandSelector != @selector(insertTab:) && commandSelector != @selector(insertBacktab:)) {
         return NO;
     }
-    XFControl *control = nil;
-    for (XFWidget *w in self.widgets) {
-        if ([w.view isKindOfClass:[NSScrollView class]] && [(NSScrollView *)w.view documentView] == textView) {
-            control = w.control;
-        }
-    }
+    XFControl *control = [self widgetForTextView:textView].control;
     self.pendingTabControl = control;
     self.pendingTabDirection = commandSelector == @selector(insertTab:) ? 1 : -1;
     // end the editing (commits and may rebuild), then move on the new widgets
@@ -1635,14 +1658,11 @@ static NSView *XFKeyViewOf(NSView *view)
 - (void)textDidChange:(NSNotification *)note
 {
     NSTextView *tv = [note object];
-    for (XFWidget *w in self.widgets) {
-        if ([w.view isKindOfClass:[NSScrollView class]]
-            && [(NSScrollView *)w.view documentView] == tv) {
-            if (w.control.incremental) {
-                [self commitIncremental:w.control value:[tv string] editingView:w.view];
-            }
-            return;
-        }
+    XFWidget *w = [self widgetForTextView:tv];
+    if (w && w.control.incremental) {
+        NSString *value = [w.view isKindOfClass:[XFRichTextEditor class]]
+            ? [(XFRichTextEditor *)w.view HTML] : [tv string];
+        [self commitIncremental:w.control value:value editingView:w.view];
     }
 }
 
@@ -1686,6 +1706,11 @@ static NSView *XFKeyViewOf(NSView *view)
                 if (date) {
                     [(NSDatePicker *)view setDateValue:date];
                 }
+            } else if ([view isKindOfClass:[XFRichTextEditor class]]) {
+                XFRichTextEditor *editor = (XFRichTextEditor *)view;
+                if (![[editor HTML] isEqualToString:control.stringValue ?: @""]) {
+                    [editor setHTML:control.stringValue ?: @""];
+                }
             } else if ([view isKindOfClass:[NSScrollView class]]) {
                 NSTextView *tv = [(NSScrollView *)view documentView];
                 if ([tv isKindOfClass:[NSTextView class]]
@@ -1711,13 +1736,21 @@ static NSView *XFKeyViewOf(NSView *view)
 - (void)textDidEndEditing:(NSNotification *)note
 {
     NSTextView *tv = [note object];
-    for (XFWidget *w in self.widgets) {
-        if ([w.view isKindOfClass:[NSScrollView class]]
-            && [(NSScrollView *)w.view documentView] == tv) {
-            [self commitControl:w.control value:[tv string]];
-            return;
-        }
+    XFWidget *w = [self widgetForTextView:tv];
+    if (w == nil) {
+        return;
     }
+    NSString *value = [w.view isKindOfClass:[XFRichTextEditor class]]
+        ? [(XFRichTextEditor *)w.view HTML] : [tv string];
+    // no change event without a change (same as the text fields)
+    if ([value isEqualToString:w.control.stringValue ?: @""]) {
+        if (w.control == self.pendingTabControl) {
+            self.pendingTabControl = nil;
+            self.pendingTabDirection = 0;
+        }
+        return;
+    }
+    [self commitControl:w.control value:value];
 }
 
 - (void)notifyDocumentReplaceIfNeeded
@@ -1914,12 +1947,66 @@ static NSView *XFKeyViewOf(NSView *view)
         } else if ([control isKindOfClass:[XFTriggerControl class]]) {
             width = MAX(width, [fv widthOfText:control.label ?: @"" font:font] + 28);
         } else if ([control isKindOfClass:[XFOutputControl class]]) {
-            width = MAX(width, [fv widthOfText:control.stringValue ?: @"" font:font] + 12);
+            if ([(XFOutputControl *)control displaysHTML]) {
+                for (NSString *line in [self displayLinesOfCell:cell]) {
+                    width = MAX(width, [fv widthOfText:line font:font] + 12);
+                }
+            } else {
+                width = MAX(width, [fv widthOfText:control.stringValue ?: @"" font:font] + 12);
+            }
         } else {
             width = MAX(width, kInlineFieldWidth);
         }
     }
     return MIN(width, kTableMaxColumnWidth);
+}
+
+/// The lines a cell shows (paragraphs / <br/> of a rich output, the plain
+/// text otherwise) — what wrapping and height estimation work from.
+- (NSArray<NSString *> *)displayLinesOfCell:(XFTableCell *)cell
+{
+    NSString *text = nil;
+    XFControl *control = cell.control;
+    if (control == nil) {
+        text = cell.text;
+    } else if ([control isKindOfClass:[XFOutputControl class]]) {
+        text = [(XFOutputControl *)control displaysHTML]
+            ? [[XFRichText attributedStringFromHTML:control.stringValue ?: @"" baseFont:[self.formView bodyFont]] string]
+            : control.stringValue;
+    } else {
+        return @[];   // widgets are single-line
+    }
+    NSMutableArray *lines = [NSMutableArray array];
+    for (NSString *para in [text ?: @"" componentsSeparatedByString:@"\n"]) {
+        [lines addObjectsFromArray:[para componentsSeparatedByString:@"\u2028"]];
+    }
+    return lines;
+}
+
+/// Rows fit the tallest cell of the table: text wraps at the column width,
+/// paragraphs stack. (Uniform — GNUstep's NSTableView declares
+/// tableView:heightOfRow: but its layout ignores it, so per-row heights
+/// are not portable.)
+- (CGFloat)preferredRowHeightWithColumnWidths:(NSArray<NSNumber *> *)widths
+{
+    XFFormView *fv = self.formView;
+    NSFont *font = [fv bodyFont];
+    NSUInteger most = 1;
+    for (XFTableRow *row in self.model.rows) {
+        for (XFTableCell *cell in row.cells) {
+            if (cell.column >= widths.count) {
+                continue;
+            }
+            CGFloat avail = MAX([widths[cell.column] doubleValue] - 10, 40);
+            NSUInteger lines = 0;
+            for (NSString *line in [self displayLinesOfCell:cell]) {
+                CGFloat w = [fv widthOfText:line font:font];
+                lines += MAX(1, (NSUInteger)ceil(w / avail));
+            }
+            most = MAX(most, MAX(lines, 1));
+        }
+    }
+    return kTableRowHeight + (most - 1) * ([font pointSize] + 4);
 }
 
 - (NSSize)build
@@ -1948,6 +2035,12 @@ static NSView *XFKeyViewOf(NSView *view)
     if (!hasHeader) {
         [table setHeaderView:nil];
     }
+    NSMutableArray<NSNumber *> *widths = [NSMutableArray array];
+    for (NSTableColumn *column in [table tableColumns]) {
+        [widths addObject:@([column width])];
+    }
+    CGFloat rowHeight = [self preferredRowHeightWithColumnWidths:widths];
+    [table setRowHeight:rowHeight];
     [table setDataSource:self];
     [table setDelegate:self];
     // a repeat's current item is the selected row, and vice versa
@@ -1961,7 +2054,7 @@ static NSView *XFKeyViewOf(NSView *view)
     self.scrollView = scroll;
 
     CGFloat rows = MAX((CGFloat)self.model.rows.count, 1);
-    CGFloat height = rows * (kTableRowHeight + [table intercellSpacing].height)
+    CGFloat height = rows * (rowHeight + [table intercellSpacing].height)
         + (hasHeader ? kTableHeaderHeight : 0) + 4;
     [table setFrame:NSMakeRect(0, 0, width, height)];
     return NSMakeSize(width + 4, height);
@@ -2024,6 +2117,9 @@ static NSView *XFKeyViewOf(NSView *view)
     }
     if ([control isKindOfClass:[XFTriggerControl class]]) {
         return @(NSOffState);
+    }
+    if ([control isKindOfClass:[XFOutputControl class]] && [(XFOutputControl *)control displaysHTML]) {
+        return [XFRichText attributedStringFromHTML:control.stringValue ?: @"" baseFont:nil];
     }
     if ([control isKindOfClass:[XFSelectControl class]]) {
         // popup cells carry a blank first entry (G-25): index + 1
@@ -2118,6 +2214,7 @@ static NSView *XFKeyViewOf(NSView *view)
         NSTextFieldCell *tc = [[NSTextFieldCell alloc] initTextCell:@""];
         [tc setEditable:NO];
         [tc setSelectable:NO];
+        [tc setWraps:YES];
         if (cell.header) {
             [tc setFont:[[NSFontManager sharedFontManager] convertFont:[self.formView bodyFont] toHaveTrait:NSBoldFontMask]];
         }
@@ -2157,6 +2254,8 @@ static NSView *XFKeyViewOf(NSView *view)
         if (editable) {
             [tc setBezeled:YES];
             [tc setDrawsBackground:YES];
+        } else {
+            [tc setWraps:YES];   // outputs show every line (rich HTML too)
         }
         made = tc;
     }
@@ -2237,6 +2336,395 @@ static NSView *XFKeyViewOf(NSView *view)
     }
     NSTableView *table = [note object];
     [self.formView listBox:self didSelectRows:[table selectedRowIndexes]];
+}
+
+@end
+
+#pragma mark - XFRichTextEditor
+
+@implementation XFRichTextEditor
+
+static const CGFloat kRichToolbarHeight = 24;
+
+- (instancetype)initWithFrame:(NSRect)frame baseFont:(NSFont *)font
+{
+    self = [super initWithFrame:frame];
+    if (self == nil) {
+        return nil;
+    }
+    _baseFont = font ?: [NSFont systemFontOfSize:13];
+
+    CGFloat x = 0;
+    _blockPopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(0, 0, 110, kRichToolbarHeight) pullsDown:NO];
+    NSArray *blocks = @[ @"Paragraph", @"Heading 1", @"Heading 2", @"Heading 3", @"• List", @"1. List" ];
+    NSArray *kinds = @[ @"p", @"h1", @"h2", @"h3", @"ul", @"ol" ];
+    for (NSUInteger i = 0; i < blocks.count; i++) {
+        [_blockPopup addItemWithTitle:blocks[i]];
+        [[_blockPopup lastItem] setRepresentedObject:kinds[i]];
+    }
+    [_blockPopup setTarget:self];
+    [_blockPopup setAction:@selector(blockChanged:)];
+    [self addSubview:_blockPopup];
+    x += 116;
+
+    NSArray *labels = @[ @"B", @"I", @"U", @"S" ];
+    NSArray *actions = @[ NSStringFromSelector(@selector(toggleRichBold:)),
+                          NSStringFromSelector(@selector(toggleRichItalic:)),
+                          NSStringFromSelector(@selector(toggleRichUnderline:)),
+                          NSStringFromSelector(@selector(toggleRichStrike:)) ];
+    NSFontManager *fm = [NSFontManager sharedFontManager];
+    for (NSUInteger i = 0; i < labels.count; i++) {
+        NSButton *b = [[NSButton alloc] initWithFrame:NSMakeRect(x, 0, 28, kRichToolbarHeight)];
+        [b setTitle:labels[i]];
+        [b setBezelStyle:NSRoundedBezelStyle];
+        NSFont *bf = [NSFont systemFontOfSize:12];
+        if (i == 0) bf = [fm convertFont:bf toHaveTrait:NSBoldFontMask] ?: bf;
+        if (i == 1) bf = [fm convertFont:bf toHaveTrait:NSItalicFontMask] ?: bf;
+        [b setFont:bf];
+        [b setTarget:self];
+        [b setAction:NSSelectorFromString(actions[i])];
+        [b setRefusesFirstResponder:YES];
+        [self addSubview:b];
+        x += 30;
+    }
+    [_blockPopup setRefusesFirstResponder:YES];
+
+    NSRect body = NSMakeRect(0, kRichToolbarHeight + 2,
+                             NSWidth(frame), NSHeight(frame) - kRichToolbarHeight - 2);
+    _scrollView = [[NSScrollView alloc] initWithFrame:body];
+    [_scrollView setHasVerticalScroller:YES];
+    [_scrollView setBorderType:NSBezelBorder];
+    [_scrollView setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+    _textView = [[NSTextView alloc] initWithFrame:NSMakeRect(0, 0, NSWidth(body), NSHeight(body))];
+    [_textView setRichText:YES];
+    [_textView setAllowsUndo:YES];
+    [_textView setTypingAttributes:@{ NSFontAttributeName: _baseFont }];
+    [_textView setAutoresizingMask:NSViewWidthSizable];
+    [_textView setVerticallyResizable:YES];
+    [_textView setHorizontallyResizable:NO];
+    [[_textView textContainer] setWidthTracksTextView:YES];
+    [_scrollView setDocumentView:_textView];
+    [self addSubview:_scrollView];
+    return self;
+}
+
+- (BOOL)isFlipped
+{
+    return YES;
+}
+
+- (void)setHTML:(NSString *)html
+{
+    NSAttributedString *rich = [XFRichText attributedStringFromHTML:html ?: @"" baseFont:self.baseFont];
+    [[self.textView textStorage] setAttributedString:rich];
+    [self.textView setTypingAttributes:@{ NSFontAttributeName: self.baseFont }];
+}
+
+- (NSString *)HTML
+{
+    return [XFRichText htmlFromAttributedString:[self.textView textStorage]];
+}
+
+#pragma mark inline formatting
+
+/// Toggle `marker` over the selection (or the typing attributes when the
+/// selection is empty); bold/italic also swap the font of each run.
+- (void)toggleMarker:(NSString *)marker
+{
+    NSTextView *tv = self.textView;
+    NSRange sel = [tv selectedRange];
+    BOOL fontTrait = [marker isEqualToString:XFRichBoldAttributeName]
+        || [marker isEqualToString:XFRichItalicAttributeName];
+    if (sel.length == 0) {
+        NSMutableDictionary *typing = [[tv typingAttributes] mutableCopy] ?: [NSMutableDictionary dictionary];
+        BOOL on = [typing[marker] boolValue] || [typing[marker] integerValue];
+        if ([marker isEqualToString:(NSString *)NSUnderlineStyleAttributeName]
+            || [marker isEqualToString:(NSString *)NSStrikethroughStyleAttributeName]) {
+            if (on) [typing removeObjectForKey:marker];
+            else typing[marker] = @(NSUnderlineStyleSingle);
+        } else {
+            if (on) [typing removeObjectForKey:marker];
+            else typing[marker] = @YES;
+        }
+        if (fontTrait) {
+            typing[NSFontAttributeName] =
+                [XFRichText fontForBlock:typing[XFRichBlockAttributeName]
+                                    bold:[typing[XFRichBoldAttributeName] boolValue]
+                                  italic:[typing[XFRichItalicAttributeName] boolValue]
+                                baseFont:self.baseFont];
+        }
+        [tv setTypingAttributes:typing];
+        return;
+    }
+    NSTextStorage *storage = [tv textStorage];
+    BOOL on = [storage attribute:marker atIndex:sel.location effectiveRange:NULL] != nil;
+    [storage beginEditing];
+    NSUInteger i = sel.location;
+    while (i < NSMaxRange(sel)) {   // no GNUstep enumerateAttributesInRange:
+        NSRange range;
+        NSMutableDictionary *a = [[storage attributesAtIndex:i effectiveRange:&range] mutableCopy];
+        range = NSIntersectionRange(range, sel);
+        if (on) {
+            [a removeObjectForKey:marker];
+        } else if ([marker isEqualToString:(NSString *)NSUnderlineStyleAttributeName]
+                   || [marker isEqualToString:(NSString *)NSStrikethroughStyleAttributeName]) {
+            a[marker] = @(NSUnderlineStyleSingle);
+        } else {
+            a[marker] = @YES;
+        }
+        if (fontTrait) {
+            a[NSFontAttributeName] = [XFRichText fontForBlock:a[XFRichBlockAttributeName]
+                                                         bold:[a[XFRichBoldAttributeName] boolValue]
+                                                       italic:[a[XFRichItalicAttributeName] boolValue]
+                                                     baseFont:self.baseFont];
+        }
+        [storage setAttributes:a range:range];
+        i = NSMaxRange(range);
+    }
+    [storage endEditing];
+    [self noteEdited];
+}
+
+- (void)toggleRichBold:(id)sender { (void)sender; [self toggleMarker:XFRichBoldAttributeName]; }
+- (void)toggleRichItalic:(id)sender { (void)sender; [self toggleMarker:XFRichItalicAttributeName]; }
+- (void)toggleRichUnderline:(id)sender { (void)sender; [self toggleMarker:(NSString *)NSUnderlineStyleAttributeName]; }
+- (void)toggleRichStrike:(id)sender { (void)sender; [self toggleMarker:(NSString *)NSStrikethroughStyleAttributeName]; }
+
+#pragma mark block formatting
+
+static NSString *XFRichListPrefix(NSString *text)
+{
+    if ([text hasPrefix:@"• "]) {
+        return @"• ";
+    }
+    NSUInteger d = 0;
+    while (d < text.length && [text characterAtIndex:d] >= '0' && [text characterAtIndex:d] <= '9') {
+        d++;
+    }
+    if (d > 0 && d < text.length && [text characterAtIndex:d] == '.') {
+        NSUInteger end = d + 1;
+        if (end < text.length && [text characterAtIndex:end] == ' ') {
+            end++;
+        }
+        return [text substringToIndex:end];
+    }
+    return nil;
+}
+
+- (void)blockChanged:(id)sender
+{
+    (void)sender;
+    NSString *kind = [[self.blockPopup selectedItem] representedObject] ?: @"p";
+    NSTextView *tv = self.textView;
+    NSTextStorage *storage = [tv textStorage];
+    NSRange paragraphs = [[storage string] paragraphRangeForRange:[tv selectedRange]];
+    [storage beginEditing];
+    // walk paragraph by paragraph (ranges shift as prefixes change)
+    NSUInteger loc = paragraphs.location;
+    NSUInteger endLoc = NSMaxRange(paragraphs);
+    while (loc < storage.length && loc < endLoc) {
+        NSRange para = [[storage string] paragraphRangeForRange:NSMakeRange(loc, 0)];
+        NSRange body = para;
+        while (NSMaxRange(body) > body.location) {   // exclude the trailing \n
+            unichar c = [[storage string] characterAtIndex:NSMaxRange(body) - 1];
+            if (c == '\n') body.length--;
+            else break;
+        }
+        NSString *text = [[storage string] substringWithRange:body];
+        NSString *oldPrefix = XFRichListPrefix(text);
+        BOOL list = [kind isEqualToString:@"ul"] || [kind isEqualToString:@"ol"];
+        NSInteger delta = 0;
+        if (oldPrefix && (!list)) {
+            [storage deleteCharactersInRange:NSMakeRange(body.location, oldPrefix.length)];
+            delta -= (NSInteger)oldPrefix.length;
+        } else if (list) {
+            NSString *want = [kind isEqualToString:@"ul"] ? @"• " : @"1. ";
+            if (oldPrefix == nil) {
+                [storage insertAttributedString:
+                    [[NSAttributedString alloc] initWithString:want
+                        attributes:@{ NSFontAttributeName: self.baseFont }]
+                                        atIndex:body.location];
+                delta += (NSInteger)want.length;
+            }
+        }
+        body.length = (NSUInteger)((NSInteger)body.length + delta);
+        endLoc = (NSUInteger)((NSInteger)endLoc + delta);
+        // block attribute + fonts over the paragraph body
+        NSRange target = NSMakeRange(body.location, body.length);
+        if (target.length == 0 && body.location >= storage.length) {
+            break;
+        }
+        NSUInteger ai = target.location;
+        while (ai < NSMaxRange(target)) {
+            NSRange range;
+            NSMutableDictionary *a = [[storage attributesAtIndex:ai effectiveRange:&range] mutableCopy];
+            range = NSIntersectionRange(range, target);
+            if ([kind isEqualToString:@"p"]) {
+                [a removeObjectForKey:XFRichBlockAttributeName];
+            } else {
+                a[XFRichBlockAttributeName] = kind;
+            }
+            a[NSFontAttributeName] = [XFRichText fontForBlock:kind
+                                                         bold:[a[XFRichBoldAttributeName] boolValue]
+                                                       italic:[a[XFRichItalicAttributeName] boolValue]
+                                                     baseFont:self.baseFont];
+            [storage setAttributes:a range:range];
+            ai = NSMaxRange(range);
+        }
+        loc = NSMaxRange(para) == para.location ? para.location + 1
+            : (NSUInteger)((NSInteger)NSMaxRange(para) + delta);
+    }
+    [self renumberLists:storage];
+    [storage endEditing];
+    // an empty caret paragraph (empty document, or the line after a
+    // trailing newline) gets its bullet right away — outside the editing
+    // batch: moving the selection mid-batch asks the layout manager for
+    // glyphs it has not generated yet (GNUstep raises)
+    BOOL isList = [kind isEqualToString:@"ul"] || [kind isEqualToString:@"ol"];
+    if (isList) {
+        NSRange sel2 = [tv selectedRange];
+        NSRange para2 = storage.length ? [[storage string] paragraphRangeForRange:sel2] : NSMakeRange(0, 0);
+        NSRange body2 = para2;
+        while (body2.length && [[storage string] characterAtIndex:NSMaxRange(body2) - 1] == '\n') {
+            body2.length--;
+        }
+        if (body2.length == 0) {
+            NSString *want = [kind isEqualToString:@"ul"] ? @"• " : @"1. ";
+            NSDictionary *attrs = @{ NSFontAttributeName: self.baseFont, XFRichBlockAttributeName: kind };
+            [storage insertAttributedString:[[NSAttributedString alloc] initWithString:want attributes:attrs]
+                                    atIndex:body2.location];
+            [self renumberLists:storage];
+            [tv setSelectedRange:NSMakeRange(body2.location + want.length, 0)];
+        }
+    }
+    // typing attributes for an empty paragraph / caret
+    NSMutableDictionary *typing = [[tv typingAttributes] mutableCopy] ?: [NSMutableDictionary dictionary];
+    if ([kind isEqualToString:@"p"]) {
+        [typing removeObjectForKey:XFRichBlockAttributeName];
+    } else {
+        typing[XFRichBlockAttributeName] = kind;
+    }
+    typing[NSFontAttributeName] = [XFRichText fontForBlock:kind
+                                                      bold:[typing[XFRichBoldAttributeName] boolValue]
+                                                    italic:[typing[XFRichItalicAttributeName] boolValue]
+                                                  baseFont:self.baseFont];
+    [tv setTypingAttributes:typing];
+    [self noteEdited];
+}
+
+/// Consecutive "ol" paragraphs get 1., 2., … (display only; the serializer
+/// strips the prefixes).
+- (void)renumberLists:(NSTextStorage *)storage
+{
+    NSString *string = [storage string];
+    NSUInteger loc = 0;
+    NSUInteger number = 1;
+    while (loc < storage.length) {
+        NSRange para = [string paragraphRangeForRange:NSMakeRange(loc, 0)];
+        NSRange body = para;
+        while (body.length && [string characterAtIndex:NSMaxRange(body) - 1] == '\n') {
+            body.length--;
+        }
+        NSString *block = body.length
+            ? [storage attribute:XFRichBlockAttributeName atIndex:body.location effectiveRange:NULL] : nil;
+        if ([block isEqualToString:@"ol"]) {
+            NSString *text = [string substringWithRange:body];
+            NSString *prefix = XFRichListPrefix(text);
+            NSString *want = [NSString stringWithFormat:@"%lu. ", (unsigned long)number++];
+            if (![prefix isEqualToString:want]) {
+                NSDictionary *attrs = [storage attributesAtIndex:body.location effectiveRange:NULL];
+                if (prefix) {
+                    [storage deleteCharactersInRange:NSMakeRange(body.location, prefix.length)];
+                }
+                [storage insertAttributedString:
+                    [[NSAttributedString alloc] initWithString:want attributes:attrs]
+                                        atIndex:body.location];
+                string = [storage string];
+                para = [string paragraphRangeForRange:NSMakeRange(body.location, 0)];
+            }
+        } else {
+            number = 1;
+        }
+        if (NSMaxRange(para) <= loc) {
+            break;
+        }
+        loc = NSMaxRange(para);
+        string = [storage string];
+    }
+}
+
+- (BOOL)handleNewline
+{
+    NSTextView *tv = self.textView;
+    NSTextStorage *storage = [tv textStorage];
+    NSRange sel = [tv selectedRange];
+    NSString *string = [storage string];
+    if (storage.length == 0) {
+        return NO;
+    }
+    NSRange para = [string paragraphRangeForRange:sel];
+    NSRange body = para;
+    while (body.length && [string characterAtIndex:NSMaxRange(body) - 1] == '\n') {
+        body.length--;
+    }
+    NSString *block = body.length
+        ? [storage attribute:XFRichBlockAttributeName atIndex:body.location effectiveRange:NULL]
+        : [tv typingAttributes][XFRichBlockAttributeName];
+    if (!([block isEqualToString:@"ul"] || [block isEqualToString:@"ol"])) {
+        return NO;
+    }
+    NSString *text = [string substringWithRange:body];
+    NSString *prefix = XFRichListPrefix(text);
+    if (prefix && text.length == prefix.length && NSMaxRange(sel) >= NSMaxRange(body)) {
+        // Return on an empty item: leave the list (what every editor does)
+        NSRange prefixRange = NSMakeRange(body.location, prefix.length);
+        if ([tv shouldChangeTextInRange:prefixRange replacementString:@""]) {
+            [storage deleteCharactersInRange:prefixRange];
+            // typed text inherits from the character before the caret — the
+            // previous item's newline; take the list marker off it so the
+            // new paragraph is a plain one
+            if (body.location > 0 && [[storage string] characterAtIndex:body.location - 1] == '\n') {
+                [storage removeAttribute:XFRichBlockAttributeName
+                                   range:NSMakeRange(body.location - 1, 1)];
+            }
+            [self renumberLists:storage];
+            [tv didChangeText];
+        }
+        // selection first: changing it resets the typing attributes from
+        // the neighbouring (list) text
+        [tv setSelectedRange:NSMakeRange(body.location, 0)];
+        NSMutableDictionary *typing = [[tv typingAttributes] mutableCopy] ?: [NSMutableDictionary dictionary];
+        [typing removeObjectForKey:XFRichBlockAttributeName];
+        typing[NSFontAttributeName] = [XFRichText fontForBlock:nil
+                                                          bold:[typing[XFRichBoldAttributeName] boolValue]
+                                                        italic:[typing[XFRichItalicAttributeName] boolValue]
+                                                      baseFont:self.baseFont];
+        [tv setTypingAttributes:typing];
+        return YES;
+    }
+    // continue the list on the next line
+    NSString *want = [block isEqualToString:@"ul"] ? @"• " : @"1. ";
+    NSString *insert = [@"\n" stringByAppendingString:want];
+    if ([tv shouldChangeTextInRange:sel replacementString:insert]) {
+        NSMutableDictionary *attrs = [[storage attributesAtIndex:body.location effectiveRange:NULL] mutableCopy];
+        attrs[XFRichBlockAttributeName] = block;
+        [storage replaceCharactersInRange:sel
+                     withAttributedString:[[NSAttributedString alloc] initWithString:insert attributes:attrs]];
+        [tv setSelectedRange:NSMakeRange(sel.location + insert.length, 0)];
+        [self renumberLists:storage];
+        [tv didChangeText];
+    }
+    return YES;
+}
+
+- (void)noteEdited
+{
+    // formatting changes go through the same commit as typing
+    NSNotification *note = [NSNotification notificationWithName:NSTextDidChangeNotification object:self.textView];
+    id delegate = [self.textView delegate];
+    if ([delegate respondsToSelector:@selector(textDidChange:)]) {
+        [delegate textDidChange:note];
+    }
 }
 
 @end

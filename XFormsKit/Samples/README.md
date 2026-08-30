@@ -56,7 +56,7 @@ Open any `.xhtml` file with **XFormsViewer** (File ▸ Open Sample lists them).
 | switch.xhtml | Switch | XFormsKit extra | switch/case/toggle |
 | textarea-styled.xhtml | textarea demo | XSLTForms | textarea/@class, external CSS |
 | textarea.xhtml | Textarea | XFormsKit port | textarea |
-| tinymce.xhtml | TinyMCE Support | XSLTForms | textarea mediatype text/html (needs TinyMCE in a browser) |
+| tinymce.xhtml | TinyMCE Support | XSLTForms | textarea mediatype="application/xhtml+xml" → built-in rich text editor (no TinyMCE/WebKit) |
 | upload.xhtml | upload | XFormsKit extra | upload, filename/mediatype |
 | uploads.xhtml | Uploads and types | XSLTForms | upload, bind/@type base64/hex, submission |
 | wikipediasearch.xhtml | WIKIPEDIA OpenSearch | XSLTForms | submission GET replace="instance", input/@delay (needs network) |

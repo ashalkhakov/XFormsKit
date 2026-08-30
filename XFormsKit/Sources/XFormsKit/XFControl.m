@@ -179,6 +179,7 @@
 {
     NSXMLElement *element = self.element;
     self.navindex = [[[element attributeForName:@"navindex"] stringValue] integerValue];
+    self.mediatype = [[element attributeForName:@"mediatype"] stringValue];
     self.accesskey = [[element attributeForName:@"accesskey"] stringValue];
     self.placeholder = [[element attributeForName:@"placeholder"] stringValue];
     self.rows = [[[element attributeForName:@"rows"] stringValue] integerValue];

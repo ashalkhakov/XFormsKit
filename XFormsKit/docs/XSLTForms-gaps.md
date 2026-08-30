@@ -67,7 +67,7 @@ row to `XSLTForms-mapping.md`.
 | G-41 | **DONE 2026-08-30** — `inputmode` lowerCase / upperCase / titleCase / digits applied in `-[XFProcessor setValue:ofControl:]` (`-[XFControl applyInputMode:]`); numeric types and digits mode right-align the field. maxLength / size from facets not enforced in the widget (the type still validates). Test: testInputModeHostAttributesAndUploadMediaTypes. Was: `@inputmode` (lowerCase/upperCase/titleCase/digits), `maxLength`/size from type facets, numeric right-align | input | `XsltForms_input.InputMode` |
 | G-42 | **DONE 2026-08-30** — Return in a text field and a checkbox click dispatch DOMActivate after the value change (keyUpActivate); the form view tracks NSReturnTextMovement. Was: Return in input / checkbox click → `DOMActivate` | input | `XFInput.js keyUpActivate` |
 | G-43 | **DONE 2026-08-30** — trigger appearance="minimal" → borderless button; select/select1 appearance="compact" (and select minimal) → list box (NSTableView, multi-select for xf:select, `XFListBoxAdapter`). Group compact/table* layouts not mapped (no sample uses them). Was: `appearance="compact"` (list box), `select` minimal (multi-select list), `trigger appearance="minimal"` (link), group `compact`/`table*` layouts | select/select1/trigger/group | `select1-select.xsl.xml`, `group.xsl.xml` |
-| G-44 | **DONE 2026-08-30** — output mediatype="application/xhtml+xml" → NSAttributedString from HTML when the platform can (else tags stripped); outputs typed with fractionDigits display the normalised number (type.format subset; locale date formatting not done). Was: `xf:output mediatype="application/xhtml+xml"` computed (`displaysHTML`) but rendered as raw text; type-formatted display (`type.format`) | output | `XFOutput.js setValue` |
+| G-44 | **DONE 2026-08-30** *(updated: outputs now render through XFRichText — the same hand-rolled XHTML-subset converter as the rich textarea — styled on BOTH platforms, no WebKit/initWithHTML:)* — output mediatype="application/xhtml+xml" → NSAttributedString from HTML when the platform can (else tags stripped); outputs typed with fractionDigits display the normalised number (type.format subset; locale date formatting not done). Was: `xf:output mediatype="application/xhtml+xml"` computed (`displaysHTML`) but rendered as raw text; type-formatted display (`type.format`) | output | `XFOutput.js setValue` |
 | G-45 | **DONE 2026-08-30** — slider is continuous only with incremental="true" (commit on release otherwise, XFRange.js); value readout not added. Was: `xf:range`: value readout, `incremental` (commit only on release), type format/parse | range | `XFRange.js` |
 | G-46 | **DONE 2026-08-30** — `acceptedMediaTypes` from @mediatype → NSOpenPanel file-type filter (common types mapped) and `acceptsMediaType:`; commit of an unexpected type fails with xforms-upload-error (error-type unexpected-type), success dispatches xforms-upload-done (filename, mediatype). Test: testInputModeHostAttributesAndUploadMediaTypes. Was: `xf:upload/@mediatype` as NSOpenPanel filter; `xforms-upload-done/error`; unexpected-type error | upload | `XFUpload.js` |
 | G-47 | **DONE 2026-08-30** — xf:submit honours @if / @while (submit.xsl generates a guarded dispatch); `-[XFControl isTrigger]` (YES for trigger/submit) suppresses MIP events (XsltForms_control.eventDispatch). Test: testSubmitControlIfGuardAndTriggerSilence. Was: `xf:submit @if/@while/@iterate`; triggers should not emit MIP/value-changed events (`isTrigger`) | submit/trigger | `jsgen/submit.xsl`, `XFControl.js` |
@@ -124,9 +124,10 @@ row to `XSLTForms-mapping.md`.
 ### n/a in an AppKit host
 
 AVTs in HTML attributes, `@class`/CSS styling, `xf:script`/`js-eval`,
-`transform`/`serialize`, HTML `<script>` pass-through, TinyMCE/CKEditor
-`mediatype="application/xhtml+xml"` editors, `xml-urlencoded-post` hidden
-form, `local://`/`opener://`/`javascript:` schemes, IE quirks, status panel,
+`transform`/`serialize`, HTML `<script>` pass-through (the
+`mediatype="application/xhtml+xml"` textarea, once n/a as "TinyMCE/CKEditor
+only", is now a native rich text editor — see the controls table),
+`xml-urlencoded-post` hidden form, `local://`/`opener://`/`javascript:` schemes, IE quirks, status panel,
 `replace="all"` document rewrite (kept as `lastAllReplacement`), table/SVG
 layout (XFFormView is a vertical stack; a table-aware layout is a renderer
 project, not an engine gap).
@@ -187,7 +188,7 @@ Legend: **impl** / **partial** / **missing**; "n/a in XSLTForms" = XSLTForms doe
 | `ref`, text field, `incremental` | `XFInput.js` | impl | |
 | `delay` | `keyUpIncremental` | missing | G-40 |
 | `inputmode` | `InputMode` | missing | G-41 |
-| `mediatype="application/xhtml+xml"` RTE | `initInput` | n/a | |
+| `mediatype="application/xhtml+xml"` RTE | `initInput` | impl 2026-08-30 | own rich text editor, not TinyMCE: `XFRichTextEditor` (toolbar: block popup p/h1–h3/ul/ol + B I U S over an NSTextView) with `XFRichText` converting NSAttributedString ↔ the XHTML subset p/h1–h3/ul/ol/li + strong/em/u/s/br (b/i/div/blockquote/span read too, canonicalised; round-trip stable; broken markup degrades to plain text). Keyed on `@mediatype` only — the `xsltforms:rte` schema facet/appinfo (TinyMCE config JSON) is ignored. Test: testRichTextConverterRoundTrip; the tinymce sample edits natively |
 | boolean → checkbox; date/dateTime → picker | `initInput`, `Calendar.js` | impl | XFormsKit also handles `xsd:time` |
 | numeric class right-align, `step` from `fractionDigits`, `maxLength`/`size` | `initInput`, type facets | missing | G-41 |
 | Return → commit + `DOMActivate`; checkbox click → `DOMActivate` | `keyUpActivate`, `click` | partial | G-42 |

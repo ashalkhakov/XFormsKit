@@ -100,6 +100,8 @@
 		AA0000010000000000000116 /* XFDialog.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000116 /* XFDialog.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0000010000000000000119 /* XFSubform.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000119 /* XFSubform.m */; };
 		AA0000010000000000000118 /* XFSubform.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000118 /* XFSubform.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA000001000000000000011B /* XFRichText.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000011B /* XFRichText.m */; };
+		AA000001000000000000011A /* XFRichText.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000001000000000000011A /* XFRichText.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0000010000000000000111 /* XFHostNode.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000110 /* XFHostNode.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA00000100000000000000C1 /* XFGroup.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000C0 /* XFGroup.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA00000100000000000000C2 /* XFRepeat.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000C3 /* XFRepeat.m */; };
@@ -259,6 +261,8 @@
 		BB0000010000000000000117 /* XFDialog.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDialog.m; sourceTree = "<group>"; };
 		BB0000010000000000000118 /* XFSubform.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFSubform.h; sourceTree = "<group>"; };
 		BB0000010000000000000119 /* XFSubform.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFSubform.m; sourceTree = "<group>"; };
+		BB000001000000000000011A /* XFRichText.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFRichText.h; sourceTree = "<group>"; };
+		BB000001000000000000011B /* XFRichText.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFRichText.m; sourceTree = "<group>"; };
 		BB00000100000000000000C2 /* XFRepeat.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFRepeat.h; sourceTree = "<group>"; };
 		BB00000100000000000000C3 /* XFRepeat.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFRepeat.m; sourceTree = "<group>"; };
 		BB00000100000000000000C4 /* XFSetindexAction.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFSetindexAction.h; sourceTree = "<group>"; };
@@ -433,6 +437,7 @@
 				BB0000010000000000000116 /* XFDialog.h */,
 				BB0000010000000000000117 /* XFDialog.m */,
 				BB0000010000000000000118 /* XFSubform.h */,
+				BB000001000000000000011A /* XFRichText.h */,
 				BB0000010000000000000119 /* XFSubform.m */,
 				BB00000100000000000000C2 /* XFRepeat.h */,
 				BB00000100000000000000C3 /* XFRepeat.m */,
@@ -546,6 +551,7 @@
 			isa = PBXGroup;
 			children = (
 				BB000001000000000000000E /* XFFormView.m */,
+				BB000001000000000000011B /* XFRichText.m */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -605,6 +611,7 @@
 				AA0000010000000000000114 /* XFVarControl.h in Headers */,
 				AA0000010000000000000116 /* XFDialog.h in Headers */,
 				AA0000010000000000000118 /* XFSubform.h in Headers */,
+				AA000001000000000000011A /* XFRichText.h in Headers */,
 				AA00000100000000000000C3 /* XFRepeat.h in Headers */,
 				AA00000100000000000000D9 /* XFSwitch.h in Headers */,
 				AA000001000000000000001D /* XFProcessor.h in Headers */,
@@ -815,6 +822,7 @@
 				AA0000010000000000000073 /* XFMIPBinding.m in Sources */,
 				AA0000010000000000000076 /* XFBind.m in Sources */,
 				AA000001000000000000000E /* XFFormView.m in Sources */,
+				AA000001000000000000011B /* XFRichText.m in Sources */,
 				AA0000010000000000000050 /* XFEvent.m in Sources */,
 				AA0000010000000000000052 /* XFListener.m in Sources */,
 				AA0000010000000000000054 /* XFXMLEvents.m in Sources */,
