@@ -414,4 +414,37 @@
     XCTAssertFalse(valid(@"bn"));       // bound + nil: only empty is valid
 }
 
+- (void)testXsltformsEvalTypes // G-79 (spreadsheet sample)
+{
+    NSError *error = nil;
+    XFProcessor *p = [self processor:
+                      @"<xf:instance><data xmlns=\"\" xmlns:xsltforms=\"http://www.agencexml.com/xsltforms\">"
+                      @"  <a>5+5</a><a>(2+3)*6</a><a>100/2</a><a>40</a><empty/><bad>5+</bad><sum/>"
+                      @"</data></xf:instance>"
+                      @"<xf:bind nodeset=\"a | empty | bad\" type=\"xsltforms:decimal\" xmlns:xsltforms=\"http://www.agencexml.com/xsltforms\"/>"
+                      @"<xf:bind nodeset=\"sum\" calculate=\"sum(../a)\"/>"
+                          extra:
+                      @"<xf:output id=\"o1\" value=\"a[1] - 0\"><xf:label>A</xf:label></xf:output>"
+                      @"<xf:output id=\"o2\" value=\"a[2] + a[3]\"><xf:label>B</xf:label></xf:output>"
+                      @"<xf:output id=\"oe\" value=\"empty + 1\"><xf:label>E</xf:label></xf:output>"
+                      @"<xf:input id=\"raw\" ref=\"a[1]\"><xf:label>R</xf:label></xf:input>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    NSXMLElement *root = [[p defaultInstance] documentElement];
+    // the XPath layer evaluates eval-typed values (XsltForms xmlValue)
+    XCTAssertEqualObjects([p controlWithIdentifier:@"o1"].stringValue, @"10");
+    XCTAssertEqualObjects([p controlWithIdentifier:@"o2"].stringValue, @"80");
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"sum"].firstObject], @"130");
+    // "" counts as 0; an unparsable value stays text (NaN in arithmetic)
+    XCTAssertEqualObjects([p controlWithIdentifier:@"oe"].stringValue, @"1");
+    XFExprContext *ctx = [[XFExprContext alloc] initWithNode:root];
+    ctx.model = p.model;
+    XCTAssertTrue(isnan([[[XFXPath xpathWithString:@"bad + 0" element:root error:NULL]
+                          evaluateInContext:ctx error:NULL] numberValue]));
+    // controls still see the raw text; the pattern validates it
+    XCTAssertEqualObjects([p controlWithIdentifier:@"raw"].stringValue, @"5+5");
+    XCTAssertTrue([XFNodeState existingStateOnNode:[root elementsForName:@"a"].firstObject].valid);
+    XCTAssertFalse([XFNodeState existingStateOnNode:[root elementsForName:@"bad"].firstObject].valid);
+}
+
 @end

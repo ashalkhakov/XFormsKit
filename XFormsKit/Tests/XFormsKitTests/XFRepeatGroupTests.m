@@ -613,4 +613,41 @@
     [[NSFileManager defaultManager] removeItemAtPath:dir error:NULL];
 }
 
+- (void)testTableCellShowsSwitchSelectedCaseControl // calculator "="
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><n/></data></xf:instance>"
+                      extra:
+                      @"<table><tr><td>"
+                      @"  <xf:switch>"
+                      @"    <xf:case id=\"one\" selected=\"true\"><xf:trigger id=\"t1\"><xf:label>=</xf:label>"
+                      @"      <xf:action ev:event=\"DOMActivate\"><xf:setvalue ref=\"n\">one</xf:setvalue><xf:toggle case=\"two\"/></xf:action>"
+                      @"    </xf:trigger></xf:case>"
+                      @"    <xf:case id=\"two\"><xf:trigger id=\"t2\"><xf:label>=</xf:label>"
+                      @"      <xf:setvalue ev:event=\"DOMActivate\" ref=\"n\">two</xf:setvalue>"
+                      @"    </xf:trigger></xf:case>"
+                      @"  </xf:switch>"
+                      @"</td><td><xf:group><xf:output value=\"'g'\"><xf:label>G</xf:label></xf:output></xf:group></td></tr></table>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFHostNode *tableNode = nil;
+    for (XFHostNode *n in p.hostNodes) {
+        if (n.kind == XFHostNodeKindTable) tableNode = n;
+    }
+    XFTableModel *m = [XFTableModel modelWithTableNode:tableNode];
+    XFTableCell *cell = [m.rows.firstObject cellAtColumn:0];
+    XCTAssertEqual(cell.control, [p controlWithIdentifier:@"t1"], @"the selected case's trigger is the cell");
+    // a group showing one control resolves too
+    XFControl *inGroup = [m.rows.firstObject cellAtColumn:1].control;
+    XCTAssertNotNil(inGroup);
+    XCTAssertFalse([inGroup isBlockLevel]);
+    XCTAssertEqualObjects(inGroup.stringValue, @"g");
+    // toggling rebuilds the model with the other case's trigger
+    [(XFTriggerControl *)[p controlWithIdentifier:@"t1"] activate];
+    [p refreshControls];
+    m = [XFTableModel modelWithTableNode:tableNode];
+    XCTAssertEqual([m.rows.firstObject cellAtColumn:0].control, [p controlWithIdentifier:@"t2"]);
+}
+
 @end

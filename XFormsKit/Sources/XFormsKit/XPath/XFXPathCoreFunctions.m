@@ -626,7 +626,7 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
                 (void)ctx; (void)err;
                 NSUInteger n = 0;
                 for (NSXMLNode *node in XFArg(args, 0).nodes) {
-                    if ([XFXML stringValueOfNode:node].length) {
+                    if (XFXPathNodeValue(node).length) {
                         n++;
                     }
                 }
@@ -695,7 +695,7 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
                 XFXPathValue *arg = XFArg(args, 0);
                 if (arg.nodes.count) {
                     for (NSXMLNode *n in arg.nodes) {
-                        NSString *s = [XFXML stringValueOfNode:n];
+                        NSString *s = XFXPathNodeValue(n);
                         for (NSString *tok in [s componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]) {
                             if (tok.length) [ids addObject:tok];
                         }

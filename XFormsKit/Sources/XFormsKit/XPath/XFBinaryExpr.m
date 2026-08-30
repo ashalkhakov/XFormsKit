@@ -62,7 +62,7 @@ static BOOL XFCompareNodeSet(NSString *op, NSArray<NSXMLNode *> *nodes, XFXPathV
         return reversed ? XFCompareAtomic(op, other, b) : XFCompareAtomic(op, b, other);
     }
     for (NSXMLNode *n in nodes) {
-        NSString *s = [XFXML stringValueOfNode:n];
+        NSString *s = XFXPathNodeValue(n);
         XFXPathValue *v = (other.type == XFXPathValueTypeNumber || XFIsRelational(op))
             ? [XFXPathValue number:[XFXPathValue string:s].numberValue]
             : [XFXPathValue string:s];
@@ -124,9 +124,9 @@ static BOOL XFCompareNodeSet(NSString *op, NSArray<NSXMLNode *> *nodes, XFXPathV
     BOOL ns2 = v2.type == XFXPathValueTypeNodeSet;
     if (ns1 && ns2) {
         for (NSXMLNode *a in v1.nodes) {
-            NSString *sa = [XFXML stringValueOfNode:a];
+            NSString *sa = XFXPathNodeValue(a);
             for (NSXMLNode *b in v2.nodes) {
-                NSString *sb = [XFXML stringValueOfNode:b];
+                NSString *sb = XFXPathNodeValue(b);
                 BOOL hit = XFIsRelational(self.op)
                     ? XFCompareNumbers(self.op, [XFXPathValue string:sa].numberValue,
                                                 [XFXPathValue string:sb].numberValue)

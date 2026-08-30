@@ -29,7 +29,7 @@ static NSString *XFStr(NSArray<XFXPathValue *> *args, NSUInteger i)
 
 static double XFNodeNumber(NSXMLNode *n)
 {
-    return [XFXPathValue string:[XFXML stringValueOfNode:n]].numberValue;
+    return [XFXPathValue string:XFXPathNodeValue(n)].numberValue;
 }
 
 /// Detached text-like nodes returned by tokenize() / fromtostep(), kept
@@ -352,7 +352,7 @@ NSDictionary<NSString *, XFXPathFunction *> *XFXPathExtraFunctionTable(void)
                 XFXPathValue *v = XFArg(args, 0);
                 if (v.type == XFXPathValueTypeNodeSet) {
                     for (NSXMLNode *n in v.nodes) {
-                        [parts addObject:[XFXML stringValueOfNode:n]];
+                        [parts addObject:XFXPathNodeValue(n)];
                     }
                 } else if (v) {
                     [parts addObject:[v stringValue]];
@@ -390,7 +390,7 @@ NSDictionary<NSString *, XFXPathFunction *> *XFXPathExtraFunctionTable(void)
                 NSMutableArray *out = [NSMutableArray array];
                 NSMutableSet *seen = [NSMutableSet set];
                 for (NSXMLNode *n in XFArg(args, 0).nodes) {
-                    NSString *v = [XFXML stringValueOfNode:n];
+                    NSString *v = XFXPathNodeValue(n);
                     if (![seen containsObject:v]) {
                         [seen addObject:v];
                         [out addObject:n];

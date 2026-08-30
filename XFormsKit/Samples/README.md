@@ -67,7 +67,9 @@ Open any `.xhtml` file with **XFormsViewer** (File ▸ Open Sample lists them).
 
 ## Known gaps (first pass, 2026-08-30)
 
-Every sample above loads and lays out in XFormsViewer. Attributes and
+Every sample above loads and lays out in XFormsViewer; the calculator
+computes (the `=` cell follows the switch's selected case) and the
+spreadsheet's `xsltforms:decimal` columns evaluate their arithmetic. Attributes and
 elements used by the samples that the engine does not yet interpret:
 
 - **Host markup** (G-20): controls nested in `<p>`, `<div>`, `<td>`, `<span>` …

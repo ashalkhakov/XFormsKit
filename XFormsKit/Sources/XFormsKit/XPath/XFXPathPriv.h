@@ -207,6 +207,13 @@ FOUNDATION_EXPORT NSDictionary<NSString *, XFXPathFunction *> *XFXPathExtraFunct
 
 #pragma mark - Helpers
 
+/// XsltForms_globals.xmlValue: the string value of an instance node as the
+/// XPath layer sees it. For a node typed with an XSLTForms eval type
+/// (xsltforms:decimal family) the text is an arithmetic expression: "" is
+/// 0 and the expression is evaluated (5+5 → 10); anything unparsable stays
+/// text. Everything in the XPath layer must read nodes through this, not
+/// [XFXML stringValueOfNode:], so sum()/comparisons/outputs agree.
+FOUNDATION_EXPORT NSString *XFXPathNodeValue(NSXMLNode *node);
 FOUNDATION_EXPORT NSXMLNode *XFRootNode(NSXMLNode *node);
 FOUNDATION_EXPORT BOOL XFNodeInArray(NSXMLNode *node, NSArray<NSXMLNode *> *array);
 FOUNDATION_EXPORT NSComparisonResult XFCompareDocumentOrder(NSXMLNode *a, NSXMLNode *b);

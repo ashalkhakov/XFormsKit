@@ -1,6 +1,9 @@
 #import "XFXPathValue.h"
 #import "XFXML.h"
+#import "XFNodeState.h"
+#import "XFType.h"
 #import <Foundation/NSXMLNode.h>
+#import <Foundation/NSXMLElement.h>
 #import <math.h>
 
 @interface XFXPathValue ()
@@ -10,6 +13,135 @@
 @property (nonatomic, assign, readwrite) double number;
 @property (nonatomic, assign, readwrite) BOOL boolean;
 @end
+
+#pragma mark - Eval-typed node values (XsltForms_globals.xmlValue)
+
+/// Tiny arithmetic evaluator for the XSLTForms eval types: decimal
+/// literals, + - * / and parentheses with the usual precedence (what the
+/// JS `eval` in xmlValue computes for values matching xsltforms:decimal's
+/// pattern). Returns NO when the text is not such an expression.
+typedef struct { const char *p; BOOL ok; } XFArith;
+
+static double XFArithExpr(XFArith *a);
+
+static void XFArithSpace(XFArith *a)
+{
+    while (*a->p == ' ' || *a->p == '\t' || *a->p == '\n' || *a->p == '\r') {
+        a->p++;
+    }
+}
+
+static double XFArithFactor(XFArith *a)
+{
+    XFArithSpace(a);
+    double sign = 1;
+    while (*a->p == '+' || *a->p == '-') {
+        if (*a->p == '-') {
+            sign = -sign;
+        }
+        a->p++;
+        XFArithSpace(a);
+    }
+    if (*a->p == '(') {
+        a->p++;
+        double v = XFArithExpr(a);
+        XFArithSpace(a);
+        if (*a->p != ')') {
+            a->ok = NO;
+            return NAN;
+        }
+        a->p++;
+        return sign * v;
+    }
+    const char *start = a->p;
+    char *end = NULL;
+    double v = strtod(start, &end);
+    if (end == start) {
+        a->ok = NO;
+        return NAN;
+    }
+    a->p = end;
+    return sign * v;
+}
+
+static double XFArithTerm(XFArith *a)
+{
+    double v = XFArithFactor(a);
+    for (;;) {
+        XFArithSpace(a);
+        if (*a->p == '*') {
+            a->p++;
+            v *= XFArithFactor(a);
+        } else if (*a->p == '/') {
+            a->p++;
+            v /= XFArithFactor(a);
+        } else {
+            return v;
+        }
+    }
+}
+
+static double XFArithExpr(XFArith *a)
+{
+    double v = XFArithTerm(a);
+    for (;;) {
+        XFArithSpace(a);
+        if (*a->p == '+') {
+            a->p++;
+            v += XFArithTerm(a);
+        } else if (*a->p == '-') {
+            a->p++;
+            v -= XFArithTerm(a);
+        } else {
+            return v;
+        }
+    }
+}
+
+static BOOL XFEvalArithmetic(NSString *text, double *out)
+{
+    XFArith a = { [text UTF8String] ?: "", YES };
+    double v = XFArithExpr(&a);
+    XFArithSpace(&a);
+    if (!a.ok || *a.p != '\0') {
+        return NO;
+    }
+    *out = v;
+    return YES;
+}
+
+/// The node's type name: the bind's (node state), else its own xsi:type.
+static XFType *XFNodeValueType(NSXMLNode *node)
+{
+    NSString *name = [XFNodeState existingStateOnNode:node].typeName;
+    if (name.length == 0 && [node kind] == NSXMLElementKind) {
+        NSString *qname = [[(NSXMLElement *)node attributeForLocalName:@"type"
+                                                                   URI:@"http://www.w3.org/2001/XMLSchema-instance"] stringValue];
+        if (qname.length) {
+            return [XFType typeForQName:qname inElement:(NSXMLElement *)node targetNamespace:nil];
+        }
+        return nil;
+    }
+    return name.length ? [XFType typeNamed:name] : nil;
+}
+
+NSString *XFXPathNodeValue(NSXMLNode *node)
+{
+    NSString *raw = [XFXML stringValueOfNode:node] ?: @"";
+    XFType *type = XFNodeValueType(node);
+    if (type.evalTypeName == nil) {
+        return raw;
+    }
+    NSString *trimmed = [raw stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (trimmed.length == 0) {
+        return @"0";   // xmlValue: ret === "" ? 0 : eval(ret)
+    }
+    double v = 0;
+    if (!XFEvalArithmetic(trimmed, &v)) {
+        return raw;
+    }
+    return XFNumberToString(v);
+}
 
 /// XPath 1.0 number → string: shortest decimal that round-trips (what JS
 /// `"" + n` gives XSLTForms), never in exponent notation, no trailing zeros.
@@ -135,7 +267,7 @@ NSString *XFNumberToString(double n)
             return self.boolean ? @"true" : @"false";
         case XFXPathValueTypeNodeSet: {
             NSXMLNode *first = self.nodes.firstObject;
-            return first ? [XFXML stringValueOfNode:first] : @"";
+            return first ? XFXPathNodeValue(first) : @"";
         }
     }
     return @"";

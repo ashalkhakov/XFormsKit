@@ -547,10 +547,18 @@
     }
     self.boundNode = node;
     [self applyMIPsFromBoundNode];
-    NSString *value = [self.binding stringValueInContext:context error:&inner];
-    if (inner && error) {
-        *error = inner;
-        return;
+    // XsltForms_control.refresh reads the bound node with getValue — the
+    // RAW text (an eval-typed node shows "5+5" while the XPath layer sees
+    // 10); only a computed value (@value, no node) takes the XPath string
+    NSString *value;
+    if (node) {
+        value = [XFXML stringValueOfNode:node];
+    } else {
+        value = [self.binding stringValueInContext:context error:&inner];
+        if (inner && error) {
+            *error = inner;
+            return;
+        }
     }
     self.stringValue = value ?: @"";
 }

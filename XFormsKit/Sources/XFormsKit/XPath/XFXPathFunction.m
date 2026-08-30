@@ -31,7 +31,7 @@
             case XFXPathFnDefaultString:
                 if (ctx.contextNode) {
                     [ctx addDependency:ctx.contextNode];
-                    arguments = @[ [XFXPathValue string:[XFXML stringValueOfNode:ctx.contextNode]] ];
+                    arguments = @[ [XFXPathValue string:XFXPathNodeValue(ctx.contextNode)] ];
                 } else {
                     arguments = @[ [XFXPathValue string:@""] ];
                 }

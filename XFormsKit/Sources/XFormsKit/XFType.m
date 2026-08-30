@@ -45,6 +45,7 @@ static NSString *XFTypeKey(NSString *ns, NSString *name)
     }
     t.patterns = pats;
     if (base) {
+        t.evalTypeName = base.evalTypeName;
         t.fractionDigits = base.fractionDigits;
         t.totalDigits = base.totalDigits;
         t.minInclusive = base.minInclusive;
@@ -342,6 +343,28 @@ static NSString * const XFXSDNS = @"http://www.w3.org/2001/XMLSchema";
         [self define:@"HTMLFragment" ns:xf base:xsdString patterns:nil whitespace:XFWhitespacePreserve];
         [self define:@"W3CDTF" ns:@"http://purl.org/dc/terms/" base:XFTypeTable()[XFTypeKey(xsd, @"dateTime")]
             patterns:nil whitespace:XFWhitespaceCollapse];
+        // XSLTForms eval types (TypeDefs.js XsltForms_typeDefs.XSLTForms):
+        // the value is an arithmetic expression, evaluated by the XPath
+        // layer (XFXPathNodeValue) — used by the spreadsheet sample (G-79)
+        NSString *xsltforms = @"http://www.agencexml.com/xsltforms";
+        XFType *evalDecimal = [self define:@"decimal" ns:xsltforms base:nil
+            patterns:@[@"^[\\-+]?\\(*[\\-+]?([0-9]+(\\.[0-9]*)?|\\.[0-9]+)(([+\\-/]|\\*)\\(*([0-9]+(\\.[0-9]*)?|\\.[0-9]+)\\)*)*$"]
+         whitespace:XFWhitespaceCollapse];
+        evalDecimal.evalTypeName = @"xsd:decimal";
+        for (NSString *n in @[ @"float", @"double", @"integer",
+                               @"nonPositiveInteger", @"nonNegativeInteger",
+                               @"negativeInteger", @"positiveInteger",
+                               @"byte", @"short", @"int", @"long",
+                               @"unsignedByte", @"unsignedShort", @"unsignedInt", @"unsignedLong" ]) {
+            XFType *t = [self define:n ns:xsltforms base:evalDecimal patterns:nil whitespace:XFWhitespaceCollapse];
+            t.evalTypeName = [@"xsd:" stringByAppendingString:n];
+        }
+        // xsltforms:shortDate (yyyyMMdd, locale format/parse) is a UI
+        // formatting type; only its pattern is enforced
+        [self define:@"shortDate" ns:xsltforms base:nil
+            patterns:@[@"^(([12][0-9]{3})(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01]))?$"]
+         whitespace:XFWhitespaceCollapse];
+
         [self define:@"dayTimeDuration" ns:xf base:nil
             patterns:@[@"^-?P((([0-9]+D)?(T(?!$)(([0-9]+H)|([0-9]+H)?[0-9]+M|[0-9]+H?([0-9]+M)?[0-9]+(\\.[0-9]+)?S))?)|T(?!$)(([0-9]+H)|([0-9]+H)?[0-9]+M|[0-9]+H?([0-9]+M)?[0-9]+(\\.[0-9]+)?S)))$"]
          whitespace:XFWhitespaceCollapse];

@@ -2,6 +2,10 @@
 #import "XFHostNode.h"
 #import "XFControl.h"
 #import "XFRepeat.h"
+#import "XFGroup.h"
+#import "XFSwitch.h"
+#import "XFDialog.h"
+#import "XFVarControl.h"
 #import <Foundation/NSXMLElement.h>
 
 @implementation XFTableCell
@@ -74,12 +78,30 @@ static NSString *XFTrim(NSString *s)
     NSArray<XFControl *> *controls = [node allControls];
     cell.controls = controls;
     cell.text = XFTrim([node textContent]);
-    if (controls.count == 1 && ![controls.firstObject isBlockLevel]) {
-        // control-only cell: everything else must be whitespace
+    // control-only cell: the single control (descending through a switch's
+    // selected case / a group that shows exactly one control, as XSLTForms
+    // renders the container's content in the cell — the calculator's "="),
+    // with only whitespace beside it
+    XFControl *only = controls.count == 1 ? controls.firstObject : nil;
+    NSInteger guard = 0;
+    while (only && [only isBlockLevel] && guard++ < 8) {
+        NSArray<XFControl *> *inner = nil;
+        if ([only isKindOfClass:[XFSwitch class]]) {
+            inner = [(XFSwitch *)only selectedCase].children;
+        } else if ([only isKindOfClass:[XFDialog class]] || [only isKindOfClass:[XFRepeat class]]) {
+            break;
+        } else if ([only isKindOfClass:[XFGroup class]]) {
+            inner = [(XFGroup *)only children];
+        } else {
+            break;
+        }
+        only = inner.count == 1 ? inner.firstObject : nil;
+    }
+    if (only && ![only isBlockLevel] && ![only isKindOfClass:[XFVarControl class]]) {
         NSMutableString *other = [NSMutableString string];
         [self appendTextExcludingControlsOf:node into:other];
         if (XFTrim(other).length == 0) {
-            cell.control = controls.firstObject;
+            cell.control = only;
         }
     }
     return cell;

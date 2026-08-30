@@ -30,6 +30,11 @@ typedef NS_ENUM(NSInteger, XFWhitespace) {
 @property (nonatomic, strong, nullable) NSNumber *maxLength;
 @property (nonatomic, copy, nullable) NSArray<NSString *> *enumeration;
 /// xs:list itemType: the value is a whitespace-separated list of items.
+/// XSLTForms eval types (`xsltforms:decimal` family): the stored text is an
+/// arithmetic expression; the XPath layer evaluates it when reading the
+/// node (XsltForms_globals.xmlValue). Holds the result type's name
+/// (TypeDefs "eval", e.g. "xsd:decimal"); nil for ordinary types.
+@property (nonatomic, copy, nullable) NSString *evalTypeName;
 @property (nonatomic, weak, nullable) XFType *itemType;
 /// xs:union memberTypes: valid when any member accepts the value.
 @property (nonatomic, copy, nullable) NSArray<XFType *> *memberTypes;
