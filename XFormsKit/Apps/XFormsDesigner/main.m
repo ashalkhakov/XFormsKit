@@ -54,6 +54,27 @@ static int XFDRunSelfTest(NSString *path)
             return 1;
         }
     }
+    // instances loaded from a relative @src that exists next to the
+    // document must carry data — the base URL rides into construction
+    // (the select-from-file regression)
+    for (XFModel *model in doc.processor.models) {
+        for (XFInstance *inst in model.instances) {
+            NSString *src = [[inst.element attributeForName:@"src"] stringValue];
+            if (src.length == 0 || [src containsString:@":"]) {
+                continue;   // absolute or none
+            }
+            NSString *local = [[[path stringByDeletingLastPathComponent]
+                stringByAppendingPathComponent:src] stringByStandardizingPath];
+            if (![[NSFileManager defaultManager] fileExistsAtPath:local]) {
+                continue;
+            }
+            if ([[inst.document rootElement] childCount] == 0
+                && [[inst.document rootElement] attributes].count == 0) {
+                NSLog(@"SELFTEST relative src '%@' produced an empty instance", src);
+                return 1;
+            }
+        }
+    }
     NSOutlineView *outline = [wc valueForKey:@"outline"];
     if ([outline numberOfRows] < 4) {
         NSLog(@"SELFTEST outline shows %ld rows", (long)[outline numberOfRows]);

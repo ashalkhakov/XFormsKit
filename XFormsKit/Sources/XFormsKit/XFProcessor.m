@@ -171,12 +171,19 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
 
 + (instancetype)processorWithXMLString:(NSString *)xml error:(NSError **)error
 {
+    return [self processorWithXMLString:xml baseURL:nil error:error];
+}
+
++ (instancetype)processorWithXMLString:(NSString *)xml
+                               baseURL:(NSURL *)baseURL
+                                 error:(NSError **)error
+{
     NSData *data = [xml dataUsingEncoding:NSUTF8StringEncoding];
     NSXMLDocument *doc = [self documentFromData:data error:error];
     if (doc == nil) {
         return nil;
     }
-    return [[self alloc] initWithHostDocument:doc baseURL:nil error:error];
+    return [[self alloc] initWithHostDocument:doc baseURL:baseURL error:error];
 }
 
 - (instancetype)initWithHostDocument:(NSXMLDocument *)document error:(NSError **)error

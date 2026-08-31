@@ -928,6 +928,38 @@
     [undo undo];
 }
 
+// Relative instance/@src (and friends) resolve DURING processor
+// construction, so the base URL must ride into the string constructor —
+// setting .baseURL afterwards is too late (the select-from-file bug:
+// both apps built from strings and patched baseURL post-hoc, leaving
+// every file-loaded itemset empty).
+- (void)testRelativeSrcResolvesAgainstBaseURL
+{
+    NSString *dir = [NSTemporaryDirectory() stringByAppendingPathComponent:
+        [NSString stringWithFormat:@"xfsrc-%d", getpid()]];
+    [[NSFileManager defaultManager] createDirectoryAtPath:dir
+                              withIntermediateDirectories:YES attributes:nil error:NULL];
+    [@"<codes xmlns=\"\"><code>alpha</code><code>beta</code></codes>"
+        writeToFile:[dir stringByAppendingPathComponent:@"codes.xml"]
+        atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+    NSString *xml =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
+        @"      xmlns:xf=\"http://www.w3.org/2002/xforms\">"
+        @"<head><xf:model>"
+        @"<xf:instance src=\"codes.xml\"/>"
+        @"</xf:model></head>"
+        @"<body><xf:output ref=\"/codes/code[1]\"/></body></html>";
+    NSURL *base = [NSURL fileURLWithPath:
+        [dir stringByAppendingPathComponent:@"form.xhtml"]];
+    NSError *error = nil;
+    XFProcessor *p = [XFProcessor processorWithXMLString:xml baseURL:base error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XCTAssertEqualObjects([[[p defaultInstance] documentElement] localName], @"codes",
+                          @"the relative src loaded against the base URL");
+    XFControl *output = [self firstControlOfClass:[XFOutputControl class] in:p];
+    XCTAssertEqualObjects(output.stringValue, @"alpha");
+}
+
 // Garbage in a typed date node must parse to nil, never to a wild
 // NSDate — GNUstep's Gregorian conversion effectively never returns for
 // year 0, hanging the layout (W3C suite 5.2.1.a, "non-empty-content").

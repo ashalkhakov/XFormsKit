@@ -79,6 +79,7 @@
         return NO;
     }
     self.sourceXML = xml;
+    self.documentBaseURL = url;   // fileURL is not set yet during read
     return [self reloadProcessor:error];
 }
 
@@ -107,12 +108,13 @@
 - (BOOL)reloadProcessor:(NSError **)error
 {
     NSError *inner = nil;
+    // relative instance/@src, includes and schemas resolve DURING
+    // construction — the base URL must ride in, never be set after
+    NSURL *base = [self fileURL] ?: self.documentBaseURL;
     XFProcessor *processor = [XFProcessor processorWithXMLString:self.sourceXML ?: @""
+                                                         baseURL:base
                                                            error:&inner];
     [self.processor close];   // xforms-model-destruct listeners of the old form (G-54)
-    if (processor) {
-        processor.baseURL = [self fileURL];
-    }
     self.processor = processor;
     self.loadError = inner;
     if (processor == nil) {

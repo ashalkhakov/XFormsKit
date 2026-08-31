@@ -107,6 +107,14 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable instancetype)processorWithContentsOfURL:(NSURL *)url
                                               error:(NSError **)error;
 
+/// Like processorWithXMLString:error: with a base URL for the relative
+/// references resolved DURING construction — instance/@src, xf:include,
+/// schemas, submission resources. Setting .baseURL afterwards is too
+/// late for those (they have already resolved), so any host that knows
+/// where the document came from must construct through this.
++ (nullable instancetype)processorWithXMLString:(NSString *)xml
+                                        baseURL:(nullable NSURL *)baseURL
+                                          error:(NSError **)error;
 + (nullable instancetype)processorWithXMLString:(NSString *)xml
                                           error:(NSError **)error;
 

@@ -5,6 +5,10 @@
 @property (nonatomic, strong, readwrite) XFProcessor *processor;
 @property (nonatomic, strong, readwrite) XFHostEdit *hostEdit;
 @property (nonatomic, copy) NSString *pendingXML;   // set by readFromData:, consumed once
+/// Where the document came from — captured in readFromURL: (fileURL is
+/// set only after the read returns) so relative instance/@src, includes
+/// and schemas resolve on the very first processor build.
+@property (nonatomic, copy) NSURL *documentBaseURL;
 @end
 
 @implementation XFDDocument
@@ -17,11 +21,14 @@
 
 - (BOOL)adoptProcessorFromXML:(NSString *)xml error:(NSError **)error
 {
-    XFProcessor *p = [XFProcessor processorWithXMLString:xml error:error];
+    // relative instance/@src, includes and schemas resolve DURING
+    // construction — the base URL must ride in, never be set after
+    XFProcessor *p = [XFProcessor processorWithXMLString:xml
+                                                 baseURL:[self fileURL] ?: self.documentBaseURL
+                                                   error:error];
     if (p == nil) {
         return NO;
     }
-    p.baseURL = [self fileURL];
     self.processor = p;
     XFHostEdit *edit = [XFHostEdit editWithProcessor:p undoManager:[self undoManager]];
     __weak XFDDocument *weakSelf = self;
@@ -33,6 +40,12 @@
     };
     self.hostEdit = edit;
     return YES;
+}
+
+- (BOOL)readFromURL:(NSURL *)url ofType:(NSString *)typeName error:(NSError **)error
+{
+    self.documentBaseURL = url;
+    return [super readFromURL:url ofType:typeName error:error];
 }
 
 - (BOOL)readFromData:(NSData *)data ofType:(NSString *)typeName error:(NSError **)error
