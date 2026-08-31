@@ -21,6 +21,11 @@
 		AA000001000000000000000C /* XFOutputControl.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000000C /* XFOutputControl.m */; };
 		AA000001000000000000000D /* XFProcessor.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000000D /* XFProcessor.m */; };
 		AA000001000000000000000E /* XFFormView.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000000E /* XFFormView.m */; };
+		AA00000100000000000011C /* XFFormView+Widgets.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000011C /* XFFormView+Widgets.m */; };
+		AA00000100000000000011D /* XFFormView+Layout.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000011D /* XFFormView+Layout.m */; };
+		AA00000100000000000011E /* XFFormView+Editing.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000011E /* XFFormView+Editing.m */; };
+		AA00000100000000000011F /* XFTableAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000011F /* XFTableAdapter.m */; };
+		AA000001000000000000120 /* XFRichTextEditor.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000120 /* XFRichTextEditor.m */; };
 		AA0000010000000000000010 /* XFormsKit.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000010 /* XFormsKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0000010000000000000011 /* XFNamespaces.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000011 /* XFNamespaces.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0000010000000000000012 /* XFErrors.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000012 /* XFErrors.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -180,6 +185,12 @@
 		BB000001000000000000000C /* XFOutputControl.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFOutputControl.m; sourceTree = "<group>"; };
 		BB000001000000000000000D /* XFProcessor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFProcessor.m; sourceTree = "<group>"; };
 		BB000001000000000000000E /* XFFormView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFFormView.m; sourceTree = "<group>"; };
+		BB00000100000000000011C /* XFFormView+Widgets.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFFormView+Widgets.m"; sourceTree = "<group>"; };
+		BB00000100000000000011D /* XFFormView+Layout.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFFormView+Layout.m"; sourceTree = "<group>"; };
+		BB00000100000000000011E /* XFFormView+Editing.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFFormView+Editing.m"; sourceTree = "<group>"; };
+		BB00000100000000000011F /* XFTableAdapter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFTableAdapter.m"; sourceTree = "<group>"; };
+		BB000001000000000000120 /* XFRichTextEditor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFRichTextEditor.m"; sourceTree = "<group>"; };
+		BB0000010000000000000121 /* XFAppKitPriv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFAppKitPriv.h; sourceTree = "<group>"; };
 		BB0000010000000000000010 /* XFormsKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFormsKit.h; sourceTree = "<group>"; };
 		BB0000010000000000000011 /* XFNamespaces.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFNamespaces.h; sourceTree = "<group>"; };
 		BB0000010000000000000012 /* XFErrors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFErrors.h; sourceTree = "<group>"; };
@@ -493,7 +504,7 @@
 				BB0000010000000000000055 /* XFXMLEvents.m */,
 				BB000001000000000000001E /* XFFormView.h */,
 				GG0000010000000000000008 /* XPath */,
-				GG0000010000000000000009 /* UI */,
+				GG0000010000000000000009 /* AppKit */,
 			);
 			path = XFormsKit;
 			sourceTree = "<group>";
@@ -547,13 +558,19 @@
 			path = XPath;
 			sourceTree = "<group>";
 		};
-		GG0000010000000000000009 /* UI */ = {
+		GG0000010000000000000009 /* AppKit */ = {
 			isa = PBXGroup;
 			children = (
 				BB000001000000000000000E /* XFFormView.m */,
+				BB0000010000000000000121 /* XFAppKitPriv.h */,
+				BB00000100000000000011C /* XFFormView+Widgets.m */,
+				BB00000100000000000011D /* XFFormView+Layout.m */,
+				BB00000100000000000011E /* XFFormView+Editing.m */,
+				BB00000100000000000011F /* XFTableAdapter.m */,
+				BB000001000000000000120 /* XFRichTextEditor.m */,
 				BB000001000000000000011B /* XFRichText.m */,
 			);
-			path = UI;
+			path = AppKit;
 			sourceTree = "<group>";
 		};
 		GG000001000000000000000A /* Apps */ = {
@@ -822,6 +839,11 @@
 				AA0000010000000000000073 /* XFMIPBinding.m in Sources */,
 				AA0000010000000000000076 /* XFBind.m in Sources */,
 				AA000001000000000000000E /* XFFormView.m in Sources */,
+				AA00000100000000000011C /* XFFormView+Widgets.m in Sources */,
+				AA00000100000000000011D /* XFFormView+Layout.m in Sources */,
+				AA00000100000000000011E /* XFFormView+Editing.m in Sources */,
+				AA00000100000000000011F /* XFTableAdapter.m in Sources */,
+				AA000001000000000000120 /* XFRichTextEditor.m in Sources */,
 				AA000001000000000000011B /* XFRichText.m in Sources */,
 				AA0000010000000000000050 /* XFEvent.m in Sources */,
 				AA0000010000000000000052 /* XFListener.m in Sources */,

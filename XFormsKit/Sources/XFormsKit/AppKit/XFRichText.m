@@ -2,6 +2,8 @@
 #import <Foundation/NSXMLDocument.h>
 #import <Foundation/NSXMLElement.h>
 
+void XFAppKitHasRichTextFile(void) {}
+
 NSString * const XFRichBlockAttributeName = @"XFRichBlock";
 NSString * const XFRichBoldAttributeName = @"XFRichBold";
 NSString * const XFRichItalicAttributeName = @"XFRichItalic";

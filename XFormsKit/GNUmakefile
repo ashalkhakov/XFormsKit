@@ -143,8 +143,13 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/XFEvent.m \
 	Sources/XFormsKit/XFListener.m \
 	Sources/XFormsKit/XFXMLEvents.m \
-	Sources/XFormsKit/UI/XFFormView.m \
-	Sources/XFormsKit/UI/XFRichText.m
+	Sources/XFormsKit/AppKit/XFFormView.m \
+	Sources/XFormsKit/AppKit/XFFormView+Widgets.m \
+	Sources/XFormsKit/AppKit/XFFormView+Layout.m \
+	Sources/XFormsKit/AppKit/XFFormView+Editing.m \
+	Sources/XFormsKit/AppKit/XFTableAdapter.m \
+	Sources/XFormsKit/AppKit/XFRichTextEditor.m \
+	Sources/XFormsKit/AppKit/XFRichText.m
 
 XFormsKit_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath
 XFormsKit_OBJCFLAGS += -fobjc-arc -Wall -Wextra
