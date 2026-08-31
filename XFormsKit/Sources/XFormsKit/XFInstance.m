@@ -83,6 +83,27 @@
     return [self.document rootElement];
 }
 
+- (void)reloadInlineDocument
+{
+    NSXMLElement *dataRoot = nil;
+    for (NSXMLNode *child in [self.element children]) {
+        if ([child kind] == NSXMLElementKind) {
+            dataRoot = (NSXMLElement *)child;
+            break;
+        }
+    }
+    if (dataRoot == nil) {
+        self.document = nil;
+        self.originalDocument = nil;
+        return;
+    }
+    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithRootElement:[dataRoot copy]];
+    [doc setVersion:@"1.0"];
+    [doc setCharacterEncoding:@"UTF-8"];
+    self.document = doc;
+    self.originalDocument = [doc copy];
+}
+
 - (BOOL)loadFromSrc:(NSError **)error
 {
     if (self.src.length == 0) {

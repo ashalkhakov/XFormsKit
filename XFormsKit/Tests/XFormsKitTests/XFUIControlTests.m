@@ -681,4 +681,855 @@
     XCTAssertTrue([alertBadge isHidden]);
 }
 
+// Attribute value templates (avtparser.xsl / XsltForms_avt): {expr}
+// segments concatenated with literals, {{ }} escapes, unmatched braces
+// staying literal, and repeat-style contexts (position()).
+- (void)testAVTTemplates
+{
+    XCTAssertFalse([XFAVT stringIsTemplate:@"plain"]);
+    XCTAssertFalse([XFAVT stringIsTemplate:@"esc {{only}} here"]);
+    XCTAssertFalse([XFAVT stringIsTemplate:@"open { but never closed"]);
+    XCTAssertTrue([XFAVT stringIsTemplate:@"a{1 + 1}b"]);
+
+    NSError *error = nil;
+    XFAVT *avt = [XFAVT avtWithString:@"x{1 + 1}y{{z}}{'q'}" element:nil error:&error];
+    XCTAssertNotNil(avt, @"%@", error);
+    XFExprContext *ctx = [[XFExprContext alloc] initWithNode:nil];
+    XCTAssertEqualObjects([avt evaluateInContext:ctx error:NULL], @"x2y{z}q");
+
+    // a string literal inside the expression may hold quotes and braces
+    avt = [XFAVT avtWithString:@"fill:{concat('#', 'AB', \"'\")}" element:nil error:&error];
+    XCTAssertNotNil(avt, @"%@", error);
+    XCTAssertEqualObjects([avt evaluateInContext:ctx error:NULL], @"fill:#AB'");
+
+    // an expression that does not compile refuses the whole template
+    XCTAssertNil([XFAVT avtWithString:@"{1 +}" element:nil error:&error]);
+    XCTAssertNotNil(error);
+
+    // context: node values and position()
+    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithXMLString:
+        @"<r><i>7</i><i>9</i></r>" options:0 error:NULL];
+    NSArray *items = [[doc rootElement] children];
+    XFExprContext *itemCtx = [[[XFExprContext alloc] initWithNode:[doc rootElement]]
+        cloneWithNode:items[1] position:2 nodeList:items];
+    XCTAssertEqualObjects([XFAVT resolveString:@"v{.}p{position()}" element:nil
+                                     inContext:itemCtx], @"v9p2");
+}
+
+// SVG parsing primitives: path data (arcs included), transform-list
+// order, colors, style declarations, unit lengths.
+- (void)testSVGParsingPrimitives
+{
+    [NSApplication sharedApplication];
+    // a unit square, closed
+    NSBezierPath *square = [XFSVGDocument bezierPathWithSVGPathData:@"M 0 0 L 10 0 L 10 10 L 0 10 Z"];
+    XCTAssertNotNil(square);
+    NSRect b = [square bounds];
+    XCTAssertEqualWithAccuracy(NSWidth(b), 10.0, 0.001);
+    XCTAssertEqualWithAccuracy(NSHeight(b), 10.0, 0.001);
+
+    // quarter-circle arc from (100,0) to (0,100) sweeping through (~70.7,~70.7)
+    NSBezierPath *arc = [XFSVGDocument bezierPathWithSVGPathData:@"M 100 0 A 100 100 0 0 1 0 100"];
+    NSRect ab = [arc bounds];
+    XCTAssertTrue(NSMaxX(ab) > 99 && NSMaxY(ab) > 99, @"%@", NSStringFromRect(ab));
+    XCTAssertEqualWithAccuracy([arc currentPoint].x, 0.0, 0.01);
+    XCTAssertEqualWithAccuracy([arc currentPoint].y, 100.0, 0.01);
+
+    // relative commands and implicit linetos after moveto
+    NSBezierPath *rel = [XFSVGDocument bezierPathWithSVGPathData:@"m 5 5 10 0 l 0 10"];
+    XCTAssertEqualWithAccuracy([rel currentPoint].x, 15.0, 0.001);
+    XCTAssertEqualWithAccuracy([rel currentPoint].y, 15.0, 0.001);
+
+    // transform lists apply left to right with the rightmost hitting the
+    // point first: translate(10,0) rotate(90) maps (1,0) to (10,1)
+    NSAffineTransform *t = [XFSVGDocument transformWithSVGString:@"translate(10,0) rotate(90)"];
+    NSPoint p = [t transformPoint:NSMakePoint(1, 0)];
+    XCTAssertEqualWithAccuracy(p.x, 10.0, 0.001);
+    XCTAssertEqualWithAccuracy(p.y, 1.0, 0.001);
+
+    NSColor *hex = [[XFSVGDocument colorWithSVGString:@"#0685C6"]
+        colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+    XCTAssertEqualWithAccuracy([hex redComponent], 0x06 / 255.0, 0.005);
+    XCTAssertEqualWithAccuracy([hex blueComponent], 0xC6 / 255.0, 0.005);
+    XCTAssertNotNil([XFSVGDocument colorWithSVGString:@"#ab0"]);
+    XCTAssertNotNil([XFSVGDocument colorWithSVGString:@"black"]);
+    XCTAssertNil([XFSVGDocument colorWithSVGString:@"none"]);
+    XCTAssertNotNil([XFSVGDocument colorWithSVGString:@"url(#pattern)"],
+                    @"paint servers degrade to a neutral wash, not to nothing");
+
+    NSDictionary *style = [XFSVGDocument declarationsWithSVGStyle:
+        @"fill:{#404040}; stroke : black ;stroke-width:1;"];
+    XCTAssertEqualObjects(style[@"stroke"], @"black");
+    XCTAssertEqualObjects(style[@"stroke-width"], @"1");
+
+    XCTAssertEqualWithAccuracy([XFSVGDocument lengthWithSVGString:@"4.1mm" fallback:0],
+                               4.1 * 96.0 / 25.4, 0.01);
+    XCTAssertEqualWithAccuracy([XFSVGDocument lengthWithSVGString:@"12" fallback:0], 12.0, 0.001);
+    XCTAssertEqualWithAccuracy([XFSVGDocument lengthWithSVGString:nil fallback:7], 7.0, 0.001);
+}
+
+// The render tree over the host DOM: AVTs resolved per repeat item
+// (position() included), text gathered from xf:output, sizes from the
+// svg element — the piechart/flags shape of dynamic SVG.
+- (void)testSVGRenderTreeWithRepeatAndAVT
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+        @"<xf:instance><data xmlns=\"\">"
+        @"<item name=\"A\" code=\"#101010\">4</item>"
+        @"<item name=\"B\" code=\"#202020\">6</item>"
+        @"</data></xf:instance>"
+        extra:
+        @"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"100\">"
+        @"<xf:repeat nodeset=\"item\">"
+        @"<rect x=\"0\" y=\"{position() * 20}\" width=\"{. * 10}\" height=\"10\" fill=\"{@code}\"/>"
+        @"<text x=\"5\" y=\"{position() * 20}\"><xf:output value=\"concat(@name, ': ', .)\"/></text>"
+        @"</xf:repeat>"
+        @"</svg>"
+        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *fv = [[XFFormView alloc] initWithProcessor:p];
+    XFSVGView *svg = nil;
+    for (NSView *sub in [fv subviews]) {
+        if ([sub isKindOfClass:[XFSVGView class]]) {
+            svg = (XFSVGView *)sub;
+        }
+    }
+    XCTAssertNotNil(svg, @"the placeholder era is over");
+    XCTAssertEqualWithAccuracy([svg frame].size.width, 200.0, 0.001);
+    XCTAssertEqualWithAccuracy([svg frame].size.height, 100.0, 0.001);
+
+    XFSVGNode *root = svg.svgDocument.root;
+    NSMutableArray *rects = [NSMutableArray array];
+    NSMutableArray *texts = [NSMutableArray array];
+    for (XFSVGNode *child in root.children) {
+        if ([child.tag isEqualToString:@"rect"]) {
+            [rects addObject:child];
+        } else if ([child.tag isEqualToString:@"text"]) {
+            [texts addObject:child];
+        }
+    }
+    XCTAssertEqual(rects.count, (NSUInteger)2, @"one per repeat item");
+    XCTAssertEqualObjects(((XFSVGNode *)rects[0]).attributes[@"fill"], @"#101010");
+    XCTAssertEqualObjects(((XFSVGNode *)rects[1]).attributes[@"fill"], @"#202020");
+    XCTAssertEqualObjects(((XFSVGNode *)rects[0]).attributes[@"y"], @"20", @"position() carries");
+    XCTAssertEqualObjects(((XFSVGNode *)rects[1]).attributes[@"y"], @"40");
+    XCTAssertEqualObjects(((XFSVGNode *)rects[1]).attributes[@"width"], @"60");
+    XCTAssertEqual(texts.count, (NSUInteger)2);
+    XCTAssertEqualObjects(((XFSVGNode *)texts[0]).text, @"A: 4", @"output values gathered");
+    XCTAssertEqualObjects(((XFSVGNode *)texts[1]).text, @"B: 6");
+
+    // refresh keeps the tree live: change a value, rebuild, re-read
+    NSXMLElement *data = [[p defaultInstance] documentElement];
+    NSXMLElement *first = (NSXMLElement *)[data childAtIndex:0];
+    [first setStringValue:@"9"];
+    [svg rebuild];
+    for (XFSVGNode *child in svg.svgDocument.root.children) {
+        if ([child.tag isEqualToString:@"rect"]) {
+            XCTAssertEqualObjects(child.attributes[@"width"], @"90");
+            break;
+        }
+    }
+}
+
+// Paint servers (linearGradient / radialGradient / pattern), defs / use,
+// and the render-tree hit testing the designer's overlay picks through.
+- (void)testSVGPaintServersUseAndHitTesting
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+        @"<xf:instance><data xmlns=\"\"><v>1</v></data></xf:instance>"
+        extra:
+        @"<svg xmlns=\"http://www.w3.org/2000/svg\""
+        @"     xmlns:xlink=\"http://www.w3.org/1999/xlink\""
+        @"     width=\"200\" height=\"200\">"
+        @"<defs>"
+        @"<linearGradient id=\"grad\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\">"
+        @"<stop offset=\"0\" stop-color=\"#FF0000\"/>"
+        @"<stop offset=\"100%\" stop-color=\"#0000FF\" stop-opacity=\"0.5\"/>"
+        @"</linearGradient>"
+        @"<pattern id=\"pat\" x=\"0\" y=\"0\" width=\"10\" height=\"10\" patternUnits=\"userSpaceOnUse\">"
+        @"<rect x=\"0\" y=\"0\" width=\"5\" height=\"10\" fill=\"#CCCCCC\"/>"
+        @"</pattern>"
+        @"<circle id=\"proto\" cx=\"5\" cy=\"5\" r=\"5\" fill=\"green\"/>"
+        @"</defs>"
+        @"<rect id=\"gr\" x=\"10\" y=\"10\" width=\"60\" height=\"30\" fill=\"url(#grad)\"/>"
+        @"<rect id=\"pr\" x=\"10\" y=\"60\" width=\"60\" height=\"30\" fill=\"url(#pat)\"/>"
+        @"<use xlink:href=\"#proto\" x=\"120\" y=\"120\"/>"
+        @"<g transform=\"translate(100,10)\"><rect id=\"tr\" x=\"0\" y=\"0\" width=\"20\" height=\"20\" fill=\"black\"/></g>"
+        @"</svg>"
+        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *fv = [[XFFormView alloc] initWithProcessor:p];
+    XFSVGView *svg = nil;
+    for (NSView *sub in [fv subviews]) {
+        if ([sub isKindOfClass:[XFSVGView class]]) {
+            svg = (XFSVGView *)sub;
+        }
+    }
+    XCTAssertNotNil(svg);
+    XFSVGDocument *doc = svg.svgDocument;
+
+    // definitions registered, not painted in place
+    XCTAssertNotNil([doc nodeForIdentifier:@"grad"]);
+    XCTAssertNotNil([doc nodeForIdentifier:@"pat"]);
+    XCTAssertNotNil([doc nodeForIdentifier:@"proto"]);
+    for (XFSVGNode *child in doc.root.children) {
+        XCTAssertFalse([child.tag isEqualToString:@"defs"]);
+        XCTAssertFalse([child.tag isEqualToString:@"lineargradient"]);
+    }
+    XCTAssertEqual([[doc nodeForIdentifier:@"grad"] children].count, (NSUInteger)2,
+                   @"gradient keeps its stops");
+
+    // hit testing: shape centers land on their host elements
+    NSXMLElement * (^byID)(NSString *) = ^NSXMLElement *(NSString *ident) {
+        return [XFXML elementWithID:ident inNode:p.hostDocument];
+    };
+    XCTAssertEqual([[doc nodeAtPoint:NSMakePoint(40, 25)] element], byID(@"gr"));
+    XCTAssertEqual([[doc nodeAtPoint:NSMakePoint(40, 75)] element], byID(@"pr"));
+    // a transformed shape hits through its group's translate
+    XCTAssertEqual([[doc nodeAtPoint:NSMakePoint(110, 20)] element], byID(@"tr"));
+    // content reached through <use> reports the use element
+    XFSVGNode *used = [doc nodeAtPoint:NSMakePoint(125, 125)];
+    XCTAssertNotNil(used);
+    XCTAssertEqualObjects(used.tag, @"use");
+    // empty space hits nothing
+    XCTAssertNil([doc nodeAtPoint:NSMakePoint(195, 195)]);
+
+    // frames: the transformed rect reports its translated rectangle
+    NSRect tr = [doc frameOfElement:byID(@"tr")];
+    XCTAssertEqualWithAccuracy(NSMinX(tr), 100.0, 0.5);
+    XCTAssertEqualWithAccuracy(NSMinY(tr), 10.0, 0.5);
+    XCTAssertEqualWithAccuracy(NSWidth(tr), 20.0, 0.5);
+    // and the form view bridges both lookups
+    NSPoint inForm = [fv convertPoint:NSMakePoint(40, 25) fromView:svg];
+    XCTAssertEqual([fv svgElementAtPoint:inForm], byID(@"gr"));
+    XCTAssertFalse(NSIsEmptyRect([fv layoutFrameOfSVGElement:byID(@"gr")]));
+
+    // the draw paths run headless (gradient, pattern tiling, use)
+    NSImage *image = [[NSImage alloc] initWithSize:doc.size];
+    [image lockFocus];
+    [doc drawInRect:NSMakeRect(0, 0, doc.size.width, doc.size.height)];
+    [image unlockFocus];
+
+    // SVG shapes reorder among SVG parents (paint order), but an xf
+    // control never moves INTO svg markup through the zone bypass
+    NSUndoManager *undo = [[NSUndoManager alloc] init];
+    [undo setGroupsByEvent:NO];
+    XFHostEdit *edit = [XFHostEdit editWithProcessor:p undoManager:undo];
+    NSXMLElement *gr = byID(@"gr");
+    NSXMLElement *svgRoot = (NSXMLElement *)[gr parent];
+    [undo beginUndoGrouping];
+    XCTAssertTrue([edit moveElement:gr underParent:svgRoot atIndex:-1]);
+    [undo endUndoGrouping];
+    XCTAssertEqual([svgRoot childAtIndex:[svgRoot childCount] - 1], gr);
+    [undo undo];
+}
+
+// Host-registered XPath extension functions (the native stand-in for
+// XSLTForms' page-JavaScript fallback): consulted after the built-ins.
+- (void)testHostRegisteredXPathFunctions
+{
+    NSError *error = nil;
+    [XFXPath registerHostFunctionNamed:@"xfx-test-fn"
+                             evaluator:^XFXPathValue *(XFExprContext *ctx,
+                                                       NSArray *args,
+                                                       NSError **err) {
+        (void)ctx;
+        (void)err;
+        double bias = args.count ? [(XFXPathValue *)args.firstObject numberValue] : 0;
+        return [XFXPathValue number:40 + bias];
+    }];
+    XFXPath *xp = [XFXPath xpathWithString:@"xfx-test-fn(2) + 1" element:nil error:&error];
+    XCTAssertNotNil(xp, @"%@", error);
+    XFExprContext *ctx = [[XFExprContext alloc] initWithNode:nil];
+    XCTAssertEqualWithAccuracy([[xp evaluateInContext:ctx error:&error] numberValue],
+                               43.0, 0.001);
+
+    // built-ins are consulted first — a host "sum" cannot shadow XPath's
+    [XFXPath registerHostFunctionNamed:@"true"
+                             evaluator:^XFXPathValue *(XFExprContext *c,
+                                                       NSArray *a, NSError **e) {
+        (void)c; (void)a; (void)e;
+        return [XFXPathValue boolean:NO];
+    }];
+    xp = [XFXPath xpathWithString:@"true()" element:nil error:&error];
+    XCTAssertTrue([[xp evaluateInContext:ctx error:&error] booleanValue]);
+    [XFXPath unregisterHostFunctionNamed:@"true"];
+
+    // unregistering restores the not-found behavior
+    [XFXPath unregisterHostFunctionNamed:@"xfx-test-fn"];
+    xp = [XFXPath xpathWithString:@"xfx-test-fn(2)" element:nil error:&error];
+    XCTAssertNotNil(xp, @"unknown functions still compile (late binding)");
+    error = nil;
+    XCTAssertNil([xp evaluateInContext:ctx error:&error]);
+}
+
+// The drag-reorder command: one undoable move preserving element
+// identity, with the same-parent index arithmetic and the zone guards.
+- (void)testHostEditMove
+{
+    NSString *xml =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
+        @"      xmlns:xf=\"http://www.w3.org/2002/xforms\">"
+        @"<head><xf:model id=\"m\">"
+        @"<xf:instance><data xmlns=\"\"><one/><two/><three/></data></xf:instance>"
+        @"</xf:model></head>"
+        @"<body>"
+        @"<xf:input id=\"a\" ref=\"one\"><xf:label>A</xf:label></xf:input>"
+        @"<xf:input id=\"b\" ref=\"two\"><xf:label>B</xf:label></xf:input>"
+        @"<xf:group id=\"g\"><xf:label>G</xf:label>"
+        @"<xf:input id=\"c\" ref=\"three\"><xf:label>C</xf:label></xf:input>"
+        @"</xf:group>"
+        @"</body></html>";
+    NSError *error = nil;
+    XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    NSXMLElement * (^byID)(NSString *) = ^NSXMLElement *(NSString *ident) {
+        return [XFXML elementWithID:ident inNode:p.hostDocument];
+    };
+    NSXMLElement *a = byID(@"a"), *b = byID(@"b"), *g = byID(@"g");
+    NSXMLElement *body = (NSXMLElement *)[a parent];
+    NSArray * (^order)(NSXMLElement *) = ^NSArray *(NSXMLElement *parent) {
+        NSMutableArray *ids = [NSMutableArray array];
+        for (NSXMLNode *c in [parent children]) {
+            if ([c kind] == NSXMLElementKind) {
+                [ids addObject:[[(NSXMLElement *)c attributeForName:@"id"] stringValue] ?: @"?"];
+            }
+        }
+        return ids;
+    };
+    NSUndoManager *undo = [[NSUndoManager alloc] init];
+    [undo setGroupsByEvent:NO];
+    XFHostEdit *edit = [XFHostEdit editWithProcessor:p undoManager:undo];
+    NSUInteger controls = p.controls.count;
+
+    // append within the same parent (index arithmetic across the detach)
+    [undo beginUndoGrouping];
+    XCTAssertTrue([edit moveElement:a underParent:body atIndex:-1]);
+    [undo endUndoGrouping];
+    XCTAssertEqualObjects(order(body), (@[ @"b", @"g", @"a" ]));
+    XCTAssertEqual(p.controls.count, controls);
+    XCTAssertNotNil([p controlForElement:a], @"the moved element stays attached");
+
+    // back up before b (same parent, moving toward the front)
+    [undo beginUndoGrouping];
+    XCTAssertTrue([edit moveElement:a underParent:body atIndex:(NSInteger)[b index]]);
+    [undo endUndoGrouping];
+    XCTAssertEqualObjects(order(body), (@[ @"a", @"b", @"g" ]));
+
+    // across parents: into the group
+    [undo beginUndoGrouping];
+    XCTAssertTrue([edit moveElement:b underParent:g atIndex:-1]);
+    [undo endUndoGrouping];
+    XCTAssertEqualObjects(order(body), (@[ @"a", @"g" ]));
+    XCTAssertEqualObjects(order(g), (@[ @"?", @"c", @"b" ]));   // "?" = the label
+    XCTAssertNotNil([p controlForElement:b]);
+
+    // refusals change nothing: into itself / its own subtree, a zone that
+    // rejects the kind, and dropping right where it already is
+    XCTAssertFalse([edit moveElement:g underParent:g atIndex:-1]);
+    XCTAssertFalse([edit moveElement:g underParent:(NSXMLElement *)[byID(@"c") parent] atIndex:0]);
+    XCTAssertFalse([edit moveElement:a underParent:(NSXMLElement *)p.model.element atIndex:-1]);
+    XCTAssertFalse([edit moveElement:a underParent:body atIndex:(NSInteger)[a index]]);
+    XCTAssertEqualObjects(order(body), (@[ @"a", @"g" ]));
+
+    // the undo chain walks every move back
+    [undo undo];
+    XCTAssertEqualObjects(order(body), (@[ @"a", @"b", @"g" ]));
+    XCTAssertEqualObjects(order(g), (@[ @"?", @"c" ]));
+    [undo undo];
+    XCTAssertEqualObjects(order(body), (@[ @"b", @"g", @"a" ]));
+    [undo undo];
+    XCTAssertEqualObjects(order(body), (@[ @"a", @"b", @"g" ]));
+    XCTAssertEqual(p.controls.count, controls);
+
+    // and the moved-again layout still resolves for the form view
+    [NSApplication sharedApplication];
+    XFFormView *fv = [[XFFormView alloc] initWithProcessor:p];
+    XCTAssertFalse(NSIsEmptyRect([fv layoutFrameOfControl:[p controlForElement:a]]));
+}
+
+// The design-support introspection the designer's overlay draws from:
+// layoutFrameOfControl / controlAtPoint on XFFormView.
+- (void)testFormViewDesignIntrospection
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+        @"<xf:instance><data xmlns=\"\"><name>Ada</name><city/><ghost/></data></xf:instance>"
+        @"<xf:bind nodeset=\"ghost\" relevant=\"false()\"/>"
+        extra:
+        @"<xf:input ref=\"name\"><xf:label>Name</xf:label></xf:input>"
+        @"<xf:group><xf:label>Address</xf:label>"
+        @"<xf:input ref=\"city\"><xf:label>City</xf:label></xf:input></xf:group>"
+        @"<xf:input ref=\"ghost\"><xf:label>Ghost</xf:label></xf:input>"
+        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *fv = [[XFFormView alloc] initWithProcessor:p];
+
+    XFControl * (^byRef)(NSString *) = ^XFControl *(NSString *ref) {
+        for (NSXMLElement *e in [XFXML elementsWithLocalName:@"input"
+                                                namespaceURI:@"http://www.w3.org/2002/xforms"
+                                                      inNode:p.hostDocument]) {
+            if ([[[e attributeForName:@"ref"] stringValue] isEqualToString:ref]) {
+                return [p controlForElement:e];
+            }
+        }
+        return nil;
+    };
+    XFControl *name = byRef(@"name");
+    XFControl *city = byRef(@"city");
+    XFControl *ghost = byRef(@"ghost");
+    XFGroup *group = [self firstControlOfClass:[XFGroup class] in:p];
+    XCTAssertNotNil(name);
+    XCTAssertNotNil(city);
+    XCTAssertNotNil(group);
+
+    // laid-out controls report a frame; the hit test finds them by it
+    NSRect nameRect = [fv layoutFrameOfControl:name];
+    XCTAssertFalse(NSIsEmptyRect(nameRect));
+    XCTAssertEqual([fv controlAtPoint:NSMakePoint(NSMidX(nameRect), NSMidY(nameRect))], name);
+
+    // the group's box encloses its child, and the child wins the hit test
+    NSRect groupRect = [fv layoutFrameOfControl:group];
+    NSRect cityRect = [fv layoutFrameOfControl:city];
+    XCTAssertFalse(NSIsEmptyRect(groupRect));
+    XCTAssertFalse(NSIsEmptyRect(cityRect));
+    XCTAssertTrue(NSContainsRect(groupRect, cityRect));
+    XCTAssertEqual([fv controlAtPoint:NSMakePoint(NSMidX(cityRect), NSMidY(cityRect))], city);
+    // the box's title strip holds no widget — the group itself answers
+    XCTAssertEqual([fv controlAtPoint:NSMakePoint(NSMinX(groupRect) + 2, NSMinY(groupRect) + 2)], group);
+
+    // a non-relevant control is not laid out: no frame, never hit
+    XCTAssertNotNil(ghost);
+    XCTAssertTrue(NSIsEmptyRect([fv layoutFrameOfControl:ghost]));
+    // empty margin space hits nothing
+    XCTAssertNil([fv controlAtPoint:NSMakePoint(0.5, 0.5)]);
+}
+
+// The designer's command layer: insert / delete / attribute / support-child
+// edits notify the processor in place and undo losslessly (element identity
+// survives the round trip).
+- (void)testHostEditCommands
+{
+    NSString *xml =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
+        @"      xmlns:xf=\"http://www.w3.org/2002/xforms\">"
+        @"<head><xf:model id=\"m\">"
+        @"<xf:instance><data xmlns=\"\"><name>Ada</name><age>7</age></data></xf:instance>"
+        @"</xf:model></head>"
+        @"<body><xf:input id=\"taken-1\" ref=\"name\"><xf:label>Name</xf:label></xf:input></body>"
+        @"</html>";
+    NSError *error = nil;
+    XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    NSXMLElement *body = [XFXML childElementWithLocalName:@"body"
+                                             namespaceURI:XFXHTMLNamespaceURI
+                                                ofElement:[p.hostDocument rootElement]];
+    XCTAssertNotNil(body);
+    NSXMLElement *modelEl = (NSXMLElement *)p.model.element;
+
+    NSUndoManager *undo = [[NSUndoManager alloc] init];
+    [undo setGroupsByEvent:NO];
+    XFHostEdit *edit = [XFHostEdit editWithProcessor:p undoManager:undo];
+    __block NSUInteger changes = 0;
+    edit.changedHandler = ^(NSXMLElement *e) { (void)e; changes++; };
+
+    // insertion zones
+    XCTAssertTrue([[XFHostEdit insertableNamesUnderParent:body] containsObject:@"input"]);
+    NSArray *modelNames = [XFHostEdit insertableNamesUnderParent:modelEl];
+    XCTAssertEqualObjects([modelNames subarrayWithRange:NSMakeRange(0, 3)],
+                          (@[ @"instance", @"bind", @"submission" ]));
+    XCTAssertTrue([modelNames containsObject:@"action"]);   // model event handlers
+    XCTAssertFalse([XFHostEdit canInsertElementNamed:@"input" underParent:modelEl]);
+    NSXMLElement *data = (NSXMLElement *)[[p.defaultInstance.document rootElement] copy];
+    XCTAssertEqual([XFHostEdit insertableNamesUnderParent:data].count, (NSUInteger)0);
+
+    // unique ids skip taken ones
+    XCTAssertEqualObjects([edit uniqueIdentifierWithPrefix:@"taken"], @"taken-2");
+
+    // insert an input under the body
+    NSUInteger before = p.controls.count;
+    [undo beginUndoGrouping];
+    NSXMLElement *input = [edit insertElementNamed:@"input" underParent:body atIndex:-1 error:&error];
+    [undo endUndoGrouping];
+    XCTAssertNotNil(input, @"%@", error);
+    XCTAssertEqual(p.controls.count, before + 1);
+    XCTAssertNotNil([p controlForElement:input]);
+    XCTAssertEqualObjects([[input attributeForName:@"id"] stringValue], @"input-1");
+    XCTAssertEqualObjects([edit supportChildText:@"label" onElement:input], @"Input");
+    XCTAssertEqual(changes, (NSUInteger)1);
+
+    // attribute edit + undo
+    [undo beginUndoGrouping];
+    [edit setAttribute:@"ref" value:@"age" onElement:input];
+    [undo endUndoGrouping];
+    XCTAssertEqualObjects([[input attributeForName:@"ref"] stringValue], @"age");
+    [undo undo];
+    XCTAssertNil([input attributeForName:@"ref"]);
+    [undo redo];
+    XCTAssertEqualObjects([[input attributeForName:@"ref"] stringValue], @"age");
+
+    // support child edit + undo
+    [undo beginUndoGrouping];
+    [edit setSupportChild:@"hint" text:@"Years" onElement:input];
+    [undo endUndoGrouping];
+    XCTAssertEqualObjects([edit supportChildText:@"hint" onElement:input], @"Years");
+    [undo undo];
+    XCTAssertNil([edit supportChildText:@"hint" onElement:input]);
+
+    // rich support child: inline markup + xf:output (XForms 1.1 label
+    // content), read back as XML, flattened text still available, undo
+    // restores the plain text version
+    [undo beginUndoGrouping];
+    [edit setSupportChild:@"hint" text:@"Years" onElement:input];
+    [undo endUndoGrouping];
+    NSError *richErr = nil;
+    XCTAssertFalse([edit setSupportChild:@"hint" contentXML:@"<broken"
+                               onElement:input error:&richErr]);
+    XCTAssertNotNil(richErr);
+    XCTAssertEqualObjects([edit supportChildText:@"hint" onElement:input], @"Years");
+    [undo beginUndoGrouping];
+    XCTAssertTrue([edit setSupportChild:@"hint"
+                             contentXML:@"Age in <strong>years</strong>: <xf:output value=\"'7'\"/>"
+                              onElement:input error:&error], @"%@", error);
+    [undo endUndoGrouping];
+    NSString *hintXML = [edit supportChildXML:@"hint" onElement:input];
+    XCTAssertTrue([hintXML containsString:@"Age in <strong>years</strong>: "], @"%@", hintXML);
+    XCTAssertTrue([hintXML containsString:@"output"], @"%@", hintXML);
+    XCTAssertFalse([hintXML containsString:@"xmlns"], @"%@", hintXML);
+    XCTAssertTrue([XFHostXMLString(p.hostDocument, 0) containsString:@"<strong>years</strong>"]);
+    [undo undo];
+    XCTAssertEqualObjects([edit supportChildText:@"hint" onElement:input], @"Years");
+    XCTAssertEqualObjects([edit supportChildXML:@"hint" onElement:input], @"Years");
+    // a rich label lands as the FIRST child even when created fresh
+    [undo beginUndoGrouping];
+    [edit setSupportChild:@"hint" text:nil onElement:input];
+    [edit setSupportChild:@"label" text:nil onElement:input];
+    XCTAssertTrue([edit setSupportChild:@"label" contentXML:@"<em>Nom</em>"
+                              onElement:input error:&error], @"%@", error);
+    [undo endUndoGrouping];
+    XCTAssertEqualObjects([(NSXMLElement *)[input childAtIndex:0] localName], @"label");
+    XCTAssertEqualObjects([edit supportChildText:@"label" onElement:input], @"Nom");
+    [undo beginUndoGrouping];
+    [edit setSupportChild:@"label" text:@"Input" onElement:input];
+    [undo endUndoGrouping];
+
+    // delete + undo brings back the SAME element at the same place
+    NSInteger index = (NSInteger)[input index];
+    [undo beginUndoGrouping];
+    [edit deleteElement:input];
+    [undo endUndoGrouping];
+    XCTAssertEqual(p.controls.count, before);
+    XCTAssertNil([p controlForElement:input]);
+    [undo undo];
+    XCTAssertEqual(p.controls.count, before + 1);
+    XCTAssertEqual((NSInteger)[input index], index);
+    XCTAssertNotNil([p controlForElement:input]);
+    XCTAssertEqual([input parent], body);
+
+    // a bind inserted under the model reaches the model
+    [undo beginUndoGrouping];
+    NSXMLElement *bind = [edit insertElementNamed:@"bind" underParent:modelEl atIndex:-1 error:&error];
+    [undo endUndoGrouping];
+    XCTAssertNotNil(bind, @"%@", error);
+    [undo beginUndoGrouping];
+    [edit setAttribute:@"nodeset" value:@"age" onElement:bind];
+    [edit setAttribute:@"required" value:@"true()" onElement:bind];
+    [undo endUndoGrouping];
+    XCTAssertTrue([XFHostXMLString(p.hostDocument, 0) containsString:@"required=\"true()\""]);
+
+    // instance-data replacement re-adopts the instance; undo restores it
+    NSXMLElement *instanceEl = [XFXML childElementWithLocalName:@"instance"
+                                                   namespaceURI:XFXFormsNamespaceURI
+                                                      ofElement:modelEl];
+    XCTAssertNotNil(instanceEl);
+    NSError *bad = nil;
+    XCTAssertFalse([edit setContentXML:@"<broken" onElement:instanceEl error:&bad]);
+    XCTAssertNotNil(bad);
+    [undo beginUndoGrouping];
+    XCTAssertTrue([edit setContentXML:@"<data xmlns=\"\"><name>Zed</name><city/></data>"
+                            onElement:instanceEl error:&error], @"%@", error);
+    [undo endUndoGrouping];
+    NSXMLElement *root = [[p defaultInstance] documentElement];
+    XCTAssertEqualObjects([[root childAtIndex:0] stringValue], @"Zed");
+    XCTAssertEqual([root childCount], (NSUInteger)2);
+    [undo undo];
+    root = [[p defaultInstance] documentElement];
+    XCTAssertEqualObjects([[root childAtIndex:0] stringValue], @"Ada");
+}
+
+// The AST's structure/rendering API (the designer's picker is built on
+// it): kinds, canonical source, precedence-preserving parentheses, and
+// subexpression replacement by structure path.
+- (void)testXPathStructureAndRendering
+{
+    NSError *error = nil;
+    XFXPath *calc = [XFXPath xpathWithString:@"../in - ../out" error:&error];
+    XCTAssertNotNil(calc, @"%@", error);
+    NSDictionary *s = [calc structure];
+    XCTAssertEqualObjects(s[@"kind"], @"binary");
+    XCTAssertEqualObjects(s[@"op"], @"-");
+    NSArray *children = s[@"children"];
+    XCTAssertEqual(children.count, (NSUInteger)2);
+    XCTAssertEqualObjects(children[0][@"kind"], @"location");
+    XCTAssertEqualObjects(children[0][@"source"], @"../in");
+    XCTAssertEqualObjects([calc canonicalSource], @"../in - ../out");
+    // splice: edit the left path only
+    XCTAssertEqualObjects([calc sourceReplacingNodeAtPath:@[ @0 ] with:@"../balance"],
+                          @"../balance - ../out");
+    XCTAssertNil([calc sourceReplacingNodeAtPath:@[ @7 ] with:@"x"]);
+
+    // parentheses survive where the grammar needs them; associativity too
+    XFXPath *parens = [XFXPath xpathWithString:@"(a + b) * c" error:&error];
+    XCTAssertEqualObjects([parens canonicalSource], @"(a + b) * c");
+    XFXPath *assoc = [XFXPath xpathWithString:@"a - (b - c)" error:&error];
+    XCTAssertEqualObjects([assoc canonicalSource], @"a - (b - c)");
+
+    // location paths: steps carry axis/test, predicates re-render
+    XFXPath *loc = [XFXPath xpathWithString:@"instance('m')/order/item[@sku='x']/price"
+                                      error:&error];
+    XCTAssertNotNil(loc, @"%@", error);
+    NSDictionary *ls = [loc structure];
+    XCTAssertEqualObjects(ls[@"kind"], @"path");
+    NSArray *lc = ls[@"children"];
+    // predicate-free filters collapse: the path's head IS the function
+    XCTAssertEqualObjects(lc[0][@"kind"], @"function");
+    XCTAssertEqualObjects(lc[0][@"name"], @"instance");
+    XCTAssertEqualObjects(lc[1][@"kind"], @"location");
+    NSArray *steps = lc[1][@"children"];
+    XCTAssertEqual(steps.count, (NSUInteger)3);
+    XCTAssertEqualObjects(steps[1][@"axis"], @"child");
+    XCTAssertEqualObjects(steps[1][@"test"], @"item");
+    XCTAssertEqualObjects([loc canonicalSource],
+                          @"instance('m')/order/item[@sku = 'x']/price");
+
+    // functions and shorthands
+    XFXPath *fn = [XFXPath xpathWithString:@"concat(../a, 'x', \"it's\")" error:&error];
+    XCTAssertEqualObjects([fn canonicalSource], @"concat(../a, 'x', \"it's\")");
+
+    // highlight tokens: engine-lexed spans with semantic classification
+    NSString *expr = @"instance('m')/a[position() mod 2 = 0] | $v/child::b";
+    NSArray *tokens = [XFXPath highlightTokensForString:expr];
+    NSMutableDictionary *byText = [NSMutableDictionary dictionary];
+    for (NSDictionary *token in tokens) {
+        NSRange r = [token[@"range"] rangeValue];
+        XCTAssertTrue(NSMaxRange(r) <= expr.length);
+        byText[[expr substringWithRange:r]] = token[@"kind"];
+    }
+    XCTAssertEqualObjects(byText[@"instance"], @"function");
+    XCTAssertEqualObjects(byText[@"'m'"], @"string");
+    XCTAssertEqualObjects(byText[@"position"], @"function");
+    XCTAssertEqualObjects(byText[@"mod"], @"operator");
+    XCTAssertEqualObjects(byText[@"2"], @"number");
+    XCTAssertEqualObjects(byText[@"|"], @"operator");
+    XCTAssertEqualObjects(byText[@"v"], @"variable");
+    XCTAssertEqualObjects(byText[@"child"], @"axis");
+    XCTAssertEqualObjects(byText[@"b"], @"name");
+    // '*' is a name test at operand position, multiplication after one
+    NSArray *star1 = [XFXPath highlightTokensForString:@"a * b"];
+    XCTAssertEqualObjects(star1[1][@"kind"], @"operator");
+    NSArray *star2 = [XFXPath highlightTokensForString:@"child::*"];
+    XCTAssertEqualObjects([star2 lastObject][@"kind"], @"name");
+    // half-typed expressions still tokenize (no parse required)
+    XCTAssertTrue([XFXPath highlightTokensForString:@"concat('a"].count > 0);
+}
+
+// Itemset authoring: insertable under selects with a compilable starter,
+// and the child-attribute command (label/@ref, value/@ref) round-trips.
+- (void)testItemsetAuthoring
+{
+    NSString *xml =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
+        @"      xmlns:xf=\"http://www.w3.org/2002/xforms\">"
+        @"<head><xf:model id=\"m\">"
+        @"<xf:instance><data xmlns=\"\"><color>red</color>"
+        @"<option>red</option><option>blue</option></data></xf:instance>"
+        @"</xf:model></head>"
+        @"<body><xf:select1 id=\"s\" ref=\"color\"><xf:label>Color</xf:label>"
+        @"<xf:item><xf:label>None</xf:label><xf:value/></xf:item>"
+        @"</xf:select1></body>"
+        @"</html>";
+    NSError *error = nil;
+    XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    NSXMLElement *select = nil;
+    for (XFControl *c in p.controls) {
+        if ([[c.element localName] isEqualToString:@"select1"]) {
+            select = c.element;
+        }
+    }
+    XCTAssertNotNil(select);
+    XCTAssertTrue([[XFHostEdit insertableNamesUnderParent:select] containsObject:@"itemset"]);
+
+    NSUndoManager *undo = [[NSUndoManager alloc] init];
+    [undo setGroupsByEvent:NO];
+    XFHostEdit *edit = [XFHostEdit editWithProcessor:p undoManager:undo];
+    [undo beginUndoGrouping];
+    NSXMLElement *itemset = [edit insertElementNamed:@"itemset" underParent:select
+                                             atIndex:-1 error:&error];
+    [undo endUndoGrouping];
+    XCTAssertNotNil(itemset, @"%@", error);
+    XCTAssertEqualObjects([[itemset attributeForName:@"nodeset"] stringValue], @".");
+    XCTAssertEqualObjects([edit supportChildAttribute:@"ref" child:@"label"
+                                            onElement:itemset], @".");
+
+    [undo beginUndoGrouping];
+    [edit setAttribute:@"nodeset" value:@"../option" onElement:itemset];
+    [edit setSupportChildAttribute:@"ref" child:@"value" value:@"." onElement:itemset];
+    [edit setSupportChildAttribute:@"ref" child:@"label" value:@"." onElement:itemset];
+    [undo endUndoGrouping];
+    XCTAssertTrue([XFHostXMLString(p.hostDocument, 0) containsString:@"nodeset=\"../option\""]);
+    // the select's items now include the two option nodes
+    XFSelectControl *sc = (XFSelectControl *)[p controlForElement:select];
+    XCTAssertGreaterThanOrEqual((NSInteger)sc.items.count, 3);
+
+    [undo undo];
+    XCTAssertEqualObjects([edit supportChildAttribute:@"ref" child:@"label"
+                                            onElement:itemset], @".");
+    [undo undo];
+    XCTAssertNil([itemset parent]);
+}
+
+// Action authoring: insertion zones offer the action module, inserts get
+// an ev:event starter, attribute edits recompile the handler, delete
+// unhooks it (the listener would otherwise keep firing).
+- (void)testActionAuthoring
+{
+    NSString *xml =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
+        @"      xmlns:xf=\"http://www.w3.org/2002/xforms\""
+        @"      xmlns:ev=\"http://www.w3.org/2001/xml-events\">"
+        @"<head><xf:model id=\"m\">"
+        @"<xf:instance><data xmlns=\"\"><name>Ada</name></data></xf:instance>"
+        @"</xf:model></head>"
+        @"<body><xf:trigger id=\"t\"><xf:label>Go</xf:label></xf:trigger></body>"
+        @"</html>";
+    NSError *error = nil;
+    XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    NSXMLElement *trigger = nil;
+    for (XFControl *c in p.controls) {
+        if ([[c.element localName] isEqualToString:@"trigger"]) {
+            trigger = c.element;
+        }
+    }
+    XCTAssertNotNil(trigger);
+
+    NSUndoManager *undo = [[NSUndoManager alloc] init];
+    [undo setGroupsByEvent:NO];
+    XFHostEdit *edit = [XFHostEdit editWithProcessor:p undoManager:undo];
+
+    // zones: the action module hangs off controls, models, submissions,
+    // and nests inside xf:action — never inside instance data
+    XCTAssertTrue([[XFHostEdit insertableNamesUnderParent:trigger] containsObject:@"setvalue"]);
+    NSXMLElement *modelEl = (NSXMLElement *)p.model.element;
+    XCTAssertTrue([[XFHostEdit insertableNamesUnderParent:modelEl] containsObject:@"action"]);
+    NSXMLElement *data = (NSXMLElement *)[[p.defaultInstance.document rootElement] copy];
+    XCTAssertFalse([XFHostEdit canInsertElementNamed:@"setvalue" underParent:data]);
+
+    // insert under the trigger: ev:event starter + live compilation
+    NSUInteger actionsBefore = p.actions.count;
+    [undo beginUndoGrouping];
+    NSXMLElement *setvalue = [edit insertElementNamed:@"setvalue" underParent:trigger
+                                              atIndex:-1 error:&error];
+    [undo endUndoGrouping];
+    XCTAssertNotNil(setvalue, @"%@", error);
+    XCTAssertEqualObjects([[setvalue attributeForName:@"ev:event"] stringValue], @"DOMActivate");
+    XCTAssertEqual(p.actions.count, actionsBefore + 1);
+    [undo beginUndoGrouping];
+    [edit setAttribute:@"ref" value:@"name" onElement:setvalue];
+    [edit setAttribute:@"value" value:@"'Zed'" onElement:setvalue];
+    [undo endUndoGrouping];
+    XCTAssertEqual(p.actions.count, actionsBefore + 1);   // recompiled, not duplicated
+
+    // the handler actually fires: activating the trigger sets the node
+    XFTriggerControl *triggerControl = (XFTriggerControl *)[p controlForElement:trigger];
+    [triggerControl activate];
+    XCTAssertEqualObjects([[[p defaultInstance] documentElement] stringValue], @"Zed");
+
+    // inline content command: message-style mixed content on the element
+    [undo beginUndoGrouping];
+    NSXMLElement *message = [edit insertElementNamed:@"message" underParent:trigger
+                                             atIndex:-1 error:&error];
+    XCTAssertNotNil(message, @"%@", error);
+    XCTAssertTrue([edit setInlineContentXML:@"Saved <strong>OK</strong>"
+                                  onElement:message error:&error], @"%@", error);
+    [undo endUndoGrouping];
+    XCTAssertTrue([[edit inlineContentXMLOfElement:message] containsString:@"<strong>OK</strong>"]);
+    [undo undo];
+    XCTAssertNil([message parent]);
+
+    // delete unhooks the compiled handler and its listener
+    [undo beginUndoGrouping];
+    [edit deleteElement:setvalue];
+    [undo endUndoGrouping];
+    XCTAssertEqual(p.actions.count, actionsBefore);
+    [[[p defaultInstance] documentElement] setStringValue:@"Ada"];
+    [triggerControl activate];
+    XCTAssertEqualObjects([[[p defaultInstance] documentElement] stringValue], @"Ada");
+
+    // ev:observer redirects a handler to listen elsewhere (XML Events
+    // attribute module): a setvalue living under the MODEL but observing
+    // the trigger fires when the trigger activates — authored live, so
+    // the attribute change must reinstall the listener on the new observer.
+    // (ref="." — the earlier setStringValue on the root ate the <name>
+    // child, so the root itself is the only stable target left.)
+    [undo beginUndoGrouping];
+    NSXMLElement *remote = [edit insertElementNamed:@"setvalue" underParent:modelEl
+                                            atIndex:-1 error:&error];
+    XCTAssertNotNil(remote, @"%@", error);
+    [edit setAttribute:@"ref" value:@"." onElement:remote];
+    [edit setAttribute:@"value" value:@"'Observed'" onElement:remote];
+    [edit setAttribute:@"ev:event" value:@"DOMActivate" onElement:remote];
+    [edit setAttribute:@"ev:observer" value:@"t" onElement:remote];
+    [undo endUndoGrouping];
+    [triggerControl activate];
+    XCTAssertEqualObjects([[[p defaultInstance] documentElement] stringValue], @"Observed");
+    [undo beginUndoGrouping];
+    [edit deleteElement:remote];
+    [undo endUndoGrouping];
+    XCTAssertEqual(p.actions.count, actionsBefore);
+    [[[p defaultInstance] documentElement] setStringValue:@"Ada"];
+    [triggerControl activate];
+    XCTAssertEqualObjects([[[p defaultInstance] documentElement] stringValue], @"Ada");
+}
+
+// The node picker's step builder: relative paths with ../, positional
+// predicates only where needed, attributes, and the below-root tail for
+// instance('id')/… expressions.
+- (void)testXPathStepBuilding
+{
+    NSString *xml =
+        @"<order xmlns=\"\">"
+        @"<customer><name>Ada</name><city>Kyzylorda</city></customer>"
+        @"<line qty=\"2\"><sku>A-1</sku></line>"
+        @"<line qty=\"5\"><sku>B-2</sku></line>"
+        @"</order>";
+    NSError *error = nil;
+    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:&error];
+    XCTAssertNotNil(doc, @"%@", error);
+    NSXMLElement *order = [doc rootElement];
+    NSXMLElement *customer = (NSXMLElement *)[order childAtIndex:0];
+    NSXMLElement *name = (NSXMLElement *)[customer childAtIndex:0];
+    NSXMLElement *line2 = (NSXMLElement *)[order childAtIndex:2];
+    NSXMLElement *sku2 = (NSXMLElement *)[line2 childAtIndex:0];
+    NSXMLNode *qty2 = [line2 attributeForName:@"qty"];
+
+    XCTAssertEqualObjects([XFHostEdit pathFromNode:order toNode:order], @".");
+    XCTAssertEqualObjects([XFHostEdit pathFromNode:order toNode:name], @"customer/name");
+    XCTAssertEqualObjects([XFHostEdit pathFromNode:order toNode:sku2], @"line[2]/sku");
+    XCTAssertEqualObjects([XFHostEdit pathFromNode:name toNode:sku2], @"../../line[2]/sku");
+    XCTAssertEqualObjects([XFHostEdit pathFromNode:customer toNode:qty2], @"../line[2]/@qty");
+    XCTAssertEqualObjects([XFHostEdit pathFromNode:sku2 toNode:customer], @"../../customer");
+    XCTAssertEqualObjects([XFHostEdit stepsBelowRootToNode:order], @"");
+    XCTAssertEqualObjects([XFHostEdit stepsBelowRootToNode:sku2], @"line[2]/sku");
+    // a node from another document has no relative path
+    NSXMLDocument *other = [[NSXMLDocument alloc] initWithXMLString:@"<x/>" options:0 error:NULL];
+    XCTAssertNil([XFHostEdit pathFromNode:order toNode:[other rootElement]]);
+}
+
 @end

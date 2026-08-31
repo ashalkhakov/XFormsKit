@@ -9,6 +9,7 @@
 
 #import "XFFormView.h"
 #import "XFRichText.h"
+#import "XFSVG.h"
 #import "XFProcessor.h"
 #import <objc/runtime.h>
 #import "XFControl.h"
@@ -129,21 +130,9 @@ typedef NS_ENUM(NSInteger, XFBadgeKind) {
 @property (nonatomic, assign) BOOL selecting;
 @end
 
-/// A minimal rich text editor: a toolbar (block popup + B I U S) over an
-/// NSTextView. The instance stores the XHTML subset (XFRichText); the text
-/// view holds the attributed form. No WebKit anywhere.
-@interface XFRichTextEditor : NSView
-@property (nonatomic, strong) NSScrollView *scrollView;
-@property (nonatomic, strong) NSTextView *textView;
-@property (nonatomic, strong) NSPopUpButton *blockPopup;
-@property (nonatomic, strong) NSFont *baseFont;
-- (instancetype)initWithFrame:(NSRect)frame baseFont:(NSFont *)font;
-- (void)setHTML:(NSString *)html;
-- (NSString *)HTML;
-/// Return inside a list continues it (next bullet / number); Return on an
-/// empty item leaves the list. NO = not in a list, insert normally.
-- (BOOL)handleNewline;
-@end
+/* XFRichTextEditor is public now (the designer's label editors need it) —
+   see XFRichTextEditor.h. */
+#import "XFRichTextEditor.h"
 
 /// The view AppKit focuses for a widget (the field editor host, the
 /// scroll view document, or the view itself). Defined in XFFormView.m.
@@ -173,6 +162,12 @@ FOUNDATION_EXPORT NSColor *XFInvalidTextColor(void);
 @property (nonatomic, strong) NSTimer *delayTimer;
 /// Adapters of compact select list boxes (G-43).
 @property (nonatomic, strong) NSMutableArray<XFListBoxAdapter *> *listBoxes;
+/// SVG widgets in the current layout (G-20 phase 3) — rebuilt on refresh
+/// so AVT and output values stay live.
+@property (nonatomic, strong) NSMutableArray *svgViews;
+/// The in-scope context node for host markup being laid out (repeat item
+/// nodes, a bound group's node) — what SVG AVTs evaluate against.
+@property (nonatomic, strong) NSXMLNode *svgContextNode;
 /// Focusable inner views in layout (document) order — the tab chain (G-63).
 @property (nonatomic, strong) NSMutableArray<NSView *> *keyViews;
 @property (nonatomic, weak) NSView *firstKeyView;

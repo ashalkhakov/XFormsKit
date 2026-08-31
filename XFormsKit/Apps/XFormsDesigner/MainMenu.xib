@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24127" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+    <dependencies>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24127"/>
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="NSApplication">
+            <connections>
+                <outlet property="mainMenu" destination="MENU" id="cMenu"/>
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
+        <customObject id="-3" userLabel="Application" customClass="NSObject"/>
+        <menu title="MainMenu" systemMenu="main" id="MENU">
+            <items>
+                <menuItem title="XFormsDesigner" id="MIAPP">
+                    <menu key="submenu" title="XFormsDesigner" systemMenu="apple" id="MSAPP">
+                        <items>
+                            <menuItem title="About XFormsDesigner" id="MABOUT">
+                                <connections>
+                                    <action selector="orderFrontStandardAboutPanel:" target="-1" id="AABOUT"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="S0"/>
+                            <menuItem title="Quit XFormsDesigner" keyEquivalent="q" id="MQ">
+                                <connections>
+                                    <action selector="terminate:" target="-1" id="AQ"/>
+                                </connections>
+                            </menuItem>
+                        </items>
+                    </menu>
+                </menuItem>
+                <menuItem title="File" id="MIFILE">
+                    <menu key="submenu" title="File" id="MSFILE">
+                        <items>
+                            <menuItem title="New" keyEquivalent="n" id="MNEW">
+                                <connections>
+                                    <action selector="newDocument:" target="-1" id="ANEW"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Open…" keyEquivalent="o" id="MOPEN">
+                                <connections>
+                                    <action selector="openDocument:" target="-1" id="AOPEN"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="S1"/>
+                            <menuItem title="Close" keyEquivalent="w" id="MCLOSE">
+                                <connections>
+                                    <action selector="performClose:" target="-1" id="ACLOSE"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Save" keyEquivalent="s" id="MSAVE">
+                                <connections>
+                                    <action selector="saveDocument:" target="-1" id="ASAVE"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Save As…" keyEquivalent="S" id="MSAVEAS">
+                                <connections>
+                                    <action selector="saveDocumentAs:" target="-1" id="ASAVEAS"/>
+                                </connections>
+                            </menuItem>
+                        </items>
+                    </menu>
+                </menuItem>
+                <menuItem title="Edit" id="MIEDIT">
+                    <menu key="submenu" title="Edit" id="MSEDIT">
+                        <items>
+                            <menuItem title="Undo" keyEquivalent="z" id="MUNDO">
+                                <connections>
+                                    <action selector="undo:" target="-1" id="AUNDO"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Redo" keyEquivalent="Z" id="MREDO">
+                                <connections>
+                                    <action selector="redo:" target="-1" id="AREDO"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="S2"/>
+                            <menuItem title="Cut" keyEquivalent="x" id="MCUT">
+                                <connections>
+                                    <action selector="cut:" target="-1" id="ACUT"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Copy" keyEquivalent="c" id="MCOPY">
+                                <connections>
+                                    <action selector="copy:" target="-1" id="ACOPY"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Paste" keyEquivalent="v" id="MPASTE">
+                                <connections>
+                                    <action selector="paste:" target="-1" id="APASTE"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Select All" keyEquivalent="a" id="MALL">
+                                <connections>
+                                    <action selector="selectAll:" target="-1" id="AALL"/>
+                                </connections>
+                            </menuItem>
+                        </items>
+                    </menu>
+                </menuItem>
+                <menuItem title="Form" id="MIFORM">
+                    <menu key="submenu" title="Form" id="MSFORM">
+                        <items>
+                            <menuItem title="Insert Element" id="MINSERT">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="insertElement:" target="-1" id="AINSERT"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Delete Element" id="MDELEL">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="deleteElement:" target="-1" id="ADELEL"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="S3"/>
+                            <menuItem title="Reset Instance Data" id="MRESET">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="resetInstances:" target="-1" id="ARESET"/>
+                                </connections>
+                            </menuItem>
+                        </items>
+                    </menu>
+                </menuItem>
+            </items>
+            <point key="canvasLocation" x="140" y="154"/>
+        </menu>
+    </objects>
+</document>

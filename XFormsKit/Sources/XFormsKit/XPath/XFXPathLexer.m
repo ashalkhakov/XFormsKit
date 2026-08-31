@@ -12,6 +12,7 @@
     // '-' (or '*', 'div', 'mod', 'and', 'or') an operator, never the start
     // of a negative literal / name test (XSLTForms xp2js.xsl does the same).
     BOOL _lastWasOperand;
+    NSUInteger _tokenStart;
 }
 
 - (instancetype)initWithString:(NSString *)string
@@ -63,6 +64,7 @@ static BOOL XFIsNameChar(unichar c)
     XFXPathToken *t = [[XFXPathToken alloc] init];
     t.kind = kind;
     t.text = text;
+    t.range = NSMakeRange(_tokenStart, _i - _tokenStart);
     return t;
 }
 
@@ -95,6 +97,7 @@ static BOOL XFIsNameChar(unichar c)
 - (XFXPathToken *)scan
 {
     [self skipSpace];
+    _tokenStart = _i;
     if (_i >= _n) {
         return [self token:XFXPathTokenEOF text:@""];
     }

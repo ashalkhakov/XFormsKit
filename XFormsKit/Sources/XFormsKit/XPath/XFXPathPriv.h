@@ -43,6 +43,8 @@ typedef NS_ENUM(NSInteger, XFXPathTokenKind) {
 @property (nonatomic, assign) XFXPathTokenKind kind;
 @property (nonatomic, copy) NSString *text;
 @property (nonatomic, assign) double number;
+/// Source span (whitespace excluded) — syntax highlighting reads this.
+@property (nonatomic, assign) NSRange range;
 @end
 
 @interface XFXPathLexer : NSObject
@@ -166,6 +168,31 @@ extern NSString * const XFAxisSelf;
 @property (nonatomic, copy) NSString *name;
 @property (nonatomic, copy) NSArray<XFExpr *> *args;
 + (instancetype)name:(NSString *)name args:(NSArray<XFExpr *> *)args;
+@end
+
+#pragma mark - Source rendering / introspection (XFExprSource.m)
+
+@interface XFExpr (XFSource)
+/// "number" "string" "variable" "unary-minus" "binary" "union"
+/// "location" "step" "predicate" "path" "filter" "function".
+- (NSString *)xfKind;
+- (NSArray<XFExpr *> *)xfChildren;
+- (NSInteger)xfPrecedence;
+/// XPath source for this subtree. `overrides` maps a subexpression to
+/// replacement source taken verbatim (the designer's splice).
+- (NSString *)xfSourceWithOverrides:(nullable NSMapTable *)overrides;
+- (NSString *)xfSource;
+- (NSString *)xfRenderWithOverrides:(nullable NSMapTable *)overrides;
+- (NSString *)xfChildSource:(XFExpr *)child
+                  overrides:(nullable NSMapTable *)overrides
+              parensBelow:(NSInteger)floor;
+/// Recursive {kind, source, children, op?/name?/axis?/test?/absolute?}.
+- (NSDictionary *)xfStructure;
+- (NSDictionary *)xfStructureExtras;
+@end
+
+@interface XFNodeTest (XFSource)
+- (NSString *)xfTestSource;
 @end
 
 @interface XFXPathParser : NSObject

@@ -13,6 +13,17 @@
 @property (nonatomic, strong) XFNSResolver *nsresolver;
 @end
 
+/// name → XFXPathFunction; consulted by XFXPathCoreFunctions after the
+/// built-in tables miss.
+NSMutableDictionary *XFXPathHostFunctionTable(void)
+{
+    static NSMutableDictionary *table;
+    if (table == nil) {
+        table = [NSMutableDictionary dictionary];
+    }
+    return table;
+}
+
 @implementation XFXPath
 
 + (NSMutableDictionary<NSString *, XFXPath *> *)expressions
@@ -28,6 +39,24 @@
 + (instancetype)xpathWithString:(NSString *)expression error:(NSError **)error
 {
     return [self xpathWithString:expression element:nil error:error];
+}
+
++ (void)registerHostFunctionNamed:(NSString *)name
+                        evaluator:(XFXPathHostFunction)evaluator
+{
+    if (name.length == 0 || evaluator == nil) {
+        return;
+    }
+    XFXPathHostFunctionTable()[name] =
+        [XFXPathFunction acceptContext:NO defaultTo:XFXPathFnDefaultNone
+                                  body:evaluator];
+}
+
++ (void)unregisterHostFunctionNamed:(NSString *)name
+{
+    if (name != nil) {
+        [XFXPathHostFunctionTable() removeObjectForKey:name];
+    }
 }
 
 /// Prefixes used in QName tokens of the expression (name tests and
@@ -142,6 +171,121 @@
 {
     XFXPathValue *value = [self evaluateInContext:context error:error];
     return value ? value.nodes : nil;
+}
+
+- (NSDictionary *)structure
+{
+    return [self.compiled xfStructure];
+}
+
+- (NSString *)canonicalSource
+{
+    return [self.compiled xfSource];
+}
+
+- (NSString *)sourceReplacingNodeAtPath:(NSArray<NSNumber *> *)path
+                                   with:(NSString *)source
+{
+    XFExpr *target = self.compiled;
+    for (NSNumber *index in path) {
+        NSArray *children = [target xfChildren];
+        NSUInteger i = [index unsignedIntegerValue];
+        if (i >= children.count) {
+            return nil;
+        }
+        target = children[i];
+    }
+    if (target == nil) {
+        return nil;
+    }
+    NSMapTable *overrides = [NSMapTable strongToStrongObjectsMapTable];
+    [overrides setObject:source ?: @"" forKey:target];
+    return [self.compiled xfSourceWithOverrides:overrides];
+}
+
+/// Do the token kinds/texts to the LEFT leave us after an operand? The
+/// lexer's own rule (XPath 1.0 §3.7), mirrored for classification.
+static BOOL XFTokenEndsOperand(XFXPathToken *t)
+{
+    switch (t.kind) {
+        case XFXPathTokenNumber:
+        case XFXPathTokenString:
+        case XFXPathTokenRParen:
+        case XFXPathTokenRBrack:
+        case XFXPathTokenDot:
+        case XFXPathTokenDotDot:
+        case XFXPathTokenStar:
+        case XFXPathTokenName:
+            return YES;
+        default:
+            return NO;
+    }
+}
+
++ (NSArray<NSDictionary *> *)highlightTokensForString:(NSString *)expression
+{
+    XFXPathLexer *lexer = [[XFXPathLexer alloc] initWithString:expression ?: @""];
+    NSMutableArray *tokens = [NSMutableArray array];
+    for (;;) {
+        XFXPathToken *t = [lexer next];
+        if (t.kind == XFXPathTokenEOF) {
+            break;
+        }
+        [tokens addObject:t];
+        if (tokens.count > 4096) {
+            break;   // hostile input guard
+        }
+    }
+    NSMutableArray *out = [NSMutableArray arrayWithCapacity:tokens.count];
+    for (NSUInteger i = 0; i < tokens.count; i++) {
+        XFXPathToken *t = tokens[i];
+        XFXPathToken *prev = i > 0 ? tokens[i - 1] : nil;
+        XFXPathToken *next = i + 1 < tokens.count ? tokens[i + 1] : nil;
+        NSString *kind;
+        switch (t.kind) {
+            case XFXPathTokenString: kind = @"string"; break;
+            case XFXPathTokenNumber: kind = @"number"; break;
+            case XFXPathTokenAnd:
+            case XFXPathTokenOr:
+            case XFXPathTokenPlus:
+            case XFXPathTokenMinus:
+            case XFXPathTokenEq:
+            case XFXPathTokenNe:
+            case XFXPathTokenLt:
+            case XFXPathTokenGt:
+            case XFXPathTokenLe:
+            case XFXPathTokenGe:
+            case XFXPathTokenUnion:
+                kind = @"operator";
+                break;
+            case XFXPathTokenDollar:
+                kind = @"variable";
+                break;
+            case XFXPathTokenStar:
+                kind = (prev != nil && XFTokenEndsOperand(prev)) ? @"operator" : @"name";
+                break;
+            case XFXPathTokenName:
+                if (prev != nil && prev.kind == XFXPathTokenDollar) {
+                    kind = @"variable";
+                } else if (next != nil && next.kind == XFXPathTokenLParen) {
+                    kind = @"function";
+                } else if (next != nil && next.kind == XFXPathTokenColonColon) {
+                    kind = @"axis";
+                } else if (prev != nil && XFTokenEndsOperand(prev)
+                           && ([t.text isEqualToString:@"div"] || [t.text isEqualToString:@"mod"])) {
+                    kind = @"operator";
+                } else {
+                    kind = @"name";
+                }
+                break;
+            default:
+                kind = @"punct";
+                break;
+        }
+        [out addObject:@{ @"kind": kind,
+                          @"range": [NSValue valueWithRange:t.range] }];
+    }
+    return out;
 }
 
 + (BOOL)hasFunctionNamed:(NSString *)name

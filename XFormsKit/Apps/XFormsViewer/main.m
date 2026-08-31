@@ -231,10 +231,52 @@
 
 @end
 
+/// Host-registered XPath extension functions (XFXPath
+/// registerHostFunctionNamed:) — the native stand-ins for the page
+/// JavaScript XSLTForms lets samples define. gantt.xhtml's lastday(): the
+/// latest of days-from-date(start[i]) + duration[i] over two comma-joined
+/// lists.
+static NSInteger XFDaysFromCivil(NSInteger y, NSInteger m, NSInteger d)
+{
+    // Howard Hinnant's days_from_civil — days since 1970-01-01
+    y -= m <= 2;
+    NSInteger era = (y >= 0 ? y : y - 399) / 400;
+    NSInteger yoe = y - era * 400;
+    NSInteger doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + d - 1;
+    NSInteger doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    return era * 146097 + doe - 719468;
+}
+
+static void XFRegisterSampleFunctions(void)
+{
+    [XFXPath registerHostFunctionNamed:@"lastday"
+                             evaluator:^XFXPathValue *(XFExprContext *ctx,
+                                                       NSArray *args,
+                                                       NSError **err) {
+        (void)ctx;
+        (void)err;
+        NSArray *starts = [[args.firstObject stringValue] componentsSeparatedByString:@","];
+        NSArray *durations = args.count > 1
+            ? [[args[1] stringValue] componentsSeparatedByString:@","] : @[];
+        double last = 0;
+        for (NSUInteger i = 0; i < starts.count && i < durations.count; i++) {
+            int y = 0, m = 0, d = 0;
+            if (sscanf([starts[i] UTF8String], "%d%*[./-]%d%*[./-]%d", &y, &m, &d) != 3) {
+                continue;
+            }
+            double t = (double)XFDaysFromCivil(y, m, d)
+                + [durations[i] doubleValue];
+            last = MAX(last, t);
+        }
+        return [XFXPathValue number:last];
+    }];
+}
+
 int main(int argc, const char *argv[])
 {
     @autoreleasepool {
         [NSApplication sharedApplication];
+        XFRegisterSampleFunctions();
         XFViewerApp *app = [[XFViewerApp alloc] init];
         [NSApp setDelegate:(id)app];
 #if !defined(GNUSTEP)

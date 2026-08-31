@@ -163,8 +163,22 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
                                                       label:[XFControl labelForElement:element]];
     select.owner = model;
     select.multiple = [[element localName] isEqualToString:@"select"];
+    if (![select reloadTemplatesWithError:&inner]) {
+        if (error) { *error = inner; }
+        return nil;
+    }
+    select.items = @[];
+    return select;
+}
+
+/// (Re)compiles item / itemset / choices templates from the element's
+/// current children — also the designer's path when a choice element is
+/// inserted or edited after the control was built.
+- (BOOL)reloadTemplatesWithError:(NSError **)error
+{
+    NSError *inner = nil;
     NSMutableArray *templates = [NSMutableArray array];
-    for (NSXMLNode *child in [element children]) {
+    for (NSXMLNode *child in [self.element children]) {
         if ([child kind] != NSXMLElementKind) continue;
         NSXMLElement *el = (NSXMLElement *)child;
         if ([XFXML element:el hasLocalName:@"label" namespaceURI:XFXFormsNamespaceURI]
@@ -173,18 +187,17 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
             || [XFXML element:el hasLocalName:@"alert" namespaceURI:XFXFormsNamespaceURI]) {
             continue;
         }
-        XFSelectTemplate *t = [self templateFromElement:el groupLabel:nil error:&inner];
+        XFSelectTemplate *t = [[self class] templateFromElement:el groupLabel:nil error:&inner];
         if (inner) {
             if (error) { *error = inner; }
-            return nil;
+            return NO;
         }
         if (t) {
             [templates addObject:t];
         }
     }
-    select.templates = templates;
-    select.items = @[];
-    return select;
+    self.templates = templates;
+    return YES;
 }
 
 - (void)emitItemFromTemplate:(XFSelectTemplate *)t

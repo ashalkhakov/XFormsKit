@@ -214,6 +214,10 @@ void XFAppKitHasEditingFile(void) {}
 
 - (void)refreshWidgetsInPlaceExcept:(NSView *)editing
 {
+    // SVG re-resolves its AVTs and gathered output values (G-20 phase 3)
+    for (XFSVGView *svg in self.svgViews) {
+        [svg rebuild];
+    }
     for (XFTableAdapter *t in self.tables) {
         [t refreshInPlace];
     }

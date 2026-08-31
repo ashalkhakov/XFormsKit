@@ -50,10 +50,14 @@ XFormsKit_HEADER_FILES = \
 	XFGroup.h \
 	XFHostNode.h \
 	XFTableModel.h \
+	XFHostEdit.h \
 	XFVarControl.h \
 	XFDialog.h \
 	XFSubform.h \
 	XFRichText.h \
+	XFRichTextEditor.h \
+	XFAVT.h \
+	XFSVG.h \
 	XFRepeat.h \
 	XFSwitch.h \
 	XFProcessor.h \
@@ -96,6 +100,7 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/XPath/XFStepExpr.m \
 	Sources/XFormsKit/XPath/XFPathExpr.m \
 	Sources/XFormsKit/XPath/XFBinaryExpr.m \
+	Sources/XFormsKit/XPath/XFExprSource.m \
 	Sources/XFormsKit/XPath/XFXPathFunction.m \
 	Sources/XFormsKit/XPath/XFXPathCoreFunctions.m \
 	Sources/XFormsKit/XPath/XFXPathExtraFunctions.m \
@@ -118,6 +123,8 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/XFGroup.m \
 	Sources/XFormsKit/XFHostNode.m \
 	Sources/XFormsKit/XFTableModel.m \
+	Sources/XFormsKit/XFHostEdit.m \
+	Sources/XFormsKit/XFAVT.m \
 	Sources/XFormsKit/XFVarControl.m \
 	Sources/XFormsKit/XFDialog.m \
 	Sources/XFormsKit/XFSubform.m \
@@ -149,7 +156,8 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/AppKit/XFFormView+Editing.m \
 	Sources/XFormsKit/AppKit/XFTableAdapter.m \
 	Sources/XFormsKit/AppKit/XFRichTextEditor.m \
-	Sources/XFormsKit/AppKit/XFRichText.m
+	Sources/XFormsKit/AppKit/XFRichText.m \
+	Sources/XFormsKit/AppKit/XFSVGView.m
 
 XFormsKit_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath
 XFormsKit_OBJCFLAGS += -fobjc-arc -Wall -Wextra

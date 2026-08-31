@@ -848,6 +848,13 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
         NSDictionary *extra = XFXPathExtraFunctionTable();
         fn = extra[local] ?: extra[name];
     }
+    if (fn == nil) {
+        // host-registered extensions — XSLTForms' page-JavaScript
+        // fallback, native (XFXPath registerHostFunctionNamed:)
+        NSMutableDictionary *XFXPathHostFunctionTable(void);
+        NSDictionary *host = XFXPathHostFunctionTable();
+        fn = host[local] ?: host[name];
+    }
     return fn;
 }
 

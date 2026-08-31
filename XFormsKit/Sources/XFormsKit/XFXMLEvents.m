@@ -314,6 +314,48 @@ static const void *kXFElementKey   = &kXFElementKey;
     }
 }
 
+#pragma mark - listener removal (the designer's detach path)
+
+static BOOL XFNodeIsUnderElement(NSXMLNode *node, NSXMLElement *root)
+{
+    for (NSXMLNode *walk = node; walk != nil; walk = [walk parent]) {
+        if (walk == (NSXMLNode *)root) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
+- (void)pruneListenersOn:(NSXMLElement *)element handlersUnder:(NSXMLElement *)root
+{
+    if ([self listenersForElement:element].count) {
+        NSMutableArray *list = [self listenersOn:element];
+        for (XFListener *listener in [list copy]) {
+            if (listener.handlerElement != nil
+                && XFNodeIsUnderElement(listener.handlerElement, root)) {
+                [list removeObject:listener];
+            }
+        }
+    }
+    for (NSXMLNode *child in [element children]) {
+        if ([child kind] == NSXMLElementKind) {
+            [self pruneListenersOn:(NSXMLElement *)child handlersUnder:root];
+        }
+    }
+}
+
+- (void)removeListenersWithHandlersUnder:(NSXMLElement *)root
+                              inDocument:(NSXMLDocument *)document
+{
+    if (root == nil || [document rootElement] == nil) {
+        return;
+    }
+    [self pruneListenersOn:[document rootElement] handlersUnder:root];
+    // the detached subtree may itself observe (nested handlers default to
+    // observing their parent inside the subtree)
+    [self pruneListenersOn:root handlersUnder:root];
+}
+
 #pragma mark - document install (XSLT stand-in)
 
 - (NSString *)ev:(NSString *)local on:(NSXMLElement *)element

@@ -44,6 +44,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (NSXMLElement *)documentElement;
 - (void)construct;
+/// Re-reads the inline data document from the host element (the designer
+/// edited the instance content in place): both the live document and the
+/// reset baseline are replaced by a fresh standalone copy.
+- (void)reloadInlineDocument;
 - (void)reset;
 - (void)revalidate;
 /// XsltForms_instance.setDoc: replace the live document from a submission/load response.

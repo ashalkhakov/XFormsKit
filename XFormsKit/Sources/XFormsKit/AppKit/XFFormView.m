@@ -170,6 +170,7 @@ FOUNDATION_EXPORT void XFAppKitHasEditingFile(void);
 FOUNDATION_EXPORT void XFAppKitHasTableAdapterFile(void);
 FOUNDATION_EXPORT void XFAppKitHasRichTextEditorFile(void);
 FOUNDATION_EXPORT void XFAppKitHasRichTextFile(void);
+FOUNDATION_EXPORT void XFAppKitHasSVGFile(void);
 __attribute__((used)) static void (*const XFAppKitLinkChecks[])(void) = {
     XFAppKitHasWidgetsFile,
     XFAppKitHasLayoutFile,
@@ -177,6 +178,7 @@ __attribute__((used)) static void (*const XFAppKitLinkChecks[])(void) = {
     XFAppKitHasTableAdapterFile,
     XFAppKitHasRichTextEditorFile,
     XFAppKitHasRichTextFile,
+    XFAppKitHasSVGFile,
 };
 
 @implementation XFFormView
@@ -195,6 +197,7 @@ __attribute__((used)) static void (*const XFAppKitLinkChecks[])(void) = {
         _widgets = [NSMutableArray array];
         _tables = [NSMutableArray array];
         _listBoxes = [NSMutableArray array];
+        _svgViews = [NSMutableArray array];
         _keyViews = [NSMutableArray array];
         [self setAutoresizingMask:NSViewNotSizable];
         if (rootGroup == nil) {
@@ -492,6 +495,7 @@ NSView *XFKeyViewOf(NSView *view)
     }
     [self.tables removeAllObjects];
     [self.listBoxes removeAllObjects];
+    [self.svgViews removeAllObjects];
     self.maxRight = 0;
     self.wrapRight = MAX(kWrapWidth, [self frame].size.width) - kMargin;
     CGFloat y = kMargin;
@@ -634,6 +638,189 @@ NSView *XFKeyViewOf(NSView *view)
         }
     }
     return nil;
+}
+
+#pragma mark - Design-support introspection
+
+/// The visual rectangle of one widget: its view plus its label column.
+static NSRect XFWidgetRect(XFWidget *w)
+{
+    NSRect r = [w.view frame];
+    if (w.labelField != nil) {
+        r = NSUnionRect(r, [w.labelField frame]);
+    }
+    return r;
+}
+
+- (NSRect)layoutFrameOfControl:(XFControl *)control
+{
+    if (control == nil) {
+        return NSZeroRect;
+    }
+    NSRect out = NSZeroRect;
+    for (XFWidget *w in self.widgets) {
+        if (w.control != control) {
+            continue;
+        }
+        NSRect r = XFWidgetRect(w);
+        out = NSIsEmptyRect(out) ? r : NSUnionRect(out, r);
+    }
+    if (!NSIsEmptyRect(out)) {
+        return out;
+    }
+    // groups: the layout ties the NSBox to its group with the same
+    // associated key the widgets use
+    for (NSView *sub in [self subviews]) {
+        if (objc_getAssociatedObject(sub, kXFBoundControlKey) == control
+            && ![sub isHidden]) {
+            out = NSIsEmptyRect(out) ? [sub frame] : NSUnionRect(out, [sub frame]);
+        }
+    }
+    if (!NSIsEmptyRect(out)) {
+        return out;
+    }
+    // controls rendered as cells inside a host <table> (G-20 phase 2)
+    for (XFTableAdapter *t in self.tables) {
+        NSArray<XFTableRow *> *rows = t.model.rows;
+        for (NSUInteger ri = 0; ri < rows.count; ri++) {
+            for (XFTableCell *cell in rows[ri].cells) {
+                if (cell.control != control && ![cell.controls containsObject:control]) {
+                    continue;
+                }
+                NSInteger ci = [t.tableView columnWithIdentifier:
+                    [NSString stringWithFormat:@"%lu", (unsigned long)cell.column]];
+                if (ci < 0) {
+                    continue;
+                }
+                NSRect r = [t.tableView frameOfCellAtColumn:ci row:(NSInteger)ri];
+                r = [self convertRect:r fromView:t.tableView];
+                out = NSIsEmptyRect(out) ? r : NSUnionRect(out, r);
+            }
+        }
+    }
+    if (!NSIsEmptyRect(out)) {
+        return out;
+    }
+    // containers with no visual of their own: the union of the children
+    if ([control isKindOfClass:[XFSwitch class]]) {
+        return [self layoutFrameOfControl:[(XFSwitch *)control selectedCase]];
+    }
+    if ([control isKindOfClass:[XFRepeat class]]) {
+        for (XFRepeatItem *item in [(XFRepeat *)control items]) {
+            for (XFControl *child in item.controls) {
+                NSRect r = [self layoutFrameOfControl:child];
+                if (!NSIsEmptyRect(r)) {
+                    out = NSIsEmptyRect(out) ? r : NSUnionRect(out, r);
+                }
+            }
+        }
+        return out;
+    }
+    if ([control isKindOfClass:[XFGroup class]]) {
+        for (XFControl *child in [(XFGroup *)control children]) {
+            NSRect r = [self layoutFrameOfControl:child];
+            if (!NSIsEmptyRect(r)) {
+                out = NSIsEmptyRect(out) ? r : NSUnionRect(out, r);
+            }
+        }
+    }
+    return out;
+}
+
+- (XFControl *)controlAtPoint:(NSPoint)point
+{
+    // widgets: the innermost (smallest) rectangle wins — widget frames
+    // are flat siblings, children lie inside their group's box
+    XFControl *best = nil;
+    CGFloat bestArea = CGFLOAT_MAX;
+    for (XFWidget *w in self.widgets) {
+        if ([w.view isHidden]) {
+            continue;
+        }
+        NSRect r = XFWidgetRect(w);
+        if (!NSPointInRect(point, r)) {
+            continue;
+        }
+        CGFloat area = NSWidth(r) * NSHeight(r);
+        if (area < bestArea) {
+            bestArea = area;
+            best = w.control;
+        }
+    }
+    if (best != nil) {
+        return best;
+    }
+    // cells of host <table>s
+    for (XFTableAdapter *t in self.tables) {
+        if (t.scrollView.superview == nil
+            || !NSPointInRect(point, [self convertRect:[t.scrollView bounds] fromView:t.scrollView])) {
+            continue;
+        }
+        NSPoint tp = [t.tableView convertPoint:point fromView:self];
+        NSInteger row = [t.tableView rowAtPoint:tp];
+        NSInteger col = [t.tableView columnAtPoint:tp];
+        if (row < 0 || col < 0 || (NSUInteger)row >= t.model.rows.count) {
+            continue;
+        }
+        NSUInteger modelColumn = (NSUInteger)
+            [[[[t.tableView tableColumns] objectAtIndex:(NSUInteger)col] identifier] integerValue];
+        XFTableRow *tableRow = t.model.rows[(NSUInteger)row];
+        XFTableCell *cell = [tableRow cellAtColumn:modelColumn];
+        XFControl *found = cell.control ?: cell.controls.firstObject;
+        if (found != nil) {
+            return found;
+        }
+        if (tableRow.repeat != nil) {
+            return tableRow.repeat;   // a repeat row's static cell still names the repeat
+        }
+    }
+    // group boxes, innermost (smallest) first
+    XFControl *box = nil;
+    CGFloat boxArea = CGFLOAT_MAX;
+    for (NSView *sub in [self subviews]) {
+        XFControl *bound = objc_getAssociatedObject(sub, kXFBoundControlKey);
+        if (bound == nil || [sub isHidden] || !NSPointInRect(point, [sub frame])) {
+            continue;
+        }
+        CGFloat area = NSWidth([sub frame]) * NSHeight([sub frame]);
+        if (area < boxArea) {
+            boxArea = area;
+            box = bound;
+        }
+    }
+    return box;
+}
+
+- (NSXMLElement *)svgElementAtPoint:(NSPoint)point
+{
+    for (XFSVGView *svg in self.svgViews) {
+        if ([svg superview] == nil || ![svg isKindOfClass:[XFSVGView class]]
+            || !NSPointInRect(point, [svg frame])) {
+            continue;
+        }
+        NSXMLElement *element = [svg hostElementAtPoint:
+            [svg convertPoint:point fromView:self]];
+        if (element != nil) {
+            return element;
+        }
+    }
+    return nil;
+}
+
+- (NSRect)layoutFrameOfSVGElement:(NSXMLElement *)element
+{
+    NSRect out = NSZeroRect;
+    for (XFSVGView *svg in self.svgViews) {
+        if ([svg superview] == nil) {
+            continue;
+        }
+        NSRect r = [svg frameOfHostElement:element];
+        if (!NSIsEmptyRect(r)) {
+            r = [self convertRect:r fromView:svg];
+            out = NSIsEmptyRect(out) ? r : NSUnionRect(out, r);
+        }
+    }
+    return out;
 }
 
 #pragma mark - Focus (G-24)

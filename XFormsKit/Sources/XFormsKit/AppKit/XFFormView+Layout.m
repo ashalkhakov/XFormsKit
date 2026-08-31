@@ -89,7 +89,12 @@ void XFAppKitHasLayoutFile(void) {}
     CGFloat start = inner;
     CGFloat outerRight = self.maxRight;
     self.maxRight = 0;
+    NSXMLNode *outerContext = self.svgContextNode;
+    if (group.boundNode != nil) {
+        self.svgContextNode = group.boundNode;
+    }
     inner = [self layoutNodes:group.hostNodes atY:inner indent:indent + kIndent font:nil];
+    self.svgContextNode = outerContext;
     // the box must enclose the last line of its content: its height runs
     // from the box top (title included) to the content bottom plus padding
     (void)start;
@@ -102,6 +107,8 @@ void XFAppKitHasLayoutFile(void) {}
     [box setFrame:NSMakeRect(left, y, right - left, MAX(h, 28))];
     self.maxRight = MAX(outerRight, right);
     // Children already added to the form; the box is a visual frame behind them.
+    // The design-support introspection finds the group through its box.
+    objc_setAssociatedObject(box, kXFBoundControlKey, group, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [self addSubview:box positioned:NSWindowBelow relativeTo:nil];
     if (!group.relevant) {
         [box setHidden:YES];
@@ -123,8 +130,12 @@ void XFAppKitHasLayoutFile(void) {}
         }
         // The item's content is the repeat's host markup instantiated for
         // its node (G-20): host blocks keep their structure, controls in
-        // <td>/<p>/<span> flow where the markup puts them.
+        // <td>/<p>/<span> flow where the markup puts them. The item's node
+        // is the in-scope context for any SVG (AVTs) inside it.
+        NSXMLNode *outerContext = self.svgContextNode;
+        self.svgContextNode = item.node;
         cursor = [self layoutNodes:item.hostNodes atY:cursor indent:indent + kIndent font:nil];
+        self.svgContextNode = outerContext;
         i++;
     }
     return cursor;
@@ -490,11 +501,16 @@ void XFAppKitHasLayoutFile(void) {}
         }
 
         case XFHostNodeKindSVG: {
-            // rendered by the SVG renderer (G-20 phase 3); placeholder for now
-            NSTextField *ph = [self makeText:@"[SVG]" font:[self fontForTag:@"i" base:font]];
-            [ph setFrame:NSMakeRect(kMargin + indent, y, 60, kRowHeight)];
-            [self addSubview:ph];
-            return y + kRowHeight + kLineGap;
+            // the SVG renderer (G-20 phase 3): AVTs and outputs resolved
+            // against the in-scope context this layout pass carries
+            XFSVGView *svg = [[XFSVGView alloc] initWithHostNode:node
+                                                       processor:self.processor
+                                                     contextNode:self.svgContextNode];
+            [svg setFrameOrigin:NSMakePoint(kMargin + indent, y)];
+            [self addSubview:svg];
+            [self.svgViews addObject:svg];
+            [self noteRight:NSMaxX([svg frame])];
+            return y + NSHeight([svg frame]) + kLineGap;
         }
 
         case XFHostNodeKindTable:

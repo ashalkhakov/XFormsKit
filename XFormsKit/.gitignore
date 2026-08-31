@@ -26,3 +26,5 @@ xcuserdata/
 *.la
 *.a
 core
+Apps/XFormsViewer/XFormsViewer.app/
+Apps/XFormsDesigner/XFormsDesigner.app/

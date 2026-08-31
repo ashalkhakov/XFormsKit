@@ -31,6 +31,10 @@ NS_ASSUME_NONNULL_BEGIN
                                      error:(NSError **)error;
 
 - (void)rebuildItemsWithContext:(XFExprContext *)context error:(NSError **)error;
+/// Recompile item / itemset / choices templates from the element's
+/// CURRENT children (the designer inserts and edits them after the
+/// control was built), then rebuildItemsWithContext: re-evaluates.
+- (BOOL)reloadTemplatesWithError:(NSError **)error;
 - (BOOL)selectValue:(NSString *)value;
 - (BOOL)toggleValue:(NSString *)value;
 - (BOOL)selectItem:(XFItem *)item;

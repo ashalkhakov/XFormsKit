@@ -1264,8 +1264,12 @@ static NSError *XFSubformError(NSString *message)
     }
 
     if ([XFAbstractAction isActionElement:element]) {
+        // a nested action (setvalue inside xf:action) is compiled as part
+        // of its outermost handler — recompile that whole handler
+        NSXMLElement *top = XFOutermostActionElement(element);
+        [self dropCompiledActionForElement:top];
         NSError *inner = nil;
-        XFAbstractAction *action = [XFAbstractAction actionWithElement:element
+        XFAbstractAction *action = [XFAbstractAction actionWithElement:top
                                                                 model:self.model
                                                                 error:&inner];
         if (action == nil) {
@@ -1275,15 +1279,17 @@ static NSError *XFSubformError(NSString *message)
         NSMutableArray *actions = [self.actions mutableCopy] ?: [NSMutableArray array];
         [actions addObject:action];
         self.actions = actions;
-        [[XFXMLEvents sharedEvents] registerElement:element xfElement:action];
-        [[XFXMLEvents sharedEvents] installListenersUnder:element inDocument:self.hostDocument];
+        [[XFXMLEvents sharedEvents] registerElement:top xfElement:action];
+        [[XFXMLEvents sharedEvents] installListenersUnder:top inDocument:self.hostDocument];
         return nil;
     }
 
     if (![XFControl shouldInstantiateElement:element]) {
         XFControl *parent = [self parentControlForElement:element];
         if ([parent isKindOfClass:[XFSelectControl class]]) {
-            // item / itemset / choices live on the select templates
+            // item / itemset / choices live on the select templates —
+            // recompile them, the element set just changed
+            [(XFSelectControl *)parent reloadTemplatesWithError:NULL];
             [(XFSelectControl *)parent rebuildItemsWithContext:[self evaluationContext] error:NULL];
         }
         [[XFXMLEvents sharedEvents] installListenersUnder:element inDocument:self.hostDocument];
@@ -1329,9 +1335,45 @@ static NSError *XFSubformError(NSString *message)
     }
 }
 
+/// The highest action element on `element`'s ancestor chain (element
+/// itself when none is above it) — nested actions compile as part of it.
+static NSXMLElement *XFOutermostActionElement(NSXMLElement *element)
+{
+    NSXMLElement *top = element;
+    for (NSXMLNode *walk = [element parent]; walk != nil; walk = [walk parent]) {
+        if ([walk kind] == NSXMLElementKind
+            && [XFAbstractAction isActionElement:(NSXMLElement *)walk]) {
+            top = (NSXMLElement *)walk;
+        }
+    }
+    return top;
+}
+
+/// Removes the compiled action for `element` (if any) with its listeners.
+- (void)dropCompiledActionForElement:(NSXMLElement *)element
+{
+    NSMutableArray *actions = [self.actions mutableCopy] ?: [NSMutableArray array];
+    for (XFAbstractAction *action in [actions copy]) {
+        if (action.element == element) {
+            [actions removeObject:action];
+        }
+    }
+    self.actions = actions;
+    [[XFXMLEvents sharedEvents] removeListenersWithHandlersUnder:element
+                                                      inDocument:self.hostDocument];
+    [[XFXMLEvents sharedEvents] registerElement:element xfElement:nil];
+}
+
 - (void)detachElement:(NSXMLElement *)element
 {
     if (element == nil) {
+        return;
+    }
+    if ([XFAbstractAction isActionElement:element]) {
+        // the element is already physically detached, so the ancestor
+        // walk cannot reach a surrounding handler here; XFHostEdit
+        // notifies the surviving parent separately
+        [self dropCompiledActionForElement:element];
         return;
     }
     NSString *local = [element localName];
@@ -1354,6 +1396,10 @@ static NSError *XFSubformError(NSString *message)
     } else if ([parent isKindOfClass:[XFRepeat class]]) {
         [(XFRepeat *)parent reloadTemplates];
         [(XFRepeat *)parent rebuildItemsWithContext:[self evaluationContext] error:NULL];
+    } else if ([parent isKindOfClass:[XFSelectControl class]]) {
+        // a deleted item / itemset leaves the compiled templates stale
+        [(XFSelectControl *)parent reloadTemplatesWithError:NULL];
+        [(XFSelectControl *)parent rebuildItemsWithContext:[self evaluationContext] error:NULL];
     } else if (control) {
         NSMutableArray *list = [self.controls mutableCopy] ?: [NSMutableArray array];
         [self removeControl:control fromList:list];
@@ -1372,6 +1418,14 @@ static NSError *XFSubformError(NSString *message)
     if (element == nil) {
         return;
     }
+    if ([XFAbstractAction isActionElement:element]) {
+        // actions compile their attributes and content up front —
+        // recompile the outermost handler the element belongs to
+        NSXMLElement *top = XFOutermostActionElement(element);
+        [self dropCompiledActionForElement:top];
+        [self attachElement:top error:NULL];
+        return;
+    }
     XFControl *control = [self controlForElement:element];
     if (control == nil) {
         NSXMLNode *walk = [element parent];
@@ -1385,6 +1439,7 @@ static NSError *XFSubformError(NSString *message)
     if (control) {
         [control reconfigureFromElement:NULL];
         if ([control isKindOfClass:[XFSelectControl class]]) {
+            [(XFSelectControl *)control reloadTemplatesWithError:NULL];
             [(XFSelectControl *)control rebuildItemsWithContext:[self evaluationContext] error:NULL];
         }
         if ([control isKindOfClass:[XFRepeat class]]) {

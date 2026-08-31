@@ -34,6 +34,7 @@
 #import <XFormsKit/XFGroup.h>
 #import <XFormsKit/XFHostNode.h>
 #import <XFormsKit/XFTableModel.h>
+#import <XFormsKit/XFHostEdit.h>
 #import <XFormsKit/XFVarControl.h>
 #import <XFormsKit/XFDialog.h>
 #import <XFormsKit/XFSubform.h>
@@ -62,5 +63,8 @@
 
 #if __has_include(<AppKit/AppKit.h>)
 #import <XFormsKit/XFFormView.h>
+#import <XFormsKit/XFAVT.h>
+#import <XFormsKit/XFSVG.h>
 #import <XFormsKit/XFRichText.h>
+#import <XFormsKit/XFRichTextEditor.h>
 #endif

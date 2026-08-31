@@ -69,6 +69,11 @@ typedef void (^XFEventDefaultAction)(id _Nullable xfElement, XFEvent *event);
 /// Runtime stand-in for the XSLT that emits `new XsltForms_listener(...)`.
 - (void)installListenersInDocument:(NSXMLDocument *)document;
 - (void)installListenersUnder:(NSXMLNode *)node inDocument:(NSXMLDocument *)document;
+/// The inverse the designer needs when a handler subtree is detached or
+/// recompiled: drops every listener (on any observer in `document`) whose
+/// handler element is `root` or lives under it.
+- (void)removeListenersWithHandlersUnder:(NSXMLElement *)root
+                              inDocument:(NSXMLDocument *)document;
 
 /// XSLTForms `element.node` for a host element (bound node, else in-scope
 /// context of the control registered for it); nil when unknown.
