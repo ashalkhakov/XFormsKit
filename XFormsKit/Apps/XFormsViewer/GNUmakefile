@@ -66,6 +66,7 @@ XFormsViewer_RESOURCE_FILES = \
 	../../Samples/tinymce.xhtml \
 	../../Samples/upload.xhtml \
 	../../Samples/uploads.xhtml \
+	../../Samples/validation.xhtml \
 	../../Samples/wikipediasearch.xhtml \
 	../../Samples/writers.xhtml \
 	../../Samples/xf.xhtml \

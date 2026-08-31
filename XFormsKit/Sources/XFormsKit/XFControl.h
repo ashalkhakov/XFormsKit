@@ -22,6 +22,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL valid;
 @property (nonatomic, assign) BOOL focused;
 @property (nonatomic, copy, nullable) NSString *hint;
+/// `xf:hint appearance="minimal"`: XSLTForms renders the hint as the host
+/// `title` attribute (a plain tooltip / placeholder) instead of the ⓘ icon
+/// (field.xsl named template).
+@property (nonatomic, assign) BOOL hintMinimal;
 @property (nonatomic, copy, nullable) NSString *help;
 @property (nonatomic, copy, nullable) NSString *alert;
 @property (nonatomic, copy, readonly) NSArray<NSString *> *mipEvents;

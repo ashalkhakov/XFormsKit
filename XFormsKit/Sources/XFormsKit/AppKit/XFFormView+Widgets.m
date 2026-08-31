@@ -195,9 +195,13 @@ void XFAppKitHasWidgetsFile(void) {}
     NSTextField *field = [self textFieldEditable:editable secure:secure];
     [field setStringValue:[self displayValueOf:control]];
     if (editable) {
-        // @placeholder, numeric right-alignment, @cols (G-41, G-63)
-        if (control.placeholder.length && [[field cell] respondsToSelector:@selector(setPlaceholderString:)]) {
-            [(NSTextFieldCell *)[field cell] setPlaceholderString:control.placeholder];
+        // @placeholder, numeric right-alignment, @cols (G-41, G-63); a
+        // minimal-appearance hint doubles as the placeholder where the
+        // widget supports one (@placeholder wins when both are given)
+        NSString *placeholder = control.placeholder.length ? control.placeholder
+            : (control.hintMinimal ? control.hint : nil);
+        if (placeholder.length && [[field cell] respondsToSelector:@selector(setPlaceholderString:)]) {
+            [(NSTextFieldCell *)[field cell] setPlaceholderString:placeholder];
         }
         if ([self isNumericControl:control]) {
             [field setAlignment:NSRightTextAlignment];

@@ -618,4 +618,67 @@
     XCTAssertTrue([[bold attribute:XFRichBoldAttributeName atIndex:0 effectiveRange:&r] boolValue]);
 }
 
+// Hints and alerts on the form (XSLTForms icones.css: hint icon always,
+// alert icon only while .xforms-invalid; minimal hint = title/placeholder).
+- (void)testValidationBadgesAndMinimalHintPlaceholder
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+        @"<xf:instance><data xmlns=\"\"><age>5</age><name/></data></xf:instance>"
+        @"<xf:bind nodeset=\"age\" constraint=\". &gt;= 18\"/>"
+        extra:
+        @"<xf:input ref=\"age\"><xf:label>Age</xf:label>"
+        @"<xf:hint>18 or more</xf:hint>"
+        @"<xf:alert>You must be at least 18</xf:alert></xf:input>"
+        @"<xf:input ref=\"name\"><xf:label>Name</xf:label>"
+        @"<xf:hint appearance=\"minimal\">Your full name</xf:hint></xf:input>"
+        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFInputControl *age = [self firstControlOfClass:[XFInputControl class] in:p];
+    XCTAssertFalse(age.valid);
+    XCTAssertFalse(age.hintMinimal);
+    XFFormView *fv = [[XFFormView alloc] initWithProcessor:p];
+
+    NSView * (^badgeWithTip)(NSString *) = ^NSView *(NSString *tip) {
+        for (NSView *v in [fv subviews]) {
+            if ([NSStringFromClass([v class]) isEqualToString:@"XFBadgeView"]
+                && [[v valueForKey:@"text"] isEqualToString:tip]) {
+                return v;
+            }
+        }
+        return nil;
+    };
+    // age is invalid: visible hint badge and visible alert badge
+    NSView *hintBadge = badgeWithTip(@"18 or more");
+    NSView *alertBadge = badgeWithTip(@"You must be at least 18");
+    XCTAssertNotNil(hintBadge);
+    XCTAssertNotNil(alertBadge);
+    XCTAssertFalse([hintBadge isHidden]);
+    XCTAssertFalse([alertBadge isHidden]);
+
+    // the minimal hint becomes the name field's placeholder, not a badge
+    XCTAssertNil(badgeWithTip(@"Your full name"));
+    BOOL foundPlaceholder = NO;
+    for (NSView *v in [fv subviews]) {
+        if ([v isKindOfClass:[NSTextField class]] && [(NSTextField *)v isEditable]
+            && [[(NSTextFieldCell *)[(NSTextField *)v cell] placeholderString]
+                   isEqualToString:@"Your full name"]) {
+            foundPlaceholder = YES;
+        }
+    }
+    XCTAssertTrue(foundPlaceholder, @"minimal hint must map to placeholderString");
+
+    // fixing the value hides the alert badge but keeps the hint badge
+    XCTAssertTrue([p setValue:@"21" ofControl:age error:&error], @"%@", error);
+    [fv reloadFromProcessor];
+    XCTAssertTrue(age.valid);
+    hintBadge = badgeWithTip(@"18 or more");
+    alertBadge = badgeWithTip(@"You must be at least 18");
+    XCTAssertNotNil(hintBadge);
+    XCTAssertFalse([hintBadge isHidden]);
+    XCTAssertNotNil(alertBadge, @"the slot stays reserved while an xf:alert exists");
+    XCTAssertTrue([alertBadge isHidden]);
+}
+
 @end

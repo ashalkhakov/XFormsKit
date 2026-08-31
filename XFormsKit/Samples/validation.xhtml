@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xf="http://www.w3.org/2002/xforms"
+      xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <head>
+    <title>Validation, hints and alerts</title>
+    <xf:model>
+      <xf:instance>
+        <data xmlns="">
+          <name/>
+          <age>5</age>
+          <email>nobody</email>
+          <birthday/>
+        </data>
+      </xf:instance>
+      <xf:bind nodeset="name" required="true()"/>
+      <xf:bind nodeset="age" type="xsd:integer" constraint=". &gt;= 18"/>
+      <xf:bind nodeset="email" constraint="contains(., '@')"/>
+      <xf:bind nodeset="birthday" type="xsd:date"/>
+    </xf:model>
+  </head>
+  <body>
+    <h1>Validation, hints and alerts</h1>
+    <p>The starting values are deliberately wrong: hover a red badge to read
+    the alert, and the <code>i</code> badge to read a hint.</p>
+    <p><xf:input ref="name">
+      <xf:label>Name</xf:label>
+      <xf:hint appearance="minimal">Your full name</xf:hint>
+    </xf:input></p>
+    <p><xf:input ref="age">
+      <xf:label>Age</xf:label>
+      <xf:hint>Must be a whole number, 18 or more</xf:hint>
+      <xf:alert>You must be at least 18</xf:alert>
+    </xf:input></p>
+    <p><xf:input ref="email" incremental="true">
+      <xf:label>E-mail</xf:label>
+      <xf:hint appearance="minimal">name@example.com</xf:hint>
+      <xf:alert>Not a valid e-mail address</xf:alert>
+    </xf:input></p>
+    <p><xf:input ref="birthday">
+      <xf:label>Birthday</xf:label>
+      <xf:hint>Used for the yearly greeting only</xf:hint>
+      <xf:alert>Not a date</xf:alert>
+    </xf:input></p>
+    <p><xf:output ref="name"><xf:label>Hello</xf:label></xf:output></p>
+  </body>
+</html>

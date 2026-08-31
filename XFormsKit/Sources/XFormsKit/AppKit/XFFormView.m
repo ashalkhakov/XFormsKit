@@ -19,6 +19,148 @@ const CGFloat kWrapWidth = 620.0;
 @implementation XFWidget
 @end
 
+static const CGFloat kBadgeSize = 14.0;
+
+BOOL XFDarkTheme(void)
+{
+#if defined(__APPLE__)
+    // NSAppearance (10.14+), by selector so older SDK targets still build;
+    // the name constants' values are their own names
+    id app = [NSApplication sharedApplication];
+    if ([app respondsToSelector:@selector(effectiveAppearance)]) {
+        id appearance = [app performSelector:@selector(effectiveAppearance)];
+        if ([appearance respondsToSelector:@selector(bestMatchFromAppearancesWithNames:)]) {
+            NSString *match = [appearance performSelector:@selector(bestMatchFromAppearancesWithNames:)
+                                               withObject:@[@"NSAppearanceNameAqua", @"NSAppearanceNameDarkAqua"]];
+            return [match isEqualToString:@"NSAppearanceNameDarkAqua"];
+        }
+    }
+    return NO;
+#else
+    // GNUstep has no system appearance: a dark theme shows in the text
+    // background's luminance
+    NSColor *bg = [[NSColor textBackgroundColor]
+        colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
+    if (bg == nil) {
+        return NO;
+    }
+    CGFloat lum = 0.299 * [bg redComponent] + 0.587 * [bg greenComponent]
+        + 0.114 * [bg blueComponent];
+    return lum < 0.5;
+#endif
+}
+
+NSColor *XFInvalidTextColor(void)
+{
+    if ([[NSColor class] respondsToSelector:@selector(systemRedColor)]) {
+        return [[NSColor class] performSelector:@selector(systemRedColor)];
+    }
+    return [NSColor redColor];
+}
+
+@interface XFBadgeView ()
+@property (nonatomic, assign) NSTrackingRectTag trackTag;
+@end
+
+@implementation XFBadgeView
+
++ (instancetype)badgeWithKind:(XFBadgeKind)kind text:(NSString *)text
+{
+    XFBadgeView *b = [[self alloc] initWithFrame:NSMakeRect(0, 0, kBadgeSize, kBadgeSize)];
+    b.kind = kind;
+    b.text = text ?: @"";
+    return b;
+}
+
+- (XFFormView *)formView
+{
+    NSView *v = [self superview];
+    return [v isKindOfClass:[XFFormView class]] ? (XFFormView *)v : nil;
+}
+
+- (void)viewWillMoveToWindow:(NSWindow *)newWindow
+{
+    // remove while the old window is still current — a tag from another
+    // window cannot be removed later
+    if (self.trackTag != 0 && [self window] != nil) {
+        [self removeTrackingRect:self.trackTag];
+        self.trackTag = 0;
+    }
+    [super viewWillMoveToWindow:newWindow];
+}
+
+- (void)viewDidMoveToWindow
+{
+    [super viewDidMoveToWindow];
+    [self refreshTracking];
+}
+
+- (void)refreshTracking
+{
+    if (self.trackTag != 0 && [self window] != nil) {
+        [self removeTrackingRect:self.trackTag];
+        self.trackTag = 0;
+    }
+    if ([self window] != nil) {
+        self.trackTag = [self addTrackingRect:[self bounds]
+                                        owner:self
+                                     userData:NULL
+                                 assumeInside:NO];
+    }
+}
+
+- (void)mouseEntered:(NSEvent *)event
+{
+    (void)event;
+    if (![self isHiddenOrHasHiddenAncestor]) {
+        [[self formView] showBadgeInfo:self];
+    }
+}
+
+- (void)mouseExited:(NSEvent *)event
+{
+    (void)event;
+    XFFormView *fv = [self formView];
+    if (fv.badgePopupBadge == self) {
+        [fv hideBadgeInfo];
+    }
+}
+
+- (void)mouseDown:(NSEvent *)event
+{
+    (void)event;
+    XFFormView *fv = [self formView];
+    if (fv.badgePopupBadge == self) {
+        [fv hideBadgeInfo];
+    } else {
+        [fv showBadgeInfo:self];
+    }
+}
+
+- (void)drawRect:(NSRect)dirtyRect
+{
+    (void)dirtyRect;
+    NSRect r = NSInsetRect([self bounds], 1, 1);
+    BOOL dark = XFDarkTheme();
+    NSColor *fill = self.kind == XFBadgeAlert
+        ? (dark ? [NSColor colorWithCalibratedRed:0.85 green:0.25 blue:0.25 alpha:1.0]
+                : [NSColor colorWithCalibratedRed:0.80 green:0.10 blue:0.10 alpha:1.0])
+        : (dark ? [NSColor colorWithCalibratedRed:0.45 green:0.55 blue:0.75 alpha:1.0]
+                : [NSColor colorWithCalibratedRed:0.35 green:0.45 blue:0.65 alpha:1.0]);
+    [fill setFill];
+    [[NSBezierPath bezierPathWithOvalInRect:r] fill];
+    NSString *glyph = self.kind == XFBadgeAlert ? @"!" : @"i";
+    NSDictionary *attrs = @{
+        NSFontAttributeName: [NSFont boldSystemFontOfSize:10],
+        NSForegroundColorAttributeName: [NSColor whiteColor],
+    };
+    NSSize sz = [glyph sizeWithAttributes:attrs];
+    [glyph drawAtPoint:NSMakePoint(NSMidX(r) - sz.width / 2, NSMidY(r) - sz.height / 2)
+        withAttributes:attrs];
+}
+
+@end
+
 // Every file split out of XFFormView.m defines one of these; referencing
 // them here turns a translation unit missing from a build (GNUmakefile or
 // an Xcode project) into a LINK error instead of a silent runtime gap.
@@ -128,13 +270,136 @@ NSView *XFKeyViewOf(NSView *view)
     }
     [view setHidden:!control.relevant];
     if ([view respondsToSelector:@selector(setToolTip:)]) {
+        // A minimal-appearance hint is the host `title` attribute in
+        // XSLTForms (field.xsl) — a plain tooltip on the widget itself; a
+        // default hint is carried by the ⓘ badge instead. The alert is
+        // repeated here so hovering the invalid field also shows it.
         NSMutableArray *bits = [NSMutableArray array];
-        if (control.hint.length) [bits addObject:control.hint];
+        if (control.hint.length && control.hintMinimal) [bits addObject:control.hint];
         if (!control.valid && control.alert.length) [bits addObject:control.alert];
-        if (bits.count) {
-            [view setToolTip:[bits componentsJoinedByString:@"\n"]];
-        }
+        [view setToolTip:bits.count ? [bits componentsJoinedByString:@"\n"] : nil];
     }
+}
+
+- (CGFloat)attachBadgesToWidget:(XFWidget *)w
+{
+    XFControl *control = w.control;
+    NSView *view = w.view;
+    CGFloat x = NSMaxX([view frame]) + 4;
+    // Centre on the first row of the widget (a textarea's badge sits by
+    // its top line, like XSLTForms' inline icons).
+    CGFloat rowH = MIN([view frame].size.height, kRowHeight);
+    CGFloat y = [view frame].origin.y + (rowH - kBadgeSize) / 2;
+    if (control.hint.length && !control.hintMinimal) {
+        w.hintBadge = [XFBadgeView badgeWithKind:XFBadgeHint text:control.hint];
+        [w.hintBadge setFrameOrigin:NSMakePoint(x, y)];
+        [self addSubview:w.hintBadge];
+        x += kBadgeSize + 2;
+    }
+    if ((control.alert.length || !control.valid)
+        && ![control isKindOfClass:[XFTriggerControl class]]
+        && ![control isKindOfClass:[XFGroup class]]) {
+        // The slot exists (hidden while valid) for any control with an
+        // xf:alert, so a validity flip during incremental editing shows the
+        // badge without moving the layout; a control without an alert gets
+        // its badge at the rebuild that follows a commit
+        // (.xforms-invalid span.xforms-alert { display: inline }).
+        w.alertBadge = [XFBadgeView badgeWithKind:XFBadgeAlert text:control.alert];
+        [w.alertBadge setFrameOrigin:NSMakePoint(x, y)];
+        [self addSubview:w.alertBadge];
+        x += kBadgeSize + 2;
+    }
+    [self updateBadgesForWidget:w];
+    return x - 4;
+}
+
+- (void)updateBadgesForWidget:(XFWidget *)w
+{
+    XFControl *control = w.control;
+    if (w.hintBadge) {
+        [w.hintBadge setHidden:!control.relevant];
+        w.hintBadge.text = control.hint ?: @"";
+    }
+    if (w.alertBadge) {
+        [w.alertBadge setHidden:control.valid || !control.relevant];
+        w.alertBadge.text = control.alert ?: @"";
+    }
+    XFBadgeView *shown = self.badgePopupBadge;
+    if (shown != nil && (shown == w.hintBadge || shown == w.alertBadge) && [shown isHidden]) {
+        [self hideBadgeInfo];
+    }
+}
+
+- (void)showBadgeInfo:(XFBadgeView *)badge
+{
+    [self hideBadgeInfo];
+    NSString *text = badge.text;
+    if (text.length == 0) {
+        return;
+    }
+    // The port of XSLTForms' span.xforms-hint-value / -alert-value box
+    // (icones.css: pale yellow / pale pink, bordered, ~200px, absolutely
+    // positioned under the icon).
+    NSFont *font = [NSFont systemFontOfSize:11];
+    const CGFloat maxTextWidth = 220;
+    const CGFloat pad = 5;
+    NSMutableArray<NSString *> *lines = [NSMutableArray array];
+    CGFloat widest = 0;
+    for (NSString *para in [text componentsSeparatedByString:@"\n"]) {
+        NSMutableString *line = [NSMutableString string];
+        for (NSString *word in [para componentsSeparatedByString:@" "]) {
+            NSString *joined = line.length ? [NSString stringWithFormat:@"%@ %@", line, word] : word;
+            if (line.length && [self widthOfText:joined font:font] > maxTextWidth) {
+                [lines addObject:[line copy]];
+                [line setString:word];
+            } else {
+                [line setString:joined];
+            }
+        }
+        [lines addObject:[line copy]];
+    }
+    for (NSString *l in lines) {
+        widest = MAX(widest, [self widthOfText:l font:font]);
+    }
+    CGFloat lineH = [self lineHeightForFont:font];
+    CGFloat w = MIN(widest, maxTextWidth) + 2 * pad;
+    CGFloat h = lines.count * lineH + 2 * pad;
+    CGFloat x = badge.frame.origin.x - 16;
+    x = MAX(4, MIN(x, NSWidth([self bounds]) - w - 4));
+    CGFloat y = NSMaxY(badge.frame) + 3;
+    NSTextField *box = [[NSTextField alloc] initWithFrame:NSMakeRect(x, y, w, h)];
+    [box setEditable:NO];
+    [box setSelectable:NO];
+    [box setBezeled:NO];
+    [box setBordered:YES];
+    [box setDrawsBackground:YES];
+    // XSLTForms' pale yellow / pink boxes in light themes; their dark
+    // counterparts otherwise — with an explicit text color either way, so
+    // the theme's default text never lands on the wrong background
+    if (XFDarkTheme()) {
+        [box setBackgroundColor:badge.kind == XFBadgeAlert
+            ? [NSColor colorWithCalibratedRed:0.33 green:0.16 blue:0.16 alpha:1.0]
+            : [NSColor colorWithCalibratedRed:0.27 green:0.26 blue:0.16 alpha:1.0]];
+        [box setTextColor:[NSColor colorWithCalibratedWhite:0.93 alpha:1.0]];
+    } else {
+        [box setBackgroundColor:badge.kind == XFBadgeAlert
+            ? [NSColor colorWithCalibratedRed:1.0 green:0.93 blue:0.93 alpha:1.0]
+            : [NSColor colorWithCalibratedRed:1.0 green:1.0 blue:0.93 alpha:1.0]];
+        [box setTextColor:[NSColor colorWithCalibratedWhite:0.10 alpha:1.0]];
+    }
+    [box setFont:font];
+    [[box cell] setWraps:YES];
+    [box setStringValue:text];
+    [self addSubview:box];   // added last — draws above every widget
+    self.badgePopup = box;
+    self.badgePopupBadge = badge;
+}
+
+- (void)hideBadgeInfo
+{
+    [self.badgePopup removeFromSuperview];
+    self.badgePopup = nil;
+    self.badgePopupBadge = nil;
 }
 
 - (XFWidget *)addWidget:(XFControl *)control view:(NSView *)view height:(CGFloat)height
@@ -151,7 +416,7 @@ NSView *XFKeyViewOf(NSView *view)
             : control.label;
         NSTextField *label = [self makeLabel:caption];
         if (!control.valid && [label respondsToSelector:@selector(setTextColor:)]) {
-            [label setTextColor:[NSColor redColor]];
+            [label setTextColor:XFInvalidTextColor()];
         }
         [label setFrame:NSMakeRect(kMargin + indent, y, kLabelWidth, kRowHeight)];
         [self addSubview:label];
@@ -165,7 +430,7 @@ NSView *XFKeyViewOf(NSView *view)
     [self registerKeyView:XFKeyViewOf(view) control:control];
     objc_setAssociatedObject(view, kXFBoundControlKey, control, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [self applyEnabled:view control:control];
-    [self noteRight:NSMaxX([view frame])];
+    [self noteRight:[self attachBadgesToWidget:w]];
     return w;
 }
 
@@ -215,6 +480,7 @@ NSView *XFKeyViewOf(NSView *view)
 
 - (void)rebuild
 {
+    [self hideBadgeInfo];
     for (NSView *view in [[self subviews] copy]) {
         [view removeFromSuperview];
     }
@@ -303,6 +569,35 @@ NSView *XFKeyViewOf(NSView *view)
 {
     [super viewDidMoveToWindow];
     [self installInitialFirstResponder];
+    // Apple snapshots tracking rects in window coordinates when they are
+    // added, so badge tracking is re-registered on every scroll (GNUstep
+    // converts at event time and would not need this).
+    NSView *clip = [[self enclosingScrollView] contentView];
+    [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                    name:NSViewBoundsDidChangeNotification
+                                                  object:nil];
+    if (clip != nil) {
+        [(NSClipView *)clip setPostsBoundsChangedNotifications:YES];
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(xfClipViewScrolled:)
+                                                     name:NSViewBoundsDidChangeNotification
+                                                   object:clip];
+    }
+}
+
+- (void)xfClipViewScrolled:(NSNotification *)note
+{
+    (void)note;
+    [self hideBadgeInfo];
+    for (XFWidget *w in self.widgets) {
+        [w.hintBadge refreshTracking];
+        [w.alertBadge refreshTracking];
+    }
+}
+
+- (void)dealloc
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 /// The widget whose textarea / rich editor owns `tv`.

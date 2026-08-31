@@ -220,6 +220,11 @@
     if (self.hint == nil) {
         self.hint = [self literalFromChild:@"hint"];
     }
+    NSXMLElement *hintEl = [XFXML childElementWithLocalName:@"hint"
+                                               namespaceURI:XFXFormsNamespaceURI
+                                                  ofElement:self.element];
+    self.hintMinimal = [[[hintEl attributeForName:@"appearance"] stringValue]
+                           isEqualToString:@"minimal"];
     self.help = [self literalFromChild:@"help"];
     self.alert = [self literalFromChild:@"alert"];
 }

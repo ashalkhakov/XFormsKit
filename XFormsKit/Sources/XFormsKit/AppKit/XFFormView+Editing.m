@@ -272,9 +272,10 @@ void XFAppKitHasEditingFile(void) {}
             }
         }
         [self applyEnabled:view control:control];
+        [self updateBadgesForWidget:w];
         [w.labelField setHidden:!control.relevant];
         if (w.labelField && [w.labelField respondsToSelector:@selector(setTextColor:)]) {
-            [w.labelField setTextColor:control.valid ? [NSColor controlTextColor] : [NSColor redColor]];
+            [w.labelField setTextColor:control.valid ? [NSColor controlTextColor] : XFInvalidTextColor()];
         }
     }
 }

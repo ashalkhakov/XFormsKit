@@ -68,11 +68,40 @@ typedef NS_ENUM(NSInteger, XFAtomKind) {
 @property (nonatomic, assign) BOOL preformatted;
 @end
 
+typedef NS_ENUM(NSInteger, XFBadgeKind) {
+    XFBadgeHint,    // grey ⓘ — xf:hint (non-minimal appearance)
+    XFBadgeAlert,   // red ! — xf:alert, shown while the control is invalid
+};
+
+/// A 14×14 icon after a widget, the port of XSLTForms' hint / alert icons
+/// (icones.css: span.xforms-hint-icon always visible, span.xforms-alert-icon
+/// only under .xforms-invalid). Drawn with NSBezierPath — no image
+/// resources, identical on Apple and GNUstep. Hovering or clicking shows
+/// the text in the form view's own floating box (showBadgeInfo:) — the
+/// port of XSLTForms' absolutely-positioned span.xforms-*-value hover box;
+/// NSToolTipManager is NOT used, its display proved unreliable for plain
+/// custom views. Mouse tracking is the classic tracking-rect API, the one
+/// both platforms implement (GNUstep has no NSTrackingArea wiring).
+@interface XFBadgeView : NSView
+@property (nonatomic, assign) XFBadgeKind kind;
+/// The hint / alert message the info box shows.
+@property (nonatomic, copy) NSString *text;
++ (instancetype)badgeWithKind:(XFBadgeKind)kind text:(NSString *)text;
+/// Re-adds the mouse tracking rect. Apple converts tracking rects to
+/// window coordinates when they are added, so the form view calls this on
+/// every scroll of its clip view (GNUstep converts at event time).
+- (void)refreshTracking;
+@end
+
 @interface XFWidget : NSObject
 @property (nonatomic, strong) XFControl *control;
 @property (nonatomic, strong) NSView *view;
 @property (nonatomic, strong) NSTextField *labelField;
 @property (nonatomic, assign) CGFloat height;
+/// ⓘ after the widget when the control has a non-minimal hint.
+@property (nonatomic, strong) XFBadgeView *hintBadge;
+/// Red ! after the widget, hidden unless the control is invalid.
+@property (nonatomic, strong) XFBadgeView *alertBadge;
 @end
 
 @class XFFormView;
@@ -120,6 +149,15 @@ typedef NS_ENUM(NSInteger, XFAtomKind) {
 /// scroll view document, or the view itself). Defined in XFFormView.m.
 FOUNDATION_EXPORT NSView *XFKeyViewOf(NSView *view);
 
+/// YES when the effective theme is dark: the system appearance on Apple,
+/// the theme's text background luminance on GNUstep. Badge and info-box
+/// colors are hard values chosen per theme — neither platform has a
+/// semantic "pale warning background". Defined in XFFormView.m.
+FOUNDATION_EXPORT BOOL XFDarkTheme(void);
+/// The color of invalid labels / cells (systemRedColor where it exists —
+/// it keeps its contrast in dark mode — plain red elsewhere).
+FOUNDATION_EXPORT NSColor *XFInvalidTextColor(void);
+
 @interface XFFormView () <NSTextViewDelegate, NSTextFieldDelegate>
 @property (nonatomic, strong, readwrite) XFProcessor *processor;
 @property (nonatomic, strong) NSMutableArray<XFWidget *> *widgets;
@@ -154,6 +192,16 @@ FOUNDATION_EXPORT NSView *XFKeyViewOf(NSView *view);
 - (NSTextField *)makeLabel:(NSString *)text;
 - (BOOL)isBooleanControl:(XFControl *)control;
 - (void)applyEnabled:(NSView *)view control:(XFControl *)control;
+/// Creates the hint / alert badges after the widget view (x = the view's
+/// right edge) and returns the x after the last badge slot.
+- (CGFloat)attachBadgesToWidget:(XFWidget *)w;
+/// Re-applies visibility (validity, relevance) and the badge texts.
+- (void)updateBadgesForWidget:(XFWidget *)w;
+/// The floating info box under a hovered / clicked badge (one at a time).
+@property (nonatomic, strong) NSTextField *badgePopup;
+@property (nonatomic, weak) XFBadgeView *badgePopupBadge;
+- (void)showBadgeInfo:(XFBadgeView *)badge;
+- (void)hideBadgeInfo;
 - (XFWidget *)addWidget:(XFControl *)control view:(NSView *)view height:(CGFloat)height atY:(CGFloat)y indent:(CGFloat)indent;
 - (void)noteRight:(CGFloat)right;
 - (XFControl *)controlForSender:(id)sender;

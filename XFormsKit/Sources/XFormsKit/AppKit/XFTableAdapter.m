@@ -405,7 +405,7 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     XFTableCell *tc = [self cellAtRow:row column:column];
     XFControl *control = tc.control;
     if (control && [cell respondsToSelector:@selector(setTextColor:)] && [cell isKindOfClass:[NSTextFieldCell class]]) {
-        [(NSTextFieldCell *)cell setTextColor:control.valid ? [NSColor controlTextColor] : [NSColor redColor]];
+        [(NSTextFieldCell *)cell setTextColor:control.valid ? [NSColor controlTextColor] : XFInvalidTextColor()];
     }
 }
 

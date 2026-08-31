@@ -299,7 +299,7 @@ void XFAppKitHasLayoutFile(void) {}
     w.height = height;
     if (caption) {
         if (!control.valid && [caption respondsToSelector:@selector(setTextColor:)]) {
-            [caption setTextColor:[NSColor redColor]];
+            [caption setTextColor:XFInvalidTextColor()];
         }
         [caption setFrame:NSMakeRect(*x, *lineY, captionWidth, kRowHeight)];
         [self addSubview:caption];
@@ -312,7 +312,8 @@ void XFAppKitHasLayoutFile(void) {}
     [self registerKeyView:XFKeyViewOf(view) control:control];
     objc_setAssociatedObject(view, kXFBoundControlKey, control, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [self applyEnabled:view control:control];
-    *x += width + 6;
+    CGFloat badgeRight = [self attachBadgesToWidget:w];
+    *x = MAX(*x + width, badgeRight) + 6;
     [self noteRight:*x];
     *lineHeight = MAX(*lineHeight, height);
     return *lineY;

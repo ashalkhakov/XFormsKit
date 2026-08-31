@@ -153,6 +153,7 @@
         @"tinymce.xhtml",
         @"upload.xhtml",
         @"uploads.xhtml",
+        @"validation.xhtml",
         @"wikipediasearch.xhtml",
         @"writers.xhtml",
         @"xf.xhtml",
