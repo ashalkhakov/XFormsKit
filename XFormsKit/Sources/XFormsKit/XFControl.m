@@ -587,11 +587,14 @@
 
 - (void)refreshInContext:(XFExprContext *)context error:(NSError **)error
 {
-    // subform content evaluates against the subform's own model (G-90)
-    XFProcessor *processor = [self processor];
-    if (processor) {
-        context = [processor contextForControl:self inherited:context];
-    }
+    // XsltForms_globals.build walks the WHOLE host DOM with one context
+    // chain — embedded subform content INHERITS the embedding context
+    // node, and a model-less binding evaluates from it whatever instance
+    // document it belongs to (writers.xhtml: books.xhtml's repeat lists
+    // the clicked writer's own books). Only an explicit model= switches
+    // the context (XsltForms_binding.bind_evaluate → XFBinding
+    // contextForEvaluation:); the subform's own instances stay reachable
+    // through instance('id') and subform-instance().
     self.inScopeContextNode = context.contextNode;
     [self refreshWithContext:context error:error];
     // label/hint/help/alert bindings follow the control (every subclass)

@@ -17,6 +17,22 @@
 #import <math.h>
 #import <objc/runtime.h>
 
+/// XsltForms_exprContext carries the subform of the evaluating element;
+/// resolve it from ctx.sourceElement (set by XFBinding around each
+/// evaluation), falling back to the context model's own subform (model
+/// event handlers run with the subform model's context).
+static XFSubform *XFSubformOfContext(XFExprContext *ctx)
+{
+    id owner = ctx.model.owner;
+    if (ctx.sourceElement && [owner isKindOfClass:[XFProcessor class]]) {
+        XFSubform *sf = [(XFProcessor *)owner subformContainingElement:ctx.sourceElement];
+        if (sf) {
+            return sf;
+        }
+    }
+    return ctx.model.subform;
+}
+
 static XFXPathValue *XFArg(NSArray<XFXPathValue *> *args, NSUInteger i)
 {
     return i < args.count ? args[i] : nil;
@@ -445,8 +461,12 @@ NSDictionary<NSString *, XFXPathFunction *> *XFXPathExtraFunctionTable(void)
             @"subform-instance": XF_FN(YES, XFXPathFnDefaultNone, ^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)err; (void)args;
                 // the root of the first instance of the subform's first model;
-                // the main form is its own subform (G-90)
-                XFModel *model = ctx.model.subform ? [ctx.model.subform defaultModel] : nil;
+                // the main form is its own subform (G-90). The subform is
+                // the one holding the EVALUATING element (ctx.sourceElement,
+                // XsltForms_exprContext's subform) — the inherited context
+                // node usually belongs to the parent form
+                XFSubform *sf = XFSubformOfContext(ctx);
+                XFModel *model = sf ? [sf defaultModel] : nil;
                 if (model == nil && [ctx.model.owner isKindOfClass:[XFProcessor class]]) {
                     model = [(XFProcessor *)ctx.model.owner model];
                 }
@@ -457,7 +477,7 @@ NSDictionary<NSString *, XFXPathFunction *> *XFXPathExtraFunctionTable(void)
             @"subform-context": XF_FN(YES, XFXPathFnDefaultNone, ^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)err; (void)args;
                 // the bound node of the control the subform was loaded into
-                XFSubform *sf = ctx.model.subform;
+                XFSubform *sf = XFSubformOfContext(ctx);
                 id owner = ctx.model.owner;
                 XFControl *control = (sf && [owner isKindOfClass:[XFProcessor class]])
                     ? [(XFProcessor *)owner controlForElement:sf.targetElement] : nil;

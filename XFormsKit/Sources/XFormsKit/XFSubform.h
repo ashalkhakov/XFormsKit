@@ -22,6 +22,19 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak, nullable) XFSubform *parent;
 /// The host element (`@targetid`) whose content the subform replaced.
 @property (nonatomic, strong) NSXMLElement *targetElement;
+/// When the target lies inside an xf:repeat template, the repeat-item
+/// node the loading action ran against. XSLTForms clones the item's DOM
+/// and IdManager resolves targetid to the CURRENT clone; XFormsKit
+/// shares one template element across items, so the owner node is what
+/// keeps each item's subform its own — content renders (and unloads)
+/// only in the owning item. nil outside repeats.
+@property (nonatomic, strong, nullable) NSXMLNode *ownerNode;
+
+/// Tags an imported node with the owning repeat-item node — the host
+/// tree builder skips imported nodes whose owner is not the item being
+/// built. Owner nil removes the tag.
++ (void)tagImportedNode:(NSXMLNode *)node ownerNode:(nullable NSXMLNode *)owner;
++ (nullable NSXMLNode *)ownerNodeOfImportedNode:(NSXMLNode *)node;
 /// The URL the subform was loaded from.
 @property (nonatomic, strong, nullable) NSURL *URL;
 /// The subform's models (in the processor's `models` too).

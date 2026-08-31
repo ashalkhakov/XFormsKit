@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 
 @class NSXMLNode;
+@class NSXMLElement;
 @class XFModel;
 @class XFNSResolver;
 @class XFXPathValue;
@@ -15,6 +16,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) NSUInteger position; // 1-based
 @property (nonatomic, assign) NSUInteger size;
 @property (nonatomic, weak, nullable) XFModel *model;
+/// The host element whose expression is being evaluated (XsltForms_exprContext
+/// carries the evaluating subform the same way): subform-instance() and
+/// subform-context() resolve their subform from it.
+@property (nonatomic, weak, nullable) NSXMLElement *sourceElement;
 @property (nonatomic, strong, nullable) XFNSResolver *nsResolver;
 @property (nonatomic, copy, nullable) NSDictionary<NSString *, XFXPathValue *> *variables;
 @property (nonatomic, strong, readonly) NSHashTable *dependencies;

@@ -36,6 +36,7 @@
     XFBinding *binding = [[self alloc] init];
     binding.xpath = xp;
     binding.expression = expression;
+    binding.element = element;
     NSString *modelID = [[element attributeForName:@"model"] stringValue];
     binding.modelID = modelID.length ? modelID : nil;
     return binding;
@@ -159,7 +160,15 @@ static NSArray<XFModel *> *XFModelsOf(XFModel *model)
         [context addDepElement:bind];
         return [XFXPathValue nodeSet:nodes];
     }
+    // XsltForms_exprContext carries the evaluating subform: stamp the host
+    // element so subform-instance()/subform-context() resolve THIS form's
+    // subform even when the inherited context belongs to the parent form
+    NSXMLElement *prevSource = ctx.sourceElement;
+    if (self.element) {
+        ctx.sourceElement = self.element;
+    }
     XFXPathValue *value = [self.xpath evaluateInContext:ctx error:error];
+    ctx.sourceElement = prevSource;
     if (ctx != context) {
         for (NSXMLNode *n in [ctx dependencyNodes]) {
             [context addDependency:n];

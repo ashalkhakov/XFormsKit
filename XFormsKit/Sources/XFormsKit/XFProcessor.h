@@ -67,14 +67,24 @@ NS_ASSUME_NONNULL_BEGIN
 /// and get xforms-model-construct(-done) and xforms-subform-ready. nil with
 /// an error when the document cannot be loaded or the target is unknown.
 - (nullable XFSubform *)loadSubformAtURL:(NSURL *)url intoTargetID:(NSString *)targetID error:(NSError **)error;
+/// Like loadSubformAtURL:intoTargetID:error: with the loading action's
+/// in-scope context node. When the target lies inside an xf:repeat
+/// template that node scopes the subform to ITS repeat item — XSLTForms
+/// resolves targetid to the current item's DOM clone; XFormsKit shares
+/// one template element, so the owner keeps each item's subform its own.
+- (nullable XFSubform *)loadSubformAtURL:(NSURL *)url
+                            intoTargetID:(NSString *)targetID
+                             contextNode:(nullable NSXMLNode *)contextNode
+                                   error:(NSError **)error;
 /// XsltForms_subform.dispose (xf:unload): remove the subform loaded into the
 /// element with id `targetID`. Returns NO when none is loaded there.
 - (BOOL)unloadSubformAtTargetID:(NSString *)targetID;
+/// Context-aware unload: inside a repeat template only the item owning
+/// the subform unloads (the writers.xhtml Show/Hide pair).
+- (BOOL)unloadSubformAtTargetID:(NSString *)targetID
+                    contextNode:(nullable NSXMLNode *)contextNode;
 /// The subform whose imported content holds `element` (nil = main form).
 - (nullable XFSubform *)subformContainingElement:(NSXMLNode *)element;
-/// The context a control inside a subform refreshes with (its subform's
-/// default model) when the inherited one belongs to another form.
-- (XFExprContext *)contextForControl:(XFControl *)control inherited:(XFExprContext *)context;
 /// XsltForms_globals.language: the language used by itext() (G-94). nil =
 /// the user's preferred language (NSLocale).
 @property (nonatomic, copy, nullable) NSString *language;

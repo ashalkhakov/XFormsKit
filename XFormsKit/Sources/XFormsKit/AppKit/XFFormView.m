@@ -809,18 +809,19 @@ static NSRect XFWidgetRect(XFWidget *w)
 
 - (NSRect)layoutFrameOfSVGElement:(NSXMLElement *)element
 {
-    NSRect out = NSZeroRect;
+    // a template element inside a repeat renders once per item (flags):
+    // the FIRST instance's frame is the useful answer — a union across
+    // items spans the whole column, and its center may sit on no view
     for (XFSVGView *svg in self.svgViews) {
         if ([svg superview] == nil) {
             continue;
         }
         NSRect r = [svg frameOfHostElement:element];
         if (!NSIsEmptyRect(r)) {
-            r = [self convertRect:r fromView:svg];
-            out = NSIsEmptyRect(out) ? r : NSUnionRect(out, r);
+            return [self convertRect:r fromView:svg];
         }
     }
-    return out;
+    return NSZeroRect;
 }
 
 #pragma mark - Focus (G-24)

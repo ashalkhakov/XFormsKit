@@ -128,7 +128,7 @@
             XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
             [du openAction:@"XsltForms_load.prototype.run"];
             NSError *err = nil;
-            XFSubform *sf = tid.length ? [processor loadSubformAtURL:url intoTargetID:tid error:&err] : nil;
+            XFSubform *sf = tid.length ? [processor loadSubformAtURL:url intoTargetID:tid contextNode:contextNode error:&err] : nil;
             [du closeAction:@"XsltForms_load.prototype.run"];
             if (sf == nil) {
                 evcontext[@"error-type"] = @"resource-error";
@@ -219,7 +219,7 @@
 
 - (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
 {
-    (void)contextNode; (void)event;
+    (void)event;
     XFProcessor *processor = [self.model.owner isKindOfClass:[XFProcessor class]] ? (XFProcessor *)self.model.owner : nil;
     NSString *tid = [self.targetID hasPrefix:@"#"] ? [self.targetID substringFromIndex:1] : self.targetID;
     if (tid.length == 0) {
@@ -228,7 +228,7 @@
         tid = [[own.targetElement attributeForName:@"id"] stringValue];
     }
     if (tid.length) {
-        [processor unloadSubformAtTargetID:tid];
+        [processor unloadSubformAtTargetID:tid contextNode:contextNode];
     }
 }
 

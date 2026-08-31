@@ -90,6 +90,7 @@
     copy->_autoPosition = position > 0 ? NO : self->_autoPosition;
     copy.size = copy.nodeList.count;
     copy.model = self.model;
+    copy.sourceElement = self.sourceElement;
     copy.nsResolver = self.nsResolver;
     copy.variables = self.variables;
     copy->_dependencies = self.dependencies;

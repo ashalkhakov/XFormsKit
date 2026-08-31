@@ -162,11 +162,17 @@
     // included) per node; controls at any depth are instantiated (G-20)
     NSMutableArray<XFControl *> *found = [NSMutableArray array];
     NSError *inner = nil;
+    // the whole build (nested groups constructing their own subtrees
+    // included) runs in this item's scope — per-item subform content
+    // filters on it
+    NSXMLNode *outerScope = [XFHostNode currentRepeatItemNode];
+    [XFHostNode setCurrentRepeatItemNode:node];
     NSArray *nodes = [XFHostNode hostNodesForChildrenOf:self.element
                                                   model:self.model ?: self.owner
                                                controls:found
                                                existing:nil
                                                   error:&inner];
+    [XFHostNode setCurrentRepeatItemNode:outerScope];
     if (nodes == nil) {
         if (error) {
             *error = inner;

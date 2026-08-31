@@ -88,6 +88,10 @@ static int XFDRunSelfTest(NSString *path)
     }
     NSUInteger before = doc.processor.controls.count;
     NSUndoManager *undo = [doc undoManager];
+    // headless: no runloop ever closes the auto-opened event group, and a
+    // later undo would unwind every grouped edit at once — explicit
+    // groups only (the unit tests disable this the same way)
+    [undo setGroupsByEvent:NO];
     [undo beginUndoGrouping];
     NSXMLElement *input = [doc.hostEdit insertElementNamed:@"input" underParent:body atIndex:-1 error:&error];
     [undo endUndoGrouping];

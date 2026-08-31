@@ -60,6 +60,14 @@ typedef NS_ENUM(NSInteger, XFHostNodeKind) {
 /// Convenience: `existing` built from `controls`' elements.
 + (nullable NSDictionary<NSValue *, XFControl *> *)controlMapFor:(NSArray<XFControl *> *)controls;
 
+/// The repeat-item node whose host tree is currently being built — a
+/// dynamic scope XFRepeat sets around each item's build (nested builds,
+/// a group constructing its own subtree included, inherit it). The
+/// builder uses it to keep per-item subform content (imported nodes
+/// tagged by XFSubform) out of the OTHER items' trees.
++ (nullable NSXMLNode *)currentRepeatItemNode;
++ (void)setCurrentRepeatItemNode:(nullable NSXMLNode *)node;
+
 /// YES when the element is an HTML block-level container.
 + (BOOL)isBlockTag:(NSString *)tag;
 

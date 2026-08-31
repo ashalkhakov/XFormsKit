@@ -2,6 +2,7 @@
 #import "XFControl.h"
 #import "XFNamespaces.h"
 #import "XFXML.h"
+#import "XFSubform.h"
 #import "XFProcessor.h"
 #import <Foundation/NSXMLElement.h>
 #import <dispatch/dispatch.h>
@@ -81,6 +82,18 @@ static NSNumber *XFElementKey(NSXMLElement *element)
     return @((unsigned long long)(uintptr_t)element);
 }
 
+static NSXMLNode *XFCurrentRepeatItemNode = nil;
+
++ (NSXMLNode *)currentRepeatItemNode
+{
+    return XFCurrentRepeatItemNode;
+}
+
++ (void)setCurrentRepeatItemNode:(NSXMLNode *)node
+{
+    XFCurrentRepeatItemNode = node;
+}
+
 + (NSArray<XFHostNode *> *)hostNodesForChildrenOf:(NSXMLElement *)element
                                             model:(id)model
                                          controls:(NSMutableArray<XFControl *> *)controls
@@ -104,6 +117,14 @@ static NSNumber *XFElementKey(NSXMLElement *element)
 {
     NSMutableArray<XFHostNode *> *out = [NSMutableArray array];
     for (NSXMLNode *child in [element children]) {
+        // per-item subform content: an imported node owned by another
+        // repeat item stays out of this item's tree (writers.xhtml —
+        // one shared <group id="subform"/> template, one subform per
+        // item, XSLTForms' per-clone IdManager behavior)
+        NSXMLNode *owner = [XFSubform ownerNodeOfImportedNode:child];
+        if (owner != nil && owner != XFCurrentRepeatItemNode) {
+            continue;
+        }
         NSXMLNodeKind kind = [child kind];
         if (kind == NSXMLTextKind) {
             NSString *raw = [child stringValue] ?: @"";

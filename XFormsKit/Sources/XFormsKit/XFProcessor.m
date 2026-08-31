@@ -890,24 +890,31 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
     return nil;
 }
 
-/// XsltForms_element.evaluateBinding for subform content: a control inside
-/// a subform evaluates against that subform's first model when the
-/// inherited context comes from another form (the main form's body, or an
-/// enclosing group of the parent form).
-- (XFExprContext *)contextForControl:(XFControl *)control inherited:(XFExprContext *)context
+/// YES when the element sits inside an xf:repeat template — where one
+/// host element serves every repeat item and subform targets need
+/// per-item owners.
+static BOOL XFElementInsideRepeat(NSXMLElement *element)
 {
-    if (self.subforms.count == 0 || control.element == nil) {
-        return context;
+    for (NSXMLNode *walk = [element parent]; walk != nil; walk = [walk parent]) {
+        if ([walk kind] == NSXMLElementKind
+            && [XFXML element:(NSXMLElement *)walk hasLocalName:@"repeat"
+                 namespaceURI:XFXFormsNamespaceURI]) {
+            return YES;
+        }
     }
-    XFSubform *sf = [self subformContainingElement:control.element];
-    XFModel *model = sf.defaultModel;
-    if (sf == nil || model == nil || context.model.subform == sf) {
-        return context;
+    return NO;
+}
+
+/// The subform loaded into `target` for this owner (nil owner = the
+/// unscoped one).
+- (XFSubform *)subformAtTarget:(NSXMLElement *)target ownerNode:(NSXMLNode *)owner
+{
+    for (XFSubform *sf in self.subforms) {
+        if (sf.targetElement == target && sf.ownerNode == owner) {
+            return sf;
+        }
     }
-    NSXMLElement *root = [[model defaultInstance] documentElement];
-    XFExprContext *ctx = [[XFExprContext alloc] initWithNode:root];
-    ctx.model = model;
-    return ctx;
+    return nil;
 }
 
 static NSError *XFSubformError(NSString *message)
@@ -919,9 +926,12 @@ static NSError *XFSubformError(NSString *message)
 /// The element whose content a subform replaces: the target itself, or for
 /// a control target its element minus label/help/hint/alert (XFLoad.js
 /// replaces the innerHTML of the control's last child div).
-- (void)clearSubformTarget:(NSXMLElement *)target
+- (void)clearSubformTarget:(NSXMLElement *)target ownerNode:(NSXMLNode *)owner
 {
     for (NSXMLNode *c in [[target children] copy]) {
+        if (owner != nil && [XFSubform ownerNodeOfImportedNode:c] != owner) {
+            continue;   // another repeat item's subform (or authored content)
+        }
         if ([c kind] == NSXMLElementKind && [[c URI] isEqualToString:XFXFormsNamespaceURI]) {
             NSString *n = [c localName];
             if ([n isEqualToString:@"label"] || [n isEqualToString:@"help"]
@@ -935,6 +945,21 @@ static NSError *XFSubformError(NSString *message)
 
 - (void)rebuildAroundTarget:(NSXMLElement *)target
 {
+    // a target inside a repeat template must rebuild THROUGH the repeat:
+    // items re-instantiate under their own item scope, so per-item
+    // subform content lands only in its owner's tree
+    for (NSXMLNode *walk = [target parent]; walk != nil; walk = [walk parent]) {
+        if ([walk kind] == NSXMLElementKind
+            && [XFXML element:(NSXMLElement *)walk hasLocalName:@"repeat"
+                 namespaceURI:XFXFormsNamespaceURI]) {
+            XFControl *repeat = [self controlForElement:(NSXMLElement *)walk];
+            if ([repeat isKindOfClass:[XFRepeat class]]) {
+                [(XFRepeat *)repeat reloadTemplates];
+                [(XFRepeat *)repeat rebuildItemsWithContext:[self evaluationContext] error:NULL];
+                return;
+            }
+        }
+    }
     XFControl *targetControl = [self controlForElement:target];
     XFControl *container = targetControl ?: [self parentControlForElement:target];
     if ([container isKindOfClass:[XFGroup class]]) {
@@ -960,16 +985,34 @@ static NSError *XFSubformError(NSString *message)
 
 - (XFSubform *)loadSubformAtURL:(NSURL *)url intoTargetID:(NSString *)targetID error:(NSError **)error
 {
+    return [self loadSubformAtURL:url intoTargetID:targetID contextNode:nil error:error];
+}
+
+- (XFSubform *)loadSubformAtURL:(NSURL *)url
+                   intoTargetID:(NSString *)targetID
+                    contextNode:(NSXMLNode *)contextNode
+                          error:(NSError **)error
+{
     NSXMLElement *target = [[XFXMLEvents sharedEvents] elementWithID:targetID inDocument:self.hostDocument];
     if (target == nil) {
         if (error) *error = XFSubformError([NSString stringWithFormat:@"Unknown subform target %@", targetID ?: @""]);
         return nil;
     }
-    return [self loadSubformAtURL:url intoTargetElement:target error:error];
+    return [self loadSubformAtURL:url intoTargetElement:target ownerNode:contextNode error:error];
 }
 
 - (XFSubform *)loadSubformAtURL:(NSURL *)url intoTargetElement:(NSXMLElement *)target error:(NSError **)error
 {
+    return [self loadSubformAtURL:url intoTargetElement:target ownerNode:nil error:error];
+}
+
+- (XFSubform *)loadSubformAtURL:(NSURL *)url
+              intoTargetElement:(NSXMLElement *)target
+                      ownerNode:(NSXMLNode *)ownerNode
+                          error:(NSError **)error
+{
+    // per-item scoping only where one template element serves many items
+    NSXMLNode *owner = XFElementInsideRepeat(target) ? ownerNode : nil;
     NSData *data = url ? [NSData dataWithContentsOfURL:url] : nil;
     NSXMLDocument *doc = data ? [[self class] documentFromData:data error:error] : nil;
     if (doc == nil) {
@@ -978,8 +1021,9 @@ static NSError *XFSubformError(NSString *message)
     }
     [self expandIncludesIn:doc baseURL:url];
 
-    // a subform already loaded there is disposed first (XFLoad.js)
-    XFSubform *previous = [self subformAtTarget:target];
+    // a subform already loaded there FOR THIS OWNER is disposed first
+    // (XFLoad.js; other repeat items keep theirs)
+    XFSubform *previous = [self subformAtTarget:target ownerNode:owner];
     if (previous) {
         [self disposeSubform:previous];
     }
@@ -989,6 +1033,7 @@ static NSError *XFSubformError(NSString *message)
     sf.processor = self;
     sf.parent = [self subformContainingElement:target];
     sf.targetElement = target;
+    sf.ownerNode = owner;
     sf.URL = url;
     sf.subforms = @[];
 
@@ -1011,9 +1056,12 @@ static NSError *XFSubformError(NSString *message)
         }
         [imported addObject:[n copy]];
     }
-    [self clearSubformTarget:target];
+    [self clearSubformTarget:target ownerNode:owner];
     for (NSXMLNode *n in imported) {
         [target addChild:n];
+        if (owner != nil) {
+            [XFSubform tagImportedNode:n ownerNode:owner];
+        }
     }
     sf.importedNodes = imported;
 
@@ -1082,8 +1130,14 @@ static NSError *XFSubformError(NSString *message)
 
 - (BOOL)unloadSubformAtTargetID:(NSString *)targetID
 {
+    return [self unloadSubformAtTargetID:targetID contextNode:nil];
+}
+
+- (BOOL)unloadSubformAtTargetID:(NSString *)targetID contextNode:(NSXMLNode *)contextNode
+{
     NSXMLElement *target = [[XFXMLEvents sharedEvents] elementWithID:targetID inDocument:self.hostDocument];
-    XFSubform *sf = target ? [self subformAtTarget:target] : nil;
+    NSXMLNode *owner = (target != nil && XFElementInsideRepeat(target)) ? contextNode : nil;
+    XFSubform *sf = target ? [self subformAtTarget:target ownerNode:owner] : nil;
     if (sf == nil) {
         return NO;
     }

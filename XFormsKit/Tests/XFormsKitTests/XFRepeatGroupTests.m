@@ -522,14 +522,18 @@
     NSString *sub =
         @"<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xf=\"http://www.w3.org/2002/xforms\""
         @" xmlns:ev=\"http://www.w3.org/2001/xml-events\">"
-        @"<head><xf:model id=\"subm\"><xf:instance><sdata xmlns=\"\"><s>sub</s><ctx/></sdata></xf:instance>"
+        @"<head><xf:model id=\"subm\"><xf:instance id=\"sdatai\"><sdata xmlns=\"\"><s>sub</s><ctx/></sdata></xf:instance>"
         @"  <xf:action id=\"subready\" ev:event=\"xforms-subform-ready\">"
         @"    <xf:setvalue ref=\"ctx\" value=\"subform-context()\"/></xf:action>"
         @"  <xf:action id=\"second\" ev:event=\"xforms-subform-ready\"/>"
         @"</xf:model></head>"
-        @"<body><xf:output id=\"so\" ref=\"s\"><xf:label>S</xf:label></xf:output>"
+        // relative refs INHERIT the embedding context (XsltForms_globals.
+        // build: one ctx chain across the whole DOM) — the subform's own
+        // data is reached through instance('id')/subform-instance()
+        @"<body><xf:output id=\"so\" value=\"instance('sdatai')/s\"><xf:label>S</xf:label></xf:output>"
         @"<xf:output id=\"si\" value=\"name(subform-instance())\"><xf:label>I</xf:label></xf:output>"
-        @"<xf:output id=\"sc\" ref=\"ctx\"><xf:label>C</xf:label></xf:output>"
+        @"<xf:output id=\"sc\" value=\"instance('sdatai')/ctx\"><xf:label>C</xf:label></xf:output>"
+        @"<xf:output id=\"sinh\" ref=\".\"><xf:label>H</xf:label></xf:output>"
         @"<xf:trigger id=\"bye\"><xf:label>Bye</xf:label><xf:unload ev:event=\"DOMActivate\"/></xf:trigger></body></html>";
     [sub writeToFile:[dir stringByAppendingPathComponent:@"sub.xhtml"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
     NSString *main =
@@ -564,10 +568,11 @@
     XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"loaded"] invocationCount], (NSInteger)1);
     XCTAssertNil([p controlWithIdentifier:@"old"], @"the target's previous content is replaced");
     XCTAssertEqualObjects([p controlWithIdentifier:@"mo"].stringValue, @"main");
-    XCTAssertEqualObjects([p controlWithIdentifier:@"so"].stringValue, @"sub", @"subform control binds to the subform model");
+    XCTAssertEqualObjects([p controlWithIdentifier:@"so"].stringValue, @"sub", @"instance('id') reaches the subform model");
     XCTAssertEqualObjects([p controlWithIdentifier:@"si"].stringValue, @"sdata");
     XCTAssertEqualObjects([p controlWithIdentifier:@"sc"].stringValue, @"here", @"subform-context() is the target's bound node");
-    XCTAssertEqual([(XFGroup *)[p controlWithIdentifier:@"slot"] children].count, (NSUInteger)4);
+    XCTAssertEqualObjects([p controlWithIdentifier:@"sinh"].stringValue, @"here", @"relative refs inherit the embedding context");
+    XCTAssertEqual([(XFGroup *)[p controlWithIdentifier:@"slot"] children].count, (NSUInteger)5);
 
     // loading again replaces the subform; a missing document is a link exception
     [(XFTriggerControl *)[p controlWithIdentifier:@"go"] activate];
@@ -585,15 +590,131 @@
     [[NSFileManager defaultManager] removeItemAtPath:dir error:NULL];
 }
 
+- (void)testSubformPerRepeatItemScoping // writers.xhtml
+{
+    // One shared <group id="sub"/> template inside a repeat: each item's
+    // load must open ITS OWN subform there (XSLTForms clones the content
+    // per item, so its IdManager resolves the targetid per clone)
+    NSString *dir = [NSTemporaryDirectory() stringByAppendingPathComponent:
+                     [NSString stringWithFormat:@"xfsubrep-%d", (int)getpid()]];
+    [[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:NULL];
+    // sub.xhtml mirrors books.xhtml: its own model exists, but the repeat
+    // inherits the embedding context — each writer's OWN books render
+    NSString *sub =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xf=\"http://www.w3.org/2002/xforms\">"
+        @"<head><xf:model><xf:instance><b xmlns=\"\"><book t=\"static\"/></b></xf:instance></xf:model></head>"
+        @"<body><xf:repeat nodeset=\"book\">"
+        @"<xf:output id=\"bt\" value=\"@t\"><xf:label>T</xf:label></xf:output>"
+        @"</xf:repeat></body></html>";
+    [sub writeToFile:[dir stringByAppendingPathComponent:@"sub.xhtml"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+    NSString *main =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xf=\"http://www.w3.org/2002/xforms\""
+        @" xmlns:ev=\"http://www.w3.org/2001/xml-events\">"
+        @"<head><xf:model><xf:instance><data xmlns=\"\">"
+        @"<w><book t=\"a1\"/><book t=\"a2\"/></w>"
+        @"<w><book t=\"b1\"/></w>"
+        @"<w/></data></xf:instance>"
+        @"</xf:model></head>"
+        @"<body><xf:repeat id=\"r\" ref=\"w\">"
+        @"<xf:trigger id=\"show\"><xf:label>Show</xf:label>"
+        @"<xf:load ev:event=\"DOMActivate\" show=\"embed\" targetid=\"sub\" resource=\"sub.xhtml\"/></xf:trigger>"
+        @"<xf:trigger id=\"hide\"><xf:label>Hide</xf:label>"
+        @"<xf:unload ev:event=\"DOMActivate\" targetid=\"sub\"/></xf:trigger>"
+        @"<xf:group id=\"sub\"/>"
+        @"</xf:repeat></body></html>";
+    NSString *path = [dir stringByAppendingPathComponent:@"main.xhtml"];
+    [main writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+    NSError *error = nil;
+    XFProcessor *p = [XFProcessor processorWithContentsOfURL:[NSURL fileURLWithPath:path] error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFRepeat *rep = (XFRepeat *)[p controlWithIdentifier:@"r"];
+    XCTAssertTrue([rep isKindOfClass:[XFRepeat class]]);
+    XCTAssertEqual(rep.items.count, (NSUInteger)3);
+
+    XFGroup *(^groupIn)(NSUInteger) = ^XFGroup *(NSUInteger i) {
+        for (XFControl *c in rep.items[i].controls) {
+            if ([c isKindOfClass:[XFGroup class]]) return (XFGroup *)c;
+        }
+        return nil;
+    };
+    XFTriggerControl *(^trig)(NSUInteger, NSString *) = ^XFTriggerControl *(NSUInteger i, NSString *ident) {
+        for (XFControl *c in rep.items[i].controls) {
+            if ([c isKindOfClass:[XFTriggerControl class]] && [c.identifier isEqualToString:ident]) {
+                return (XFTriggerControl *)c;
+            }
+        }
+        return nil;
+    };
+    NSString *(^bookIn)(NSUInteger) = ^NSString *(NSUInteger i) {
+        XFControl *c = groupIn(i).children.firstObject;
+        if (![c isKindOfClass:[XFRepeat class]]) {
+            return nil;
+        }
+        NSMutableArray *titles = [NSMutableArray array];
+        for (XFRepeatItem *it in [(XFRepeat *)c items]) {
+            for (XFControl *b in it.controls) {
+                if ([b.identifier isEqualToString:@"bt"]) {
+                    [titles addObject:b.stringValue ?: @""];
+                }
+            }
+        }
+        return titles.count ? [titles componentsJoinedByString:@","] : nil;
+    };
+    for (NSUInteger i = 0; i < 3; i++) {
+        XCTAssertEqual(groupIn(i).children.count, (NSUInteger)0);
+    }
+
+    // load into item 2's context: only item 2 shows content, and the
+    // subform's repeat inherits the ITEM context — writer 2's own books
+    [trig(1, @"show") activate];
+    XCTAssertEqual(p.subforms.count, (NSUInteger)1);
+    XCTAssertEqual(p.subforms.firstObject.ownerNode, rep.nodes[1]);
+    XCTAssertEqual(p.models.count, (NSUInteger)2);
+    XCTAssertNil(bookIn(0));
+    XCTAssertEqualObjects(bookIn(1), @"b1");
+    XCTAssertNil(bookIn(2));
+
+    // item 1 opens its own, independent of item 2's, with ITS books
+    [trig(0, @"show") activate];
+    XCTAssertEqual(p.subforms.count, (NSUInteger)2);
+    XCTAssertEqual(p.models.count, (NSUInteger)3);
+    XCTAssertEqualObjects(bookIn(0), @"a1,a2");
+    XCTAssertEqualObjects(bookIn(1), @"b1");
+    XCTAssertNil(bookIn(2));
+
+    // reloading item 1's replaces only item 1's
+    [trig(0, @"show") activate];
+    XCTAssertEqual(p.subforms.count, (NSUInteger)2);
+    XCTAssertEqual(p.models.count, (NSUInteger)3);
+
+    // unload in item 2's context leaves item 1's alone
+    [trig(1, @"hide") activate];
+    XCTAssertEqual(p.subforms.count, (NSUInteger)1);
+    XCTAssertEqual(p.models.count, (NSUInteger)2);
+    XCTAssertEqualObjects(bookIn(0), @"a1,a2");
+    XCTAssertNil(bookIn(1));
+    XCTAssertNil(bookIn(2));
+
+    [trig(0, @"hide") activate];
+    XCTAssertEqual(p.subforms.count, (NSUInteger)0);
+    XCTAssertEqual(p.models.count, (NSUInteger)1);
+    XCTAssertNil(bookIn(0));
+    [[NSFileManager defaultManager] removeItemAtPath:dir error:NULL];
+}
+
 - (void)testComponentResourceEmbedsSubform // G-95 (xf:component)
 {
     NSString *dir = [NSTemporaryDirectory() stringByAppendingPathComponent:
                      [NSString stringWithFormat:@"xfcomp-%d", (int)getpid()]];
     [[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:NULL];
+    // component content inherits the component's bound node as context
+    // (XsltForms_component: innerHTML + the one global build walk); its
+    // own instance is reached through instance('id')
     NSString *comp =
         @"<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xf=\"http://www.w3.org/2002/xforms\">"
-        @"<head><xf:model><xf:instance><c xmlns=\"\"><v>component</v></c></xf:instance></xf:model></head>"
-        @"<body><xf:output id=\"cv\" ref=\"v\"><xf:label>V</xf:label></xf:output>"
+        @"<head><xf:model><xf:instance id=\"cdatai\"><c xmlns=\"\"><v>component</v></c></xf:instance></xf:model></head>"
+        @"<body><xf:output id=\"cv\" value=\"instance('cdatai')/v\"><xf:label>V</xf:label></xf:output>"
+        @"<xf:output id=\"ci\" ref=\".\"><xf:label>H</xf:label></xf:output>"
         @"<xf:output id=\"cc\" value=\"subform-context()\"><xf:label>C</xf:label></xf:output></body></html>";
     [comp writeToFile:[dir stringByAppendingPathComponent:@"comp.xhtml"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
     NSString *main =
@@ -609,6 +730,7 @@
     XCTAssertEqual(p.subforms.firstObject.targetElement, [p controlWithIdentifier:@"k"].element);
     XCTAssertEqualObjects([p controlWithIdentifier:@"k"].label, @"K");
     XCTAssertEqualObjects([p controlWithIdentifier:@"cv"].stringValue, @"component");
+    XCTAssertEqualObjects([p controlWithIdentifier:@"ci"].stringValue, @"bound", @"content inherits the component's bound node");
     XCTAssertEqualObjects([p controlWithIdentifier:@"cc"].stringValue, @"bound");
     [[NSFileManager defaultManager] removeItemAtPath:dir error:NULL];
 }
