@@ -155,7 +155,13 @@ void XFAppKitHasWidgetsFile(void) {}
             [picker setDatePickerElements:elements];
             [picker setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:0]];
             NSDate *date = [input dateValue];
-            if (date) {
+            // years 1..9999 only: GNUstep's NSDatePicker formatting
+            // iterates the Gregorian calendar year by year and a far
+            // date hangs the layout (the parse guard should never let
+            // one through; this is the belt to its braces)
+            if (date != nil
+                && [date timeIntervalSince1970] > -62135596800.0
+                && [date timeIntervalSince1970] < 253402300800.0) {
                 [picker setDateValue:date];
             }
             [picker setTarget:self];

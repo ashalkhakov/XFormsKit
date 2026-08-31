@@ -53,6 +53,13 @@
         c.year = [[string substringWithRange:NSMakeRange(0, 4)] integerValue];
         c.month = [[string substringWithRange:NSMakeRange(5, 2)] integerValue];
         c.day = [[string substringWithRange:NSMakeRange(8, 2)] integerValue];
+        // an invalid value in a typed node ("non-empty-content", W3C
+        // suite 5.2.1) must yield nil, not a garbage NSDate — GNUstep's
+        // Gregorian conversion effectively never returns for year 0
+        if (c.year < 1 || c.year > 9999 || c.month < 1 || c.month > 12
+            || c.day < 1 || c.day > 31) {
+            return nil;
+        }
     }
     if (type == XFDateTypeTime) {
         NSArray *parts = [string componentsSeparatedByString:@":"];

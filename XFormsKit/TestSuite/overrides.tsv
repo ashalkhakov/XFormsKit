@@ -1,0 +1,3 @@
+# Human-reviewed verdicts pinned over the runner's automation.
+# name<TAB>status<TAB>note      status: pass|fail|skip|na
+# (seed: none yet — record reviewed judgments here per chapter)

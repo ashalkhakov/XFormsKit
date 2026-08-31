@@ -1,0 +1,501 @@
+name	section	chapter	status	how	summary	detail
+B.1.a	B.1	B. Insert and Delete Action Patterns for Data Mutations	pass	values	Prepend Element Copy	1 quoted value(s) found
+B.2.a	B.2	B. Insert and Delete Action Patterns for Data Mutations	pass	values	Append Element Copy	1 quoted value(s) found
+B.3.a	B.3	B. Insert and Delete Action Patterns for Data Mutations	review	-	Duplicate Element	nothing auto-checkable
+B.4.a	B.4	B. Insert and Delete Action Patterns for Data Mutations	pass	values	Set Attribute	1 quoted value(s) found
+B.5.a	B.5	B. Insert and Delete Action Patterns for Data Mutations	pass	values	Remove Element	1 quoted value(s) found
+B.6.a	B.6	B. Insert and Delete Action Patterns for Data Mutations	check	-	Remove Attribute	unmatched: classified | dump: group '      b.6.a Remove Attribute     '; group '      You must not see the string "classified" after key '23' :      '; repeat; output 'key : ' = 23 
+B.7.a	B.7	B. Insert and Delete Action Patterns for Data Mutations	review	-	Remove Nodeset	nothing auto-checkable
+B.8.a	B.8	B. Insert and Delete Action Patterns for Data Mutations	pass	values	Copy Nodeset	3 quoted value(s) found
+B.9.a	B.9	B. Insert and Delete Action Patterns for Data Mutations	pass	values	Copy Attribute List	1 quoted value(s) found
+B.10.a	B.10	B. Insert and Delete Action Patterns for Data Mutations	review	-	Replace Element	nothing auto-checkable
+B.11.a	B.11	B. Insert and Delete Action Patterns for Data Mutations	review	-	Replace Attribute	nothing auto-checkable
+B.12.a	B.12	B. Insert and Delete Action Patterns for Data Mutations	check	-	Replace Instance with Insert	unmatched: SKU-0815 / SKU-4711 | dump: group '      b.12.a Replace Instance with Insert     '; group '      You must not see item product ("SKU-0815") or item product ("SKU-4711")  :      '; repeat [hidden]
+B.13.a	B.13	B. Insert and Delete Action Patterns for Data Mutations	pass	values	Move Element	3 quoted value(s) found
+B.14.a	B.14	B. Insert and Delete Action Patterns for Data Mutations	pass	values	Move Attribute	1 quoted value(s) found
+B.15.a	B.15	B. Insert and Delete Action Patterns for Data Mutations	review	-	Insert Element into Non-Contiguous, Heterogeneous Nodeset	nothing auto-checkable
+G.1.a	G.1	G. XForms and Styling	review	-	enabled and disabled pseudo-classes	nothing auto-checkable
+G.1.b	G.1	G. XForms and Styling	review	-	required and optional pseudo-classes	nothing auto-checkable
+G.1.c	G.1	G. XForms and Styling	review	-	valid and invalid pseudo-classes	nothing auto-checkable
+G.1.d	G.1	G. XForms and Styling	review	-	read-only and read-write pseudo-classes	nothing auto-checkable
+G.1.e	G.1	G. XForms and Styling	review	-	out-of-range and in-range pseudo-classes	nothing auto-checkable
+G.2.a	G.2	G. XForms and Styling	review	-	value pseudo-element	nothing auto-checkable
+G.2.b	G.2	G. XForms and Styling	review	-	repeat-item pseudo-element	nothing auto-checkable
+G.2.c	G.2	G. XForms and Styling	review	-	repeat-index pseudo-element	nothing auto-checkable
+G.2.d	G.2	G. XForms and Styling	review	-	repeat-index precedence over repeat-item	nothing auto-checkable
+H.1	H.1	H. Complete XForms Examples	review	-	XForms in XHTML	no message observed (form defines 2)
+H.2	H.2	H. Complete XForms Examples	review	-	Editing Hierarchical Bookmarks Using XForms	nothing auto-checkable
+H.3	H.3	H. Complete XForms Examples	missing	-	Survey Using XForms and SVG	manifest links a file that does not exist
+3.3.1.d1	3.3.1	1. Differences between XForms 1.1 and XForms 1.0	review	-	model element now supports a version attribute	no message observed (form defines 1)
+3.3.2.c	3.3.2	1. Differences between XForms 1.1 and XForms 1.0	pass	values	instance element now has a resource attribute	3 quoted value(s) found
+11.1.c	11.1	1. Differences between XForms 1.1 and XForms 1.0	check	-	submission element now has a resource attribute	unmatched: white / Acura / Integra / Acura / Integra / white | dump: group '11.1.c resource attribute of submission element'; group '     When you activate the Submit Make And Model trigger the page must be replaced by the form data.      The form data must contain the values "Acura" and "Integra", but not t…
+11.6.1.a	11.6.1	1. Differences between XForms 1.1 and XForms 1.0	pass	message	submission element now has a resource element	message 'Unable to submit'
+11.9.4.a	11.9.4	1. Differences between XForms 1.1 and XForms 1.0	check	-	submission method attribute now supports delete 	unmatched: blue | dump: group '11.9.4.a delete submission method'; group '        When you activate the Use Delete Method submit control the page must be replaced by the form data. The         value "blue" must appear in the request URI but must not appear in the …
+11.7.1.a	11.7.1	1. Differences between XForms 1.1 and XForms 1.0	check	-	submission method element with value attribute	unmatched: post | dump: group '11.7.1.a method element'; group '           When the Submit With Method trigger is activated the page will be replaced by the form data.            The variable on the page for the request method must equal "post".    '; submit 'Subm…
+11.8.a	11.8	1. Differences between XForms 1.1 and XForms 1.0	check	-	submission headers can now be added with header element	unmatched: myHeader1 / myHeader2 / myValue1 / myValue2 | dump: group '11.8.a header element of submission element'; group '        When you activate the Submit Now submit control the page must be replaced by the form data. Among the         variables you must see two headers named "myHeader1" and "myHe…
+11.11.3.c	11.11.3	1. Differences between XForms 1.1 and XForms 1.0	check	-	special submission header behavior through the mediatype  attribute	unmatched: text/xml / ASCII / http://www.google.com | dump: group '11.11.3.c SOAP HTTP binding'; group '       Activate the Submit SOAP submit control to replace this page with the form data.        The value of the content type header must be "text/xml".        and contain the value "ASCII". The va…
+11.1.i	11.1	1. Differences between XForms 1.1 and XForms 1.0	check	-	submission element now supports relevant attribute	unmatched: Suzuki / Hayabusa 1300 / Suzuki / Hayabusa 1300 / 2006-04-26 | dump: group '11.1.i relevant attribute of submission element'; group '     Both submit controls must replace the page with the form data when activated.      When you activate the Submit (relevant=true) submit control you must see the values "Suz…
+11.1.h	11.1	1. Differences between XForms 1.1 and XForms 1.0	pass	message	submission element now supports validate attribute	message 'xforms-submit-error'
+11.1.t	11.1	1. Differences between XForms 1.1 and XForms 1.0	check	-	submission element now supports target attribute	unmatched: Janel / Saturn / red | dump: group '11.1.t targetref attribute of submission element'; group '      You must see the values "Thomas", "Toyota", and "silver" in the output       controls. When you activate the Replace Instance submit control the values must change to   …
+11.10.b	11.10	1. Differences between XForms 1.1 and XForms 1.0	pass	message	submission element now supports replace attribute text setting	message 'xforms-submit-error'
+11.3.a	11.3	1. Differences between XForms 1.1 and XForms 1.0	pass	message	submission element now also supports the xforms-submit-serialize event	message 'xforms-submit-serialize'
+11.1.j	11.1	1. Differences between XForms 1.1 and XForms 1.0	check	-	serialization attribute of submission element	unmatched: blue | dump: group '11.1.j serialization attribute of submission element'; group '        When you activate the Submit With Serialization submit control the page must be replaced by the form data. The         value "blue" must not appear in the request …
+11.4.b	11.4	1. Differences between XForms 1.1 and XForms 1.0	review	-	accessing context information for xforms-submit-done event	nothing auto-checkable
+11.5.b	11.5	1. Differences between XForms 1.1 and XForms 1.0	pass	values	accessing context information for xforms-submit-error event	2 quoted value(s) found
+5.2.6.a	5.2.6	1. Differences between XForms 1.1 and XForms 1.0	pass	message	email datatype	message 'You entered an invalid email'
+5.2.7.a	5.2.7	1. Differences between XForms 1.1 and XForms 1.0	pass	message	card-number datatype	message 'You entered an invalid card-number'
+5.2.1.a	5.2.1	1. Differences between XForms 1.1 and XForms 1.0	review	-	XForms datatypes to allow empty content - built-in primitive types	nothing auto-checkable
+7.9.1.a	7.9.1	1. Differences between XForms 1.1 and XForms 1.0	review	-	local-date() function	nothing auto-checkable
+7.9.2.a	7.9.2	1. Differences between XForms 1.1 and XForms 1.0	review	-	local-dateTime() function	nothing auto-checkable
+7.9.5.a	7.9.5	1. Differences between XForms 1.1 and XForms 1.0	pass	values	days-to-date() function	2 quoted value(s) found
+7.9.7.a	7.9.7	1. Differences between XForms 1.1 and XForms 1.0	pass	values	seconds-to-dateTime() function	1 quoted value(s) found
+7.9.8.a	7.9.8	1. Differences between XForms 1.1 and XForms 1.0	check	-	adjust-dateTime-to-timezone() function	unmatched: 2007-10-02T14:26:43-07:00 / 2007-10-07T02:22:00-07:00 | dump: group '      7.9.8.a adjust-dateTime-to-timezone() function       '; group '      You must see the value "2007-10-07T02:22:00-07:00"(assuming Pacific Standard Time with daylight savings time) for the Test 1 output.     '; group; output 'Tes…
+7.10.2.a	7.10.2	1. Differences between XForms 1.1 and XForms 1.0	pass	values	current() function	1 quoted value(s) found
+7.11.1.a	7.11.1	1. Differences between XForms 1.1 and XForms 1.0	pass	values	choose() function	4 quoted value(s) found
+7.10.4.a	7.10.4	1. Differences between XForms 1.1 and XForms 1.0	check	-	context() function	unmatched: apple / orange / mandarine / tomato / apple / orange / mandarine / tomato | dump: group '    7.10.4.a context() function       '; group '      You must initially see the value "Unknown" for the Bad Fruit picked output and       four triggers labeled "apple", "orange", "mandarine", and "tomato".      When you activate one…
+7.8.3.a	7.8.3	1. Differences between XForms 1.1 and XForms 1.0	check	-	digest() function using sha1, md5, and sha256	unmatched: PASS / FAIL | dump: group '7.8.3.a digest() function using sha1, md5, and sha256'; group '  You must see the group label "PASS" for all Tests.   If the function does not return the correct value you will see a group label  with the word "FAIL" and the incorrec…
+7.8.4.a	7.8.4	1. Differences between XForms 1.1 and XForms 1.0	check	-	hmac() function using sha1, md5, and sha256	unmatched: PASS / FAIL | dump: group '7.8.4.a hmac() function using sha1, md5, and sha256'; group '  You must see the group label "PASS" for all Tests.   If the function does not return the correct value you will see a group label  with the word "FAIL" and the incorrect …
+7.7.7.a	7.7.7	1. Differences between XForms 1.1 and XForms 1.0	review	-	random() function	nothing auto-checkable
+7.7.6.a	7.7.6	1. Differences between XForms 1.1 and XForms 1.0	pass	values	power() function	2 quoted value(s) found
+7.6.2.a	7.6.2	1. Differences between XForms 1.1 and XForms 1.0	pass	values	is-card-number() function	2 quoted value(s) found
+7.7.8.a	7.7.8	1. Differences between XForms 1.1 and XForms 1.0	pass	values	compare() function	3 quoted value(s) found
+7.10.3.a	7.10.3	1. Differences between XForms 1.1 and XForms 1.0	pass	values	id() function	3 quoted value(s) found
+7.11.2.a	7.11.2	1. Differences between XForms 1.1 and XForms 1.0	check	-	event() function	unmatched: /Dates/date | dump: group '7.11.2.a event() function with inserted-nodes property'; group '      After you activate the Insert A Date trigger you must see the correct value as output.     '; group; trigger 'Insert A Date'; group 'You must see the XPath express…
+8.1.5.1.a	8.1.5.1	1. Differences between XForms 1.1 and XForms 1.0	pass	values	mediatype element on output control	1 quoted value(s) found
+10.17.a	10.17	1. Differences between XForms 1.1 and XForms 1.0	pass	values	conditional execution of XForms actions	2 quoted value(s) found
+10.18.a	10.18	1. Differences between XForms 1.1 and XForms 1.0	pass	values	iteration of XForms actions	1 quoted value(s) found
+10.8.a	10.8	1. Differences between XForms 1.1 and XForms 1.0	pass	message	dispatch action now allows event name and target	message 'xforms-rebuild'
+10.8.c	10.8	1. Differences between XForms 1.1 and XForms 1.0	pass	message	dispatch action with new delay attribute	message 'xforms-rebuild'
+10.7.1.a	10.7.1	1. Differences between XForms 1.1 and XForms 1.0	check	-	setfocus element with control child element	unmatched: Set Focus To Age / Set Focus To DOB | dump: group '10.7.1.a setfocus element with control child element'; group '             The triggers below must shift the focus to the proper form controls when activated.              The "Set Focus To Age" trigger must place the focus into the …
+10.6.1.a	10.6.1	1. Differences between XForms 1.1 and XForms 1.0	review	-	toggle element with case child element	nothing auto-checkable
+7.10.4.a	7.10.4	1. Differences between XForms 1.1 and XForms 1.0	check	-	setvalue improved with addition of context() function	unmatched: apple / orange / mandarine / tomato / apple / orange / mandarine / tomato | dump: group '    7.10.4.a context() function       '; group '      You must initially see the value "Unknown" for the Bad Fruit picked output and       four triggers labeled "apple", "orange", "mandarine", and "tomato".      When you activate one…
+10.a	10	10. XForms Actions	pass	values	action syntax example	1 quoted value(s) found
+10.b	10	10. XForms Actions	pass	message	rebuild in action element	message 'xforms:action'
+10.c	10	10. XForms Actions	pass	message	recalculate in action element	message 'xforms:action'
+10.d	10	10. XForms Actions	pass	message	revalidate in action element	message 'xforms:action'
+10.e	10	10. XForms Actions	pass	message	refresh in action element	message 'xforms:action'
+10.f	10	10. XForms Actions	pass	message	insert in action element	message 'xforms:action'
+10.g	10	10. XForms Actions	pass	message	delete in action element	message 'xforms:action'
+10.h	10	10. XForms Actions	pass	message	setvalue in action element	message 'xforms:action'
+10.i	10	10. XForms Actions	pass	message	reset in action element	message 'xforms-rebuild'
+10.1.a	10.1	10. XForms Actions	pass	values	action element	1 quoted value(s) found
+10.2.a	10.2	10. XForms Actions	check	-	setvalue elements with expression or literal	unmatched: Toyoto | dump: group '10.2.a setvalue elements with expression or literal'; group '        You must see the value "white" in the Color output control, the value         "excellent" in the Condition output control, and the value "Toyoto"       in the Make …
+10.2.b	10.2	10. XForms Actions	pass	values	setvalue element with expression and literal, element with neither	3 quoted value(s) found
+10.3.a	10.3	10. XForms Actions	review	-	insert action using context attribute	nothing auto-checkable
+10.3.b	10.3	10. XForms Actions	review	-	insert action with bind and model attributes	nothing auto-checkable
+10.3.c	10.3	10. XForms Actions	review	-	insert action using origin attribute	nothing auto-checkable
+10.3.d	10.3	10. XForms Actions	review	-	insert action using at attribute	nothing auto-checkable
+10.3.e	10.3	10. XForms Actions	review	-	insert action using position attribute	nothing auto-checkable
+10.3.f	10.3	10. XForms Actions	pass	values	insert action in repeat bound to collection	1 quoted value(s) found
+10.3.g	10.3	10. XForms Actions	pass	values	insert action - nodeset indicates root element	1 quoted value(s) found
+10.3.h	10.3	10. XForms Actions	check	-	insert action and repeat element	unmatched: 1 / 3 / 3 / 1 | dump: group '10.3.h insert action and repeat element'; group '               You must see the correct values for the two output controls both before and after                activating the Perform Insert trigger. The conditions change after the t…
+10.3.i	10.3	10. XForms Actions	pass	values	insert action - xforms-insert event	1 quoted value(s) found
+10.3.j	10.3	10. XForms Actions	check	-	insert action - copying an attribute	unmatched: 6.00 / 5.00 / 4.00 | dump: group '10.3.j insert action - copying an attribute'; group 'You must not see the value "4.00" : '; output [hidden]; group 'You must not see the value "5.00" : '; output [hidden]; group 'You must not see the value "6.00" : '; output = 3.00
+10.4.a	10.4	10. XForms Actions	review	-	delete action using context attribute	nothing auto-checkable
+10.4.b	10.4	10. XForms Actions	review	-	delete action using context and bind attributes	nothing auto-checkable
+10.4.c	10.4	10. XForms Actions	review	-	delete action using context attribute terminates with no effect	nothing auto-checkable
+10.4.d	10.4	10. XForms Actions	review	-	delete action using at attribute	nothing auto-checkable
+10.4.e	10.4	10. XForms Actions	pass	message	delete element rules	message 'xforms-delete'
+10.4.f	10.4	10. XForms Actions	review	-	delete action and repeat element	nothing auto-checkable
+10.4.g	10.4	10. XForms Actions	review	-	delete action with xforms-delete event	no message observed (form defines 1)
+10.5.a	10.5	10. XForms Actions	pass	message	setindex element rules	message 'xforms-scroll-last'
+10.6.a	10.6	10. XForms Actions	check	-	events dispatched by toggle element	unmatched: out / in / in / out | dump: group '10.6.a events dispatched by toggle element'; group '     If you are in the "in" case and you activate the Show Out Case trigger     you must see an xforms-deselect(in) message followed by an      xforms-select(out) message.      If y…
+10.6.1.a	10.6.1	10. XForms Actions	review	-	case element child of the toggle element	nothing auto-checkable
+10.6.1.b	10.6.1	10. XForms Actions	review	-	case element child of the toggle element precedence testing	nothing auto-checkable
+10.7.a	10.7	10. XForms Actions	pass	values	setfocus element	2 quoted value(s) found
+10.7.1.a	10.7.1	10. XForms Actions	check	-	setfocus element with control child element	unmatched: Set Focus To Age / Set Focus To DOB | dump: group '10.7.1.a setfocus element with control child element'; group '             The triggers below must shift the focus to the proper form controls when activated.              The "Set Focus To Age" trigger must place the focus into the …
+10.7.1.b	10.7.1	10. XForms Actions	check	-	control element precedence tests	unmatched: Set Focus To Age / Set Focus To DOB | dump: group '10.7.1.b control element precedence tests'; group '             The triggers below must shift the focus to the proper form controls when activated.              The "Set Focus To Age" trigger must place the focus into the input contr…
+10.8.a	10.8	10. XForms Actions	pass	message	dispatch element dispatches predefined event	message 'xforms-rebuild'
+10.8.b	10.8	10. XForms Actions	pass	message	dispatch element dispatches custom event	message 'custom-event'
+10.8.c	10.8	10. XForms Actions	pass	message	dispatch element with delay attribute	message 'xforms-rebuild'
+10.8.d	10.8	10. XForms Actions	pass	message	dispatch element dispatches custom event that bubbles	message 'Child Element'
+10.8.e	10.8	10. XForms Actions	pass	message	dispatch element dispatches cancelled custom event	message 'custom-event'
+10.8.f	10.8	10. XForms Actions	check	-	dispatch element dispatches cancelled predefined event	unmatched: Audi | dump: group '10.8.f dispatch element dispatches cancelled predefined event'; group '       When you activate the Reset trigger the value in the input control must NOT change to "Audi".    '; trigger 'Reset'; input 'Car Input : ' = Kia
+10.8.1.a	10.8.1	10. XForms Actions	pass	message	dispatch element with name child element	message 'xforms-rebuild'
+10.8.1.b	10.8.1	10. XForms Actions	pass	message	name element has precedence over attribute	message 'xforms-rebuild'
+10.8.1.c	10.8.1	10. XForms Actions	pass	message	value attribute has precedence in name element	message 'xforms-rebuild'
+10.8.2.a	10.8.2	10. XForms Actions	pass	message	dispatch element with target child element	message 'custom-event'
+10.8.2.b	10.8.2	10. XForms Actions	pass	message	target element has precedence over attribute	message 'custom-event'
+10.8.2.c	10.8.2	10. XForms Actions	pass	message	value attribute has precedence in target element	message 'custom-event'
+10.8.3.a	10.8.3	10. XForms Actions	pass	message	dispatch element with delay child element	message 'xforms-rebuild'
+10.8.3.b	10.8.3	10. XForms Actions	pass	message	delay element has precedence over attribute	message 'xforms-rebuild'
+10.8.3.c	10.8.3	10. XForms Actions	pass	message	value attribute has precedence in delay element	message 'xforms-rebuild'
+10.13.a	10.13	10. XForms Actions	pass	message	reset element	message 'xforms-reset'
+10.13.b	10.13	10. XForms Actions	pass	values	reset element with model attribute	2 quoted value(s) found
+10.14.a	10.14	10. XForms Actions	review	-	load element attributes	nothing auto-checkable
+10.14.b	10.14	10. XForms Actions	review	-	show attribute of load element	nothing auto-checkable
+10.14.1.a	10.14.1	10. XForms Actions	review	-	load element with resource child element	nothing auto-checkable
+10.14.1.b	10.14.1	10. XForms Actions	review	-	value attribute has precedence in load element	nothing auto-checkable
+10.15.a	10.15	10. XForms Actions	review	-	send element	no message observed (form defines 2)
+10.16.a	10.16	10. XForms Actions	pass	message	message element using single node binding	message 'Instance Message'
+10.16.b	10.16	10. XForms Actions	pass	message	level attribute of message element	message 'Modal Message'
+10.16.c	10.16	10. XForms Actions	check	-	message element interface created at run time	unmatched: Hello, world! | dump: group '10.16.c message element interface created at run time'; group '     When you activate the See Message trigger you must see a message that says "Hello, world!".    '; group; trigger 'See Message'
+10.17.a	10.17	10. XForms Actions	pass	values	conditional execution of XForms actions	2 quoted value(s) found
+10.17.b	10.17	10. XForms Actions	pass	message	conditional execution of XForms actions using action element	message 'This is the positive test'
+10.17.c	10.17	10. XForms Actions	review	-	conditional execution of XForms actions - Automatic Focus Advancement example	nothing auto-checkable
+10.17.d	10.17	10. XForms Actions	review	-	conditional execution of XForms actions - Handling Focus for Empty Repeats example	nothing auto-checkable
+10.18.a	10.18	10. XForms Actions	pass	values	iteration of XForms actions	1 quoted value(s) found
+10.18.b	10.18	10. XForms Actions	pass	values	iteration of XForms actions using action element	1 quoted value(s) found
+10.18.c	10.18	10. XForms Actions	pass	values	iteration executed zero times	1 quoted value(s) found
+10.18.d	10.18	10. XForms Actions	pass	values	XForms actions with if and while attributes	1 quoted value(s) found
+10.18.e	10.18	10. XForms Actions	pass	values	iteration of XForms actions - Summing Selected Results example	2 quoted value(s) found
+11.1.a	11.1	11. The XForms Submission Module	check	-	ref attribute of submission element	unmatched: white / Acura / Integra / Acura / Integra / white | dump: group '11.1.a ref attribute of submission element'; group '     When you activate the Submit Make And Model trigger the page must be replaced by the form data.      The form data must contain the values "Acura" and "Integra", but not the va…
+11.1.b	11.1	11. The XForms Submission Module	check	-	bind attribute of submission element	unmatched: white / Acura / 1994 / 120 | dump: group '11.1.b bind attribute of submission element'; group '         When you activate the Submit trigger the page must be replaced by the form data. You must see the value          "white" in the form data. You must not see the values "Acu…
+11.1.c	11.1	11. The XForms Submission Module	check	-	resource attribute of submission element	unmatched: white / Acura / Integra / Acura / Integra / white | dump: group '11.1.c resource attribute of submission element'; group '     When you activate the Submit Make And Model trigger the page must be replaced by the form data.      The form data must contain the values "Acura" and "Integra", but not t…
+11.1.d	11.1	11. The XForms Submission Module	check	-	action attribute of submission element	unmatched: Subaru / Impreza WRX STi / 2005 | dump: group '11.1.d action attribute of submission element'; group '               When you activate the Submit trigger the page must be replaced by the form data.         The form data must contain the values "Subaru" and "Impreza WRX STi", and …
+11.1.e	11.1	11. The XForms Submission Module	check	-	mode attribute of submission element	unmatched: white | dump: group '11.1.e mode attribute of submission element'; group '         Each submit control below submits the form with a different mode. Both must replace the page                with form data containing the value "white".        '; submit '…
+11.1.f	11.1	11. The XForms Submission Module	check	-	method attribute of submission element	unmatched: Infiniti / G35x / 2005 | dump: group '11.1.f method attribute of submission element'; group '               Each submit control below submits the form with a different method. Both must replace the page                with form data containing the values "Infiniti", "G35…
+11.1.h	11.1	11. The XForms Submission Module	pass	message	validate attribute of submission element	message 'xforms-submit-error'
+11.1.i	11.1	11. The XForms Submission Module	check	-	relevant attribute of submission element	unmatched: Suzuki / Hayabusa 1300 / Suzuki / Hayabusa 1300 / 2006-04-26 | dump: group '11.1.i relevant attribute of submission element'; group '     Both submit controls must replace the page with the form data when activated.      When you activate the Submit (relevant=true) submit control you must see the values "Suz…
+11.1.j	11.1	11. The XForms Submission Module	check	-	serialization attribute of submission element	unmatched: blue | dump: group '11.1.j serialization attribute of submission element'; group '        When you activate the Submit With Serialization submit control the page must be replaced by the form data. The         value "blue" must not appear in the request …
+11.1.k	11.1	11. The XForms Submission Module	check	-	version attribute of submission element	unmatched: 1.0 / 1.1 | dump: group '11.1.k version attribute of submission element (non-normative)'; group '       Each submit control below replaces the page with the form instance data. The Submit As 1.0 submits the        form with a submission element that has a ve…
+11.1.l	11.1	11. The XForms Submission Module	check	-	indent attribute of submission element	unmatched: no / yes | dump: group '11.1.l indent attribute of submission element (non-normative)'; group '       Each submit control below replaces the page with the form instance data. The Submit Without indent        submits the form with a submission element that h…
+11.1.m	11.1	11. The XForms Submission Module	check	-	mediatype attribute of submission element	unmatched: application/xml | dump: group '11.1.m mediatype attribute of submission element'; group '        When you activate the Submit submit control the page must be replaced by the form data.         The variable on the page for the content type must equal the value "app…
+11.1.n	11.1	11. The XForms Submission Module	check	-	encoding attribute of submission element	unmatched: encoding= / encoding= | dump: group '11.1.n encoding attribute of submission element'; group '        When you activate the Submit (UTF-8) control you must see the value         " encoding="UTF-8" " at the top of the form data.         When you activate the Submit (ISO)…
+11.1.o	11.1	11. The XForms Submission Module	check	-	omit-xml-declaration attribute of submission element	unmatched: <?xml version= / encoding= / ?> | dump: group '11.1.o omit-xml-declaration attribute of submission element'; group '        After activating the Submit control the page must be replaced by the instance data. You must         not see the value "<?xml version="1.0" encoding="UTF-8"…
+11.1.p	11.1	11. The XForms Submission Module	check	-	standalone attribute of submission element	unmatched: standalone= / standalone= / standalone= / standalone= | dump: group '11.1.p standalone attribute of submission element'; group '        When you activate the Submit With Standalone true submit control you must see a standalone         declaration in the form data. It may appear as the value " standalo…
+11.1.q	11.1	11. The XForms Submission Module	check	-	cdata-section-elements attribute of submission element	unmatched: year / make / make / <make><![CDATA[Toyota]]><model>Acura</model><![CDATA[]]></make> / year / <year><![CDATA[2005]]></year> | dump: group '11.1.q cdata-section-elements attribute of submission element'; group '        When you activate the Submit (cdata="make") submit control you must see the value         " <make><![CDATA[Toyota]]><model>Acura</model><![CDATA[]]></make…
+11.1.r	11.1	11. The XForms Submission Module	check	-	replace attribute of submission element	unmatched: Janel / Saturn / red | dump: group '11.1.r replace attribute of submission element'; group '      You must see the values "Henry", "Acura", and "white" in the First       Instance. You must see the values "Thomas", "Toyota", and "silver" in       the Second Instance. W…
+11.1.s1	11.1	11. The XForms Submission Module	check	-	instance attribute of submission element	unmatched: This is the response data. | dump: group '11.1.s1 instance attribute of submission element'; group '               When you activate one of the submit controls below the text next to that submit must change to                "This is the response data."               Only th…
+11.1.s2	11.1	11. The XForms Submission Module	review	-	invalid instance attribute of submission element	no message observed (form defines 1)
+11.1.t	11.1	11. The XForms Submission Module	check	-	target attribute of submission element	unmatched: Janel / Saturn / red | dump: group '11.1.t targetref attribute of submission element'; group '      You must see the values "Thomas", "Toyota", and "silver" in the output       controls. When you activate the Replace Instance submit control the values must change to   …
+11.1.u	11.1	11. The XForms Submission Module	check	-	separator attribute of submission element	unmatched: carOwner=Greg / make=Toyota / color=Silver | dump: group '11.1.u separator attribute of submission element'; group '              Both submit controls below replace this page with the form data.               The instance data for this page is the values "carOwner=Greg", "make=Toyota" and  …
+11.1.v	11.1	11. The XForms Submission Module	check	-	includenamespaceprefixes attribute of submission element	unmatched: <my:car xmlns:my= / > | dump: group '11.1.v includenamespaceprefixes attribute of submission element'; group '        When you activate the Submit submit control the page must be replaced by the form data.         You must see the namespace " <my:car xmlns:my="http://ww…
+11.2.a	11.2	11. The XForms Submission Module	pass	message	only one concurrent submit per submission element	message 'xforms-submit'
+11.2.b	11.2	11. The XForms Submission Module	check	-	non-relevant nodes are not serialized	unmatched: a / a | dump: group '11.2.b non-relevant nodes are not serialized'; group '               When you activate the Show submit control the page must be replaced by the form data.                You must see the values <data>, <test1 x=""/>, <test2 x="a"/>, …
+11.2.c	11.2	11. The XForms Submission Module	pass	values	xforms-submit with empty instance data	1 quoted value(s) found
+11.2.d	11.2	11. The XForms Submission Module	pass	values	xforms-submit with empty instance data and required attribute	1 quoted value(s) found
+11.2.e	11.2	11. The XForms Submission Module	pass	values	xforms-submit stops with invalid instance data	1 quoted value(s) found
+11.3.a	11.3	11. The XForms Submission Module	pass	message	xforms-submit-serialize event	message 'xforms-submit-serialize'
+11.3.b	11.3	11. The XForms Submission Module	pass	message	xforms-submit-serialize event with submission-body property	message 'xforms-submit-serialize'
+11.4.a	11.4	11. The XForms Submission Module	review	-	xforms-submit-done event	no message observed (form defines 1)
+11.4.b	11.4	11. The XForms Submission Module	review	-	accessing context information for xforms-submit-done event	nothing auto-checkable
+11.5.a	11.5	11. The XForms Submission Module	pass	message	xforms-submit-error event	message 'xforms-submit-error'
+11.5.b	11.5	11. The XForms Submission Module	pass	values	accessing context information for xforms-submit-error event	2 quoted value(s) found
+11.6.1.a	11.6.1	11. The XForms Submission Module	pass	message	resource element	message 'Unable to submit'
+11.6.1.b	11.6.1	11. The XForms Submission Module	pass	message	resource element with value attribute	message 'Unable to submit'
+11.7.1.a	11.7.1	11. The XForms Submission Module	check	-	method element with value attribute	unmatched: post | dump: group '11.7.1.a method element'; group '           When the Submit With Method trigger is activated the page will be replaced by the form data.            The variable on the page for the request method must equal "post".    '; submit 'Subm…
+11.8.a	11.8	11. The XForms Submission Module	check	-	header element of submission element	unmatched: myHeader1 / myHeader2 / myValue1 / myValue2 | dump: group '11.8.a header element of submission element'; group '        When you activate the Submit Now submit control the page must be replaced by the form data. Among the         variables you must see two headers named "myHeader1" and "myHe…
+11.8.b	11.8	11. The XForms Submission Module	check	-	header element with nodeset attribute	unmatched: myHeader | dump: group '11.8.b header element with nodeset attribute'; group '        When you activate the Submit Now submit control the page must be replaced by the form data. Among the         variables you must see three headers named "myHeader".       …
+11.8.c	11.8	11. The XForms Submission Module	check	-	header element of submission element	unmatched: myHeader / myValue1,myValue2,myValue1,myValue2,myValue3,myValue4,myValue4 | dump: group '11.8.c header element with similar name elements'; group '        When you activate the Submit Now submit control the page must be replaced by the form data. Among the         variables you must see one header named "myHeader".      …
+11.8.1.a	11.8.1	11. The XForms Submission Module	check	-	name element with value attribute	unmatched: myHeader / wrongData | dump: group '11.8.1.a name element with value attribute'; group '        When you activate the Submit Now submit control the page must be replaced by the form data.         Among the variables you must see a header named "myHeader". You must not …
+11.8.1.b	11.8.1	11. The XForms Submission Module	check	-	name element with empty value attribute	unmatched: myValue | dump: group '11.8.1.b name element with empty value attribute'; group '        When you activate the Submit Now submit control the page must be replaced by the form data. Among the         list you must not see a header with the value "myValue". …
+11.8.2.a	11.8.2	11. The XForms Submission Module	check	-	value element with value attribute	unmatched: myHeader / three / wrongValue | dump: group '11.8.2.a value element with value attribute'; group '        When you activate the Submit Now submit control the page must be replaced by the form data. Among the         variables you must see a header named "myHeader" with a value …
+11.9.a	11.9	11. The XForms Submission Module	check	-	HTTP Post as a submission option	unmatched: post | dump: group '11.9.a HTTP Post as a submission option'; group '      Activate the Post Data submit control to replace the page with the form data.       The variable on the page for the request method must equal the value "post".     '; submit 'Po…
+11.9.b	11.9	11. The XForms Submission Module	check	-	HTTP Get as a submission option	unmatched: get | dump: group '11.9.b HTTP Get as a submission option'; group '      Activate the Get Data submit control to replace the page with the form data.       The variable on the page for the request method must equal the value "get".     '; submit 'Get D…
+11.9.c	11.9	11. The XForms Submission Module	check	-	HTTP Put as a submission option	unmatched: put | dump: group '11.9.c HTTP Put as a submission option'; group '      Activate the Put Data submit control to replace the page with the form data.       The variable on the page for the request method must equal the value "put".     '; submit 'Put D…
+11.9.d	11.9	11. The XForms Submission Module	check	-	HTTP multipart-post as a submission option	unmatched: post | dump: group '11.9.d HTTP multipart-post as a submission option'; group '      Activate the Post Data submit control to replace the page with the form data.       The variable on the page for the request method must equal the value "post".     '; …
+11.9.e	11.9	11. The XForms Submission Module	check	-	HTTP form-data-post as a submission option	unmatched: post | dump: group '11.9.e HTTP form-data-post as a submission option'; group '      Activate the Post Data submit control to replace the page with the form data.       The variable on the page for the request method must equal the value "post".     '; …
+11.9.f	11.9	11. The XForms Submission Module	check	-	HTTP urlencoded-posts as a submission option	unmatched: post | dump: group '11.9.f HTTP urlencoded-posts as a submission option'; group '      Activate the Post Data submit control to replace the page with the form data.       The variable on the page for the request method must equal the value "post".     '…
+11.9.g	11.9	11. The XForms Submission Module	review	-	HTTPS Post as a submission option	nothing auto-checkable
+11.9.h	11.9	11. The XForms Submission Module	review	-	HTTPS Get as a submission option	nothing auto-checkable
+11.9.i	11.9	11. The XForms Submission Module	review	-	HTTPS Put as a submission option	nothing auto-checkable
+11.9.j	11.9	11. The XForms Submission Module	review	-	HTTPS multipart-post as a submission option	nothing auto-checkable
+11.9.k	11.9	11. The XForms Submission Module	review	-	HTTPS form-data-post as a submission option	nothing auto-checkable
+11.9.l	11.9	11. The XForms Submission Module	review	-	HTTPS urlencoded-posts as a submission option	nothing auto-checkable
+11.9.m	11.9	11. The XForms Submission Module	review	-	mailto Post as a submission option	nothing auto-checkable
+11.9.n	11.9	11. The XForms Submission Module	review	-	File Get as a submission option	nothing auto-checkable
+11.9.o	11.9	11. The XForms Submission Module	review	-	File Put as a submission option	nothing auto-checkable
+11.9.p	11.9	11. The XForms Submission Module	review	-	mailto urlencoded-posts as a submission option	nothing auto-checkable
+11.9.q	11.9	11. The XForms Submission Module	review	-	mailto form-data-post as a submission option	nothing auto-checkable
+11.9.1.a	11.9.1	11. The XForms Submission Module	check	-	get submission method	unmatched: blue | dump: group '11.9.1.a get submission method'; group '        When you activate the Use Get Method submit control the page must be replaced by the form data. The         value "blue" must appear in the request URI but must not appear in the form d…
+11.9.2.a	11.9.2	11. The XForms Submission Module	check	-	post submission method	unmatched: blue | dump: group '11.9.2.a post submission method'; group '        When you activate the Use Post Method submit control the page must be replaced by the form data. The         value "blue" must appear in the form data.       '; group; submit 'Use Post…
+11.9.2.b	11.9.2	11. The XForms Submission Module	check	-	multipart-post submission method	unmatched: blue | dump: group '11.9.2.b multipart-post submission method'; group '        When you activate the Use Multipart-Post Method submit control the page must be replaced by the form data. The         value "blue" must appear in the form data.       '; gro…
+11.9.2.c	11.9.2	11. The XForms Submission Module	check	-	form-data-post submission method	unmatched: blue | dump: group '11.9.2.c form-data-post submission method'; group '        When you activate the Use Form-Data-Post Method submit control the page must be replaced by the form data. The         value "blue" must appear in the form data.       '; gro…
+11.9.2.d	11.9.2	11. The XForms Submission Module	check	-	urlencoded-post submission method	unmatched: blue | dump: group '11.9.2.d urlencoded-post submission method'; group '        When you activate the Use Urlencoded-Post Method submit control the page must be replaced by the form data.         The value "blue" must appear in the form data.       '; g…
+11.9.3.a	11.9.3	11. The XForms Submission Module	check	-	put submission method	unmatched: blue | dump: group '11.9.3.a put submission method'; group '        When you activate the Use Put Method submit control the page must be replaced by the form data.      The value "blue" must appear in the form data.       '; group; submit 'Use Put Metho…
+11.9.3.b	11.9.3	11. The XForms Submission Module	check	-	put submission method to local file	unmatched: blue / myfile.txt | dump: group '11.9.3.b put submission method to local file (non-normative)'; group '        When you activate the Use Put Method submit control the value "blue" will be submitted to a         local file called "myfile.txt".       '; group; submit …
+11.9.4.a	11.9.4	11. The XForms Submission Module	check	-	delete submission method	unmatched: blue | dump: group '11.9.4.a delete submission method'; group '        When you activate the Use Delete Method submit control the page must be replaced by the form data. The         value "blue" must appear in the request URI but must not appear in the …
+11.9.4.b	11.9.4	11. The XForms Submission Module	pass	message	delete submission method deletes a file	message 'You pass'
+11.9.5.a	11.9.5	11. The XForms Submission Module	check	-	serialization as application/xml	unmatched: Henry / Acura / white | dump: group '11.9.5.a serialization as application/xml'; group '      When you activate the Submit Data submit control the page must be replaced by the form data.       The data must contain the values "Henry", "Acura", and "white".       The for…
+11.9.6.a	11.9.6	11. The XForms Submission Module	check	-	serialization as multipart/related	unmatched: Henry / Acura / white | dump: group '11.9.6.a serialization as multipart/related'; group '      When you activate the Submit Data submit control the page must be replaced by the form       data.       The data must contain the values "Henry", "Acura", and "white".      …
+11.9.7.a	11.9.7	11. The XForms Submission Module	check	-	serialization as multipart/form-data	unmatched: Henry / Acura / white | dump: group '11.9.7.a serialization as multipart/form-data'; group '      When you activate the Submit Data submit control the page must be replaced by the form       data.       The data must contain the values "Henry", "Acura", and "white".    …
+11.9.8.a	11.9.8	11. The XForms Submission Module	check	-	serialization as application/x-www-form-urlencoded	unmatched: Ren%C3%A9 | dump: group '11.9.8.a serialization as application/x-www-form-urlencoded'; group '      When you activate the Submit Data submit control the page must be replaced by the       form data.       The data must contain the value "Ren%C3%A9".       Th…
+11.10.a	11.10	11. The XForms Submission Module	pass	message	submission response with invalid target	message 'xforms-submit-error'
+11.10.b	11.10	11. The XForms Submission Module	pass	message	submission response with target receiving text	message 'xforms-submit-error'
+11.10.c	11.10	11. The XForms Submission Module	pass	message	submission response with target receiving instance	message 'xforms-submit-error'
+11.11.1.a	11.11.1	11. The XForms Submission Module	check	-	representation of SOAP envelope	unmatched: <soap:Envelope> / This is the message / </soap:Envelope> | dump: group '11.11.1.a representation of SOAP envelope'; group '       When you activate the Submit SOAP submit control the page must be replaced by the form data. You must see        the values "<soap:Envelope>", "This is the message", and      …
+11.11.2.a	11.11.2	11. The XForms Submission Module	check	-	indicating a SOAP submission	unmatched: application/soap+xml | dump: group '11.11.2.a indicating a SOAP submission'; group '       Activate the Submit SOAP submit control to replace the page with the form data.        The variable on the page for the content type must equal the value "application/soap+xml"  …
+11.11.3.a	11.11.3	11. The XForms Submission Module	check	-	SOAP HTTP binding with get method	unmatched: application/soap+xml / ASCII | dump: group '11.11.3.a SOAP HTTP binding with get method'; group '       Activate the Submit SOAP submit control to replace this page with the form data.        The value of the HTTP accept header must begin with the value "application/soap+xml" …
+11.11.3.b	11.11.3	11. The XForms Submission Module	check	-	SOAP HTTP binding with post method	unmatched: application/soap+xml | dump: group '11.11.3.b SOAP HTTP binding with post method'; group '       Activate the Submit SOAP submit control to replace this page with the form data.        The value of the content type header must be "application/soap+xml".      '; submit …
+11.11.3.c	11.11.3	11. The XForms Submission Module	check	-	SOAP HTTP binding	unmatched: text/xml / ASCII / http://www.google.com | dump: group '11.11.3.c SOAP HTTP binding'; group '       Activate the Submit SOAP submit control to replace this page with the form data.        The value of the content type header must be "text/xml".        and contain the value "ASCII". The va…
+11.11.3.d	11.11.3	11. The XForms Submission Module	check	-	SOAP HTTP binding with get method and encoding attribute	unmatched: application/soap+xml / UTF-8 | dump: group '11.11.3.d SOAP HTTP binding with get method and encoding attribute'; group '       Activate the Submit SOAP submit control to replace this page with the form data.        The value of the HTTP accept header must begin with the value …
+11.11.3.e	11.11.3	11. The XForms Submission Module	check	-	SOAP HTTP binding with post method and encoding attribute	unmatched: application/soap+xml / UTF-8 | dump: group '11.11.3.e SOAP HTTP binding with post method and encoding attribute'; group '       Activate the Submit SOAP submit control to replace this page with the form data.        The value of the content type header must be "application/soa…
+11.11.4.a	11.11.4	11. The XForms Submission Module	pass	message	handling SOAP failure response	message 'xforms-submit-error'
+11.11.4.b	11.11.4	11. The XForms Submission Module	review	-	handling SOAP success response	no message observed (form defines 1)
+2.1.a	2.1	2. Introduction to XForms	check	-	Introductory Example No. 1	unmatched: Cash / Credit / cash | dump: group '2.1.a Introductory Example No. 1'; group '                 You must see a select1 control with the values "Cash" and "Credit" as well as two                  input controls on the page. When you activate the Submit Now submit control…
+2.2.a	2.2	2. Introduction to XForms	check	-	Example: Encapsulation of Instance Data	unmatched: Cash / Credit / cash | dump: group '2.2.a Example: Encapsulation of Instance Data'; group '              You must see a select1 control with the values "Cash" and "Credit" as well as two                  input controls on the page. When you activate the Submit Now subm…
+2.3.a	2.3	2. Introduction to XForms	check	-	Example: Value Constraints	unmatched: cash / Cash / Credit | dump: group '2.3.a Example: Value Constraints'; group '                 You must see a select1 control with the values "Cash" and "Credit" as well as two                  input controls on the page.                  The Credit Card Number and Exp…
+2.4.a	2.4	2. Introduction to XForms	check	-	Example: Multiple Forms	unmatched: cash / Cash / Credit | dump: group '2.4.a Example: Multiple Forms'; group '                 You must see a select1 control with the values "Cash" and "Credit" as well as two                  input controls on the page.                  The Credit Card Number and Expira…
+3.1.a	3.1	3. Document Structure	pass	values	XForms namespace	1 quoted value(s) found
+3.2.1.a	3.2.1	3. Document Structure	review	-	id attribute	nothing auto-checkable
+3.2.1.b	3.2.1	3. Document Structure	pass	values	foreign attributes	1 quoted value(s) found
+3.2.2.a	3.2.2	3. Document Structure	check	-	src attribute	unmatched: Color: | dump: group '3.2.2.a src Attribute (non-normative)'; group '              This test case uses the src attribute to pull instance data from a file.               You must see an input control labeled "Color:" and it must contain the value         …
+3.2.3.a	3.2.3	3. Document Structure	pass	values	single-node binding - ref attribute	2 quoted value(s) found
+3.2.3.b	3.2.3	3. Document Structure	pass	values	single-node binding - model attribute	3 quoted value(s) found
+3.2.3.c	3.2.3	3. Document Structure	pass	values	single-node binding - bind attribute	1 quoted value(s) found
+3.2.3.d	3.2.3	3. Document Structure	pass	values	single-node binding - bind attribute overrides ref and model	1 quoted value(s) found
+3.2.3.e	3.2.3	3. Document Structure	review	-	single-node binding - invalid bind IDREF	no message observed (form defines 1)
+3.2.3.f	3.2.3	3. Document Structure	review	-	single-node binding - invalid model IDREF	no message observed (form defines 1)
+3.2.3.g	3.2.3	3. Document Structure	pass	values	first node rule	1 quoted value(s) found
+3.2.4.a	3.2.4	3. Document Structure	review	-	node-set binding - nodeset attribute and bind attribute override	nothing auto-checkable
+3.2.4.b	3.2.4	3. Document Structure	review	-	node-set binding - model attribute of itemset element	nothing auto-checkable
+3.2.4.c	3.2.4	3. Document Structure	review	-	node-set binding - bind attribute of itemset element	nothing auto-checkable
+3.2.4.d	3.2.4	3. Document Structure	pass	values	node-set binding - bind attribute overrides model attribute	1 quoted value(s) found
+3.2.4.e	3.2.4	3. Document Structure	review	-	node-set binding - invalid model IDREF	no message observed (form defines 1)
+3.2.4.f	3.2.4	3. Document Structure	review	-	node-set binding - invalid bind IDREF	no message observed (form defines 1)
+3.3.a	3.3.a	3. Document Structure	pass	values	processor must ignore unrecognized foreign-namespaced attributes	1 quoted value(s) found
+3.3.1.a1	3.3.1	3. Document Structure	review	-	50 models created	nothing auto-checkable
+3.3.1.a2	3.3.1	3. Document Structure	error	-	no models created	load: host document has no xf:model
+3.3.1.b	3.3.1	3. Document Structure	review	-	invalid function	no message observed (form defines 1)
+3.3.1.c1	3.3.1	3. Document Structure	review	-	valid schema	no message observed (form defines 1)
+3.3.1.c2	3.3.1	3. Document Structure	review	-	invalid schema	no message observed (form defines 1)
+3.3.1.d1	3.3.1	3. Document Structure	review	-	version attribute	no message observed (form defines 1)
+3.3.1.d2	3.3.1	3. Document Structure	review	-	version attribute negative test 1	no message observed (form defines 1)
+3.3.1.d3	3.3.1	3. Document Structure	review	-	version attribute negative test 2	no message observed (form defines 1)
+3.3.2.a	3.3.2	3. Document Structure	review	-	model with no instance	nothing auto-checkable
+3.3.2.b	3.3.2	3. Document Structure	pass	values	instance with inline data	3 quoted value(s) found
+3.3.2.c	3.3.2	3. Document Structure	pass	values	instance with resource attribute	3 quoted value(s) found
+3.3.2.d	3.3.2	3. Document Structure	review	-	instance with invalid resource link	no message observed (form defines 1)
+3.3.2.e	3.3.2	3. Document Structure	pass	values	instance with inline data and resource attribute	3 quoted value(s) found
+3.3.2.f	3.3.2	3. Document Structure	pass	values	instance with inline data, resource attribute, and src attribute	6 quoted value(s) found
+3.3.2.g	3.3.2	3. Document Structure	review	-	inline content has two top-level nodes in instance element	no message observed (form defines 1)
+3.3.2.h	3.3.2	3. Document Structure	review	-	invalid instance causes exception with resource-uri	no message observed (form defines 1)
+3.3.4.a	3.3.4	3. Document Structure	pass	values	nodeset attribute of bind element	1 quoted value(s) found
+3.3.4.b	3.3.4	3. Document Structure	pass	values	more bind element examples	1 quoted value(s) found
+3.4.1.a	3.4.1	3. Document Structure	check	-	extension element	unmatched: color | dump: group '3.4.1.a extension element (non-normative)'; group '      The output element below has a label with the value "color" and should display the value       "blue". It also has an extension element. How it is handled is determined by your…
+4.2.1.a	4.2.1	4. Processing Model	review	-	xforms-model-construct event	no message observed (form defines 2)
+4.2.1.b1	4.2.1	4. Processing Model	review	-	schemas loaded sucessfully	no message observed (form defines 1)
+4.2.1.b2	4.2.1	4. Processing Model	review	-	schemas loaded with an xforms-link-exception	no message observed (form defines 1)
+4.2.1.c1	4.2.1	4. Processing Model	pass	values	initial instance defined in external source	1 quoted value(s) found
+4.2.1.c2	4.2.1	4. Processing Model	pass	values	external source takes precedence over inline source for initial instance data	1 quoted value(s) found
+4.2.1.c3	4.2.1	4. Processing Model	review	-	initial instance defined in invalid external source	no message observed (form defines 1)
+4.2.1.d	4.2.1	4. Processing Model	review	-	xforms-model-construct-done event is dispatched for each model	no message observed (form defines 2)
+4.2.2.a	4.2.2	4. Processing Model	review	-	xforms-model-construct and xforms-model-construct-done events	no message observed (form defines 2)
+4.2.2.b	4.2.2	4. Processing Model	check	-	xforms-model-construct-done	unmatched: Mitsubishi | dump: group '4.2.2.b xforms-model-construct-done'; group '      You must not see the value "Mitsubishi":   '; output [hidden]
+4.2.2.c1	4.2.2	4. Processing Model	check	-	form control referenced instance that did not exist yet	unmatched: your input | dump: group '4.2.2.c1 form control referenced instance that did not exist yet'; group '      You must be able to type in the input and see the result in the output as car="your input"   '; input 'Type a car model:'; output = car=
+4.2.2.c2	4.2.2	4. Processing Model	review	-	invalid QNAME causes xforms-binding-exception	no message observed (form defines 1)
+4.2.3.a	4.2.3	4. Processing Model	check	-	xforms-model-construct-done and xforms-ready events	unmatched: xforms-ready dispatched | dump: group '4.2.3.a xforms-model-construct-done and xforms-ready events'; group '       You must have seen two messages.  One must have said "xforms-model-construct-done was        dispatched" and the other must have said "xforms-ready dispatche…
+4.2.4.a	4.2.4	4. Processing Model	review	-	xforms-model-destruct dispatched after form submission	nothing auto-checkable
+4.3.1.a	4.3.1	4. Processing Model	pass	message	xforms-rebuild event	message 'xforms-rebuild'
+4.3.2.a	4.3.2	4. Processing Model	pass	message	xforms-recalculate event	message 'xforms-recalculate'
+4.3.3.a	4.3.3	4. Processing Model	review	-	xforms-revalidate event	no message observed (form defines 1)
+4.3.4.a	4.3.4	4. Processing Model	review	-	xforms-refresh event	no message observed (form defines 1)
+4.3.5.a	4.3.5	4. Processing Model	pass	message	xforms-reset event	message 'xforms-reset'
+4.3.6.a	4.3.6	4. Processing Model	pass	message	xforms-previous and xforms-next	message 'xforms-previous'
+4.3.6.b	4.3.6	4. Processing Model	review	-	navigation sequence with navindex	nothing auto-checkable
+4.3.7.a	4.3.7	4. Processing Model	pass	message	xforms-focus event	message 'xforms-focus'
+4.3.8.a	4.3.8	4. Processing Model	pass	message	xforms-help and xforms-hint events	message 'xforms-help'
+4.4.1.a	4.4.1	4. Processing Model	pass	values	xforms-insert event	2 quoted value(s) found
+4.4.2.a	4.4.2	4. Processing Model	pass	values	xforms-delete action	2 quoted value(s) found
+4.4.3.a	4.4.3	4. Processing Model	pass	message	xforms-value-changed event	message 'xforms-value-changed'
+4.4.4.a	4.4.4	4. Processing Model	review	-	xforms-valid event	no message observed (form defines 1)
+4.4.5.a	4.4.5	4. Processing Model	pass	message	xforms-invalid event	message 'xforms-invalid'
+4.4.6.a	4.4.6	4. Processing Model	review	-	xforms-readonly event	no message observed (form defines 1)
+4.4.7.a	4.4.7	4. Processing Model	review	-	xforms-readwrite event	no message observed (form defines 1)
+4.4.8.a	4.4.8	4. Processing Model	review	-	xforms-required event	no message observed (form defines 1)
+4.4.9.a	4.4.9	4. Processing Model	review	-	xforms-optional event	no message observed (form defines 1)
+4.4.10.a	4.4.10	4. Processing Model	review	-	xforms-enabled event	no message observed (form defines 1)
+4.4.11.a	4.4.11	4. Processing Model	review	-	xforms-disabled event	no message observed (form defines 1)
+4.4.12.a	4.4.12	4. Processing Model	pass	message	DOMActivate event	message 'DOMActivate'
+4.4.13.a	4.4.13	4. Processing Model	review	-	DOMFocusIn event	no message observed (form defines 1)
+4.4.14.a	4.4.14	4. Processing Model	review	-	DOMFocusOut event	no message observed (form defines 1)
+4.4.15.a	4.4.15	4. Processing Model	check	-	xforms-select and xforms-deselect events	unmatched: Subaru / Subaru | dump: group '4.4.15.a xforms-select and xforms-deselect events'; group '         You must see an xforms-select message when the value "Subaru" is selected in          the select control.          You must see an xforms-deselect message when the v…
+4.4.16.a	4.4.16	4. Processing Model	review	-	xforms-in-range event	no message observed (form defines 2)
+4.4.17.a	4.4.17	4. Processing Model	review	-	xforms-out-of-range event	no message observed (form defines 1)
+4.4.18.a	4.4.18	4. Processing Model	pass	message	xforms-scroll-first and xforms-scroll-last events	message 'xforms-scroll-last'
+4.5.1.a1	4.5.1	4. Processing Model	review	-	xforms-binding-exception, invalid model attribute	no message observed (form defines 1)
+4.5.1.a2	4.5.1	4. Processing Model	review	-	xforms-binding-exception, invalid bind attribute	no message observed (form defines 1)
+4.5.1.a3	4.5.1	4. Processing Model	review	-	xforms-binding-exception, invalid submission attribute	no message observed (form defines 1)
+4.5.1.a4	4.5.1	4. Processing Model	review	-	xforms-binding-exception, invalid instance attribute of submission attribute	no message observed (form defines 1)
+4.5.1.a5	4.5.1	4. Processing Model	review	-	xforms-binding-exception, illegal binding expression	no message observed (form defines 2)
+4.5.2.a	4.5.2	4. Processing Model	error	-	xforms-compute-exception	load: unexpected token '@'
+4.5.3.a	4.5.3	4. Processing Model	missing	-	xforms-version-exception	manifest links a file that does not exist
+4.5.4.a	4.5.4	4. Processing Model	review	-	xforms-link-exception	no message observed (form defines 1)
+4.5.5.a	4.5.5	4. Processing Model	review	-	xforms-output-error event	no message observed (form defines 1)
+4.6.1.a1	4.6.1	4. Processing Model	check	-	event sequencing for input, secret, textarea controls	unmatched: Value Change | dump: group '4.6.1.a1 event Sequencing for input, secret, textarea controls'; group '       You must see a series of outputs for a "Value Change" sequence (xforms-recalculate, xforms-revalidate,        and xforms-refresh) every time the value in …
+4.6.1.a2	4.6.1	4. Processing Model	check	-	event sequenceing for range and upload controls	unmatched: Value Change | dump: group '4.6.1.a2 event sequencing for range and upload controls'; group '       When the values in the controls are changed you must see a series of outputs for a "Value Change"        sequence (xforms-recalculate, xforms-revalidate, and xfo…
+4.6.1.b1	4.6.1	4. Processing Model	check	-	event sequencing for input, secret, textarea controls - focus change with value change	unmatched: Value Change | dump: group '4.6.1.b1 event sequencing for input, secret, textarea controls - focus change with value change'; group '       When you activate one of the 'Test' triggers below you must see a series of outputs for a "Value Change"        sequence …
+4.6.1.b2	4.6.1	4. Processing Model	check	-	event sequenceing for range and upload controls - focus change with value change	unmatched: Value Change | dump: group '4.6.1.b2 event sequenceing for range and upload controls - focus change with value change'; group '       When you activate one of the 'Test' triggers below you must see a series of outputs for a "Value Change"        sequence (xform…
+4.6.3.a	4.6.3	4. Processing Model	check	-	event sequencing for select/select1 controls with incremental="true"	unmatched: xforms-deselect / xforms-select / xforms-recalculate / xforms-revalidate / xforms-refresh / xforms-value-changed / xforms-select / xforms-recalculate / xforms-revalidate / xforms-refresh / xforms-value-changed / true | dump: group '4.6.3.a event sequencing for select/select1 controls with incremental="true"'; group 'When a value is selected you must see the output "xforms-select". The value in             parentheses indicates which form control the event came …
+4.6.3.b	4.6.3	4. Processing Model	check	-	event sequencing for select/select1 controls without incremental="true"	unmatched: xforms-select / xforms-deselect / false | dump: group '4.6.3.b event sequencing for select/select1 controls with incremental="false"'; group '                 When selecting and deselecting items within one of the selection controls, messages for "xforms-select"                 and "xfor…
+4.6.3.c	4.6.3	4. Processing Model	check	-	event sequencing for select/select1 controls (focus changes)	unmatched: xforms-recalculate / xforms-revalidate / xforms-refresh / xforms-select / xforms-deselect / false | dump: group '4.6.3.c event sequencing for select/select1 controls with incremental="false" (focus changes)'; group '                 When changing focus between the two controls, messages for "xforms-recalculate", "xforms-revalidate",            …
+4.6.4.a	4.6.4	4. Processing Model	pass	message	event sequencing for trigger controls	message 'DOMActivate'
+4.6.5.a	4.6.5	4. Processing Model	pass	message	event sequencing for submit controls	message 'DOMActivate'
+4.7.a	4.7	4. Processing Model	review	-	invalid ID references that terminate with no effect	no message observed (form defines 2)
+4.7.b	4.7	4. Processing Model	review	-	xforms-submit event not dispatched	no message observed (form defines 1)
+4.7.c	4.7	4. Processing Model	pass	values	null result of IDREF search by index() function	1 quoted value(s) found
+4.7.d	4.7	4. Processing Model	review	-	null result of IDREF search by instance() function	nothing auto-checkable
+4.7.e1	4.7	4. Processing Model	review	-	null search for bind causes exception	no message observed (form defines 1)
+4.7.e2	4.7	4. Processing Model	review	-	null search for model causes exception	no message observed (form defines 1)
+4.7.e3	4.7	4. Processing Model	review	-	null search for instance causes exception	no message observed (form defines 1)
+4.8.1.a	4.8.1	4. Processing Model	check	-	getInstanceDocument() method	unmatched: blue | dump: group '4.8.1.a getInstanceDocument() method (non-normative)'; group '     This test case uses Javascript to execute the getInstanceDocument() method.      You may have seen a message box with the value "blue".    '
+4.8.1.b	4.8.1	4. Processing Model	check	-	getInstanceDocument() throws a DOMException	unmatched: DOMException | dump: group '4.8.1.b getInstanceDocument() throws a DOMException (non-normative)'; group '     This test case uses Javascript to execute the getInstanceDocument() method.      You may have seen a message box with the value "DOMException".    '
+5.1.a	5.1	5. Datatypes	pass	values	built-in primitive types	2 quoted value(s) found
+5.1.b	5.1	5. Datatypes	pass	values	built-in derived types	2 quoted value(s) found
+5.1.c	5.1	5. Datatypes	pass	values	supported primitive XML schema types in basic processors	2 quoted value(s) found
+5.1.d	5.1	5. Datatypes	check	-	supported derived XML schema types in basic processors	unmatched: xforms-valid | dump: group '5.1.d supported derived XML schema types in basic processors'; group '  When you activate the Valid Values trigger you must see an "xforms-valid" output for all the   data types. When you activate the Invalid Values trigger you must …
+5.1.e	5.1	5. Datatypes	check	-	built-in primitive type via xsi:type	unmatched: xforms-valid | dump: group '5.1.e built-in primitive type via xsi:type'; group '     When you activate the Valid Value trigger you must see an "xforms-valid" output      for the date data type. When you activate the Invalid Value trigger you must see an      "X…
+5.2.1.a	5.2.1	5. Datatypes	review	-	XForms datatypes to allow empty content - built-in primitive types	nothing auto-checkable
+5.2.1.b	5.2.1	5. Datatypes	review	-	XForms datatypes to allow empty content - built-in derived types	nothing auto-checkable
+5.2.1.c	5.2.1	5. Datatypes	review	-	built-in data types which allow empty content for basic processors	nothing auto-checkable
+5.2.2.a	5.2.2	5. Datatypes	check	-	listItem datatype	unmatched: You entered a valid listItem | dump: group '5.2.2.a listItem datatype'; group '      You must have seen the message "You entered a valid listItem".     '; input 'Colors available (listItem)' = RedBlueGreen
+5.2.3.a	5.2.3	5. Datatypes	check	-	listItems datatype	unmatched: You entered a valid listItems | dump: group '5.2.3.a listItems datatype'; group '      You must have seen the message "You entered a valid listItems".     '; input 'Colors available (listItems)' = Red Blue Green
+5.2.4.a	5.2.4	5. Datatypes	check	-	dayTimeDuration datatype	unmatched: You entered a valid dayTimeDuration | dump: group '5.2.4.a dayTimeDuration datatype'; group '      You must have seen the message "You entered a valid dayTimeDuration".      '; input 'Length of rental car lease (dayTimeDuration)' = P5DT3H4M2S
+5.2.5.a	5.2.5	5. Datatypes	check	-	yearMonthDuration datatype	unmatched: You entered a valid yearMonthDuration | dump: group '5.2.5.a yearMonthDuration datatype'; group '      You must have seen the message "You entered a valid yearMonthDuration".     '; input 'Length of car lease (yearMonthDuration)' = P100Y1M
+5.2.6.a	5.2.6	5. Datatypes	pass	message	email datatype	message 'You entered an invalid email'
+5.2.7.a	5.2.7	5. Datatypes	pass	message	card-number datatype	message 'You entered an invalid card-number'
+5.2.7.b	5.2.7	5. Datatypes	pass	message	card-number datatype - credit card example	message 'Invalid ID number'
+6.1.1.a	6.1.1	6. Model Item Properties	pass	message	type property	message 'You have entered a valid gMonth'
+6.1.2.a	6.1.2	6. Model Item Properties	pass	values	readonly property	2 quoted value(s) found
+6.1.2.b	6.1.2	6. Model Item Properties	pass	values	inheritance rules of readonly property	2 quoted value(s) found
+6.1.3.a	6.1.3	6. Model Item Properties	review	-	required property	nothing auto-checkable
+6.1.4.a	6.1.4	6. Model Item Properties	review	-	inheritance rules for relevant property	nothing auto-checkable
+6.1.4.b	6.1.4	6. Model Item Properties	check	-	relevant property	unmatched: Discount : 100 | dump: group '6.1.4.b relevant property'; group '     You must see the output "Discount : 100" after you activate the Enter 1500 trigger, but      not when you activate the Enter 250 trigger.     '; input 'Order Amount:'; output 'Discount : ' = 10…
+6.1.4.c	6.1.4	6. Model Item Properties	review	-	relevant property inheritance to attributes	nothing auto-checkable
+6.1.5.a	6.1.5	6. Model Item Properties	check	-	calculate property	unmatched: Discount : 750 / Discount : 1000 | dump: group '6.1.5.a calculate property'; group '     You must see the output "Discount : 750" after you have activated the Enter 1500 trigger.      You must see the output "Discount : 1000" after you have activated the Enter 2000 trigger.     ';…
+6.1.6.a	6.1.6	6. Model Item Properties	pass	message	constraint property	message 'xforms-valid'
+6.1.7.a	6.1.7	6. Model Item Properties	review	-	p3ptype property	nothing auto-checkable
+6.2.1.a	6.2.1	6. Model Item Properties	review	-	atomic datatype	no message observed (form defines 2)
+7.2.a	7.2	7. XPath Expressions in XForms	pass	values	evaluation context for the outermost binding elements	3 quoted value(s) found
+7.2.b	7.2	7. XPath Expressions in XForms	pass	values	evaluation context for the non-outermost binding elements	3 quoted value(s) found
+7.2.c	7.2	7. XPath Expressions in XForms	check	-	context node always resides within the context model	unmatched: 3 | dump: group '     7.2.c context node always resides within the context model    '; group '     You must see a value of "1" for the First Number output, a value of "2" for the      Second Number output, and a value of "3" for the Third Number outp…
+7.2.d	7.2	7. XPath Expressions in XForms	pass	values	context node for the computed expression is the node currently being processed	3 quoted value(s) found
+7.2.e	7.2	7. XPath Expressions in XForms	pass	values	context size and position	3 quoted value(s) found
+7.2.f	7.2	7. XPath Expressions in XForms	pass	values	namespace declarations in scope for the attribute are applied to the expression	1 quoted value(s) found
+7.4.6.a	7.4.6	7. XPath Expressions in XForms	pass	values	binding examples	1 quoted value(s) found
+7.5.a	7.5	7. XPath Expressions in XForms	review	-	error in modal item property causes an xforms-compute-exception	no message observed (form defines 1)
+7.5.b	7.5	7. XPath Expressions in XForms	review	-	error not in modal item property causes an xforms-binding-exception	no message observed (form defines 1)
+7.6.1.a	7.6.1	7. XPath Expressions in XForms	pass	values	boolean-from-string() function	2 quoted value(s) found
+7.6.2.a	7.6.2	7. XPath Expressions in XForms	pass	values	is-card-number() function	2 quoted value(s) found
+7.7.1.a	7.7.1	7. XPath Expressions in XForms	pass	values	avg() function	1 quoted value(s) found
+7.7.1.b	7.7.1	7. XPath Expressions in XForms	pass	values	avg() function negative test	1 quoted value(s) found
+7.7.2.a	7.7.2	7. XPath Expressions in XForms	pass	values	min() function	1 quoted value(s) found
+7.7.2.b	7.7.2	7. XPath Expressions in XForms	pass	values	min() function negative test	1 quoted value(s) found
+7.7.3.a	7.7.3	7. XPath Expressions in XForms	pass	values	max() function	1 quoted value(s) found
+7.7.3.b	7.7.3	7. XPath Expressions in XForms	pass	values	max() function negative test	1 quoted value(s) found
+7.7.4.a	7.7.4	7. XPath Expressions in XForms	pass	values	count-non-empty() function	2 quoted value(s) found
+7.7.5.a	7.7.5	7. XPath Expressions in XForms	pass	values	index() function	1 quoted value(s) found
+7.7.5.b	7.7.5	7. XPath Expressions in XForms	pass	values	index() function negative test	1 quoted value(s) found
+7.7.6.a	7.7.6	7. XPath Expressions in XForms	pass	values	power() function	2 quoted value(s) found
+7.7.7.a	7.7.7	7. XPath Expressions in XForms	review	-	random() function	nothing auto-checkable
+7.7.8.a	7.7.8	7. XPath Expressions in XForms	pass	values	compare() function	3 quoted value(s) found
+7.8.1.a	7.8.1	7. XPath Expressions in XForms	pass	values	if() function	2 quoted value(s) found
+7.8.2.a	7.8.2	7. XPath Expressions in XForms	pass	values	property() function with version property	1 quoted value(s) found
+7.8.2.b	7.8.2	7. XPath Expressions in XForms	check	-	property() function with conformance-level property	unmatched: basic / basic | dump: group '7.8.2.b property() function with conformance-level property'; group '              You must see either the values "basic", "full", or an output beginning with               "basic" or "full" for the Conformance Level output control. …
+7.8.2.c	7.8.2	7. XPath Expressions in XForms	review	-	property() function with invalid NCNAME property	no message observed (form defines 1)
+7.8.2.d	7.8.2	7. XPath Expressions in XForms	review	-	property() function with invalid QNamebutnotNCNAME property	nothing auto-checkable
+7.8.3.a	7.8.3	7. XPath Expressions in XForms	check	-	digest() function using sha1, md5, and sha256	unmatched: PASS / FAIL | dump: group '7.8.3.a digest() function using sha1, md5, and sha256'; group '  You must see the group label "PASS" for all Tests.   If the function does not return the correct value you will see a group label  with the word "FAIL" and the incorrec…
+7.8.3.b	7.8.3	7. XPath Expressions in XForms	check	-	digest() function using sha384 and sha512	unmatched: PASS / FAIL | dump: group '7.8.3.b digest() function using sha384 and sha512 (non-normative)'; group '  This case tests the digest() attribute using the optional SHA-384 and SHA-512 hash algorithms.   You must see the group label "PASS" for all Tests.   If the…
+7.8.3.c	7.8.3	7. XPath Expressions in XForms	review	-	digest() function negative test with invalid NCNAME property	no message observed (form defines 1)
+7.8.3.d	7.8.3	7. XPath Expressions in XForms	review	-	digest() function negative test with a QNameButNotNCNAME	no message observed (form defines 1)
+7.8.3.e	7.8.3	7. XPath Expressions in XForms	review	-	digest() function with invalid encoding method	no message observed (form defines 1)
+7.8.3.f	7.8.3	7. XPath Expressions in XForms	check	-	digest() function default encoding base64	unmatched: PASS / FAIL | dump: group '7.8.3.f digest() function default encoding is 'base64''; group '  You must see the group label "PASS" for all Tests.   If the function does not return the correct value you will see a group label  with the word "FAIL" and the incorre…
+7.8.4.a	7.8.4	7. XPath Expressions in XForms	check	-	hmac() function using sha1, md5, and sha256	unmatched: PASS / FAIL | dump: group '7.8.4.a hmac() function using sha1, md5, and sha256'; group '  You must see the group label "PASS" for all Tests.   If the function does not return the correct value you will see a group label  with the word "FAIL" and the incorrect …
+7.8.4.b	7.8.4	7. XPath Expressions in XForms	check	-	hmac() function using sha384 and sha512	unmatched: PASS / FAIL | dump: group '7.8.4.b hmac() function using sha384 and sha512 (non-normative)'; group '  You must see the group label "PASS" for all Tests.   If the function does not return the correct value you will see a group label  with the word "FAIL" and th…
+7.8.4.c	7.8.4	7. XPath Expressions in XForms	review	-	hmac() function with invalid NCNAME property	no message observed (form defines 1)
+7.8.4.d	7.8.4	7. XPath Expressions in XForms	review	-	hmac() function with invalid QNameButNotNCNAME	no message observed (form defines 1)
+7.8.4.e	7.8.4	7. XPath Expressions in XForms	review	-	hmac() function with invalid encoding method	no message observed (form defines 1)
+7.8.4.f	7.8.4	7. XPath Expressions in XForms	check	-	hmac() function using default encoding base64	unmatched: PASS / FAIL | dump: group '7.8.4.f hmac() function using default encoding base64'; group '  You must see the group label "PASS" for all Tests.   If the function does not return the correct value you will see a group label  with the word "FAIL" and the incorrec…
+7.9.1.a	7.9.1	7. XPath Expressions in XForms	review	-	local-date() function	nothing auto-checkable
+7.9.2.a	7.9.2	7. XPath Expressions in XForms	review	-	local-dateTime() function	nothing auto-checkable
+7.9.3.a	7.9.3	7. XPath Expressions in XForms	review	-	now() function	nothing auto-checkable
+7.9.4.a	7.9.4	7. XPath Expressions in XForms	pass	values	days-from-date() function	2 quoted value(s) found
+7.9.4.b	7.9.4	7. XPath Expressions in XForms	pass	values	days-from-date() function ignores hours, minutes, and seconds components	1 quoted value(s) found
+7.9.4.c	7.9.4	7. XPath Expressions in XForms	pass	values	days-from-date() function negative test	1 quoted value(s) found
+7.9.5.a	7.9.5	7. XPath Expressions in XForms	pass	values	days-to-date() function	2 quoted value(s) found
+7.9.6.a	7.9.6	7. XPath Expressions in XForms	check	-	seconds-from-dateTime() function	unmatched: 3.1536E7 | dump: group '    7.9.6.a seconds-from-dateTime() function       '; group '      You must see either the value "3.1536E7" or the value "31536000" for the       Test 1 output.     '; group; output 'Test 1 : ' = 31536000; group '    You must see the…
+7.9.7.a	7.9.7	7. XPath Expressions in XForms	pass	values	seconds-to-dateTime() function	1 quoted value(s) found
+7.9.8.a	7.9.8	7. XPath Expressions in XForms	check	-	adjust-dateTime-to-timezone() function	unmatched: 2007-10-02T14:26:43-07:00 / 2007-10-07T02:22:00-07:00 | dump: group '      7.9.8.a adjust-dateTime-to-timezone() function       '; group '      You must see the value "2007-10-07T02:22:00-07:00"(assuming Pacific Standard Time with daylight savings time) for the Test 1 output.     '; group; output 'Tes…
+7.9.9.a	7.9.9	7. XPath Expressions in XForms	pass	values	seconds() function	3 quoted value(s) found
+7.9.10.a	7.9.10	7. XPath Expressions in XForms	pass	values	months() function	3 quoted value(s) found
+7.10.1.a	7.10.1	7. XPath Expressions in XForms	pass	values	instance() function	2 quoted value(s) found
+7.10.2.a	7.10.2	7. XPath Expressions in XForms	pass	values	current() function example 1	1 quoted value(s) found
+7.10.2.b	7.10.2	7. XPath Expressions in XForms	check	-	current() function example 2	unmatched: Jan Feb Mar | dump: group '7.10.2.b current() function example 2'; group 'You must see the value "Jan Feb Mar" for the Months output. '; repeat; output; output; output
+7.10.3.a	7.10.3	7. XPath Expressions in XForms	pass	values	id() function	3 quoted value(s) found
+7.10.3.b	7.10.3	7. XPath Expressions in XForms	pass	values	id() function with xml:id	1 quoted value(s) found
+7.10.3.c	7.10.3	7. XPath Expressions in XForms	check	-	id() function with xsi:type	unmatched: Node-A / Node-B / Node-C | dump: group '7.10.3.c id() function with xsi:type'; group '                  You must see the values "Node-A", "Node-B", and "Node-C" for the Node                   Values output.              '; repeat [hidden]
+7.10.4.a	7.10.4	7. XPath Expressions in XForms	check	-	context() function	unmatched: apple / orange / mandarine / tomato / apple / orange / mandarine / tomato | dump: group '    7.10.4.a context() function       '; group '      You must initially see the value "Unknown" for the Bad Fruit picked output and       four triggers labeled "apple", "orange", "mandarine", and "tomato".      When you activate one…
+7.11.1.a	7.11.1	7. XPath Expressions in XForms	pass	values	choose() function	4 quoted value(s) found
+7.11.2.a	7.11.2	7. XPath Expressions in XForms	check	-	event() function with inserted-nodes property	unmatched: /Dates/date | dump: group '7.11.2.a event() function with inserted-nodes property'; group '      After you activate the Insert A Date trigger you must see the correct value as output.     '; group; trigger 'Insert A Date'; group 'You must see the XPath express…
+7.12.a	7.12	7. XPath Expressions in XForms	review	-	invalid functions attribute in model element	no message observed (form defines 1)
+8.1.a	8.1	8. Core Form Controls	review	-	navindex and accesskey	nothing auto-checkable
+8.1.1.a	8.1.1	8. Core Form Controls	review	-	form control violates data binding restriction	no message observed (form defines 1)
+8.1.1.b	8.1.1	8. Core Form Controls	pass	message	non-relevant form control becoming relevant	message 'xforms-value-changed'
+8.1.1.c	8.1.1	8. Core Form Controls	review	-	relevant form control becoming non-relevant	no message observed (form defines 7)
+8.1.2.a	8.1.2	8. Core Form Controls	pass	message	incremental attribute for input element	message 'xforms-value-changed'
+8.1.2.b	8.1.2	8. Core Form Controls	review	-	data binding restrictions for input element	nothing auto-checkable
+8.1.2.c	8.1.2	8. Core Form Controls	review	-	datatype bound to input element	nothing auto-checkable
+8.1.3.a	8.1.3	8. Core Form Controls	pass	message	incremental attribute of secret element	message 'xforms-value-changed'
+8.1.3.b	8.1.3	8. Core Form Controls	review	-	data binding restrictions for secret element	nothing auto-checkable
+8.1.4.a	8.1.4	8. Core Form Controls	pass	message	incremental attribute of textarea element	message 'xforms-value-changed'
+8.1.4.b	8.1.4	8. Core Form Controls	review	-	data binding restrictions for textarea element	no message observed (form defines 1)
+8.1.5.a	8.1.5	8. Core Form Controls	pass	values	appearance attribute of output element	3 quoted value(s) found
+8.1.5.b	8.1.5	8. Core Form Controls	pass	values	value attribute of output element	2 quoted value(s) found
+8.1.5.c	8.1.5	8. Core Form Controls	review	-	UI Common added to output element	nothing auto-checkable
+8.1.5.d	8.1.5	8. Core Form Controls	pass	values	mediatype attribute of output element	1 quoted value(s) found
+8.1.5.1.a	8.1.5.1	8. Core Form Controls	pass	values	mediatype element	1 quoted value(s) found
+8.1.6.a	8.1.6	8. Core Form Controls	check	-	mediatype attribute for upload element	unmatched: image/jpeg image/png | dump: group '8.1.6.a mediatype attribute for upload element (non-normative)'; group '               When you activate the Upload Image upload control your choice of files may be limited to those                that are the same media type as the …
+8.1.6.b	8.1.6	8. Core Form Controls	review	-	incremental attribute for upload element	no message observed (form defines 1)
+8.1.6.c	8.1.6	8. Core Form Controls	review	-	filename and mediatype elements for upload element	nothing auto-checkable
+8.1.6.d	8.1.6	8. Core Form Controls	review	-	data binding restrictions for upload element	no message observed (form defines 1)
+8.1.6.e	8.1.6	8. Core Form Controls	review	-	upload element	nothing auto-checkable
+8.1.6.1.a	8.1.6.1	8. Core Form Controls	review	-	filename element	nothing auto-checkable
+8.1.6.2.a	8.1.6.2	8. Core Form Controls	review	-	mediatype element	nothing auto-checkable
+8.1.7.a	8.1.7	8. Core Form Controls	review	-	start attribute of range element	nothing auto-checkable
+8.1.7.b	8.1.7	8. Core Form Controls	review	-	end attribute of range element	nothing auto-checkable
+8.1.7.c	8.1.7	8. Core Form Controls	review	-	step attribute of range element	nothing auto-checkable
+8.1.7.d	8.1.7	8. Core Form Controls	review	-	incremental attribute of range element	no message observed (form defines 1)
+8.1.7.e	8.1.7	8. Core Form Controls	review	-	example of range element	nothing auto-checkable
+8.1.7.f	8.1.7	8. Core Form Controls	review	-	data binding restrictions on range element	nothing auto-checkable
+8.1.7.g	8.1.7	8. Core Form Controls	review	-	data binding restrictions on range element for basic processors	nothing auto-checkable
+8.1.8.a	8.1.8	8. Core Form Controls	pass	message	trigger element	message 'DOMActivate'
+8.1.8.b	8.1.8	8. Core Form Controls	check	-	trigger element with appearance attribute	unmatched: Regular Trigger / Minimal Trigger | dump: group '8.1.8.b trigger element with appearance attribute'; group '     You must see two trigger controls on this page, one labeled "Regular Trigger" and      the other labeled "Minimal Trigger". They may look different.     '; group; trigge…
+8.1.9.a	8.1.9	8. Core Form Controls	pass	message	submit element	message 'DOMActivate'
+8.1.9.b	8.1.9	8. Core Form Controls	check	-	submit element with appearance attribute	unmatched: Regular Submit / Minimal Submit | dump: group '8.1.9.b submit element with appearance attribute'; group '     You must see two submit controls on this page, one labeled "Regular Submit" and      the other labeled "Minimal Submit". They may look different.     '; group; submit 'Re…
+8.1.10.a	8.1.10	8. Core Form Controls	review	-	selection attribute of select element	nothing auto-checkable
+8.1.10.b	8.1.10	8. Core Form Controls	review	-	incremental attribute of select element	no message observed (form defines 1)
+8.1.10.c	8.1.10	8. Core Form Controls	review	-	appearance attribute of select element	nothing auto-checkable
+8.1.10.d	8.1.10	8. Core Form Controls	pass	message	value out of range of a select element	message 'xforms-out-of-range'
+8.1.11.a	8.1.11	8. Core Form Controls	review	-	selection attribute of select1 element	nothing auto-checkable
+8.1.11.b	8.1.11	8. Core Form Controls	review	-	incremental attribute of select1 element	no message observed (form defines 1)
+8.1.11.c	8.1.11	8. Core Form Controls	review	-	appearance attribute of select1 element	nothing auto-checkable
+8.1.11.d	8.1.11	8. Core Form Controls	pass	message	value out of range of a select1 element	message 'xforms-out-of-range'
+8.2.1.a	8.2.1	8. Core Form Controls	check	-	label element references instance data	unmatched: Instance Data | dump: group '8.2.1.a label element references instance data'; group '     You must see an input control with the label "Instance Data".    '; input 'Instance Data'
+8.2.1.b	8.2.1	8. Core Form Controls	check	-	label element uses inline text	unmatched: Inline Text | dump: group '8.2.1.b label element uses inline text'; group '     You must see an input control with the label "Inline Text".    '; input 'Inline Text'
+8.2.1.c	8.2.1	8. Core Form Controls	check	-	label element has binding precedence	unmatched: Instance Data | dump: group '8.2.1.c label element has binding precedence'; group '     You must see an input control with the label "Instance Data".    '; input 'Instance Data'
+8.2.2.a	8.2.2	8. Core Form Controls	check	-	help element references instance data	unmatched: Instance Help Message | dump: group '8.2.2.a help element references instance data'; group '     When you activate the Dispatch Help Message trigger you must see a message that says      "Instance Help Message".    '; input 'Input : '; trigger 'Dispatch Help Message'
+8.2.2.b	8.2.2	8. Core Form Controls	check	-	help element uses inline text	unmatched: Inline Help Message | dump: group '8.2.2.b help element uses inline text'; group '     When you activate the Dispatch Help Message trigger you must see a message that says      "Inline Help Message".    '; input 'Input : '; trigger 'Dispatch Help Message'
+8.2.2.c	8.2.2	8. Core Form Controls	review	-	bind precedence for help element	nothing auto-checkable
+8.2.3.a	8.2.3	8. Core Form Controls	check	-	hint element references instance data	unmatched: Instance Hint Message | dump: group '8.2.3.a hint element references instance data'; group '     When you activate the Dispatch Hint Message trigger you must see a message that says      "Instance Hint Message".    '; input 'Input : '; trigger 'Dispatch Hint Message'
+8.2.3.b	8.2.3	8. Core Form Controls	check	-	hint element uses inline text	unmatched: Inline Hint Message | dump: group '8.2.3.b hint element uses inline text'; group '     When you activate the Dispatch Hint Message trigger you must see a message that says      "Inline Hint Message".    '; input 'Input : '; trigger 'Dispatch Hint Message'
+8.2.3.c	8.2.3	8. Core Form Controls	check	-	bind precedence for hint element	unmatched: Instance Hint Message | dump: group '8.2.3.c bind precedence for hint element'; group '     When you activate the Dispacth Hint Message trigger you must see the message      "Instance Hint Message".    '; input 'Input : '; trigger 'Dispatch Hint Message'
+8.2.4.a	8.2.4	8. Core Form Controls	check	-	alert element references instance data	unmatched: Instance Alert Message | dump: group '8.2.4.a alert element references instance data'; group '     When you enter an alphanumeric value in the input field you must see a message that says      "Instance Alert Message".    '; input 'Enter 'abc', tab out, and see the alert…
+8.2.4.b	8.2.4	8. Core Form Controls	check	-	alert element uses inline text	unmatched: Inline Alert Message | dump: group '8.2.4.b alert element uses inline text'; group '     When you enter an alphanumeric value in the input field you must see a message that says      "Inline Alert Message".    '; input 'Enter 'abc', tab out, and see the alert message' …
+8.2.4.c	8.2.4	8. Core Form Controls	check	-	bind precedence for alert element	unmatched: Instance Alert Message | dump: group '8.2.4.c bind precedence for alert element'; group '     When you enter an alphanumeric value in the input field you must see the message      "Instance Alert Message".    '; input 'Enter 'abc', tab out, and see the alert message' = 0
+8.3.1.a	8.3.1	8. Core Form Controls	review	-	choices element	nothing auto-checkable
+8.3.2.a	8.3.2	8. Core Form Controls	review	-	item element	nothing auto-checkable
+8.3.3.a	8.3.3	8. Core Form Controls	check	-	data binding restrictions on value element	unmatched: One / Two / Three | dump: group '8.3.3.a data binding restrictions on value element'; group '     When you select the values "One" or "Two" from the Number select1 control you must see an xforms-invalid      message. When you select the value "Three" from the Number…
+8.3.3.b	8.3.3	8. Core Form Controls	check	-	precedence for value element	unmatched: Neapolitan | dump: group '8.3.3.b precedence for value element'; group '        No matter what flavor you choose in the Flavors select1 control the value "Neapolitan" must be         displayed in the Selected Flavor output control.       '; select1 'Flavors:'…
+8.3.3.c	8.3.3	8. Core Form Controls	review	-	value element with inline content	nothing auto-checkable
+9.1.1.a1	9.1.1	9. Container Form Controls	review	-	precedence of group element	nothing auto-checkable
+9.1.1.a2	9.1.1	9. Container Form Controls	check	-	group element inside case element of a switch	unmatched: You are now in the Out case / You are now in the In case | dump: group '9.1.1.a2 group element inside case element of a switch'; group '      When you activate the Show Out Case trigger you must see "You are now in the Out case"       output to the screen and a Show In Case trigger.       When you activa…
+9.1.1.b	9.1.1	9. Container Form Controls	check	-	label element in a group element	unmatched: Shipping Address / Shipping Date | dump: group '9.1.1.b label element in a group element'; group '       The first element in each of the two groups is a label element.  This label should act as a label       for the entire group. The group labeled "Shipping Address" must include …
+9.1.1.c	9.1.1	9. Container Form Controls	review	-	focus set to group element	nothing auto-checkable
+9.2.1.a1	9.2.1	9. Container Form Controls	review	-	switch element	nothing auto-checkable
+9.2.1.a2	9.2.1	9. Container Form Controls	check	-	switch element receives events	unmatched: yes / Switch is readonly | dump: group '9.2.1.a2 switch element receives events'; group '        When you choose "yes" in the select1 control, you should see the message "Switch is readonly"         and the select1 control should be readonly too.      '; group; switch; cas…
+9.2.1.b	9.2.1	9. Container Form Controls	check	-	switch element example	unmatched: Hello | dump: group '9.2.1.b switch element example'; group '        When you activate the Send Name trigger, the input control and the trigger will be replaced          by an output that says "Hello" followed by whatever value was in         the input c…
+9.2.2.a	9.2.2	9. Container Form Controls	check	-	case element	unmatched: Name : Janel / Eye Color | dump: group '9.2.2.a case element'; group '       You must see the output "Name : Janel" below.        You must NOT be able to see an output labeled "Eye Color" or it must        be somehow unavailable to you.       '; switch; case
+9.2.2.b	9.2.2	9. Container Form Controls	check	-	case element with selected attribute	unmatched: Eye Color : Blue / Name | dump: group '9.2.2.b case element with selected attribute'; group '       You must see the output "Eye Color : Blue" below.        You must NOT be able to see an output labeled "Name" or it must          be somehow unavailable to you.       '; sw…
+9.2.2.c	9.2.2	9. Container Form Controls	check	-	case element with multiple selected attributes	unmatched: Name : Janel / Eye Color | dump: group '9.2.2.c case element with multiple selected attributes'; group '       You must see the output "Name : Janel" below.        You must NOT be able to see an output labeled "Eye Color" or it must           be somehow unavailable to you.…
+9.3.1.a	9.3.1	9. Container Form Controls	check	-	repeat element	unmatched: winshield wipers | dump: group '9.3.1.a repeat element'; group '       You must see the values "winshield wipers", "tires", "exhaust", and        "air freshener" output below.       '; repeat; output = windshield wipers; output = tires; output = exhaust; output = a…
+9.3.1.b	9.3.1	9. Container Form Controls	pass	values	startindex attribute of repeat element	1 quoted value(s) found
+9.3.1.c	9.3.1	9. Container Form Controls	review	-	number attribute of repeat element	nothing auto-checkable
+9.3.1.d	9.3.1	9. Container Form Controls	check	-	unrolling the repeat element	unmatched: winshield wipers | dump: group '9.3.1.d unrolling the repeat element'; group '        You must see two lists of items, Items In Cart 1 and Items In Cart 2.  Both lists must contain the         values "winshield wipers", "tires", "exhaust", and         "air freshene…
+9.3.1.e	9.3.1	9. Container Form Controls	review	-	repeat element example	nothing auto-checkable
+9.3.1.f	9.3.1	9. Container Form Controls	check	-	switch element within repeat element	unmatched: You are in the In case / You are in the Out case | dump: group '9.3.1.f switch element within repeat element'; group '       You must see three sets of the statement "You are in the In case" and Go To Out Case triggers.        When you activate a Go To Out Case trigger, the corresponding statemen…
+9.3.4.a	9.3.4	9. Container Form Controls	review	-	switch element inside a repeat element	nothing auto-checkable
+9.3.5.a	9.3.5	9. Container Form Controls	review	-	repeating structures via attributes	nothing auto-checkable
+9.3.6.a	9.3.6	9. Container Form Controls	check	-	itemset element example	unmatched: Vanilla / Strawberry / Chocolate | dump: group '9.3.6.a itemset element example'; group '        You must see two select controls that both contain the values "Vanilla", "Strawberry",         and "Chocolate".       '; group '     List 1 (itemset element) :     '; select1; group ' …
+9.3.7.a	9.3.7	9. Container Form Controls	check	-	copy element	unmatched: Icecream Order : | dump: group '9.3.7.a copy element'; group '       When you select a flavor from the select control below you must see the output "Icecream Order :        " and        the selected flavor. If no flavor is selected (including if the chosen flavor i…
+9.3.7.b	9.3.7	9. Container Form Controls	review	-	copy element has xforms-binding-exception event	no message observed (form defines 1)

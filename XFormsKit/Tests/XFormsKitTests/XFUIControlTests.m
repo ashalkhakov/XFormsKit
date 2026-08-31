@@ -928,6 +928,21 @@
     [undo undo];
 }
 
+// Garbage in a typed date node must parse to nil, never to a wild
+// NSDate — GNUstep's Gregorian conversion effectively never returns for
+// year 0, hanging the layout (W3C suite 5.2.1.a, "non-empty-content").
+- (void)testDateParsingRejectsGarbage
+{
+    XCTAssertNil([XFInputControl parseDateString:@"non-empty-content"
+                                            type:XFDateTypeDate]);
+    XCTAssertNil([XFInputControl parseDateString:@"0000-00-00"
+                                            type:XFDateTypeDate]);
+    XCTAssertNil([XFInputControl parseDateString:@"2026-13-40"
+                                            type:XFDateTypeDate]);
+    XCTAssertNotNil([XFInputControl parseDateString:@"2026-08-31"
+                                               type:XFDateTypeDate]);
+}
+
 // Host-registered XPath extension functions (the native stand-in for
 // XSLTForms' page-JavaScript fallback): consulted after the built-ins.
 - (void)testHostRegisteredXPathFunctions
