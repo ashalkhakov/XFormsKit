@@ -165,6 +165,14 @@
 		AA000002000000000000000C /* XFDRichTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000000C /* XFDRichTextField.m */; };
 		AA000002000000000000000D /* XFDIDRefField.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000000D /* XFDIDRefField.m */; };
 		AA000002000000000000000E /* XFDDesignOverlay.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000000E /* XFDDesignOverlay.m */; };
+		AA0000020000000000000050 /* XFDWindowController+Outline.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000050 /* XFDWindowController+Outline.m */; };
+		AA0000020000000000000051 /* XFDWindowController+Inspector.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000051 /* XFDWindowController+Inspector.m */; };
+		AA0000020000000000000052 /* XFDWindowController+Preview.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000052 /* XFDWindowController+Preview.m */; };
+		AA0000020000000000000053 /* XFDInspectorSpecs.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000053 /* XFDInspectorSpecs.m */; };
+		AA0000020000000000000054 /* XFDPalettePanel.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000054 /* XFDPalettePanel.m */; };
+		AA0000020000000000000055 /* XFDInstanceXMLEditor.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000055 /* XFDInstanceXMLEditor.m */; };
+		AA0000020000000000000056 /* XFDEventsPane.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000056 /* XFDEventsPane.m */; };
+		AA0000020000000000000057 /* XFDActionRowsPane.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000057 /* XFDActionRowsPane.m */; };
 		AA0000020000000000000005 /* DMTabBar.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000005; };
 		AA0000020000000000000006 /* DMTabBarItem.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000006; };
 		AA0000020000000000000007 /* JUInspectorBaseView.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000007; };
@@ -375,6 +383,20 @@
 		BB000002000000000000001D /* XFDIDRefField.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDIDRefField.h; sourceTree = "<group>"; };
 		BB000002000000000000000E /* XFDDesignOverlay.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDDesignOverlay.m; sourceTree = "<group>"; };
 		BB000002000000000000001E /* XFDDesignOverlay.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDDesignOverlay.h; sourceTree = "<group>"; };
+		BB0000020000000000000050 /* XFDWindowController+Outline.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFDWindowController+Outline.m"; sourceTree = "<group>"; };
+		BB0000020000000000000051 /* XFDWindowController+Inspector.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFDWindowController+Inspector.m"; sourceTree = "<group>"; };
+		BB0000020000000000000052 /* XFDWindowController+Preview.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFDWindowController+Preview.m"; sourceTree = "<group>"; };
+		BB0000020000000000000053 /* XFDInspectorSpecs.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDInspectorSpecs.m; sourceTree = "<group>"; };
+		BB0000020000000000000063 /* XFDInspectorSpecs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDInspectorSpecs.h; sourceTree = "<group>"; };
+		BB0000020000000000000054 /* XFDPalettePanel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDPalettePanel.m; sourceTree = "<group>"; };
+		BB0000020000000000000064 /* XFDPalettePanel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDPalettePanel.h; sourceTree = "<group>"; };
+		BB0000020000000000000055 /* XFDInstanceXMLEditor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDInstanceXMLEditor.m; sourceTree = "<group>"; };
+		BB0000020000000000000065 /* XFDInstanceXMLEditor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDInstanceXMLEditor.h; sourceTree = "<group>"; };
+		BB0000020000000000000056 /* XFDEventsPane.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDEventsPane.m; sourceTree = "<group>"; };
+		BB0000020000000000000066 /* XFDEventsPane.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDEventsPane.h; sourceTree = "<group>"; };
+		BB0000020000000000000057 /* XFDActionRowsPane.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDActionRowsPane.m; sourceTree = "<group>"; };
+		BB0000020000000000000067 /* XFDActionRowsPane.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDActionRowsPane.h; sourceTree = "<group>"; };
+		BB0000020000000000000068 /* XFDWindowControllerPriv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDWindowControllerPriv.h; sourceTree = "<group>"; };
 		BB0000020000000000000005 /* DMTabBar.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DMTabBar.m; sourceTree = "<group>"; };
 		BB0000020000000000000006 /* DMTabBarItem.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DMTabBarItem.m; sourceTree = "<group>"; };
 		BB0000020000000000000007 /* JUInspectorBaseView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JUInspectorBaseView.m; sourceTree = "<group>"; };
@@ -699,6 +721,20 @@
 				BB000002000000000000000D /* XFDIDRefField.m */,
 				BB000002000000000000001E /* XFDDesignOverlay.h */,
 				BB000002000000000000000E /* XFDDesignOverlay.m */,
+				BB0000020000000000000050 /* XFDWindowController+Outline.m */,
+				BB0000020000000000000051 /* XFDWindowController+Inspector.m */,
+				BB0000020000000000000052 /* XFDWindowController+Preview.m */,
+				BB0000020000000000000053 /* XFDInspectorSpecs.m */,
+				BB0000020000000000000063 /* XFDInspectorSpecs.h */,
+				BB0000020000000000000054 /* XFDPalettePanel.m */,
+				BB0000020000000000000064 /* XFDPalettePanel.h */,
+				BB0000020000000000000055 /* XFDInstanceXMLEditor.m */,
+				BB0000020000000000000065 /* XFDInstanceXMLEditor.h */,
+				BB0000020000000000000056 /* XFDEventsPane.m */,
+				BB0000020000000000000066 /* XFDEventsPane.h */,
+				BB0000020000000000000057 /* XFDActionRowsPane.m */,
+				BB0000020000000000000067 /* XFDActionRowsPane.h */,
+				BB0000020000000000000068 /* XFDWindowControllerPriv.h */,
 				BB0000020000000000000021 /* MainMenu.xib */,
 				BB0000020000000000000022 /* XFDDocumentWindow.xib */,
 				BB0000020000000000000023 /* Info.plist */,
@@ -1065,6 +1101,14 @@
 				AA000002000000000000000C /* XFDRichTextField.m in Sources */,
 				AA000002000000000000000D /* XFDIDRefField.m in Sources */,
 				AA000002000000000000000E /* XFDDesignOverlay.m in Sources */,
+				AA0000020000000000000050 /* XFDWindowController+Outline.m in Sources */,
+				AA0000020000000000000051 /* XFDWindowController+Inspector.m in Sources */,
+				AA0000020000000000000052 /* XFDWindowController+Preview.m in Sources */,
+				AA0000020000000000000053 /* XFDInspectorSpecs.m in Sources */,
+				AA0000020000000000000054 /* XFDPalettePanel.m in Sources */,
+				AA0000020000000000000055 /* XFDInstanceXMLEditor.m in Sources */,
+				AA0000020000000000000056 /* XFDEventsPane.m in Sources */,
+				AA0000020000000000000057 /* XFDActionRowsPane.m in Sources */,
 				AA0000020000000000000005 /* DMTabBar.m in Sources */,
 				AA0000020000000000000006 /* DMTabBarItem.m in Sources */,
 				AA0000020000000000000007 /* JUInspectorBaseView.m in Sources */,

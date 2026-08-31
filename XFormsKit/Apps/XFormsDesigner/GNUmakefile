@@ -22,6 +22,14 @@ XFormsDesigner_OBJC_FILES = \
 	XFDDocument.m \
 	XFDEditors.m \
 	XFDWindowController.m \
+	XFDWindowController+Outline.m \
+	XFDWindowController+Inspector.m \
+	XFDWindowController+Preview.m \
+	XFDInspectorSpecs.m \
+	XFDPalettePanel.m \
+	XFDInstanceXMLEditor.m \
+	XFDEventsPane.m \
+	XFDActionRowsPane.m \
 	XFDXPathField.m \
 	XFDRichTextField.m \
 	XFDIDRefField.m \

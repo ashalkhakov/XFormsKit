@@ -22,10 +22,7 @@
 #import "XFDIDRefField.h"
 #import "XFDDesignOverlay.h"
 
-@interface XFDWindowController : NSWindowController
-    <NSOutlineViewDataSource, NSOutlineViewDelegate, NSTableViewDataSource,
-     NSTableViewDelegate, NSSplitViewDelegate, XFDXPathFieldProvider,
-     XFDRichTextFieldProvider, XFDIDRefFieldProvider, XFDDesignOverlayDelegate>
+@interface XFDWindowController : NSWindowController <NSSplitViewDelegate>
 
 /* Left pane */
 @property (nonatomic, strong) IBOutlet NSOutlineView *outline;
@@ -102,17 +99,36 @@
    selected element (they observe their parent implicitly). */
 @property (nonatomic, strong) IBOutlet NSView *eventsHost;
 
-/* Actions (xib / menu) */
-- (IBAction)inspectorChanged:(id)sender;
+@end
+
+/* The controller is split over sibling files; each category interface
+   carries the protocols and xib / menu actions its file implements
+   (declaring them on the primary class would warn every category
+   implementation). */
+
+/* XFDWindowController+Outline.m â the left pane */
+/* (the outline's dataSource / delegate wiring is the xib's; adopting the
+   AppKit protocols on a category would demand every method in this one
+   file) */
+@interface XFDWindowController (XFDOutline)
 - (IBAction)plusMinusClicked:(NSSegmentedControl *)sender;
+- (IBAction)insertElement:(id)sender;
+- (IBAction)deleteElement:(id)sender;
+- (IBAction)editInstanceXML:(id)sender;
+@end
+
+/* XFDWindowController+Inspector.m â the right pane */
+@interface XFDWindowController (XFDInspector)
+    <XFDXPathFieldProvider, XFDRichTextFieldProvider, XFDIDRefFieldProvider>
+- (IBAction)inspectorChanged:(id)sender;
+- (IBAction)createBindFromRef:(id)sender;
+- (IBAction)elementCreateBoundControl:(id)sender;
+@end
+
+/* XFDWindowController+Preview.m â the center pane and design mode */
+@interface XFDWindowController (XFDPreview) <XFDDesignOverlayDelegate>
 - (IBAction)modeChanged:(NSSegmentedControl *)sender;
 - (IBAction)toggleDesignMode:(id)sender;
 - (IBAction)applySource:(id)sender;
-- (IBAction)insertElement:(id)sender;
-- (IBAction)deleteElement:(id)sender;
 - (IBAction)resetInstances:(id)sender;
-- (IBAction)editInstanceXML:(id)sender;
-- (IBAction)createBindFromRef:(id)sender;
-- (IBAction)elementCreateBoundControl:(id)sender;
-
 @end
