@@ -397,7 +397,7 @@ void XFAppKitHasWidgetsFile(void) {}
         url = [NSURL fileURLWithPath:[panel filename]];
     }
     if (url && [upload commitFileAtURL:url error:NULL]) {
-        [self.processor controlDidChangeValue:upload];
+        // commitFileData: runs the value-change pipeline itself
         [self reloadFromProcessor];
     }
 }

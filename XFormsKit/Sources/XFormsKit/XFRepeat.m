@@ -46,6 +46,7 @@
 @property (nonatomic, copy, readwrite) NSArray<XFRepeatItem *> *items;
 @property (nonatomic, copy, readwrite) NSArray<NSXMLElement *> *templateElements;
 @property (nonatomic, weak) XFModel *model;
+@property (nonatomic, assign) BOOL itemsNeedRebuild;
 @end
 
 @implementation XFRepeat
@@ -216,9 +217,25 @@
     NSMutableArray<XFRepeatItem *> *items = [NSMutableArray array];
     NSUInteger i = 1;
     for (NSXMLNode *node in nodes) {
-        XFRepeatItem *item = [self makeItemForNode:node position:i error:error];
-        if (item == nil && error && *error) {
-            return;
+        // XsltForms_repeat.build_ keeps the DOM of unchanged rows and
+        // only inserts/removes the delta — REUSING the item keeps its
+        // per-item UI state (a toggled switch inside this row, a nested
+        // repeat's index) across refreshes (9.3.1.f, 9.3.4.a)
+        XFRepeatItem *item = nil;
+        if (!self.itemsNeedRebuild) {
+            for (XFRepeatItem *old in self.items) {
+                if (old.node == node) {
+                    item = old;
+                    item.position = i;
+                    break;
+                }
+            }
+        }
+        if (item == nil) {
+            item = [self makeItemForNode:node position:i error:error];
+            if (item == nil && error && *error) {
+                return;
+            }
         }
         if (self.identifier.length) {
             [XFNodeState stateOnNode:node].repeatIdentifier = self.identifier;
@@ -227,6 +244,7 @@
         i++;
     }
     self.items = items;
+    self.itemsNeedRebuild = NO;
 
     if (nodes.count == 0) {
         _index = 0;
@@ -242,6 +260,11 @@
         }
         _index = idx;
     }
+}
+
+- (void)invalidateItems
+{
+    self.itemsNeedRebuild = YES;
 }
 
 - (void)resetNestedRepeatIndexes

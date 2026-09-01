@@ -49,12 +49,18 @@
     }
 
     NSXMLElement *dataRoot = nil;
+    NSUInteger elementChildren = 0;
     for (NSXMLNode *child in [instanceElement children]) {
         if ([child kind] == NSXMLElementKind) {
-            dataRoot = (NSXMLElement *)child;
-            break;
+            elementChildren++;
+            if (dataRoot == nil) {
+                dataRoot = (NSXMLElement *)child;
+            }
         }
     }
+    // more than one top-level element is not a document — the exception
+    // fires at construct, once listeners exist (3.3.2.g/h)
+    instance.inlineContentMalformed = elementChildren > 1;
     if (dataRoot == nil && instance.src.length == 0) {
         if (error) {
             *error = [NSError errorWithDomain:XFErrorDomain
@@ -159,6 +165,16 @@
 
 - (void)construct
 {
+    if (self.inlineContentMalformed) {
+        // XForms 1.1 4.2.1: inline content that is not exactly one
+        // element is a link failure; event('resource-uri') names the
+        // form document holding it (3.3.2.h reads it in the handler)
+        NSString *uri = [self.baseURL absoluteString]
+            ?: [NSString stringWithFormat:@"#%@", self.identifier ?: @"instance"];
+        [XFXMLEvents raise:@"xforms-link-exception" on:self.element ?: (id)self.model
+                   message:@"xf:instance inline content has more than one root element"
+                   context:@{ @"resource-uri": uri }];
+    }
     if (self.src.length && self.document == nil) {
         NSError *inner = nil;
         if (![self loadFromSrc:&inner]) {
@@ -613,7 +629,15 @@ static void XFNode2JSONValue(NSXMLElement *el, NSMutableString *out)
     ctx.position = position;
     ctx.nodeList = nodeList;
     ctx.size = nodeList.count;
-    XFXPathValue *value = [mip evaluateInContext:ctx node:node model:self.model error:NULL];
+    NSError *inner = nil;
+    XFXPathValue *value = [mip evaluateInContext:ctx node:node model:self.model error:&inner];
+    if (value == nil && inner != nil) {
+        // an ERROR inside a model item property is a computed-expression
+        // failure: xforms-compute-exception (7.5.a — a failing binding
+        // expression raises binding-exception instead, 7.5.b)
+        [XFXMLEvents raise:@"xforms-compute-exception" on:self.model.element ?: (id)self.model
+                   message:inner.localizedDescription];
+    }
     return value ? [value booleanValue] : fallback;
 }
 

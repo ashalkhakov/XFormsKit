@@ -36,6 +36,9 @@ NS_ASSUME_NONNULL_BEGIN
 + (NSString *)jsonStringFromNode:(NSXMLNode *)node;
 + (NSString *)csvStringFromNode:(NSXMLNode *)node separator:(nullable NSString *)separator;
 @property (nonatomic, copy, nullable) NSURL *baseURL;
+/// Inline content held MORE than one top-level element (only the first
+/// became the root): an xforms-link-exception at construct (3.3.2.g/h).
+@property (nonatomic, assign) BOOL inlineContentMalformed;
 @property (nonatomic, strong, readonly) NSXMLDocument *document;
 @property (nonatomic, strong, readonly) NSXMLDocument *originalDocument;
 

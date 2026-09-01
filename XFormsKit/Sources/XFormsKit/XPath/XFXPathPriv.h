@@ -36,7 +36,10 @@ typedef NS_ENUM(NSInteger, XFXPathTokenKind) {
     XFXPathTokenOr,
     XFXPathTokenUnion,
     XFXPathTokenColonColon,
-    XFXPathTokenDollar
+    XFXPathTokenDollar,
+    /// A character no XPath production accepts ('%'): the parser turns
+    /// it into a compile error instead of a bogus name test.
+    XFXPathTokenIllegal
 };
 
 @interface XFXPathToken : NSObject

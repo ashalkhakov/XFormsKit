@@ -738,6 +738,14 @@ static BOOL XFNodeIsUnderElement(NSXMLNode *node, NSXMLElement *root)
 
 + (void)raise:(NSString *)eventName on:(id)target message:(NSString *)message
 {
+    [self raise:eventName on:target message:message context:nil];
+}
+
++ (void)raise:(NSString *)eventName
+           on:(id)target
+      message:(NSString *)message
+      context:(NSDictionary *)context
+{
     XFXMLEvents *events = [self sharedEvents];
     if (events.exceptionMessages == nil) {
         events.exceptionMessages = [NSMutableArray array];
@@ -752,7 +760,7 @@ static BOOL XFNodeIsUnderElement(NSXMLNode *node, NSXMLElement *root)
         xf = [events xfElementForElement:target] ?: target;
     }
     if (xf) {
-        [self dispatch:xf name:eventName];
+        [self dispatch:xf name:eventName context:context];
     }
 }
 

@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <dispatch/dispatch.h>
 #import "XFUploadControl.h"
+#import "XFProcessor.h"
 #import "XFBinding.h"
 #import "XFExprContext.h"
 #import "XFXML.h"
@@ -128,6 +129,19 @@
     }
 }
 
+- (void)refreshWithContext:(XFExprContext *)context error:(NSError **)error
+{
+    [super refreshWithContext:context error:error];
+    // XForms 1.1 8.1.6 data binding restriction: an upload binds only
+    // xsd:anyURI, xsd:base64Binary or xsd:hexBinary
+    static NSSet *allowed;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        allowed = [NSSet setWithArray:@[ @"anyURI", @"base64Binary", @"hexBinary" ]];
+    });
+    [self enforceDatatypeRestriction:allowed];
+}
+
 - (BOOL)commitFileData:(NSData *)data
               fileName:(NSString *)fileName
              mediaType:(NSString *)mediaType
@@ -183,10 +197,15 @@
     }
     [self writeBinding:self.filenameBinding value:fileName context:ctx];
     [self writeBinding:self.mediatypeBinding value:mediaType context:ctx];
+    // the commit runs the value-change pipeline itself (recalculate/
+    // revalidate/refresh dispatch xforms-value-changed, 8.1.6.b) — like
+    // a keyboard edit, whatever host drove it
+    XFProcessor *processor = [self processor];
+    if (processor != nil) {
+        [processor controlDidChangeValue:self];
+    }
     [XFXMLEvents dispatch:self name:@"xforms-upload-done"
                   context:[@{ @"filename": fileName ?: @"", @"mediatype": mediaType ?: @"" } mutableCopy]];
-    // xforms-value-changed and the recalculation cycle are driven by
-    // -[XFProcessor controlDidChangeValue:].
     return YES;
 }
 

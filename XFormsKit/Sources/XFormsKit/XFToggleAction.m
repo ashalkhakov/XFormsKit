@@ -48,12 +48,34 @@
     return self;
 }
 
-- (XFSwitch *)switchContainingCaseID:(NSString *)caseID
+- (XFSwitch *)switchContainingCaseID:(NSString *)caseID event:(XFEvent *)event
 {
     NSXMLDocument *doc = self.element.rootDocument;
     NSXMLElement *caseEl = [XFXML elementWithID:caseID inNode:doc];
     if (caseEl == nil) {
         return nil;
+    }
+    // XsltForms_toggle.run: IdManager.find resolves the case CLONE in the
+    // repeat item the event came from. Repeat items here share the template
+    // elements (no clones), so resolve the live per-item switch through the
+    // event target's control chain instead: the activated trigger's
+    // parentControl chain reaches ITS OWN item's switch (9.3.1.f, 9.3.4.a).
+    NSXMLElement *swEl = nil;
+    for (NSXMLNode *n = [caseEl parent]; n; n = [n parent]) {
+        if ([n kind] == NSXMLElementKind
+            && [XFXML element:(NSXMLElement *)n hasLocalName:@"switch"
+                 namespaceURI:XFXFormsNamespaceURI]) {
+            swEl = (NSXMLElement *)n;
+            break;
+        }
+    }
+    id origin = event.xfElement;
+    if (swEl && [origin isKindOfClass:[XFControl class]]) {
+        for (XFControl *c = origin; c; c = c.parentControl) {
+            if ([c isKindOfClass:[XFSwitch class]] && c.element == swEl) {
+                return (XFSwitch *)c;
+            }
+        }
     }
     id xf = [[XFXMLEvents sharedEvents] xfElementForElement:caseEl];
     if ([xf isKindOfClass:[XFCase class]]) {
@@ -81,7 +103,6 @@
 
 - (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
 {
-    (void)event;
     NSString *cid = self.caseID;
     if (self.caseExpr) {
         XFExprContext *ctx = [[XFExprContext alloc] initWithNode:contextNode];
@@ -95,7 +116,7 @@
         cid = [cid substringFromIndex:1];
     }
     self.lastCaseID = cid;
-    XFSwitch *sw = [self switchContainingCaseID:cid];
+    XFSwitch *sw = [self switchContainingCaseID:cid event:event];
     XFCase *caze = [sw caseWithIdentifier:cid];
     if (caze) {
         [sw selectCase:caze];

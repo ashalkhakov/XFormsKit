@@ -9,6 +9,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) double end;
 @property (nonatomic, assign) double step;
 @property (nonatomic, assign) double numericValue;
+/// The bound value lies outside [start, end] (the CSS :out-of-range
+/// state; announced by xforms-in-range / xforms-out-of-range).
+@property (nonatomic, assign, readonly) BOOL outOfRange;
 
 + (nullable instancetype)rangeWithElement:(NSXMLElement *)element
                                     model:(nullable id)model

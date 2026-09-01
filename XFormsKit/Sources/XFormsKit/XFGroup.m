@@ -1,4 +1,6 @@
 #import "XFGroup.h"
+#import "XFProcessor.h"
+#import "XFInstance.h"
 #import "XFBinding.h"
 #import "XFExprContext.h"
 #import "XFNodeState.h"
@@ -146,6 +148,26 @@
     } else {
         self.relevant = YES;
         self.boundNode = context.contextNode;
+        // a group's model= (with no binding of its own) reroutes its
+        // children to that model's default instance root
+        // (XsltForms_binding.bind_evaluate; 7.2.c)
+        NSString *mid = [[self.element attributeForName:@"model"] stringValue];
+        if (mid.length && ![mid isEqualToString:context.model.identifier]) {
+            XFModel *target = nil;
+            XFProcessor *processor = [self processor];
+            for (XFModel *m in processor.models) {
+                if ([m.identifier isEqualToString:mid]) {
+                    target = m;
+                    break;
+                }
+            }
+            NSXMLElement *root = [[target defaultInstance] documentElement];
+            if (root) {
+                childCtx = [context cloneWithNode:root position:1 nodeList:@[ root ]];
+                childCtx.model = target;
+                self.boundNode = root;
+            }
+        }
     }
     // XsltForms_group.refresh only toggles xforms-disabled; the children
     // keep being built/refreshed (their own relevance comes from the

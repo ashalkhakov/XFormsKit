@@ -149,6 +149,20 @@
         if (xmlid == nil) {
             xmlid = [[element attributeForName:@"id"] stringValue];
         }
+        if (xmlid == nil) {
+            // xsi:type="xsd:ID" makes the element's CONTENT its ID
+            // (7.10.3.c)
+            NSString *xsi = [self attributeValue:@"type"
+                                    namespaceURI:@"http://www.w3.org/2001/XMLSchema-instance"
+                                       onElement:element]
+                // XsltForms_browser.getType matches the literal
+                // "xsi:type" name — suite forms bind xsi to variant URIs
+                ?: [[element attributeForName:@"xsi:type"] stringValue];
+            if (xsi != nil
+                && [[[xsi componentsSeparatedByString:@":"] lastObject] isEqualToString:@"ID"]) {
+                xmlid = [self stringValueOfNode:element];
+            }
+        }
         if ([xmlid isEqualToString:identifier]) {
             return element;
         }

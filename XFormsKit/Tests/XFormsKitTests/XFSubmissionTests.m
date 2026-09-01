@@ -685,6 +685,39 @@
     XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"err"] invocationCount], (NSInteger)0);
 }
 
+- (void)testXMLSerializationDeclaresUsedPrefixes // 11.1.v on Apple Foundation
+{
+    // The my: prefix is declared on the HOST root, not inside the instance
+    // subtree. The serialized body must still declare it: XSLTForms gets
+    // this from the browser's XMLSerializer (which declares every visibly
+    // used prefix by itself), GNUstep's XMLString matches that, but
+    // Apple's XMLString serializes a detached subtree's prefixes
+    // UNDECLARED — declareUsedNamespacesOn:fromSource: closes the gap.
+    NSString *xml =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
+        @"      xmlns:xf=\"http://www.w3.org/2002/xforms\""
+        @"      xmlns:ev=\"http://www.w3.org/2001/xml-events\""
+        @"      xmlns:my=\"http://www.fakenamespace.org\">"
+        @"  <xf:model id=\"m\">"
+        @"    <xf:instance><my:car><make>Acura</make></my:car></xf:instance>"
+        @"    <xf:submission id=\"s\" resource=\"http://example.test/echo\" method=\"post\" replace=\"none\"/>"
+        @"  </xf:model>"
+        @"  <xf:send id=\"go\" submission=\"s\"/>"
+        @"</html>";
+    NSError *error = nil;
+    XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFMapSubmissionTransport *map = [[XFMapSubmissionTransport alloc] init];
+    [map setStatus:204 body:@"" forURL:@"http://example.test/echo"];
+    p.model.transport = map;
+    [self send:p identifier:@"go"];
+    NSString *body = map.lastRequest.body;
+    XCTAssertTrue([body containsString:@"my:car"], @"%@", body);
+    XCTAssertTrue([body containsString:@"xmlns:my=\"http://www.fakenamespace.org\""],
+                  @"the used prefix must be declared in the body: %@", body);
+    XCTAssertFalse([body containsString:@"xmlns:xf"], @"unused prefixes stay out: %@", body);
+}
+
 - (void)testJSONResponseReplacesInstanceAsXML // G-55
 {
     NSError *error = nil;
@@ -1004,6 +1037,7 @@
         @"    <xf:instance><data xmlns=\"\"><a>1</a></data></xf:instance>"
         @"    <xf:submission id=\"rel\" method=\"post\" action=\"sub/echo.xml\"/>"
         @"    <xf:submission id=\"abs\" method=\"post\" action=\"http://example.org/echo\"/>"
+        @"    <xf:submission id=\"schemerel\" method=\"post\" action=\"file:sub/data.xml\"/>"
         @"  </xf:model>"
         @"</html>";
     NSError *error = nil;
@@ -1017,6 +1051,12 @@
                           @"file:///forms/test/sub/echo.xml");
     XCTAssertEqualObjects([abs previewRequest].URLString,
                           @"http://example.org/echo");
+    // WHATWG semantics: a same-scheme reference without authority
+    // ("file:sub/data.xml") is RELATIVE — the scheme is dropped and the
+    // rest resolves against the base (11.9.n)
+    XFSubmission *schemerel = [p.model submissionWithIdentifier:@"schemerel"];
+    XCTAssertEqualObjects([schemerel previewRequest].URLString,
+                          @"file:///forms/test/sub/data.xml");
 }
 
 - (void)testSyncSubmissionLeavesDeferredQueueBalanced

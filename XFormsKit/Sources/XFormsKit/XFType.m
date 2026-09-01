@@ -379,7 +379,10 @@ static NSString * const XFXSDNS = @"http://www.w3.org/2001/XMLSchema";
     if (localName.length == 0) {
         return nil;
     }
-    NSString *ns = namespaceURI.length ? namespaceURI : XFXMLSchemaNamespaceURI;
+    // an EMPTY namespace first looks up the no-namespace registry (a
+    // user schema without targetNamespace registers there, 6.2.1.a)
+    // before falling back to the XSD builtins
+    NSString *ns = namespaceURI.length ? namespaceURI : @"";
     XFType *t = XFTypeTable()[XFTypeKey(ns, localName)];
     if (t == nil && ![ns isEqualToString:XFXMLSchemaNamespaceURI]) {
         t = XFTypeTable()[XFTypeKey(XFXMLSchemaNamespaceURI, localName)];
@@ -414,7 +417,10 @@ static NSString * const XFXSDNS = @"http://www.w3.org/2001/XMLSchema";
         return [self typeWithLocalName:local namespaceURI:ns];
     }
     return [self typeWithLocalName:name namespaceURI:XFXMLSchemaNamespaceURI]
-        ?: [self typeWithLocalName:name namespaceURI:XFXFormsNamespaceURI];
+        ?: [self typeWithLocalName:name namespaceURI:XFXFormsNamespaceURI]
+        // a user type from an inline schema WITHOUT targetNamespace
+        // registers in no namespace (6.2.1.a's plain "nonEmptyString")
+        ?: [self typeWithLocalName:name namespaceURI:@""];
 }
 
 - (NSString *)canonicalValue:(NSString *)value
@@ -544,6 +550,11 @@ static NSString * const XFXSDNS = @"http://www.w3.org/2001/XMLSchema";
         return YES;
     }
     if (value.length == 0) {
+        // a length facet outranks the optional-empty conventions: a
+        // minLength >= 1 (or fixed length) rejects "" (6.2.1.a)
+        if ([type.minLength integerValue] >= 1 || [type.length integerValue] >= 1) {
+            return NO;
+        }
         // XSLTForms TypeDefs: the xforms:* types have `(...)?` patterns and
         // accept the empty string; the xsd:* types only do when they have no
         // pattern (string family). XForms 1.1 says the same: use xf:date

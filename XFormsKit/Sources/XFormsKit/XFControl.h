@@ -65,6 +65,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)refreshWithContext:(XFExprContext *)context error:(NSError **)error;
 - (void)focus;
+/// XForms 1.1 data binding restrictions: raise xforms-binding-exception
+/// (once) when the bound node's datatype LOCAL NAME is typed and not in
+/// `allowed` (range 8.1.1.a, upload 8.1.6.d).
+- (void)enforceDatatypeRestriction:(NSSet<NSString *> *)allowed;
+
 /// The processor owning this control (directly or through its model).
 - (nullable XFProcessor *)processor;
 - (BOOL)commitStringValue:(nullable NSString *)value error:(NSError **)error;

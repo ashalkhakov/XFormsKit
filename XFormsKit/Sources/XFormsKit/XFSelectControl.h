@@ -19,6 +19,9 @@ NS_ASSUME_NONNULL_BEGIN
 @interface XFSelectControl : XFControl
 
 @property (nonatomic, assign) BOOL multiple;
+/// selection="open" (8.1.10/8.1.11): free values are accepted — the
+/// control never flags out-of-range for a value with no matching item.
+@property (nonatomic, assign) BOOL openSelection;
 @property (nonatomic, copy, readonly) NSArray<XFItem *> *items;
 @property (nonatomic, copy) NSArray<NSString *> *selectedValues;
 @property (nonatomic, assign, readonly) BOOL usesCopy;

@@ -146,8 +146,17 @@ NSMutableDictionary *XFXPathHostFunctionTable(void)
     } else if (context.nsResolver != self.nsresolver) {
         [context.nsResolver registerAll:self.nsresolver];
     }
+    // XSLT current(): the context node of the EXPRESSION as a whole —
+    // (re)stamped at the top of each full evaluation, so a predicate's
+    // inner context can still see it (month[@code = current()] inside a
+    // repeat item, 7.10.2.b). Kept SEPARATE from currentNode, which the
+    // XForms context() function reads as the outer in-scope context
+    // (setvalue value="context()", 7.10.4.a).
+    NSXMLNode *prevStart = context.expressionStartNode;
+    context.expressionStartNode = context.contextNode;
     NSError *inner = nil;
     XFXPathValue *value = [self.compiled evaluate:context error:&inner];
+    context.expressionStartNode = prevStart;
     if (value == nil) {
         if (error) {
             *error = inner ?: [NSError errorWithDomain:XFErrorDomain

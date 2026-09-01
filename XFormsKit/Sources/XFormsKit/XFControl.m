@@ -40,7 +40,10 @@
 @property (nonatomic, assign) BOOL mipKnown;
 @end
 
-@implementation XFControl
+@implementation XFControl {
+    BOOL _checkedModelIDREF;
+    BOOL _raisedDatatypeRestriction;
+}
 
 - (instancetype)initWithElement:(NSXMLElement *)element
                         binding:(XFBinding *)binding
@@ -517,6 +520,32 @@
     return YES;
 }
 
+- (void)enforceDatatypeRestriction:(NSSet<NSString *> *)allowed
+{
+    if (_raisedDatatypeRestriction || self.boundNode == nil) {
+        return;
+    }
+    // the bind's type, else the node's literal xsi:type (the
+    // XsltForms_browser.getType convention)
+    NSString *typeName = [XFNodeState existingStateOnNode:self.boundNode].typeName;
+    if (typeName.length == 0 && [self.boundNode kind] == NSXMLElementKind) {
+        typeName = [[(NSXMLElement *)self.boundNode attributeForLocalName:@"type"
+                        URI:@"http://www.w3.org/2001/XMLSchema-instance"] stringValue]
+            ?: [[(NSXMLElement *)self.boundNode attributeForName:@"xsi:type"] stringValue];
+    }
+    if (typeName.length == 0) {
+        return;   // an untyped node is not a declared violation
+    }
+    NSString *local = [[typeName componentsSeparatedByString:@":"] lastObject];
+    if ([allowed containsObject:local]) {
+        return;
+    }
+    _raisedDatatypeRestriction = YES;
+    [XFXMLEvents raise:@"xforms-binding-exception" on:self.element
+               message:[NSString stringWithFormat:
+                        @"%@ cannot bind to datatype '%@'", [self.element localName], typeName]];
+}
+
 - (XFProcessor *)processor
 {
     id owner = self.owner;
@@ -543,12 +572,42 @@
 - (void)refreshWithContext:(XFExprContext *)context error:(NSError **)error
 {
     if (self.binding == nil) {
+        // an UNBOUND control can still carry a model IDREF — one that
+        // names no model raises xforms-binding-exception (4.5.1.a1);
+        // bound controls get the same check from XFBinding
+        if (!_checkedModelIDREF) {
+            _checkedModelIDREF = YES;
+            NSString *mid = [[self.element attributeForName:@"model"] stringValue];
+            if (mid.length) {
+                BOOL found = NO;
+                XFProcessor *processor = [self processor];
+                NSArray<XFModel *> *models = processor ? processor.models
+                    : ([self.owner isKindOfClass:[XFModel class]] ? @[ (XFModel *)self.owner ] : @[]);
+                for (XFModel *m in models) {
+                    if ([m.identifier isEqualToString:mid]) {
+                        found = YES;
+                        break;
+                    }
+                }
+                if (!found) {
+                    [XFXMLEvents raise:@"xforms-binding-exception" on:self.element
+                               message:[NSString stringWithFormat:@"no model with id '%@'", mid]];
+                }
+            }
+        }
         return;
     }
     NSError *inner = nil;
     NSXMLNode *node = [self.binding boundNodeInContext:context error:&inner];
-    if (inner && error) {
-        *error = inner;
+    if (inner != nil) {
+        // a failing UI binding expression is an xforms-binding-exception
+        // (7.5.b — the same failure inside a model item property raises
+        // xforms-compute-exception instead)
+        [XFXMLEvents raise:@"xforms-binding-exception" on:self.element
+                   message:inner.localizedDescription];
+        if (error) {
+            *error = inner;
+        }
         return;
     }
     self.boundNode = node;
@@ -561,8 +620,12 @@
         value = [XFXML stringValueOfNode:node];
     } else {
         value = [self.binding stringValueInContext:context error:&inner];
-        if (inner && error) {
-            *error = inner;
+        if (inner != nil) {
+            [XFXMLEvents raise:@"xforms-binding-exception" on:self.element
+                       message:inner.localizedDescription];
+            if (error) {
+                *error = inner;
+            }
             return;
         }
     }

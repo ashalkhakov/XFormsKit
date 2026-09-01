@@ -277,6 +277,14 @@
         NSString *ref = [attr stringValue] ?: @"";
         if (ref.length == 0 || ![startChars characterIsMember:[ref characterAtIndex:0]]
             || [ref rangeOfCharacterFromSet:[nameChars invertedSet]].location != NSNotFound) {
+            // lazy authoring auto-constructs only plain element NCNames:
+            // any other binding expression over the synthesised instance
+            // is an xforms-binding-exception (4.2.2.c2)
+            if (ref.length && [parent isKindOfClass:[NSXMLElement class]]) {
+                [XFXMLEvents raise:@"xforms-binding-exception" on:(NSXMLElement *)parent
+                           message:[NSString stringWithFormat:
+                                    @"lazy authoring cannot construct '%@'", ref]];
+            }
             continue;
         }
         if (![names containsObject:ref]) {

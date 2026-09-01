@@ -83,6 +83,10 @@
         }
         XFExprContext *valueCtx = [[XFExprContext alloc] initWithNode:valueNode];
         valueCtx.model = self.model;
+        // the XForms context() function reads the ACTION's in-scope
+        // context node — inside a repeat item that is the item's node,
+        // not the setvalue target (7.10.4.a)
+        valueCtx.currentNode = contextNode;
         value = [self.valueExpr stringValueInContext:valueCtx error:NULL] ?: @"";
     }
     XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];

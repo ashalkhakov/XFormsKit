@@ -598,7 +598,7 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
             }],
             @"current": [XFXPathFunction acceptContext:YES defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)args; (void)err;
-                NSXMLNode *n = ctx.currentNode ?: ctx.contextNode;
+                NSXMLNode *n = ctx.expressionStartNode ?: ctx.currentNode ?: ctx.contextNode;
                 if (n) {
                     [ctx addDependency:n];
                     if (ctx.model) [ctx addDepElement:ctx.model];
@@ -666,10 +666,15 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
                     }
                     return [XFXPathValue string:@""];
                 }
-                if (name.length && [name rangeOfCharacterFromSet:[[NSCharacterSet characterSetWithCharactersInString:
-                        @"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-.:"] invertedSet]].location != NSNotFound) {
-                    [XFXMLEvents raise:@"xforms-binding-exception" on:ctx.model message:@"Invalid NCNAME"];
+                if (name.length == 0
+                    || [name rangeOfString:@":"].location != NSNotFound) {
+                    // an unknown PREFIXED property is simply empty (7.8.2.d)
+                    return [XFXPathValue string:@""];
                 }
+                // an unrecognized unprefixed property name is an error
+                // (XForms 1.1 7.8.2; the 7.8.2.c case)
+                [XFXMLEvents raise:@"xforms-binding-exception" on:ctx.model
+                           message:[NSString stringWithFormat:@"Unknown property '%@'", name]];
                 return [XFXPathValue string:@""];
             }],
             @"event": [XFXPathFunction acceptContext:YES defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
@@ -705,9 +710,10 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
                         if (tok.length) [ids addObject:tok];
                     }
                 }
-                // optional second argument: a node whose document is searched
+                // optional second argument: the SUBTREE searched — ids
+                // outside it are not returned (7.10.3.b)
                 NSXMLNode *scope = args.count > 1 ? XFArg(args, 1).firstNode : nil;
-                NSXMLNode *root = XFRootNode(scope ?: ctx.contextNode);
+                NSXMLNode *root = scope ?: XFRootNode(ctx.contextNode);
                 NSMutableArray *found = [NSMutableArray array];
                 for (NSString *ident in ids) {
                     NSXMLElement *el = [XFXML elementWithID:ident inNode:root];
@@ -802,35 +808,43 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
                 (void)ctx; (void)err;
                 return [XFXPathValue boolean:XFLuhn([XFArg(args, 0) stringValue])];
             }],
+            // digest/hmac argument errors FAIL the evaluation — the caller
+            // decides the exception: xforms-compute-exception from a model
+            // item property (7.5.a), xforms-binding-exception from a UI
+            // binding or @value (7.5.b, 7.8.3.e)
             @"digest": [XFXPathFunction acceptContext:YES defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
-                (void)ctx; (void)err;
+                (void)ctx;
                 NSString *data = [XFArg(args, 0) stringValue] ?: @"";
                 NSString *alg = args.count > 1 ? [XFArg(args, 1) stringValue] : @"MD5";
                 NSString *enc = args.count > 2 ? [XFArg(args, 2) stringValue] : @"base64";
-                if (!XFDigestAlgorithmKnown(alg)) {
-                    [XFXMLEvents raise:@"xforms-binding-exception" on:ctx.model message:@"Invalid crypting method"];
-                    return [XFXPathValue string:@""];
-                }
-                if (!XFDigestEncodingKnown(enc)) {
-                    [XFXMLEvents raise:@"xforms-binding-exception" on:ctx.model message:@"Invalid encoding method"];
-                    return [XFXPathValue string:@""];
+                if (!XFDigestAlgorithmKnown(alg) || !XFDigestEncodingKnown(enc)) {
+                    if (err) {
+                        *err = [NSError errorWithDomain:XFErrorDomain
+                                                   code:XFErrorXPathEvaluation
+                                               userInfo:@{ NSLocalizedDescriptionKey:
+                                                   !XFDigestAlgorithmKnown(alg) ? @"Invalid crypting method"
+                                                                                : @"Invalid encoding method" }];
+                    }
+                    return nil;
                 }
                 NSString *out = XFDigestString(data, alg, enc, nil);
                 return [XFXPathValue string:out ?: @""];
             }],
             @"hmac": [XFXPathFunction acceptContext:YES defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
-                (void)ctx; (void)err;
+                (void)ctx;
                 NSString *key = [XFArg(args, 0) stringValue] ?: @"";
                 NSString *data = [XFArg(args, 1) stringValue] ?: @"";
                 NSString *alg = args.count > 2 ? [XFArg(args, 2) stringValue] : @"MD5";
                 NSString *enc = args.count > 3 ? [XFArg(args, 3) stringValue] : @"base64";
-                if (!XFDigestAlgorithmKnown(alg)) {
-                    [XFXMLEvents raise:@"xforms-binding-exception" on:ctx.model message:@"Invalid crypting method"];
-                    return [XFXPathValue string:@""];
-                }
-                if (!XFDigestEncodingKnown(enc)) {
-                    [XFXMLEvents raise:@"xforms-binding-exception" on:ctx.model message:@"Invalid encoding method"];
-                    return [XFXPathValue string:@""];
+                if (!XFDigestAlgorithmKnown(alg) || !XFDigestEncodingKnown(enc)) {
+                    if (err) {
+                        *err = [NSError errorWithDomain:XFErrorDomain
+                                                   code:XFErrorXPathEvaluation
+                                               userInfo:@{ NSLocalizedDescriptionKey:
+                                                   !XFDigestAlgorithmKnown(alg) ? @"Invalid crypting method"
+                                                                                : @"Invalid encoding method" }];
+                    }
+                    return nil;
                 }
                 NSString *out = XFDigestString(data, alg, enc, key);
                 return [XFXPathValue string:out ?: @""];

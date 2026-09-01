@@ -12,6 +12,7 @@
 
 @interface XFBinding ()
 @property (nonatomic, strong, readwrite) XFXPath *xpath;
+@property (nonatomic, assign) BOOL raisedModelError;
 @property (nonatomic, copy, readwrite) NSString *expression;
 @property (nonatomic, copy, readwrite) NSString *bindID;
 @property (nonatomic, copy, readwrite) NSString *modelID;
@@ -92,6 +93,14 @@ static NSArray<XFModel *> *XFModelsOf(XFModel *model)
         if ([m.identifier isEqualToString:self.modelID]) {
             return m;
         }
+    }
+    // a model IDREF that names nothing: xforms-binding-exception
+    // (XForms 1.1 4.5.1) — raised once per binding, then the inherited
+    // context carries on so the form stays usable
+    if (!self.raisedModelError) {
+        self.raisedModelError = YES;
+        [XFXMLEvents raise:@"xforms-binding-exception" on:self.element
+                   message:[NSString stringWithFormat:@"no model with id '%@'", self.modelID]];
     }
     return nil;
 }

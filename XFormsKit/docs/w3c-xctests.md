@@ -37,78 +37,93 @@ by itself.
 | Chapter | cases | converted | green | red (engine gaps) |
 |---|---|---|---|---|
 | 2 Introduction to XForms | 4 | 4 | 4 | 0 |
-| 3 Document Structure | 37 | 37 | 28 | 9 |
-| 4 Processing Model | 67 | 66 (4.5.3.a absent upstream) | 56 | 10 |
+| 3 Document Structure | 37 | 37 | 37 | 0 |
+| 4 Processing Model | 67 | 66 (4.5.3.a absent upstream) | 66 | 0 |
 | 5 Datatypes | 15 | 15 | 15 | 0 |
-| 6 Model Item Properties | 11 | 11 | 9 | 2 |
-| 7 XPath Expressions | 62 | 62 | 50 | 12 |
-| 8 Form Controls | 59 | 59 | 53 | 6 |
-| 9 Container Form Controls | 21 | 21 | 16 | 5 |
+| 6 Model Item Properties | 11 | 11 | 11 | 0 |
+| 7 XPath Expressions | 62 | 62 | 62 | 0 |
+| 8 Form Controls | 59 | 59 | 59 | 0 |
+| 9 Container Form Controls | 21 | 21 | 21 | 0 |
 | 10 XForms Actions | 70 | 70 | 70 | 0 |
 | 11 The XForms Submit Module | 85 | 85 | 85 | 0 |
 | B Insert/Delete Recipes | 15 | 15 | 15 | 0 |
-| G XForms 1.1 CSS | 10 | 10 | 9 | 1 |
-| H Complete Examples | 3 | 3 | 2 | 1 |
+| G XForms 1.1 CSS | 10 | 10 | 10 | 0 |
+| H Complete Examples | 3 | 3 | 3 | 0 |
 
 The first gap-fix round (mac state 76) closed the chapter 10, 11, 2, B
-and H gaps wholesale — the fixed families are struck through below with
-a note on the fix; what remains open is the exception-raising family and
-assorted singletons in chapters 3, 4, 6, 7, 8, 9 and G.
+and H gaps wholesale; the second round (mac state 77) closed everything
+else — chapters 3, 4, 6, 7, 8, 9 and G. **The suite is fully green:
+`make w3ccheck` reports 458/458.** The per-gap notes below are kept as
+the record of what each red documented and what fixed it.
 
 Chapter 1 ("Differences between XForms 1.1 and 1.0") defines no forms of
 its own: its manifest's 43 cases are all cross-references into chapters
 3, 5, 7, 8, 10 and 11, each already asserted by that chapter's class —
 so there is no chapter-1 test file, and the suite is fully converted.
 
-## Open engine gaps the red tests document
+## Engine gaps the red tests documented — all closed
 
-Chapter 3: label/`@src` content not loaded (3.2.2.a, non-normative);
-invalid `model` IDREF raises no xforms-binding-exception (3.2.3.f — the
-invalid `bind` IDREF case 3.2.3.e works); itemset `@bind` yields no items
-(3.2.4.a, 3.2.4.c) and itemset bad model/bind IDREFs raise nothing
-(3.2.4.e/f); lazy authoring — a document with no xf:model refuses to
-load (3.3.1.a2); malformed inline instance (two top-level nodes) is
-accepted silently instead of xforms-link-exception (3.3.2.g, 3.3.2.h —
-h also wants event('resource-uri') in the handler).
+**Chapter 3 — ALL FIXED (ms77)**: label/help/hint/alert `@src` content
+is fetched at load against the document base URL and replaces the
+inline default (3.2.2.a); an unbound control's invalid `model` IDREF
+raises xforms-binding-exception (3.2.3.f); itemset builds its nodeset
+through `bindingForElement:` so `@bind`/`@model` are honored and bad
+IDREFs raise (3.2.4.a/c/e/f); lazy authoring — a host document with no
+xf:model gets an implicit empty default model (3.3.1.a2); a malformed
+inline instance (two top-level element children) raises
+xforms-link-exception with event('resource-uri') in the context
+(3.3.2.g, 3.3.2.h).
 
-Chapter 4: a space-separated multi-schema `@schema` list raises a
-spurious link-exception (4.2.1.b1 — a single schema works); the illegal
-lazy-`/car` ref raises no binding-exception (4.2.2.c2); range controls
-never dispatch xforms-in-range / xforms-out-of-range (4.4.16/17, also
-g.1.e); binding exceptions missing for: invalid `model` IDREF
-(4.5.1.a1, 4.7.e2), illegal binding expression `ref="%"` (4.5.1.a5); a
-non-compiling calculate hard-fails the load with no
-xforms-compute-exception dispatch (4.5.2.a — the known finding); a
-failed instance link does not halt processing (4.5.4.a renders "Hello
-world!"); unknown output mediatype dispatches no xforms-output-error
-(4.5.5.a). **FIXED (ms76)**: xforms-scroll-first on a negative setindex
+**Chapter 4 — ALL FIXED (ms76/ms77)**: ms77 — two valid external
+`@schema` documents may share a targetNamespace (XML Schema semantics);
+the duplicate-namespace link-exception now guards inline re-declaration
+only (4.2.1.b1); the illegal lazy-`/car` ref raises binding-exception
+(4.2.2.c2); range controls dispatch xforms-in-range/out-of-range on
+state change including first refresh (4.4.16/17, also g.1.e); invalid
+`model` IDREF raises binding-exception (4.5.1.a1, 4.7.e2); the lexer
+rejects unknown characters so `ref="%"` fails the load (4.5.1.a5); a
+non-compiling calculate no longer hard-fails the load — the model
+loads, recalculate dispatches xforms-compute-exception, and processing
+halts (4.5.2.a); construct-time link-/compute-/version-exceptions are
+FATAL — the UI never refreshes after one (4.5.4.a; a missing
+xf:include, an extension, still reports without halting); a mediatype
+with no type/subtype shape dispatches xforms-output-error (4.5.5.a).
+**FIXED (ms76)**: xforms-scroll-first on a negative setindex
 (4.4.18 — the NSUInteger wrap), the invalid `submission` IDREF
 (4.5.1.a3) and the invalid submission `instance` IDREF (4.5.1.a4,
 4.7.e3) now raise xforms-binding-exception.
 
-Chapter 6: a readonly node still accepts `setValue:ofControl:` — the
-model must refuse the edit, not just gray out the widget (6.1.2.a); an
-inline `xsd:schema` simpleType (minLength) is not applied to
-`bind/@type` (6.2.1.a).
+**Chapter 6 — ALL FIXED (ms77)**: the processor refuses
+`setValue:ofControl:` on a readonly control (6.1.2.a); no-namespace
+inline schema simpleTypes resolve (typeNamed:/typeWithLocalName: check
+the no-namespace registry before falling back to XSD) and an empty
+value fails a minLength/length ≥ 1 restriction (6.2.1.a).
 
-Chapter 7: a group's `model` attribute does not reroute its children's
-context model (7.2.c shows 1, not 3); evaluation errors inside MIP
-expressions raise xforms-binding-exception where the spec wants
-xforms-compute-exception (7.5.a, 7.8.3.c/d, 7.8.4.c/d/e);
-`property('invalid')` raises nothing (7.8.2.c); `current()` inside a
-repeat's `value=` yields nothing (7.10.2.b); the two-argument `id()` is
-ignored (7.10.3.b); `xsi:type="xsd:ID"` content is not ID-registered
-(7.10.3.c); a computed trigger label (`label ref="."`) does not compute
-(7.10.4.a — the `context()` function itself works). The digest/hmac
-vector suites (7.8.3/7.8.4 a/b/f) are fully green.
+**Chapter 7 — ALL FIXED (ms77)**: a group's `model` attribute reroutes
+its children to the target model's default instance (7.2.c); XPath
+function errors PROPAGATE as NSError and the CALLER decides the
+exception — MIP/calculate errors raise xforms-compute-exception, UI
+binding/@value errors raise xforms-binding-exception (7.5.a/b,
+7.8.3.c/d/e, 7.8.4.c/d/e — digest/hmac set the error instead of
+raising); `property()` with an unknown UNPREFIXED name raises
+binding-exception, an unknown prefixed name is silently empty
+(7.8.2.c/d); `current()` reads the expression's start context
+(XFExprContext.expressionStartNode, stamped per evaluation) — distinct
+from `context()`'s in-scope node, so both work in the same action
+(7.10.2.b, 7.10.4.a); the two-argument `id()` scopes the lookup to the
+given subtree (7.10.3.b); `xsi:type` content naming an ID type is
+ID-registered, with a literal `xsi:type` attribute-name fallback for
+the suite's variant xsi URIs (7.10.3.c).
 
-Chapter 8: datatype binding restrictions are not enforced — range and
-upload bound to xsd:string raise no binding exception (8.1.1.a,
-8.1.6.d); the `xf:mediatype` child element does not override the
-mediatype attribute (8.1.5.1.a); an upload commit dispatches
-xforms-upload-done but no xforms-value-changed (8.1.6.b);
-`selection="open"` is not honored — free values flag out-of-range
-(8.1.10.a, 8.1.11.a). **FIXED (ms76)**: the select-commit family —
+**Chapter 8 — ALL FIXED (ms76/ms77)**: ms77 — datatype binding
+restrictions are enforced for range (duration/date/time/number family)
+and upload (anyURI/base64Binary/hexBinary), one binding-exception per
+control (8.1.1.a, 8.1.6.d); the `xf:mediatype` child element overrides
+the mediatype attribute, its ref evaluated against the output's bound
+node (8.1.5.1.a); an upload commit routes through the processor's
+value-change pipeline before xforms-upload-done (8.1.6.b);
+`selection="open"` skips the out-of-range check (8.1.10.a, 8.1.11.a).
+**FIXED (ms76)**: the select-commit family —
 XFSelectControl now routes its commit through the processor's
 value-change pipeline, and a leak was found underneath it: a SUCCESSFUL
 synchronous submission never closed its deferred-update action, so
@@ -116,11 +131,16 @@ every later recalculate/revalidate/refresh silently stalled
 (regression test testSyncSubmissionLeavesDeferredQueueBalanced). That
 one leak was also hiding the inline-schema pattern validation in 2.3.a.
 
-Chapter 9: a switch inside a repeat does not keep per-item
-state (9.3.1.f, 9.3.4.a); `xf:copy` items copy nothing — items build
-and label but usesCopy is unset, selecting inserts no subtree, and
-copy-into-attribute raises no binding exception (9.3.6.a, 9.3.7.a/b).
-**FIXED (ms76)**: 9.2.1.a2 (the select-commit family, see chapter 8).
+**Chapter 9 — ALL FIXED (ms76/ms77)**: ms77 — repeat items are REUSED
+across refreshes (matched by node identity, XSLTForms' keep-the-DOM
+delta behavior) so per-item UI state survives, and toggle resolves its
+target switch through the EVENT TARGET's control chain — the activated
+trigger's own item's switch — instead of the document-wide registry
+that shared template elements defeat (9.3.1.f, 9.3.4.a); the `xf:copy`
+family — select items carry usesCopy, selecting copies the subtree,
+deselecting clears it, and a non-element copy target raises
+binding-exception (9.3.6.a, 9.3.7.a/b). **FIXED (ms76)**: 9.2.1.a2
+(the select-commit family, see chapter 8).
 
 **Chapter 10 — ALL FIXED (ms76)**: the insert/delete `context`/`model`
 attributes now switch the evaluation context first (XFAbstractAction
@@ -168,11 +188,11 @@ xforms-binding-exception (also flips 4.5.1.a3).
 parent (b.15.a's heterogeneous `chapter/*` nodeset spans sibling
 parents).
 
-Appendix G: the state behind `:out-of-range` is never announced — the
-range bound to -100 in [0,2000] dispatches no xforms-out-of-range
-(g.1.e — the ch4 4.4.16/17 family; the MIP pseudo-class states
+**Appendix G — ALL FIXED (ms77)**: g.1.e flowed from the range-events
+fix (the ch4 4.4.16/17 family) — the range bound to -100 in [0,2000]
+now dispatches xforms-out-of-range; the MIP pseudo-class states
 relevance/required/validity/readonly and the repeat-index styling hooks
-are all green).
+were already green.
 
 **Appendix H — FIXED (ms76)**: h.2 flowed from the nested-repeat index
 and delete-@at-clamp fixes.

@@ -84,6 +84,11 @@ typedef void (^XFEventDefaultAction)(id _Nullable xfElement, XFEvent *event);
 /// host element) and remember the message (G-30). XSLTForms then throws;
 /// XFormsKit keeps going and reports the error through the usual NSError.
 + (void)raise:(NSString *)eventName on:(nullable id)target message:(nullable NSString *)message;
+/// raise: with event context properties (event('resource-uri') etc).
++ (void)raise:(NSString *)eventName
+           on:(nullable id)target
+      message:(nullable NSString *)message
+      context:(nullable NSDictionary *)context;
 /// Messages recorded by +raise:on:message:, oldest first.
 @property (nonatomic, strong, readonly) NSMutableArray<NSString *> *exceptionMessages;
 

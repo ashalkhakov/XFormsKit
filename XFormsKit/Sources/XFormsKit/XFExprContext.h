@@ -12,6 +12,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong, nullable) NSXMLNode *contextNode;
 @property (nonatomic, strong, nullable) NSXMLNode *currentNode;
+/// The context node the CURRENT full expression evaluation started from
+/// (XSLT current()); stamped by XFXPath evaluateInContext: and inherited
+/// by predicate sub-contexts. Distinct from currentNode, which carries
+/// the OUTER in-scope context for the XForms context() function.
+@property (nonatomic, strong, nullable) NSXMLNode *expressionStartNode;
 @property (nonatomic, copy, nullable) NSArray<NSXMLNode *> *nodeList;
 @property (nonatomic, assign) NSUInteger position; // 1-based
 @property (nonatomic, assign) NSUInteger size;

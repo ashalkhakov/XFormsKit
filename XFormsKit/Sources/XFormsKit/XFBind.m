@@ -29,6 +29,9 @@ static NSInteger XFNextDepsId(void)
 @property (nonatomic, strong, readwrite) NSMutableArray<NSXMLNode *> *depsNodes;
 @property (nonatomic, strong, readwrite) NSMutableArray *depsElements;
 @property (nonatomic, strong, readwrite) NSMutableArray<XFBind *> *binds;
+/// A calculate expression that failed to COMPILE: kept so the model still
+/// loads and recalculate can dispatch xforms-compute-exception (4.5.2.a).
+@property (nonatomic, copy) NSString *calculateCompileError;
 @end
 
 @implementation XFBind
@@ -86,10 +89,12 @@ static NSInteger XFNextDepsId(void)
     if (calculate.length) {
         bind.calculate = [XFXPath xpathWithString:calculate element:element error:&inner];
         if (bind.calculate == nil) {
-            if (error) {
-                *error = inner;
-            }
-            return nil;
+            // XForms 1.1 4.5.2: a non-compiling computed expression is an
+            // xforms-compute-exception dispatched during (re)calculate —
+            // not a silent load failure. The model keeps loading so its
+            // handlers exist when the exception fires (4.5.2.a).
+            bind.calculateCompileError = inner.localizedDescription
+                ?: [NSString stringWithFormat:@"Invalid XPath expression: %@", calculate];
         }
     }
 
@@ -225,6 +230,11 @@ static NSInteger XFNextDepsId(void)
 
 - (void)recalculate
 {
+    if (self.calculateCompileError) {
+        [XFXMLEvents raise:@"xforms-compute-exception" on:self.element
+                   message:self.calculateCompileError];
+        self.calculateCompileError = nil;   // once — halting follows anyway
+    }
     if (self.calculate) {
         NSUInteger i = 0;
         for (NSXMLNode *node in [self.nodes copy]) {
@@ -232,7 +242,14 @@ static NSInteger XFNextDepsId(void)
                                               position:i + 1
                                               nodeList:self.nodes];
             NSError *inner = nil;
-            NSString *value = [self.calculate stringValueInContext:ctx error:&inner] ?: @"";
+            NSString *value = [self.calculate stringValueInContext:ctx error:&inner];
+            if (value == nil && inner != nil) {
+                // calculate is a computed expression: its evaluation
+                // errors raise xforms-compute-exception (7.8.3.c/d)
+                [XFXMLEvents raise:@"xforms-compute-exception" on:self.element
+                           message:inner.localizedDescription];
+            }
+            value = value ?: @"";
             // XFBind.js recalculate: type.normalize(value) (G-57)
             XFType *type = [XFType typeNamed:[XFNodeState existingStateOnNode:node].typeName ?: self.typeName];
             if (type) {

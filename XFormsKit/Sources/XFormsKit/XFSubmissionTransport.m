@@ -489,6 +489,21 @@ static NSString * const XFHTTPTransportRunLoopMode = @"XFHTTPSubmissionTransport
         }
         return nil;
     }
+    if ([url isFileURL] && [[request.method lowercaseString] isEqualToString:@"get"]) {
+        // XSLTForms special-cases file: in submit rather than trusting
+        // XMLHttpRequest with it; NSURLConnection's file loader differs
+        // per Foundation too (Apple refuses a file URL carrying the GET
+        // query string, 11.9.n) — read the file directly, ignoring the
+        // query like an HTTP file server would.
+        NSString *path = [url path] ?: @"";
+        NSData *data = path.length ? [NSData dataWithContentsOfFile:path] : nil;
+        XFSubmissionResponse *out = [[XFSubmissionResponse alloc] init];
+        out.statusCode = data ? 200 : 404;
+        out.headers = @{};
+        out.body = data ? ([[NSString alloc] initWithData:data
+                                                 encoding:NSUTF8StringEncoding] ?: @"") : @"";
+        return out;
+    }
     NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:url];
     req.HTTPMethod = [request.method uppercaseString] ?: @"GET";
     req.timeoutInterval = self.timeout > 0 ? self.timeout : 30;

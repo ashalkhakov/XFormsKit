@@ -229,6 +229,21 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     // instance/@src. An absolute URI passes through unchanged, and a
     // string NSURL cannot parse falls back to the raw text.
     if (raw.length && self.baseURL) {
+        // WHATWG URL semantics (what the browsers under XSLTForms apply):
+        // for a special scheme equal to the base's, "file:name" is a
+        // RELATIVE reference — the scheme is dropped and name resolves
+        // against the base (11.9.n's action="file:11.9.n.data.xml").
+        // Apple's NSURL follows RFC 3986 strictly and keeps the
+        // unloadable scheme-relative form; GNUstep happens to merge.
+        NSString *scheme = self.baseURL.scheme;
+        if (scheme.length) {
+            NSString *prefix = [scheme stringByAppendingString:@":"];
+            if (raw.length > prefix.length
+                && [[raw substringToIndex:prefix.length] caseInsensitiveCompare:prefix] == NSOrderedSame
+                && ![[raw substringFromIndex:prefix.length] hasPrefix:@"//"]) {
+                raw = [raw substringFromIndex:prefix.length];
+            }
+        }
         NSURL *url = [NSURL URLWithString:raw relativeToURL:self.baseURL];
         if (url != nil && url.scheme.length > 0) {
             return [url absoluteString];
@@ -423,9 +438,14 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
         }
         return pair;
     }
-    if ((self.relevant || self.cdataSectionElements.count) && [node kind] == NSXMLElementKind) {
+    if ([node kind] == NSXMLElementKind
+        && (self.relevant || self.cdataSectionElements.count
+            || [self hasUndeclaredUsedPrefix:(NSXMLElement *)node])) {
         self.cdataTexts = [NSMutableArray array];
         NSXMLElement *copy = [self relevantCopy:(NSXMLElement *)node];
+        if (copy) {
+            [self declareUsedNamespacesOn:copy fromSource:(NSXMLElement *)node];
+        }
         NSString *xml = copy ? [copy XMLString] : @"";
         NSUInteger i = 0;
         for (NSString *text in self.cdataTexts) {
@@ -464,6 +484,79 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     }
     [decl appendString:@"?>\n"];
     return [decl stringByAppendingString:xml];
+}
+
+/// Prefix → namespace URI for every prefix VISIBLY USED by the subtree's
+/// element and attribute names. XSLTForms serializes with the browser's
+/// XMLSerializer, which declares every used prefix by itself; GNUstep's
+/// XMLString does the same, but Apple's does NOT for a subtree detached
+/// from the document that declared the prefix (11.1.v: xmlns:my lives on
+/// the HOST document root, so the instance copy serializes my:car with no
+/// declaration). The map drives re-declaring what the output would
+/// otherwise use undeclared.
+static void XFCollectUsedPrefixes(NSXMLElement *element,
+                                  NSMutableDictionary<NSString *, NSString *> *map)
+{
+    NSString *prefix = [element prefix];
+    if (prefix.length && map[prefix] == nil && [element URI].length) {
+        map[prefix] = [element URI];
+    }
+    for (NSXMLNode *attr in [element attributes]) {
+        NSString *aprefix = [attr prefix];
+        NSString *uri = [attr URI];
+        if (aprefix.length == 0) {
+            // attributes rebuilt by relevantCopy carry the prefix in the name
+            NSString *name = [attr name] ?: @"";
+            NSRange colon = [name rangeOfString:@":"];
+            if (colon.location != NSNotFound) {
+                aprefix = [name substringToIndex:colon.location];
+            }
+        }
+        if (aprefix.length && ![aprefix isEqualToString:@"xmlns"]
+            && ![aprefix isEqualToString:@"xml"] && map[aprefix] == nil) {
+            if (uri.length == 0) {
+                uri = [[element resolveNamespaceForName:
+                        [aprefix stringByAppendingString:@":x"]] stringValue];
+            }
+            if (uri.length) {
+                map[aprefix] = uri;
+            }
+        }
+    }
+    for (NSXMLNode *child in [element children]) {
+        if ([child kind] == NSXMLElementKind) {
+            XFCollectUsedPrefixes((NSXMLElement *)child, map);
+        }
+    }
+}
+
+/// YES when serializing `element` directly would use a prefix that no
+/// in-scope declaration covers (the Apple detached-subtree case above).
+- (BOOL)hasUndeclaredUsedPrefix:(NSXMLElement *)element
+{
+    NSMutableDictionary<NSString *, NSString *> *map = [NSMutableDictionary dictionary];
+    XFCollectUsedPrefixes(element, map);
+    for (NSString *prefix in map) {
+        if ([element resolveNamespaceForName:[prefix stringByAppendingString:@":x"]] == nil) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
+/// Declares on `copy` every prefix the SOURCE subtree visibly uses that
+/// the copy does not already have in scope, so the serialized body stays
+/// well-formed on both Foundations.
+- (void)declareUsedNamespacesOn:(NSXMLElement *)copy fromSource:(NSXMLElement *)source
+{
+    NSMutableDictionary<NSString *, NSString *> *map = [NSMutableDictionary dictionary];
+    XFCollectUsedPrefixes(source, map);
+    for (NSString *prefix in map) {
+        if ([copy resolveNamespaceForName:[prefix stringByAppendingString:@":x"]] != nil) {
+            continue;
+        }
+        [copy addNamespace:[NSXMLNode namespaceWithName:prefix stringValue:map[prefix]]];
+    }
 }
 
 - (NSXMLElement *)relevantCopy:(NSXMLElement *)element

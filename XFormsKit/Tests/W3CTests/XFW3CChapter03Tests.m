@@ -276,8 +276,9 @@
     if (p == nil) {
         return;   // "or a fatal error"
     }
-    XCTAssertTrue([self.messages containsObject:@"xforms-link-exception"],
-                  @"messages: %@", self.messages);
+    // the exception fires at construct, before the host's message
+    // handler exists — the dispatched event is the evidence
+    [self assertSawEvent:@"xforms-link-exception"];
     // event('resource-uri') was copied into model2's /msg
     NSString *uri = [self stringForXPath:@"/msg" model:[self modelWithID:@"model2"]];
     XCTAssertTrue(uri.length > 0, @"resource-uri must reach the handler");

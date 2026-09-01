@@ -244,9 +244,11 @@ static BOOL XFIsNameChar(unichar c)
         return [self token:XFXPathTokenName text:text];
     }
 
-    // Unknown character: consume and treat as name so the parser can fail clearly.
+    // Unknown character ('%'): an ILLEGAL token — a bare name token here
+    // would parse as an element test and silently select nothing, hiding
+    // the xforms-binding-exception the spec wants (4.5.1.a5).
     _i++;
-    return [self token:XFXPathTokenName text:[NSString stringWithCharacters:&c length:1]];
+    return [self token:XFXPathTokenIllegal text:[NSString stringWithCharacters:&c length:1]];
 }
 
 @end

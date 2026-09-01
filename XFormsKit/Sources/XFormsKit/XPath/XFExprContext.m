@@ -85,6 +85,7 @@
     XFExprContext *copy = [[[self class] alloc] init];
     copy.contextNode = node ?: self.contextNode;
     copy.currentNode = self.currentNode ?: copy.contextNode;
+    copy.expressionStartNode = self.expressionStartNode;
     copy.nodeList = nodeList ?: self.nodeList;
     copy.position = position > 0 ? position : self.position;
     copy->_autoPosition = position > 0 ? NO : self->_autoPosition;

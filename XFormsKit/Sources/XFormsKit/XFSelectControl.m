@@ -102,14 +102,13 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
         t.valueLiteral = XFChildLiteral(element, @"value");
     } else if ([XFXML element:element hasLocalName:@"itemset" namespaceURI:XFXFormsNamespaceURI]) {
         t.kind = XFSelectTemplateItemset;
-        NSString *ns = [[element attributeForName:@"nodeset"] stringValue]
-            ?: [[element attributeForName:@"ref"] stringValue];
-        if (ns.length) {
-            t.nodeset = [XFBinding bindingWithExpression:ns element:element error:&inner];
-            if (t.nodeset == nil) {
-                if (error) { *error = inner; }
-                return nil;
-            }
+        // bindingForElement: honors bind= (which overrides the nodeset,
+        // 3.2.4.a/c) and model=; unresolvable IDREFs then raise
+        // xforms-binding-exception at evaluation (3.2.4.e/f)
+        t.nodeset = [XFBinding bindingForElement:element attribute:@"nodeset" error:&inner];
+        if (inner) {
+            if (error) { *error = inner; }
+            return nil;
         }
         t.labelBinding = XFChildBinding(element, @"label", &inner);
         t.valueBinding = XFChildBinding(element, @"value", &inner);
@@ -164,6 +163,8 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
                                                       label:[XFControl labelForElement:element]];
     select.owner = model;
     select.multiple = [[element localName] isEqualToString:@"select"];
+    select.openSelection = [[[element attributeForName:@"selection"] stringValue]
+                               isEqualToString:@"open"];
     if (![select reloadTemplatesWithError:&inner]) {
         if (error) { *error = inner; }
         return nil;
@@ -358,12 +359,15 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
     self.selectedValues = sel;
 
     // XsltForms_select.setValue: every wanted value must be an item, else
-    // the control is out of range (an empty single selection is neither)
+    // the control is out of range (an empty single selection is neither;
+    // selection="open" accepts ANY value, 8.1.10.a/8.1.11.a)
     BOOL well = YES;
-    for (NSString *v in wanted) {
-        if (v.length && [self itemWithValue:v] == nil) {
-            well = NO;
-            break;
+    if (!self.openSelection) {
+        for (NSString *v in wanted) {
+            if (v.length && [self itemWithValue:v] == nil) {
+                well = NO;
+                break;
+            }
         }
     }
     BOOL emptySingle = !self.multiple && (self.stringValue.length == 0);
@@ -423,7 +427,10 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
 {
     NSMutableArray *vals = [NSMutableArray array];
     NSMutableArray *copies = [NSMutableArray array];
-    BOOL anyCopy = NO;
+    // a copy-based control REPLACES the bound node's children with the
+    // selected copies — an empty selection must still CLEAR them
+    // (9.3.7.a's deselect leg), so the control-level flag drives it
+    BOOL anyCopy = self.usesCopy;
     for (XFItem *item in selected) {
         if (item.value) {
             [vals addObject:item.value];
@@ -436,6 +443,10 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
     self.selectedValues = vals;
     if (anyCopy) {
         if (self.boundNode == nil || [self.boundNode kind] != NSXMLElementKind) {
+            // copy into a non-element (an attribute) cannot carry a
+            // subtree: xforms-binding-exception (9.3.7.b)
+            [XFXMLEvents raise:@"xforms-binding-exception" on:self.element
+                       message:@"xf:copy requires an element bound node"];
             if (error) {
                 *error = [NSError errorWithDomain:@"XFormsKit"
                                              code:2

@@ -539,18 +539,30 @@
     XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"compute"] invocationCount], (NSInteger)1); // @functions
     XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"version"] invocationCount], (NSInteger)1);
     XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"link"] invocationCount], (NSInteger)1);
-    // the unknown bind raised on the output; the handler sits on the model
-    // (document-level bubbling reaches the model only for model targets),
-    // so check the recorded message
+    // construct-time link/compute/version exceptions are FATAL (4.5.2,
+    // 4.5.4): the UI never refreshes, so the output's unknown bind never
+    // evaluates here — its binding-exception is checked below on a
+    // document without fatal exceptions
+    // an unknown function at evaluation time (dispatch still works on a
+    // halted processor's models)
+    [XFXMLEvents dispatch:p.model name:@"boom"];
+    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"compute"] invocationCount], (NSInteger)2);
+
+    [[[XFXMLEvents sharedEvents] exceptionMessages] removeAllObjects];
+    (void)[self processorWithBody:
+        @"<xf:model id=\"m2\">"
+        @"  <xf:instance><data xmlns=\"\"><n>1</n></data></xf:instance>"
+        @"</xf:model>"
+        @"<xf:output id=\"o2\" bind=\"nope\"/>"];
+    // the unknown bind raised on the output; the handler would sit on the
+    // model (document-level bubbling reaches the model only for model
+    // targets), so check the recorded message
     NSArray *messages = [[XFXMLEvents sharedEvents] exceptionMessages];
     BOOL sawBinding = NO;
     for (NSString *m in messages) {
         if ([m hasPrefix:@"xforms-binding-exception"]) sawBinding = YES;
     }
     XCTAssertTrue(sawBinding, @"%@", messages);
-    // an unknown function at evaluation time
-    [XFXMLEvents dispatch:p.model name:@"boom"];
-    XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"compute"] invocationCount], (NSInteger)2);
 }
 
 - (void)testUnknownPhaseRaisesAndCloseRunsDestructListeners // G-54

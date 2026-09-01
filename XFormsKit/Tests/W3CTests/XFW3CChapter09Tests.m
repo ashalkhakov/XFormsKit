@@ -233,9 +233,12 @@
         XFSelectControl *select = [self controlOfClass:[XFSelectControl class] index:s];
         XCTAssertEqual(select.items.count, (NSUInteger)3, @"select %lu", (unsigned long)s);
         XCTAssertEqualObjects(select.items.firstObject.label, @"Vanilla");
-        XCTAssertTrue(select.items.firstObject.usesCopy || select.usesCopy,
-                      @"itemset uses xf:copy");
     }
+    // only list 1 (the itemset) uses xf:copy — list 2 is a plain
+    // value-based choices list
+    XFSelectControl *first = [self controlOfClass:[XFSelectControl class] index:0];
+    XCTAssertTrue(first.items.firstObject.usesCopy || first.usesCopy,
+                  @"itemset uses xf:copy");
 }
 
 - (void)test_9_3_7_a_CopyElement

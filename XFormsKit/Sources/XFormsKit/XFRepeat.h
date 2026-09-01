@@ -33,6 +33,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable XFRepeatItem *)currentItem;
 - (nullable NSXMLNode *)currentNode;
 - (void)setIndex:(NSUInteger)index;
+/// The next rebuild constructs every item fresh instead of reusing
+/// unchanged rows — required after subform content was imported into or
+/// removed from item subtrees (per-item xf:load embedding).
+- (void)invalidateItems;
+
 /// XForms 1.1 repeat processing: when an outer repeat's index changes —
 /// or its indexed item is replaced by an insert/delete — the indexes of
 /// repeats NESTED in it re-initialize to their startindex.

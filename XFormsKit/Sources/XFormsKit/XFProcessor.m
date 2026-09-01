@@ -44,6 +44,9 @@
 /// while its content is collected).
 @property (nonatomic, weak) XFModel *actionModel;
 @property (nonatomic, assign) NSUInteger subformCounter;
+/// Set when a fatal construct-time exception (link/compute/version) halted
+/// processing: the UI is never refreshed afterwards (4.5.2, 4.5.4).
+@property (nonatomic, assign) BOOL halted;
 @end
 
 @implementation XFProcessor
@@ -247,18 +250,39 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
     _baseURL = baseURL;
     [self expandIncludesIn:document];
 
+    // XForms 1.1 8.3.3: label/help/hint/alert carry a linking @src whose
+    // resource replaces the inline default content (3.2.2.a, non-normative).
+    // Resolved once here, before controls read their labels.
+    for (NSString *name in @[ @"label", @"help", @"hint", @"alert" ]) {
+        for (NSXMLElement *el in [XFXML elementsWithLocalName:name
+                                                 namespaceURI:XFXFormsNamespaceURI
+                                                       inNode:document]) {
+            NSString *src = [[el attributeForName:@"src"] stringValue];
+            if (src.length == 0) {
+                continue;
+            }
+            NSURL *url = [NSURL URLWithString:src relativeToURL:baseURL];
+            NSData *data = url ? [NSData dataWithContentsOfURL:url] : nil;
+            NSString *text = data ? [[NSString alloc] initWithData:data
+                                                          encoding:NSUTF8StringEncoding] : nil;
+            if (text.length) {
+                [el setStringValue:[text stringByTrimmingCharactersInSet:
+                                    [NSCharacterSet whitespaceAndNewlineCharacterSet]]];
+            }
+        }
+    }
+
     NSArray<NSXMLElement *> *modelElements =
         [XFXML elementsWithLocalName:@"model"
                        namespaceURI:XFXFormsNamespaceURI
                              inNode:document];
     if (modelElements.count == 0) {
-        if (error) {
-            *error = [NSError errorWithDomain:XFErrorDomain
-                                         code:XFErrorDocument
-                                     userInfo:@{ NSLocalizedDescriptionKey:
-                                                     @"host document has no xf:model" }];
-        }
-        return nil;
+        // XForms 1.1 3.3.1 (lazy authoring): a host document with no
+        // xf:model gets an implicit empty default model (3.3.1.a2)
+        NSXMLElement *implicit = [NSXMLElement elementWithName:@"model"
+                                                           URI:XFXFormsNamespaceURI];
+        [document.rootElement addChild:implicit];
+        modelElements = @[ implicit ];
     }
 
     NSError *inner = nil;
@@ -321,13 +345,17 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
         [XFXMLEvents raise:@"xforms-link-exception" on:self.models.firstObject
                    message:[NSString stringWithFormat:@"Include %@ not found", src]];
     }
+    // fatal-exception window opens here: a missing xf:include (extension,
+    // G-92) reports but does not halt — everything below does (4.5.4)
+    NSUInteger exceptionsBefore = [[XFXMLEvents sharedEvents] exceptionMessages].count;
 
     // XsltForms_model.init: xf:model/@functions and @version checks (G-30)
     // XsltForms_schema: a second schema for an already loaded target
     // namespace is an xforms-link-exception (G-82)
     NSMutableSet<NSString *> *schemaNamespaces = [NSMutableSet set];
     NSMutableSet<NSNumber *> *schemaElements = [NSMutableSet set];
-    BOOL (^registerSchema)(NSXMLElement *, XFModel *) = ^BOOL(NSXMLElement *schemaEl, XFModel *m) {
+    BOOL (^registerSchema)(NSXMLElement *, XFModel *, BOOL) =
+        ^BOOL(NSXMLElement *schemaEl, XFModel *m, BOOL external) {
         // XFModel.js: @schema names an already loaded schema, so an inline
         // schema referenced by its id is not loaded twice
         NSNumber *key = @((unsigned long long)(uintptr_t)schemaEl);
@@ -337,6 +365,13 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
         [schemaElements addObject:key];
         NSString *tns = [[schemaEl attributeForName:@"targetNamespace"] stringValue] ?: @"";
         if (tns.length && [schemaNamespaces containsObject:tns]) {
+            if (external) {
+                // XML Schema lets several schema DOCUMENTS contribute to
+                // one namespace; two valid @schema files sharing a
+                // targetNamespace merge without exception (4.2.1.b1)
+                [XFType registerSchemaElement:schemaEl];
+                return YES;
+            }
             [XFXMLEvents raise:@"xforms-link-exception" on:m
                        message:@"More than one schema with the same namespace declaration"];
             return NO;
@@ -352,7 +387,7 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
         for (NSXMLNode *c in [m.element children]) {
             if ([c kind] == NSXMLElementKind && [[c localName] isEqualToString:@"schema"]
                 && [[c URI] isEqualToString:@"http://www.w3.org/2001/XMLSchema"]) {
-                registerSchema((NSXMLElement *)c, m);
+                registerSchema((NSXMLElement *)c, m, NO);
             }
         }
         NSString *schemas = [[m.element attributeForName:@"schema"] stringValue];
@@ -361,6 +396,7 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
                 continue;
             }
             NSXMLElement *schemaEl = nil;
+            BOOL external = NO;
             NSString *sid = [ref hasPrefix:@"#"] ? [ref substringFromIndex:1] : ref;
             NSXMLElement *byID = [[XFXMLEvents sharedEvents] elementWithID:sid inDocument:document];
             if (byID && [[byID localName] isEqualToString:@"schema"]) {
@@ -370,9 +406,10 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
                 NSData *data = url ? [NSData dataWithContentsOfURL:url] : nil;
                 NSXMLDocument *sdoc = data ? [[NSXMLDocument alloc] initWithData:data options:0 error:NULL] : nil;
                 schemaEl = [sdoc rootElement];
+                external = YES;
             }
             if (schemaEl) {
-                registerSchema(schemaEl, m);
+                registerSchema(schemaEl, m, external);
             } else {
                 [XFXMLEvents raise:@"xforms-link-exception" on:m
                            message:[NSString stringWithFormat:@"Schema %@ not found", ref]];
@@ -402,6 +439,20 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
     for (XFModel *m in self.models) {
         [XFXMLEvents dispatch:m name:@"xforms-model-construct"];
         [XFXMLEvents dispatch:m name:@"xforms-model-construct-done"];
+    }
+    // XForms 1.1 4.5.2/4.5.4 (also 4.5.3): the exception default actions
+    // are FATAL — after dispatching, processing halts. A construct-time
+    // link-/compute-/version-exception stops here: the models and their
+    // handlers ran (messages, event context), but the UI never refreshes
+    // (4.5.2.a, 4.5.4.a). Refresh-time exceptions stay non-halting.
+    NSArray<NSString *> *raised = [[XFXMLEvents sharedEvents] exceptionMessages];
+    for (NSUInteger e = exceptionsBefore; e < raised.count; e++) {
+        if ([raised[e] hasPrefix:@"xforms-link-exception"]
+            || [raised[e] hasPrefix:@"xforms-compute-exception"]
+            || [raised[e] hasPrefix:@"xforms-version-exception"]) {
+            self.halted = YES;
+            return self;
+        }
     }
     [self refreshControls];
     // case.xsl: the initially selected case of every switch gets
@@ -724,6 +775,9 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
 
 - (void)refreshControls
 {
+    if (self.halted) {
+        return;
+    }
     XFExprContext *ctx = [self evaluationContext];
     XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
     [du pushVariableScope];
@@ -815,6 +869,17 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
 
 - (BOOL)setValue:(NSString *)value ofControl:(XFControl *)control error:(NSError **)error
 {
+    // XForms 1.1 6.1.2: a readonly node refuses the edit at the MODEL —
+    // graying the widget is not enough (a scripted write must bounce too)
+    if (control.readonly) {
+        if (error) {
+            *error = [NSError errorWithDomain:XFErrorDomain
+                                         code:XFErrorBinding
+                                     userInfo:@{ NSLocalizedDescriptionKey:
+                                                     @"bound node is readonly" }];
+        }
+        return NO;
+    }
     value = [control applyInputMode:value];   // G-41
     // XsltForms_control.valueChanged: nothing happens when the value is unchanged
     if (control.boundNode && [[XFXML stringValueOfNode:control.boundNode] isEqualToString:value ?: @""]) {
@@ -1136,8 +1201,20 @@ static NSError *XFSubformError(NSString *message)
         [XFXMLEvents dispatch:m name:@"xforms-subform-ready"];
     }
     sf.ready = YES;
+    // imported content may live INSIDE repeat items: the reuse cache
+    // would hide it, so every repeat rebuilds its rows once
+    [self invalidateRepeatItemCaches];
     [self refreshControls];
     return sf;
+}
+
+- (void)invalidateRepeatItemCaches
+{
+    for (XFModel *m in self.models) {
+        for (XFRepeat *r in m.repeats) {
+            [r invalidateItems];
+        }
+    }
 }
 
 - (BOOL)unloadSubformAtTargetID:(NSString *)targetID
@@ -1155,6 +1232,7 @@ static NSError *XFSubformError(NSString *message)
     }
     [self disposeSubform:sf];
     [self rebuildAroundTarget:target];
+    [self invalidateRepeatItemCaches];
     [self refreshControls];
     return YES;
 }
