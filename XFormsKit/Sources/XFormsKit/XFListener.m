@@ -143,6 +143,11 @@
     // from bubble, so that check is not applied here.
 
     if (effectiveTarget && self.handler) {
+        // debugConsole: "Captured event … on <…/>" — only when the
+        // handler actually runs (XsltForms_listener.callback).
+        XFTraceWrite(XFTraceKindHandler, event.type, event.target,
+                     @"Captured event %@ on %@", event.type,
+                     XFTraceDescribeElement(event.target));
         self.handler(event);
     }
     if (!self.defaultAction) {

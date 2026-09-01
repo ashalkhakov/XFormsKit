@@ -9,6 +9,38 @@
 #import <Foundation/NSXMLDocument.h>
 #import <Foundation/NSXMLElement.h>
 
+/// Test sink for the debugConsole trace stream: records every line as
+/// {kind, message, event?, element-desc?}.
+@interface XFRecordingTraceSink : NSObject <XFEventTraceSink>
+@property (nonatomic, strong) NSMutableArray<NSDictionary *> *lines;
+@end
+
+@implementation XFRecordingTraceSink
+- (instancetype)init
+{
+    if ((self = [super init])) {
+        _lines = [NSMutableArray array];
+    }
+    return self;
+}
+- (void)traceEventOfKind:(XFTraceKind)kind
+                 message:(NSString *)message
+               eventName:(NSString *)eventName
+                 element:(NSXMLElement *)element
+{
+    NSMutableDictionary *e = [NSMutableDictionary dictionary];
+    e[@"kind"] = @(kind);
+    e[@"message"] = message ?: @"";
+    if (eventName) {
+        e[@"event"] = eventName;
+    }
+    if (element) {
+        e[@"element-desc"] = XFTraceDescribeElement(element);
+    }
+    [self.lines addObject:e];
+}
+@end
+
 @interface XFXMLEventsTests : XCTestCase
 @end
 
@@ -539,6 +571,82 @@
     XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"bye"] invocationCount], (NSInteger)1);
     [p close];
     XCTAssertEqual([(XFAction *)[p actionWithIdentifier:@"bye"] invocationCount], (NSInteger)1);
+}
+
+#pragma mark - Event tracing (the XSLTForms debugConsole port)
+
+- (void)testEventTraceSinkSeesDispatchHandlersAndActions
+{
+    XFRecordingTraceSink *sink = [[XFRecordingTraceSink alloc] init];
+    [XFXMLEvents setTraceSink:sink];
+    @try {
+        XFProcessor *p = [self processorWithBody:
+            @"<xf:model id=\"m\"><xf:instance><data xmlns=\"\"><n>1</n></data></xf:instance>"
+            @"  <xf:action id=\"go\" ev:event=\"ping\">"
+            @"    <xf:setvalue ref=\"n\" value=\"'2'\"/>"
+            @"  </xf:action>"
+            @"</xf:model>"];
+        [sink.lines removeAllObjects]; // drop the init storm; watch one dispatch
+        [XFXMLEvents dispatch:p.model name:@"ping"];
+
+        // "Dispatching event ping on <…/>" with kind/event/element attached
+        NSUInteger dispatchAt = NSNotFound, capturedAt = NSNotFound, setvalueAt = NSNotFound;
+        for (NSUInteger i = 0; i < sink.lines.count; i++) {
+            NSDictionary *e = sink.lines[i];
+            NSString *msg = e[@"message"];
+            if ([msg hasPrefix:@"Dispatching event ping"]) {
+                dispatchAt = i;
+                XCTAssertEqualObjects(e[@"kind"], @(XFTraceKindEvent));
+                XCTAssertEqualObjects(e[@"event"], @"ping");
+                XCTAssertTrue([msg containsString:@"<xf:model"], @"%@", msg);
+                XCTAssertTrue([msg containsString:@"id=\"m\""], @"%@", msg);
+            } else if ([msg hasPrefix:@"Captured event ping"]) {
+                capturedAt = i;
+                XCTAssertEqualObjects(e[@"kind"], @(XFTraceKindHandler));
+            } else if ([msg hasPrefix:@"Setvalue"]) {
+                setvalueAt = i;
+                XCTAssertEqualObjects(e[@"kind"], @(XFTraceKindAction));
+                XCTAssertEqualObjects(msg, @"Setvalue n = 2");
+            }
+        }
+        XCTAssertTrue(dispatchAt != NSNotFound);
+        XCTAssertTrue(capturedAt != NSNotFound && capturedAt > dispatchAt);
+        XCTAssertTrue(setvalueAt != NSNotFound && setvalueAt > capturedAt);
+        XCTAssertEqualObjects([[[p.model defaultInstance].document rootElement] stringValue], @"2");
+    } @finally {
+        [XFXMLEvents setTraceSink:nil];
+    }
+}
+
+- (void)testEventTraceSinkAbsentIsSilentAndErrorsAreTraced
+{
+    // no sink: dispatch must not touch a stale one
+    [XFXMLEvents setTraceSink:nil];
+    XFProcessor *p = [self processorWithBody:
+        @"<xf:model id=\"m\"><xf:instance><data xmlns=\"\"><n>1</n></data></xf:instance></xf:model>"];
+    [XFXMLEvents dispatch:p.model name:@"ping"]; // must simply not crash
+
+    XFRecordingTraceSink *sink = [[XFRecordingTraceSink alloc] init];
+    [XFXMLEvents setTraceSink:sink];
+    @try {
+        [XFXMLEvents raise:@"xforms-compute-exception" on:p.model message:@"boom happened"];
+        BOOL sawError = NO;
+        for (NSDictionary *e in sink.lines) {
+            if ([e[@"kind"] isEqual:@(XFTraceKindError)] &&
+                [e[@"message"] isEqualToString:@"Error: boom happened"]) {
+                sawError = YES;
+            }
+        }
+        XCTAssertTrue(sawError);
+        // name2string
+        NSXMLElement *el = [[NSXMLElement alloc] initWithName:@"a"];
+        NSXMLNode *attr = [NSXMLNode attributeWithName:@"b" stringValue:@"x"];
+        [el addAttribute:(NSXMLNode *)attr];
+        XCTAssertEqualObjects(XFTraceDescribeNode(el), @"a");
+        XCTAssertEqualObjects(XFTraceDescribeNode([el attributeForName:@"b"]), @"@b");
+    } @finally {
+        [XFXMLEvents setTraceSink:nil];
+    }
 }
 
 @end

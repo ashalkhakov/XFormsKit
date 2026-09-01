@@ -174,6 +174,7 @@
 		AA0000020000000000000056 /* XFDEventsPane.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000056 /* XFDEventsPane.m */; };
 		AA0000020000000000000057 /* XFDActionRowsPane.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000057 /* XFDActionRowsPane.m */; };
 		AA0000020000000000000058 /* XFDSubmissionTester.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000058 /* XFDSubmissionTester.m */; };
+		AA0000020000000000000059 /* XFDEventsConsole.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000059 /* XFDEventsConsole.m */; };
 		AA0000020000000000000005 /* DMTabBar.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000005; };
 		AA0000020000000000000006 /* DMTabBarItem.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000006; };
 		AA0000020000000000000007 /* JUInspectorBaseView.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000007; };
@@ -399,6 +400,8 @@
 		BB0000020000000000000067 /* XFDActionRowsPane.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDActionRowsPane.h; sourceTree = "<group>"; };
 		BB0000020000000000000058 /* XFDSubmissionTester.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDSubmissionTester.m; sourceTree = "<group>"; };
 		BB0000020000000000000069 /* XFDSubmissionTester.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDSubmissionTester.h; sourceTree = "<group>"; };
+		BB0000020000000000000059 /* XFDEventsConsole.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDEventsConsole.m; sourceTree = "<group>"; };
+		BB000002000000000000006A /* XFDEventsConsole.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDEventsConsole.h; sourceTree = "<group>"; };
 		BB0000020000000000000068 /* XFDWindowControllerPriv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDWindowControllerPriv.h; sourceTree = "<group>"; };
 		BB0000020000000000000005 /* DMTabBar.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DMTabBar.m; sourceTree = "<group>"; };
 		BB0000020000000000000006 /* DMTabBarItem.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DMTabBarItem.m; sourceTree = "<group>"; };
@@ -738,6 +741,8 @@
 				BB0000020000000000000057 /* XFDActionRowsPane.m */,
 				BB0000020000000000000067 /* XFDActionRowsPane.h */,
 				BB0000020000000000000069 /* XFDSubmissionTester.h */,
+				BB000002000000000000006A /* XFDEventsConsole.h */,
+				BB0000020000000000000059 /* XFDEventsConsole.m */,
 				BB0000020000000000000058 /* XFDSubmissionTester.m */,
 				BB0000020000000000000068 /* XFDWindowControllerPriv.h */,
 				BB0000020000000000000021 /* MainMenu.xib */,
@@ -1115,6 +1120,7 @@
 				AA0000020000000000000056 /* XFDEventsPane.m in Sources */,
 				AA0000020000000000000057 /* XFDActionRowsPane.m in Sources */,
 				AA0000020000000000000058 /* XFDSubmissionTester.m in Sources */,
+				AA0000020000000000000059 /* XFDEventsConsole.m in Sources */,
 				AA0000020000000000000005 /* DMTabBar.m in Sources */,
 				AA0000020000000000000006 /* DMTabBarItem.m in Sources */,
 				AA0000020000000000000007 /* JUInspectorBaseView.m in Sources */,

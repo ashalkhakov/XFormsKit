@@ -14,6 +14,7 @@
 #import "XFDXPathField.h"
 #import "XFDDesignOverlay.h"
 #import "XFDSubmissionTester.h"
+#import "XFDEventsConsole.h"
 
 static BOOL XFDLoadNib(NSString *name, id owner)
 {
@@ -782,6 +783,61 @@ static int XFDRunSelfTest(NSString *path)
             [[XFMapSubmissionTransport alloc] init], nil);
         if (![offline[@"outcome"] isEqualToString:@"error"]) {
             NSLog(@"SELFTEST tester offline run not an error: %@", offline);
+            return 1;
+        }
+    }
+    // events console core (headless — the panel needs a window): the
+    // XFDEventsLog sink sees Dispatching/Captured/Setvalue lines from the
+    // real engine, filters them, exports the tracelog document, and the
+    // duplicate-id scan flags the console-open warning the original shows
+    {
+        NSError *ecerr = nil;
+        XFProcessor *ep = [XFProcessor processorWithXMLString:
+            @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
+            @" xmlns:xf=\"http://www.w3.org/2002/xforms\""
+            @" xmlns:ev=\"http://www.w3.org/2001/xml-events\">"
+            @"<head><xf:model id=\"m\"><xf:instance><data xmlns=\"\"><n>1</n></data></xf:instance>"
+            @"<xf:action id=\"go\" ev:event=\"ping\"><xf:setvalue ref=\"n\" value=\"'2'\"/></xf:action>"
+            @"</xf:model></head><body><p id=\"dup\"/><p id=\"dup\"/></body></html>"
+                                                         error:&ecerr];
+        if (ep == nil) {
+            NSLog(@"SELFTEST console probe form failed: %@", ecerr);
+            return 1;
+        }
+        XFDEventsLog *log = [[XFDEventsLog alloc] init];
+        [log install];
+        [XFXMLEvents dispatch:ep.model name:@"ping"];
+        [log uninstall];
+        BOOL sawDispatch = NO, sawCaptured = NO, sawSetvalue = NO;
+        for (XFDEventsLogEntry *e in log.entries) {
+            if ([e.message hasPrefix:@"Dispatching event ping"]) sawDispatch = YES;
+            if ([e.message hasPrefix:@"Captured event ping"]) sawCaptured = YES;
+            if ([e.message isEqualToString:@"Setvalue n = 2"]) sawSetvalue = YES;
+        }
+        if (!sawDispatch || !sawCaptured || !sawSetvalue) {
+            NSLog(@"SELFTEST console stream incomplete (%lu lines)",
+                  (unsigned long)log.entries.count);
+            return 1;
+        }
+        if ([log entriesMatchingKind:XFTraceKindAction substring:@"setvalue"].count != 1
+            || [log entriesMatchingKind:-1 substring:@"nothing-matches-this"].count != 0) {
+            NSLog(@"SELFTEST console filtering wrong");
+            return 1;
+        }
+        if (![[log tracelogXMLString] containsString:@"Setvalue n = 2"]) {
+            NSLog(@"SELFTEST console tracelog export wrong");
+            return 1;
+        }
+        // uninstalled: the engine trace must be a no-op again
+        NSUInteger frozen = log.entries.count;
+        [XFXMLEvents dispatch:ep.model name:@"ping"];
+        if (log.entries.count != frozen) {
+            NSLog(@"SELFTEST console kept tracing after uninstall");
+            return 1;
+        }
+        NSArray *dupes = XFDDuplicateIDsInDocument(ep.hostDocument);
+        if (dupes.count != 1 || ![dupes.firstObject isEqualToString:@"dup"]) {
+            NSLog(@"SELFTEST duplicate-id scan wrong: %@", dupes);
             return 1;
         }
     }

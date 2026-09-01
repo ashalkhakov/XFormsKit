@@ -31,6 +31,7 @@ XFormsDesigner_OBJC_FILES = \
 	XFDEventsPane.m \
 	XFDActionRowsPane.m \
 	XFDSubmissionTester.m \
+	XFDEventsConsole.m \
 	XFDXPathField.m \
 	XFDRichTextField.m \
 	XFDIDRefField.m \

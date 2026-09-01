@@ -18,6 +18,83 @@
 static const void *kXFListenersKey = &kXFListenersKey;
 static const void *kXFElementKey   = &kXFElementKey;
 
+#pragma mark - Event tracing (XsltForms_browser.debugConsole, data side)
+
+static __weak id<XFEventTraceSink> gXFTraceSink = nil;
+
+@implementation XFXMLEvents (XFEventTracing)
+
++ (void)setTraceSink:(id<XFEventTraceSink>)sink
+{
+    gXFTraceSink = sink;
+}
+
++ (id<XFEventTraceSink>)traceSink
+{
+    return gXFTraceSink;
+}
+
+@end
+
+NSString *XFTraceDescribeElement(NSXMLElement *element)
+{
+    // debugConsole prints "<NAME class="…" id="…"/>" in Dispatching /
+    // Captured lines (XsltForms_xmlevents.dispatch, listener callback).
+    if (element == nil) {
+        return @"<null/>";
+    }
+    NSString *cls = [[element attributeForName:@"class"] stringValue];
+    NSString *ident = [[element attributeForName:@"id"] stringValue];
+    NSMutableString *s = [NSMutableString stringWithFormat:@"<%@", [element name] ?: @"?"];
+    if (cls.length) {
+        [s appendFormat:@" class=\"%@\"", cls];
+    }
+    if (ident.length) {
+        [s appendFormat:@" id=\"%@\"", ident];
+    }
+    [s appendString:@"/>"];
+    return s;
+}
+
+NSString *XFTraceDescribeNode(NSXMLNode *node)
+{
+    // XsltForms_browser.name2string
+    if (node == nil) {
+        return @"#notanode (nil)";
+    }
+    switch ([node kind]) {
+        case NSXMLAttributeKind:
+        case NSXMLElementKind: {
+            NSString *prefix = ([node kind] == NSXMLAttributeKind) ? @"@" : @"";
+            NSString *uri = [node URI];
+            if (uri.length) {
+                return [NSString stringWithFormat:@"%@Q{%@}%@", prefix, uri,
+                        [node localName] ?: [node name] ?: @"?"];
+            }
+            return [prefix stringByAppendingString:[node localName] ?: [node name] ?: @"?"];
+        }
+        case NSXMLTextKind:                 return @"#text";
+        case NSXMLDocumentKind:             return @"#document";
+        case NSXMLCommentKind:              return @"#comment";
+        case NSXMLProcessingInstructionKind: return @"#processing-instruction";
+        default:                            return @"#node";
+    }
+}
+
+void XFTraceWrite(XFTraceKind kind, NSString *eventName, NSXMLElement *element,
+                  NSString *format, ...)
+{
+    id<XFEventTraceSink> sink = gXFTraceSink;
+    if (sink == nil) {
+        return; // debugConsole.write with no console: silently dropped
+    }
+    va_list args;
+    va_start(args, format);
+    NSString *message = [[NSString alloc] initWithFormat:format arguments:args];
+    va_end(args);
+    [sink traceEventOfKind:kind message:message eventName:eventName element:element];
+}
+
 @implementation XFEventRegistration
 @end
 
@@ -210,6 +287,8 @@ static const void *kXFElementKey   = &kXFElementKey;
     (void)type; // XSLTForms accepts `type` then overwrites from `name` in makeEventContext
     if (target == nil) {
         NSLog(@"XFormsKit: cannot dispatch event %@ as the target is null", name);
+        XFTraceWrite(XFTraceKindError, name, nil,
+                     @"ERROR: Cannot dispatch event %@ as the target is null", name);
         return;
     }
     id xfElement = nil;
@@ -217,6 +296,9 @@ static const void *kXFElementKey   = &kXFElementKey;
     if (element == nil) {
         return;
     }
+    // debugConsole: "Dispatching event … on <…/>"
+    XFTraceWrite(XFTraceKindEvent, name, element,
+                 @"Dispatching event %@ on %@", name, XFTraceDescribeElement(element));
 
     XFEventRegistration *reg = self.registry[name];
     if (reg) {
@@ -661,6 +743,10 @@ static BOOL XFNodeIsUnderElement(NSXMLNode *node, NSXMLElement *root)
         events.exceptionMessages = [NSMutableArray array];
     }
     [events.exceptionMessages addObject:[NSString stringWithFormat:@"%@: %@", eventName, message ?: @""]];
+    // XsltForms_globals.error → debugConsole.write("Error: " + message)
+    XFTraceWrite(XFTraceKindError, eventName,
+                 [target isKindOfClass:[NSXMLElement class]] ? target : nil,
+                 @"Error: %@", message ?: eventName);
     id xf = target;
     if ([target isKindOfClass:[NSXMLElement class]]) {
         xf = [events xfElementForElement:target] ?: target;

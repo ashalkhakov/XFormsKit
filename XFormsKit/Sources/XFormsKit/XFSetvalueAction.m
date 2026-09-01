@@ -87,6 +87,9 @@
     }
     XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
     [du openAction:@"setvalue"];
+    // debugConsole: "Setvalue name2string(node) = value"
+    XFTraceWrite(XFTraceKindAction, nil, self.element,
+                 @"Setvalue %@ = %@", XFTraceDescribeNode(node), value);
     [XFXML setStringValue:value ofNode:node];
     [self.model addChange:node];
     [du addChangedModel:self.model];
@@ -206,6 +209,10 @@
     }
     XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
     [du openAction:@"XsltForms_setnode.prototype.run"];
+    // debugConsole: "Setnode name2string(node) inner|outer = value"
+    XFTraceWrite(XFTraceKindAction, nil, self.element,
+                 @"Setnode %@%@ = %@", XFTraceDescribeNode(node),
+                 self.inner ? @" inner" : @" outer", value);
     NSXMLElement *element = (NSXMLElement *)node;
     NSXMLNode *changed = node;
     if (self.inner) {

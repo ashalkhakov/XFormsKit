@@ -130,6 +130,7 @@
 @interface XFDWindowController (XFDPreview) <XFDDesignOverlayDelegate>
 - (IBAction)modeChanged:(NSSegmentedControl *)sender;
 - (IBAction)toggleDesignMode:(id)sender;
+- (IBAction)toggleEventsConsole:(id)sender;
 - (IBAction)applySource:(id)sender;
 - (IBAction)resetInstances:(id)sender;
 @end

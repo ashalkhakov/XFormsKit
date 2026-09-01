@@ -15,6 +15,7 @@
 #import "XFDPalettePanel.h"
 #import "XFDInstanceXMLEditor.h"
 #import "XFDSubmissionTester.h"
+#import "XFDEventsConsole.h"
 #import "DMTabBar.h"
 #import "DMTabBarItem.h"
 
@@ -30,6 +31,7 @@ __attribute__((used)) static void (*const XFDWindowControllerFileChecks[])(void)
     XFDEventsPaneFilePresent,
     XFDActionRowsPaneFilePresent,
     XFDSubmissionTesterFilePresent,
+    XFDEventsConsoleFilePresent,
 };
 
 @implementation XFDWindowController
@@ -100,6 +102,23 @@ __attribute__((used)) static void (*const XFDWindowControllerFileChecks[])(void)
     [testButton setTarget:self];
     [testButton setAction:@selector(testSubmissionClicked:)];
     [submissionPage addSubview:testButton];
+
+    /* The events console toggle sits beside the Design checkbox — in
+       code, like the tester button, so the xib stays untouched. */
+    if (self.designModeCheckbox) {
+        NSRect near = [self.designModeCheckbox frame];
+        NSButton *consoleButton = [[NSButton alloc] initWithFrame:
+            NSMakeRect(NSMaxX(near) + 8, NSMinY(near) - 2, 130, NSHeight(near) + 4)];
+        [consoleButton setTitle:@"Events Console"];
+        [consoleButton setBezelStyle:NSRoundedBezelStyle];
+        [[consoleButton cell] setControlSize:NSSmallControlSize];
+        [consoleButton setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+        [consoleButton setToolTip:@"The XSLTForms events console: every dispatched event, handler run, and engine action, live."];
+        [consoleButton setTarget:self];
+        [consoleButton setAction:@selector(toggleEventsConsole:)];
+        [consoleButton setAutoresizingMask:[self.designModeCheckbox autoresizingMask]];
+        [[self.designModeCheckbox superview] addSubview:consoleButton];
+    }
 
     [self.outline setTarget:self];
     [self.outline setDoubleAction:@selector(outlineDoubleClicked:)];

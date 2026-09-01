@@ -612,7 +612,7 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
 /// The exact request `submit` would send from the CURRENT instance
 /// state — the designer's submission tester shows this. No events are
 /// dispatched (xforms-submit-serialize included), no validation gate
-/// runs, and no submission state changes: a pure preview
+/// runs, and no submission state changes: a pure preview.
 - (XFSubmissionRequest *)previewRequest
 {
     NSString *method = [self resolvedMethod];
@@ -658,6 +658,10 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
 
     NSString *method = [self resolvedMethod];
     NSString *action = [self resolvedResource];
+    // debugConsole: "Submit method - mediatype - action - synchronous"
+    XFTraceWrite(XFTraceKindAction, nil, self.element,
+                 @"Submit %@ - %@ - %@ - %@", method, self.mediatype ?: @"",
+                 action ?: @"", self.asynchronous ? @"false" : @"true");
     NSMutableDictionary *evcontext = [@{
         @"method": method,
         @"resource-uri": action ?: @""

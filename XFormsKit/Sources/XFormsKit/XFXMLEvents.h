@@ -89,6 +89,59 @@ typedef void (^XFEventDefaultAction)(id _Nullable xfElement, XFEvent *event);
 
 @end
 
+#pragma mark - Event tracing (XsltForms_browser.debugConsole, data side)
+
+/// XSLTForms ships an events console (F1 / debugMode): every
+/// XsltForms_xmlevents.dispatch, every listener that actually runs, and
+/// the action/model traces go through XsltForms_browser.debugConsole.write.
+/// XFormsKit keeps the framework UI-free, so the engine only exposes the
+/// write stream: a host (the designer's events console) installs a sink
+/// and renders it. With no sink installed every trace call is a cheap
+/// no-op — the exact behavior of debugConsole.write when the console div
+/// is absent.
+typedef NS_ENUM(NSInteger, XFTraceKind) {
+    XFTraceKindEvent = 0,   ///< "Dispatching event …" (xmlevents.dispatch)
+    XFTraceKindHandler,     ///< "Captured event …" (a listener's handler ran)
+    XFTraceKindAction,      ///< Setvalue / insert / setIndex / Submit / Load …
+    XFTraceKindModel,       ///< Calculate / instance loading
+    XFTraceKindError,       ///< "ERROR: …" and XsltForms_globals.error messages
+    XFTraceKindWarning,     ///< "WARNING: …" (the console's duplicate-id scan)
+};
+
+@protocol XFEventTraceSink <NSObject>
+/// One debugConsole.write line. `eventName` is set for Event/Handler
+/// entries; `element` is the dispatch target / acted-on host element when
+/// one exists. Called on whatever thread the engine work runs on (the
+/// engine is main-thread in practice).
+- (void)traceEventOfKind:(XFTraceKind)kind
+                 message:(NSString *)message
+               eventName:(nullable NSString *)eventName
+                 element:(nullable NSXMLElement *)element;
+@end
+
+@interface XFXMLEvents (XFEventTracing)
+/// The one process-wide sink (XSLTForms' console is a page-global too).
+/// Held weakly — a deallocated sink uninstalls itself.
++ (void)setTraceSink:(nullable id<XFEventTraceSink>)sink;
++ (nullable id<XFEventTraceSink>)traceSink;
+@end
+
+/// debugConsole.write: forwards one formatted line to the installed sink;
+/// no-op (and no format evaluation beyond the varargs call) without one.
+FOUNDATION_EXPORT void XFTraceWrite(XFTraceKind kind,
+                                    NSString *_Nullable eventName,
+                                    NSXMLElement *_Nullable element,
+                                    NSString *format, ...) NS_FORMAT_FUNCTION(4, 5);
+
+/// "<input class="…" id="…"/>" — the target description the XSLTForms
+/// console prints in its Dispatching/Captured lines.
+FOUNDATION_EXPORT NSString *XFTraceDescribeElement(NSXMLElement *_Nullable element);
+
+/// XsltForms_browser.name2string: "@Q{ns}name" for attributes,
+/// "Q{ns}name" for elements, "#text"/"#document"… otherwise — the node
+/// description in Setvalue/insert/Calculate lines.
+FOUNDATION_EXPORT NSString *XFTraceDescribeNode(NSXMLNode *_Nullable node);
+
 @protocol XFXMLEventHandler <NSObject>
 - (void)handleXMLEvent:(XFEvent *)event;
 @optional

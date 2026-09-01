@@ -109,6 +109,8 @@
     if (self.src.length == 0) {
         return YES;
     }
+    // debugConsole: "Loading src"
+    XFTraceWrite(XFTraceKindModel, nil, self.element, @"Loading %@", self.src);
     NSURL *url = [NSURL URLWithString:self.src];
     if (url == nil || url.scheme == nil) {
         if (self.baseURL) {

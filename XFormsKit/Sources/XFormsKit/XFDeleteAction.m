@@ -139,6 +139,12 @@
 
     self.lastDeletedNodes = deleted;
     if (deleted.count) {
+        // XFormsKit extension: XSLTForms' console does not log xf:delete,
+        // but the designer console wants the mutation visible.
+        XFTraceWrite(XFTraceKindAction, nil, self.element,
+                     @"delete %lu node(s), first %@",
+                     (unsigned long)deleted.count,
+                     XFTraceDescribeNode(deleted.firstObject));
         [self.model setRebuilded:YES];
         [du addChangedModel:self.model];
         NSMutableDictionary *evctx = [@{ @"deleted-nodes": deleted } mutableCopy];

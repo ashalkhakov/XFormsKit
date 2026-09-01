@@ -4,6 +4,7 @@
    drag-reorder drop slots), and the XML source view. */
 #import "XFDWindowControllerPriv.h"
 #import "XFDDocument.h"
+#import "XFDEventsConsole.h"
 
 @implementation XFDWindowController (XFDPreview)
 
@@ -36,6 +37,16 @@
     } else if ([[self window] firstResponder] == self.designOverlay) {
         [[self window] makeFirstResponder:nil];
     }
+}
+
+- (IBAction)toggleEventsConsole:(id)sender
+{
+    (void)sender;
+    /* The XSLTForms F1 console. The trace sink is engine-global, so the
+       console follows preview rebuilds without rewiring; the duplicate-id
+       scan runs against the host document at open, as the original does. */
+    [[XFDEventsConsole sharedConsole]
+        toggleWithHostDocument:self.processor.hostDocument];
 }
 
 #pragma mark - Design overlay (the element picker)

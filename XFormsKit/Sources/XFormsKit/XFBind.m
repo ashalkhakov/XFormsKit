@@ -238,6 +238,9 @@ static NSInteger XFNextDepsId(void)
             if (type) {
                 value = [type normalizeValue:value];
             }
+            // debugConsole: "Calculate node value"
+            XFTraceWrite(XFTraceKindModel, nil, self.element,
+                         @"Calculate %@ %@", XFTraceDescribeNode(node), value);
             [XFXML setStringValue:value ofNode:node];
             [self.model addChange:node];
             i++;

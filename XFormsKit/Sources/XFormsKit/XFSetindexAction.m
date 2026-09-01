@@ -1,4 +1,5 @@
 #import "XFSetindexAction.h"
+#import "XFXMLEvents.h"
 #import "XFRepeat.h"
 #import "XFModel.h"
 #import "XFXPath.h"
@@ -49,6 +50,9 @@
     if (isnan(n)) {
         return;
     }
+    // debugConsole: "setIndex index"
+    XFTraceWrite(XFTraceKindAction, nil, self.element,
+                 @"setIndex %lu", (unsigned long)(NSUInteger)n);
     [repeat setIndex:(NSUInteger)n];
 }
 

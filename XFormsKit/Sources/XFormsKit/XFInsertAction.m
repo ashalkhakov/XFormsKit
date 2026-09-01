@@ -225,6 +225,11 @@
         }
         NSXMLNode *clone = [self insertClone:origin intoParent:parent beforeNode:before];
         if (clone) {
+            // debugConsole: "insert node in parent at index - ctx"
+            XFTraceWrite(XFTraceKindAction, nil, self.element,
+                         @"insert %@ in %@ at %lu - %@",
+                         XFTraceDescribeNode(clone), XFTraceDescribeNode(parent),
+                         (unsigned long)location, XFTraceDescribeNode(ctxNode));
             [inserted addObject:clone];
             NSMutableArray *grown = [nodes mutableCopy] ?: [NSMutableArray array];
             [grown addObject:clone];

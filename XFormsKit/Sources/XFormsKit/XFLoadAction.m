@@ -105,6 +105,8 @@
         @"resource-uri": href ?: @""
     } mutableCopy];
 
+    // debugConsole: "Load href"
+    XFTraceWrite(XFTraceKindAction, nil, self.element, @"Load %@", href ?: @"");
     if (href.length == 0) {
         evcontext[@"error-type"] = @"resource-error";
         self.lastEventContext = evcontext;
