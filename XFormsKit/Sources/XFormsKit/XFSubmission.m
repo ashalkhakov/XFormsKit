@@ -679,13 +679,16 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
 
     if (self.asynchronous) {
         [du closeAction:@"submission"];
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-            NSError *net = nil;
-            XFSubmissionResponse *resp = [transport performRequest:req error:&net];
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [self finishWithResponse:resp error:net context:evcontext];
-            });
-        });
+        // The request runs off the main thread and the finish lands back
+        // on it through the RUN LOOP (performSelectorOnMainThread), not
+        // the main dispatch queue: a gnustep-base built without
+        // GS_USE_LIBDISPATCH_RUNLOOP never drains that queue from
+        // NSRunLoop, so a main-queue hop would hang waitUntilFinished:
+        // and every host that spins the loop for async submissions.
+        [self performSelectorInBackground:@selector(runAsyncRequest:)
+                               withObject:@{ @"transport": transport,
+                                             @"request": req,
+                                             @"context": evcontext }];
         return;
     }
 
@@ -805,6 +808,34 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     [XFXMLEvents dispatch:self name:@"xforms-submit-done" context:evcontext];
     [du closeAction:@"submission-finish"];
     self.pending = NO;
+}
+
+/// Background side of an asynchronous submission (see runWithContextNode:).
+- (void)runAsyncRequest:(NSDictionary *)job
+{
+    @autoreleasepool {
+        id<XFSubmissionTransport> transport = job[@"transport"];
+        NSError *net = nil;
+        XFSubmissionResponse *resp = [transport performRequest:job[@"request"] error:&net];
+        NSMutableDictionary *done = [NSMutableDictionary dictionary];
+        if (resp) {
+            done[@"response"] = resp;
+        }
+        if (net) {
+            done[@"error"] = net;
+        }
+        done[@"context"] = job[@"context"];
+        [self performSelectorOnMainThread:@selector(finishAsyncRequest:)
+                               withObject:done
+                            waitUntilDone:NO];
+    }
+}
+
+- (void)finishAsyncRequest:(NSDictionary *)done
+{
+    [self finishWithResponse:done[@"response"]
+                       error:done[@"error"]
+                     context:done[@"context"]];
 }
 
 - (BOOL)waitUntilFinished:(NSTimeInterval)timeout
