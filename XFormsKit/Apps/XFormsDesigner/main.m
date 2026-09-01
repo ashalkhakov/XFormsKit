@@ -5,11 +5,15 @@
    Copyright (c) 2026 the XFormsKit contributors. LGPL 2.1. */
 #import <AppKit/AppKit.h>
 #import <XFormsKit/XFormsKit.h>
+#import <XFormsKit/XFSubmission.h>
+#import <XFormsKit/XFSubmissionTransport.h>
+#import <XFormsKit/XFXML.h>
 #import "XFDDocument.h"
 #import "XFDRichTextField.h"
 #import "XFDIDRefField.h"
 #import "XFDXPathField.h"
 #import "XFDDesignOverlay.h"
+#import "XFDSubmissionTester.h"
 
 static BOOL XFDLoadNib(NSString *name, id owner)
 {
@@ -732,6 +736,52 @@ static int XFDRunSelfTest(NSString *path)
         if (![pre[@"ok"] boolValue] || [pre[@"matching"] unsignedIntegerValue] != 3
             || [pre[@"normalized"] length] != 0) {
             NSLog(@"SELFTEST empty predicate preview wrong: %@", pre);
+            return 1;
+        }
+    }
+    // submission tester core (headless — the panel is modal): the echo
+    // transport round-trips replace="instance" through the REAL submit
+    // path, extra headers inject like a host session, offline hits the
+    // xforms-submit-error path
+    {
+        NSError *sterr = nil;
+        XFProcessor *sp = [XFProcessor processorWithXMLString:
+            @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
+            @" xmlns:xf=\"http://www.w3.org/2002/xforms\">"
+            @"<head><xf:model><xf:instance id=\"d\"><data xmlns=\"\"><n>ping</n></data></xf:instance>"
+            @"<xf:submission id=\"s\" resource=\"http://echo.test/x\" method=\"post\""
+            @"  replace=\"instance\" instance=\"d\"/>"
+            @"</xf:model></head><body/></html>"
+                                                         error:&sterr];
+        if (sp == nil) {
+            NSLog(@"SELFTEST tester probe form failed: %@", sterr);
+            return 1;
+        }
+        XFSubmission *sub = sp.model.defaultSubmission;
+        XFSubmissionRequest *preview = [sub previewRequest];
+        if (![preview.URLString isEqualToString:@"http://echo.test/x"]
+            || ![(preview.body ?: @"") containsString:@"<n>ping</n>"]) {
+            NSLog(@"SELFTEST tester preview wrong: %@ %@", preview.URLString, preview.body);
+            return 1;
+        }
+        NSDictionary *run = XFDPerformSubmission(sub, [[XFDEchoTransport alloc] init],
+                                                 @{ @"X-Session": @"abc" });
+        XFSubmissionRequest *sent = run[@"request"];
+        if (![run[@"outcome"] isEqualToString:@"done"]
+            || ![sent.headers[@"X-Session"] isEqualToString:@"abc"]) {
+            NSLog(@"SELFTEST tester echo run wrong: %@", run);
+            return 1;
+        }
+        NSString *after = [XFXML stringValueOfNode:
+            [[sp.model.defaultSubmission targetInstance] documentElement]];
+        if (![after isEqualToString:@"ping"]) {
+            NSLog(@"SELFTEST tester echo replace lost the data: '%@'", after);
+            return 1;
+        }
+        NSDictionary *offline = XFDPerformSubmission(sub,
+            [[XFMapSubmissionTransport alloc] init], nil);
+        if (![offline[@"outcome"] isEqualToString:@"error"]) {
+            NSLog(@"SELFTEST tester offline run not an error: %@", offline);
             return 1;
         }
     }

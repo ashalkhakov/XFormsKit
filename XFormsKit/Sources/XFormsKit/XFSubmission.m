@@ -9,6 +9,7 @@
 #import "XFXPathValue.h"
 #import "XFExprContext.h"
 #import "XFNodeState.h"
+#import "XFProcessor.h"
 #import "XFXML.h"
 #import "XFXMLEvents.h"
 #import "XFEvent.h"
@@ -500,86 +501,16 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     [XFXMLEvents dispatch:self name:@"xforms-submit-error" context:ctx];
 }
 
-- (void)submit
+/// The request exactly as `submit` sends it — method mapping, media
+/// type rules, SOAPAction, evaluated xf:header list with @combine,
+/// Accept defaults, preemptive-authentication flag. Shared by the live
+/// path and previewRequest.
+- (XFSubmissionRequest *)buildRequestWithMethod:(NSString *)method
+                                         action:(NSString *)action
+                                           body:(NSString *)body
+                                       bodyData:(NSData *)bodyData
+                                      mediaType:(NSString *)mediaType
 {
-    if (self.pending) {
-        [self fail:[NSMutableDictionary dictionary] type:@"submission-in-progress"];
-        return;
-    }
-    self.pending = YES;
-    XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
-    [du openAction:@"submission"];
-
-    NSString *method = [self resolvedMethod];
-    NSString *action = [self resolvedResource];
-    NSMutableDictionary *evcontext = [@{
-        @"method": method,
-        @"resource-uri": action ?: @""
-    } mutableCopy];
-
-    NSXMLNode *node = [self submissionNode];
-    if (self.validate && node && ![self nodeIsValid:node]) {
-        evcontext[@"error-type"] = @"validation-error";
-        self.lastEventContext = evcontext;
-        [self.model addChange:node];
-        [XFXMLEvents dispatch:self.model name:@"xforms-rebuild"];
-        [self.model refresh];
-        [self fail:evcontext type:@"validation-error"];
-        [du closeAction:@"submission"];
-        self.pending = NO;
-        return;
-    }
-
-    if (([method isEqualToString:@"get"] || [method isEqualToString:@"delete"]) &&
-        ![self.serialization isEqualToString:@"none"] && node) {
-        NSString *qs = [self serializeNode:node method:method];
-        if (qs.length) {
-            action = [action stringByAppendingFormat:@"%@%@",
-                      [action rangeOfString:@"?"].location == NSNotFound ? @"?" : @"&",
-                      qs];
-            evcontext[@"resource-uri"] = action;
-        }
-    }
-
-    NSString *body = @"";
-    NSData *bodyData = nil;
-    NSString *mediaType = self.mediatype;
-    if (![self.serialization isEqualToString:@"none"]) {
-        [XFXMLEvents dispatch:self name:@"xforms-submit-serialize" context:evcontext];
-        if ([self isMultipartSerialization] && node
-            && !([method isEqualToString:@"get"] || [method isEqualToString:@"delete"])) {
-            NSString *mt = nil;
-            bodyData = [self multipartBodyFromNode:node mediaType:&mt];
-            mediaType = self.mediatype.length ? self.mediatype : mt;
-            body = [[NSString alloc] initWithData:bodyData encoding:NSISOLatin1StringEncoding] ?: @"";
-            self.lastBodyData = bodyData;
-            self.lastSerialization = body;
-            evcontext[@"submission-body"] = body;
-        } else {
-            body = [self serializeNode:node method:method] ?: @"";
-            self.lastSerialization = body;
-            self.lastBodyData = [body dataUsingEncoding:NSUTF8StringEncoding];
-            evcontext[@"submission-body"] = body;
-        }
-    } else {
-        self.lastSerialization = @"";
-        self.lastBodyData = nil;
-    }
-
-    if ([self.replace isEqualToString:@"none"] && [self.serialization isEqualToString:@"none"]
-        && action.length == 0) {
-        self.lastEventContext = evcontext;
-        [XFXMLEvents dispatch:self name:@"xforms-submit-done" context:evcontext];
-        [du closeAction:@"submission"];
-        self.pending = NO;
-        return;
-    }
-
-    id<XFSubmissionTransport> transport = self.transport ?: self.model.transport;
-    if (transport == nil) {
-        transport = [[XFHTTPSubmissionTransport alloc] init];
-    }
-
     XFSubmissionRequest *req = [[XFSubmissionRequest alloc] init];
     // XSLTForms openRequest(method.split("-").pop()): the XForms methods
     // urlencoded-post / multipart-post / form-data-post are HTTP POST (G-07)
@@ -668,6 +599,143 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
         }
     }
     req.headers = hdrs;
+    // preemptive Basic only when the author says so (Orbeon's
+    // xxf:preemptive-authentication spelling, any prefix)
+    for (NSXMLNode *attr in [self.element attributes]) {
+        if ([[attr localName] isEqualToString:@"preemptive-authentication"]) {
+            req.preemptiveAuth = [[attr stringValue] isEqualToString:@"true"];
+        }
+    }
+    return req;
+}
+
+/// The exact request `submit` would send from the CURRENT instance
+/// state — the designer's submission tester shows this. No events are
+/// dispatched (xforms-submit-serialize included), no validation gate
+/// runs, and no submission state changes: a pure preview
+- (XFSubmissionRequest *)previewRequest
+{
+    NSString *method = [self resolvedMethod];
+    NSString *action = [self resolvedResource];
+    NSXMLNode *node = [self submissionNode];
+    if (([method isEqualToString:@"get"] || [method isEqualToString:@"delete"]) &&
+        ![self.serialization isEqualToString:@"none"] && node) {
+        NSString *qs = [self serializeNode:node method:method];
+        if (qs.length) {
+            action = [action stringByAppendingFormat:@"%@%@",
+                      [action rangeOfString:@"?"].location == NSNotFound ? @"?" : @"&",
+                      qs];
+        }
+    }
+    NSString *body = @"";
+    NSData *bodyData = nil;
+    NSString *mediaType = self.mediatype;
+    if (![self.serialization isEqualToString:@"none"]) {
+        if ([self isMultipartSerialization] && node
+            && !([method isEqualToString:@"get"] || [method isEqualToString:@"delete"])) {
+            NSString *mt = nil;
+            bodyData = [self multipartBodyFromNode:node mediaType:&mt];
+            mediaType = self.mediatype.length ? self.mediatype : mt;
+            body = [[NSString alloc] initWithData:bodyData encoding:NSISOLatin1StringEncoding] ?: @"";
+        } else {
+            body = [self serializeNode:node method:method] ?: @"";
+            bodyData = [body dataUsingEncoding:NSUTF8StringEncoding];
+        }
+    }
+    return [self buildRequestWithMethod:method action:action
+                                   body:body bodyData:bodyData mediaType:mediaType];
+}
+
+- (void)submit
+{
+    if (self.pending) {
+        [self fail:[NSMutableDictionary dictionary] type:@"submission-in-progress"];
+        return;
+    }
+    self.pending = YES;
+    XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
+    [du openAction:@"submission"];
+
+    NSString *method = [self resolvedMethod];
+    NSString *action = [self resolvedResource];
+    NSMutableDictionary *evcontext = [@{
+        @"method": method,
+        @"resource-uri": action ?: @""
+    } mutableCopy];
+
+    NSXMLNode *node = [self submissionNode];
+    if (self.validate && node && ![self nodeIsValid:node]) {
+        evcontext[@"error-type"] = @"validation-error";
+        self.lastEventContext = evcontext;
+        [self.model addChange:node];
+        [XFXMLEvents dispatch:self.model name:@"xforms-rebuild"];
+        [self.model refresh];
+        [self fail:evcontext type:@"validation-error"];
+        [du closeAction:@"submission"];
+        self.pending = NO;
+        return;
+    }
+
+    if (([method isEqualToString:@"get"] || [method isEqualToString:@"delete"]) &&
+        ![self.serialization isEqualToString:@"none"] && node) {
+        NSString *qs = [self serializeNode:node method:method];
+        if (qs.length) {
+            action = [action stringByAppendingFormat:@"%@%@",
+                      [action rangeOfString:@"?"].location == NSNotFound ? @"?" : @"&",
+                      qs];
+            evcontext[@"resource-uri"] = action;
+        }
+    }
+
+    NSString *body = @"";
+    NSData *bodyData = nil;
+    NSString *mediaType = self.mediatype;
+    if (![self.serialization isEqualToString:@"none"]) {
+        [XFXMLEvents dispatch:self name:@"xforms-submit-serialize" context:evcontext];
+        if ([self isMultipartSerialization] && node
+            && !([method isEqualToString:@"get"] || [method isEqualToString:@"delete"])) {
+            NSString *mt = nil;
+            bodyData = [self multipartBodyFromNode:node mediaType:&mt];
+            mediaType = self.mediatype.length ? self.mediatype : mt;
+            body = [[NSString alloc] initWithData:bodyData encoding:NSISOLatin1StringEncoding] ?: @"";
+            self.lastBodyData = bodyData;
+            self.lastSerialization = body;
+            evcontext[@"submission-body"] = body;
+        } else {
+            body = [self serializeNode:node method:method] ?: @"";
+            self.lastSerialization = body;
+            self.lastBodyData = [body dataUsingEncoding:NSUTF8StringEncoding];
+            evcontext[@"submission-body"] = body;
+        }
+    } else {
+        self.lastSerialization = @"";
+        self.lastBodyData = nil;
+    }
+
+    if ([self.replace isEqualToString:@"none"] && [self.serialization isEqualToString:@"none"]
+        && action.length == 0) {
+        self.lastEventContext = evcontext;
+        [XFXMLEvents dispatch:self name:@"xforms-submit-done" context:evcontext];
+        [du closeAction:@"submission"];
+        self.pending = NO;
+        return;
+    }
+
+    // one transport per DOCUMENT by default: its cookie jar makes
+    // "login submission, then call the API" work
+    id<XFSubmissionTransport> transport = self.transport ?: self.model.transport;
+    if (transport == nil && [self.model.owner isKindOfClass:[XFProcessor class]]) {
+        transport = [(XFProcessor *)self.model.owner defaultTransport];
+    }
+    if (transport == nil) {
+        transport = [[XFHTTPSubmissionTransport alloc] init];
+    }
+
+    XFSubmissionRequest *req = [self buildRequestWithMethod:method
+                                                     action:action
+                                                       body:body
+                                                   bodyData:bodyData
+                                                  mediaType:mediaType];
 
     if (![method isEqualToString:@"get"] && ![method isEqualToString:@"delete"]
         && node == nil && ![self.serialization isEqualToString:@"none"]) {

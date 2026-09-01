@@ -163,6 +163,9 @@
     }
 
     id<XFSubmissionTransport> transport = self.model.transport;
+    if (transport == nil && [self.model.owner isKindOfClass:[XFProcessor class]]) {
+        transport = [(XFProcessor *)self.model.owner defaultTransport];
+    }
     if (transport == nil) {
         transport = [[XFHTTPSubmissionTransport alloc] init];
     }

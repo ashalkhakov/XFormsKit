@@ -1,4 +1,5 @@
 #import "XFProcessor.h"
+#import "XFSubmissionTransport.h"
 #import "XFHostNode.h"
 #import "XFXPath.h"
 #import "XFType.h"
@@ -29,6 +30,7 @@
 #import <Foundation/NSXMLElement.h>
 
 @interface XFProcessor ()
+@property (nonatomic, strong, readwrite) XFHTTPSubmissionTransport *defaultTransport;
 @property (nonatomic, strong, readwrite) NSXMLDocument *hostDocument;
 @property (nonatomic, strong, readwrite) XFModel *model;
 @property (nonatomic, copy, readwrite) NSArray<XFModel *> *models;
@@ -675,6 +677,14 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
 - (XFRepeat *)repeatWithIdentifier:(NSString *)identifier
 {
     return [self.model repeatWithIdentifier:identifier];
+}
+
+- (XFHTTPSubmissionTransport *)defaultTransport
+{
+    if (_defaultTransport == nil) {
+        _defaultTransport = [[XFHTTPSubmissionTransport alloc] init];
+    }
+    return _defaultTransport;
 }
 
 - (NSString *)effectiveLanguage

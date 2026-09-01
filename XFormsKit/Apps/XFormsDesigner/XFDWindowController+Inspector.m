@@ -7,6 +7,7 @@
 #import "XFDDocument.h"
 #import "XFDEditors.h"
 #import "XFDInspectorSpecs.h"
+#import "XFDSubmissionTester.h"
 #import "DMTabBar.h"
 
 @implementation XFDWindowController (XFDInspector)
@@ -646,6 +647,17 @@
         }
     }
     return [[[self processor] defaultInstance] documentElement];
+}
+
+- (IBAction)testSubmissionClicked:(id)sender
+{
+    (void)sender;
+    NSString *identifier = nil;
+    if ([self pageForElement:self.selected] == XFDPageSubmission) {
+        identifier = [[self.selected attributeForName:@"id"] stringValue];
+    }
+    [XFDSubmissionTester runForProcessor:[self processor]
+                       initialSubmission:identifier];
 }
 
 - (void)showAttributesGroup

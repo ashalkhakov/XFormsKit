@@ -11,6 +11,86 @@
 #import <XFormsKit/XFNodeState.h>
 #import <XFormsKit/XFUploadControl.h>
 
+
+#pragma mark - Transport policy test doubles
+
+/// Scripted HTTP conversation: performSingleRequest pops the next canned
+/// response and records the hop it was asked to make — the POLICY above
+/// it (redirects, cookies, challenges) is what the tests observe.
+@interface XFScriptedHTTPTransport : XFHTTPSubmissionTransport
+@property (nonatomic, strong) NSMutableArray<XFSubmissionResponse *> *script;
+@property (nonatomic, strong) NSMutableArray<XFSubmissionRequest *> *hops;
+@property (nonatomic, copy) NSString *fixedCNonce;
+@end
+
+@implementation XFScriptedHTTPTransport
+
+- (instancetype)init
+{
+    self = [super init];
+    if (self) {
+        _script = [NSMutableArray array];
+        _hops = [NSMutableArray array];
+    }
+    return self;
+}
+
+- (void)addResponse:(NSInteger)status headers:(NSDictionary *)headers body:(NSString *)body
+{
+    XFSubmissionResponse *r = [[XFSubmissionResponse alloc] init];
+    r.statusCode = status;
+    r.headers = headers ?: @{};
+    r.body = body ?: @"";
+    [self.script addObject:r];
+}
+
+- (XFSubmissionResponse *)performSingleRequest:(XFSubmissionRequest *)request
+                                         error:(NSError **)error
+{
+    (void)error;
+    [self.hops addObject:request];
+    if (self.script.count == 0) {
+        XFSubmissionResponse *ok = [[XFSubmissionResponse alloc] init];
+        ok.statusCode = 200;
+        ok.body = @"";
+        return ok;
+    }
+    XFSubmissionResponse *next = self.script.firstObject;
+    [self.script removeObjectAtIndex:0];
+    return next;
+}
+
+- (NSString *)makeCNonce
+{
+    return self.fixedCNonce ?: [super makeCNonce];
+}
+
+@end
+
+/// Fixed-credential host port.
+@interface XFTestAuthProvider : NSObject <XFSubmissionAuth>
+@property (nonatomic, copy) NSString *user;
+@property (nonatomic, copy) NSString *password;
+@property (nonatomic, strong) NSURLProtectionSpace *lastSpace;
+@end
+
+@implementation XFTestAuthProvider
+
+- (NSURLCredential *)credentialForProtectionSpace:(NSURLProtectionSpace *)space
+                                          request:(XFSubmissionRequest *)request
+{
+    (void)request;
+    self.lastSpace = space;
+    if (self.user.length == 0) {
+        return nil;
+    }
+    return [NSURLCredential credentialWithUser:self.user
+                                      password:self.password ?: @""
+                                   persistence:NSURLCredentialPersistenceNone];
+}
+
+@end
+
 @interface XFSubmissionTests : XCTestCase
 @end
 
@@ -665,6 +745,251 @@
     XCTAssertEqualObjects(body, (@{ @"rows": @{ @"row": @[ @{ @"a": @"1.5", @"b": @"x,y" }, @{ @"a": @"2", @"b": @"z" } ] } }));
     [self send:p identifier:@"sc"];
     XCTAssertEqualObjects(map.lastRequest.body, @"a;b\n1,5;x,y\n2;z\n");
+}
+
+#pragma mark - Transport policy (redirects, cookies, auth)
+
+- (XFSubmissionRequest *)postRequestTo:(NSString *)url
+{
+    XFSubmissionRequest *r = [[XFSubmissionRequest alloc] init];
+    r.method = @"post";
+    r.URLString = url;
+    r.body = @"<x/>";
+    r.mediaType = @"application/xml";
+    return r;
+}
+
+- (void)testTransportRedirectRules
+{
+    // 302 on POST: browsers rewrite to GET and never replay the body
+    XFScriptedHTTPTransport *t = [[XFScriptedHTTPTransport alloc] init];
+    [t addResponse:302 headers:@{ @"Location": @"/moved" } body:nil];
+    [t addResponse:200 headers:@{} body:@"ok"];
+    XFSubmissionResponse *resp = [t performRequest:
+        [self postRequestTo:@"http://one.test/start"] error:NULL];
+    XCTAssertEqual(resp.statusCode, (NSInteger)200);
+    XCTAssertEqual(t.hops.count, (NSUInteger)2);
+    XCTAssertEqualObjects(t.hops[1].URLString, @"http://one.test/moved", @"relative Location resolves");
+    XCTAssertEqualObjects([t.hops[1].method lowercaseString], @"get");
+    XCTAssertNil(t.hops[1].body, @"no POST body replay through a redirect");
+
+    // 307 preserves the method and the body
+    t = [[XFScriptedHTTPTransport alloc] init];
+    [t addResponse:307 headers:@{ @"Location": @"http://one.test/again" } body:nil];
+    [t addResponse:200 headers:@{} body:@"ok"];
+    resp = [t performRequest:[self postRequestTo:@"http://one.test/start"] error:NULL];
+    XCTAssertEqualObjects([t.hops[1].method lowercaseString], @"post");
+    XCTAssertEqualObjects(t.hops[1].body, @"<x/>");
+
+    // the hop limit returns the final 3xx instead of looping forever
+    t = [[XFScriptedHTTPTransport alloc] init];
+    t.maxRedirects = 3;
+    for (int i = 0; i < 6; i++) {
+        [t addResponse:302 headers:@{ @"Location": @"/loop" } body:nil];
+    }
+    resp = [t performRequest:[self postRequestTo:@"http://one.test/start"] error:NULL];
+    XCTAssertEqual(resp.statusCode, (NSInteger)302);
+    XCTAssertEqual(t.hops.count, (NSUInteger)4);   // start + 3 hops
+}
+
+- (void)testTransportRedirectDropsAuthorizationCrossOrigin
+{
+    XFScriptedHTTPTransport *t = [[XFScriptedHTTPTransport alloc] init];
+    [t addResponse:302 headers:@{ @"Location": @"http://other.test/target" } body:nil];
+    [t addResponse:200 headers:@{} body:@"ok"];
+    XFSubmissionRequest *req = [self postRequestTo:@"http://one.test/start"];
+    req.headers = @{ @"Authorization": @"Bearer secret", @"X-Trace": @"1" };
+    [t performRequest:req error:NULL];
+    XCTAssertEqualObjects(t.hops[0].headers[@"Authorization"], @"Bearer secret");
+    XCTAssertNil(t.hops[1].headers[@"Authorization"],
+                 @"credentials never follow a cross-origin redirect");
+    XCTAssertEqualObjects(t.hops[1].headers[@"X-Trace"], @"1", @"ordinary headers do");
+}
+
+- (void)testTransportCookieJar
+{
+    XFScriptedHTTPTransport *t = [[XFScriptedHTTPTransport alloc] init];
+    [t addResponse:200 headers:@{ @"Set-Cookie": @"sid=abc123; Path=/" } body:@"login"];
+    [t addResponse:200 headers:@{} body:@"data"];
+    [t addResponse:200 headers:@{} body:@"other"];
+    [t performRequest:[self postRequestTo:@"http://api.test/login"] error:NULL];
+    [t performRequest:[self postRequestTo:@"http://api.test/data"] error:NULL];
+    [t performRequest:[self postRequestTo:@"http://elsewhere.test/x"] error:NULL];
+    XCTAssertNil(t.hops[0].headers[@"Cookie"]);
+    XCTAssertEqualObjects(t.hops[1].headers[@"Cookie"], @"sid=abc123",
+                          @"the jar returns the cookie to its host");
+    XCTAssertNil(t.hops[2].headers[@"Cookie"], @"never to another host");
+
+    // Secure cookies stay off plain http (a fresh host: api.test above
+    // still holds sid)
+    XFCookieJar *jar = t.cookieJar;
+    [jar storeCookiesFromHeaders:@{ @"Set-Cookie": @"tok=s3cret; Secure" }
+                          forURL:[NSURL URLWithString:@"https://secure.test/login"]];
+    XCTAssertNil([jar cookieHeaderForURL:[NSURL URLWithString:@"http://secure.test/data"]]);
+    XCTAssertEqualObjects([jar cookieHeaderForURL:[NSURL URLWithString:@"https://secure.test/data"]],
+                          @"tok=s3cret");
+
+    // Max-Age=0 deletes
+    [jar storeCookiesFromHeaders:@{ @"Set-Cookie": @"tok=; Max-Age=0" }
+                          forURL:[NSURL URLWithString:@"https://secure.test/logout"]];
+    XCTAssertNil([jar cookieHeaderForURL:[NSURL URLWithString:@"https://secure.test/data"]]);
+}
+
+- (void)testProcessorDefaultTransportIsShared
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:@"<xf:instance><data xmlns=\"\"><n>1</n></data></xf:instance>"
+                          extra:nil error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XCTAssertNotNil(p.defaultTransport);
+    XCTAssertEqual(p.defaultTransport, p.defaultTransport,
+                   @"one transport (and one cookie jar) per document");
+}
+
+- (void)testTransportBasicAuthOneRetry
+{
+    XFScriptedHTTPTransport *t = [[XFScriptedHTTPTransport alloc] init];
+    XFTestAuthProvider *auth = [[XFTestAuthProvider alloc] init];
+    auth.user = @"Aladdin";
+    auth.password = @"open sesame";
+    t.auth = auth;
+    [t addResponse:401 headers:@{ @"WWW-Authenticate": @"Basic realm=\"cave\"" } body:nil];
+    [t addResponse:200 headers:@{} body:@"in"];
+    XFSubmissionResponse *resp = [t performRequest:
+        [self postRequestTo:@"http://one.test/protected"] error:NULL];
+    XCTAssertEqual(resp.statusCode, (NSInteger)200);
+    XCTAssertEqual(t.hops.count, (NSUInteger)2);
+    XCTAssertNil(t.hops[0].headers[@"Authorization"], @"never preemptive by default");
+    // RFC 2617's own Basic example pair
+    XCTAssertEqualObjects(t.hops[1].headers[@"Authorization"],
+                          @"Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==");
+    XCTAssertEqualObjects(auth.lastSpace.realm, @"cave");
+
+    // wrong credentials: ONE retry, then the 401 flows out (submit-error)
+    t = [[XFScriptedHTTPTransport alloc] init];
+    t.auth = auth;
+    [t addResponse:401 headers:@{ @"WWW-Authenticate": @"Basic realm=\"cave\"" } body:nil];
+    [t addResponse:401 headers:@{ @"WWW-Authenticate": @"Basic realm=\"cave\"" } body:nil];
+    resp = [t performRequest:[self postRequestTo:@"http://one.test/protected"] error:NULL];
+    XCTAssertEqual(resp.statusCode, (NSInteger)401);
+    XCTAssertEqual(t.hops.count, (NSUInteger)2, @"exactly one retry");
+
+    // no host credentials: no retry at all
+    t = [[XFScriptedHTTPTransport alloc] init];
+    [t addResponse:401 headers:@{ @"WWW-Authenticate": @"Basic realm=\"cave\"" } body:nil];
+    resp = [t performRequest:[self postRequestTo:@"http://one.test/protected"] error:NULL];
+    XCTAssertEqual(resp.statusCode, (NSInteger)401);
+    XCTAssertEqual(t.hops.count, (NSUInteger)1);
+}
+
+- (void)testTransportDigestAuthRFC2617Vector
+{
+    XFScriptedHTTPTransport *t = [[XFScriptedHTTPTransport alloc] init];
+    t.fixedCNonce = @"0a4f113b";
+    XFTestAuthProvider *auth = [[XFTestAuthProvider alloc] init];
+    auth.user = @"Mufasa";
+    auth.password = @"Circle Of Life";
+    t.auth = auth;
+    [t addResponse:401 headers:@{ @"WWW-Authenticate":
+        @"Digest realm=\"testrealm@host.com\", qop=\"auth,auth-int\", "
+        @"nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\", "
+        @"opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"" } body:nil];
+    [t addResponse:200 headers:@{} body:@"in"];
+    XFSubmissionRequest *req = [[XFSubmissionRequest alloc] init];
+    req.method = @"get";
+    req.URLString = @"http://www.nowhere.org/dir/index.html";
+    XFSubmissionResponse *resp = [t performRequest:req error:NULL];
+    XCTAssertEqual(resp.statusCode, (NSInteger)200);
+    NSString *authz = t.hops[1].headers[@"Authorization"];
+    XCTAssertTrue([authz hasPrefix:@"Digest username=\"Mufasa\""], @"%@", authz);
+    // the RFC's published response hash — the password itself never travels
+    XCTAssertTrue([authz containsString:@"response=\"6629fae49393a05397450978507c4ef1\""], @"%@", authz);
+    XCTAssertTrue([authz containsString:@"qop=auth"], @"%@", authz);
+    XCTAssertTrue([authz containsString:@"nc=00000001"], @"%@", authz);
+    XCTAssertFalse([authz containsString:@"Circle"], @"no password in the header");
+}
+
+- (void)testTransportPreemptiveBasicOnlyWhenAskedFor
+{
+    XFScriptedHTTPTransport *t = [[XFScriptedHTTPTransport alloc] init];
+    XFTestAuthProvider *auth = [[XFTestAuthProvider alloc] init];
+    auth.user = @"u";
+    auth.password = @"p";
+    t.auth = auth;
+    [t addResponse:200 headers:@{} body:@"ok"];
+    XFSubmissionRequest *req = [self postRequestTo:@"http://one.test/x"];
+    req.preemptiveAuth = YES;
+    [t performRequest:req error:NULL];
+    XCTAssertTrue([t.hops[0].headers[@"Authorization"] hasPrefix:@"Basic "],
+                  @"preemptive Basic when the author/host opted in");
+}
+
+- (void)testHeaderInjectingTransport
+{
+    XFMapSubmissionTransport *inner = [[XFMapSubmissionTransport alloc] init];
+    [inner setStatus:200 body:@"ok" forURL:@"http://api.test/x"];
+    XFHeaderInjectingTransport *wrap = [[XFHeaderInjectingTransport alloc] init];
+    wrap.inner = inner;
+    wrap.extraHeaders = @{ @"Authorization": @"Bearer host-session",
+                           @"X-Injected": @"yes" };
+    XFSubmissionRequest *req = [self postRequestTo:@"http://api.test/x"];
+    req.headers = @{ @"Authorization": @"Bearer author-wins" };
+    [wrap performRequest:req error:NULL];
+    XCTAssertEqualObjects(inner.lastRequest.headers[@"Authorization"], @"Bearer author-wins",
+                          @"the form author's header wins over the injected one");
+    XCTAssertEqualObjects(inner.lastRequest.headers[@"X-Injected"], @"yes");
+}
+
+- (void)testSubmissionPreemptiveAuthenticationAttribute
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+        @"<xf:instance><data xmlns=\"\"><n>1</n></data></xf:instance>"
+        @"<xf:submission id=\"s\" resource=\"http://api.test/x\" method=\"post\""
+        @"  replace=\"none\" xxf:preemptive-authentication=\"true\""
+        @"  xmlns:xxf=\"http://orbeon.org/oxf/xml/xforms\"/>"
+        @"<xf:send id=\"go\" submission=\"s\"/>"
+                          extra:nil error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFMapSubmissionTransport *map = [[XFMapSubmissionTransport alloc] init];
+    [map setStatus:200 body:@"" forURL:@"http://api.test/x"];
+    p.model.transport = map;
+    [self send:p identifier:@"go"];
+    XCTAssertTrue(map.lastRequest.preemptiveAuth);
+}
+
+- (void)testPreviewRequestMatchesSubmitWithoutSideEffects
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+        @"<xf:instance><data xmlns=\"\"><q>xforms</q></data></xf:instance>"
+        @"<xf:instance id=\"auth\"><auth xmlns=\"\"><token>t0k3n</token></auth></xf:instance>"
+        @"<xf:submission id=\"s\" resource=\"http://api.test/search\" method=\"get\""
+        @"  replace=\"none\">"
+        @"  <xf:header combine=\"replace\"><xf:name>Authorization</xf:name>"
+        @"    <xf:value value=\"concat('Bearer ', instance('auth')/token)\"/></xf:header>"
+        @"</xf:submission>"
+        @"<xf:send id=\"go\" submission=\"s\"/>"
+                          extra:nil error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFSubmission *sub = p.model.defaultSubmission;
+    XFSubmissionRequest *preview = [sub previewRequest];
+    XCTAssertEqualObjects(preview.method, @"get");
+    XCTAssertEqualObjects(preview.URLString, @"http://api.test/search?q=xforms",
+                          @"GET serializes into the query");
+    XCTAssertEqualObjects(preview.headers[@"Authorization"], @"Bearer t0k3n",
+                          @"xf:header evaluated from instance data");
+    XCTAssertFalse(sub.pending, @"a preview never runs the submission");
+    XCTAssertNil(sub.lastEventContext, @"no events, no state");
+
+    // the live submit builds the same request
+    XFMapSubmissionTransport *map = [[XFMapSubmissionTransport alloc] init];
+    [map setStatus:200 body:@"" forURL:@"http://api.test/search"];
+    p.model.transport = map;
+    [self send:p identifier:@"go"];
+    XCTAssertEqualObjects(map.lastRequest.URLString, preview.URLString);
+    XCTAssertEqualObjects(map.lastRequest.headers[@"Authorization"],
+                          preview.headers[@"Authorization"]);
 }
 
 @end

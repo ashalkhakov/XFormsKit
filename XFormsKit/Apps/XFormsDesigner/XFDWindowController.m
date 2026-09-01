@@ -14,6 +14,7 @@
 #import "XFDInspectorSpecs.h"
 #import "XFDPalettePanel.h"
 #import "XFDInstanceXMLEditor.h"
+#import "XFDSubmissionTester.h"
 #import "DMTabBar.h"
 #import "DMTabBarItem.h"
 
@@ -28,6 +29,7 @@ __attribute__((used)) static void (*const XFDWindowControllerFileChecks[])(void)
     XFDInstanceXMLEditorFilePresent,
     XFDEventsPaneFilePresent,
     XFDActionRowsPaneFilePresent,
+    XFDSubmissionTesterFilePresent,
 };
 
 @implementation XFDWindowController
@@ -84,6 +86,20 @@ __attribute__((used)) static void (*const XFDWindowControllerFileChecks[])(void)
     [self.modeControl setSelectedSegment:0];
     [self.identityTitleField setFont:
         [NSFont boldSystemFontOfSize:[NSFont smallSystemFontSize]]];
+
+    /* The Submission page gets its Test… button in code — the xib stays
+       untouched (the tester panel itself is XFDSubmissionTester). */
+    NSView *submissionPage = [[self.inspectorKindTabView
+        tabViewItemAtIndex:XFDPageSubmission] view];
+    NSButton *testButton = [[NSButton alloc] initWithFrame:NSMakeRect(12, 8, 150, 26)];
+    [testButton setTitle:@"Test Submission…"];
+    [testButton setBezelStyle:NSRoundedBezelStyle];
+    [[testButton cell] setControlSize:NSSmallControlSize];
+    [testButton setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+    [testButton setToolTip:@"Postman-style test run: preview the exact request, send it through the real xforms-submit path, inspect the response."];
+    [testButton setTarget:self];
+    [testButton setAction:@selector(testSubmissionClicked:)];
+    [submissionPage addSubview:testButton];
 
     [self.outline setTarget:self];
     [self.outline setDoubleAction:@selector(outlineDoubleClicked:)];

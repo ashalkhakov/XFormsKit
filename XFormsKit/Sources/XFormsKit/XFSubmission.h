@@ -6,6 +6,7 @@
 @class XFBinding;
 @class XFXPath;
 @protocol XFSubmissionTransport;
+@class XFSubmissionRequest;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -44,6 +45,10 @@ NS_ASSUME_NONNULL_BEGIN
                                          error:(NSError **)error;
 
 - (void)submit;
+/// The exact request `submit` would send from the CURRENT instance state
+/// — no events, no validation gate, no state change: the designer's
+/// submission tester previews with this.
+- (nullable XFSubmissionRequest *)previewRequest;
 - (nullable XFInstance *)targetInstance;
 /// Spin the current run loop until `pending` clears or `timeout` elapses.
 - (BOOL)waitUntilFinished:(NSTimeInterval)timeout;

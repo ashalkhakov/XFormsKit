@@ -27,6 +27,8 @@ FOUNDATION_EXPORT NSString * const XFWhitespaceMarkerText;
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class XFHTTPSubmissionTransport;
+
 @interface XFProcessor : NSObject <XFModelOwner>
 
 @property (nonatomic, strong, readonly) NSXMLDocument *hostDocument;
@@ -85,6 +87,13 @@ NS_ASSUME_NONNULL_BEGIN
                     contextNode:(nullable NSXMLNode *)contextNode;
 /// The subform whose imported content holds `element` (nil = main form).
 - (nullable XFSubform *)subformContainingElement:(NSXMLNode *)element;
+/// The document's default HTTP transport (created lazily): ONE per
+/// processor, so its cookie jar and credential retries persist across
+/// this document's submissions and loads (never the process-shared
+/// cookie storage). A model.transport override still wins per model;
+/// hosts set auth / inject headers here.
+@property (nonatomic, strong, readonly) XFHTTPSubmissionTransport *defaultTransport;
+
 /// XsltForms_globals.language: the language used by itext() (G-94). nil =
 /// the user's preferred language (NSLocale).
 @property (nonatomic, copy, nullable) NSString *language;

@@ -123,6 +123,7 @@
 - (IBAction)inspectorChanged:(id)sender;
 - (IBAction)createBindFromRef:(id)sender;
 - (IBAction)elementCreateBoundControl:(id)sender;
+- (IBAction)testSubmissionClicked:(id)sender;
 @end
 
 /* XFDWindowController+Preview.m â the center pane and design mode */
