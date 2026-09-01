@@ -58,6 +58,11 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     sub.targetref = [[element attributeForName:@"targetref"] stringValue];
     sub.serialization = [[element attributeForName:@"serialization"] stringValue] ?: @"application/xml";
     sub.mediatype = [[element attributeForName:@"mediatype"] stringValue];
+    sub.encoding = [[element attributeForName:@"encoding"] stringValue];
+    sub.standalone = [[element attributeForName:@"standalone"] stringValue];
+    NSString *omit = [[[element attributeForName:@"omit-xml-declaration"] stringValue] lowercaseString];
+    sub.omitXMLDeclaration = [omit isEqualToString:@"true"] || [omit isEqualToString:@"1"]
+        || [omit isEqualToString:@"yes"];
     // XForms 1.1: validate / relevant default to false with serialization="none" (G-58)
     BOOL noSerialization = [sub.serialization isEqualToString:@"none"];
     sub.validate = XFBoolAttr(element, @"validate", !noSerialization);
@@ -212,10 +217,24 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
 
 - (NSString *)resolvedResource
 {
+    NSString *raw;
     if (self.resourceExpr) {
-        return [self.resourceExpr stringValueInContext:[self rootContext] error:NULL] ?: @"";
+        raw = [self.resourceExpr stringValueInContext:[self rootContext] error:NULL] ?: @"";
+    } else {
+        raw = self.resource ?: @"";
     }
-    return self.resource ?: @"";
+    // XSLTForms leaves URI resolution to the browser (XMLHttpRequest
+    // resolves against the page URI); headless, resolve a RELATIVE
+    // action/resource against the document base ourselves, like
+    // instance/@src. An absolute URI passes through unchanged, and a
+    // string NSURL cannot parse falls back to the raw text.
+    if (raw.length && self.baseURL) {
+        NSURL *url = [NSURL URLWithString:raw relativeToURL:self.baseURL];
+        if (url != nil && url.scheme.length > 0) {
+            return [url absoluteString];
+        }
+    }
+    return raw;
 }
 
 - (NSXMLNode *)submissionNode
@@ -417,12 +436,34 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
             i++;
         }
         self.cdataTexts = nil;
-        return xml;
+        return [self prependXMLDeclaration:xml];
     }
     if ([node isKindOfClass:[NSXMLElement class]]) {
-        return [(NSXMLElement *)node XMLString];
+        return [self prependXMLDeclaration:[(NSXMLElement *)node XMLString]];
     }
     return [node XMLString] ?: [XFXML stringValueOfNode:node];
+}
+
+/// The XML declaration for the serialized body (XForms 1.1 11.1):
+/// version 1.0 plus the @encoding (default UTF-8) and, when the
+/// @standalone attribute is present, a standalone declaration.
+/// @omit-xml-declaration suppresses it.
+- (NSString *)prependXMLDeclaration:(NSString *)xml
+{
+    if (self.omitXMLDeclaration || xml.length == 0) {
+        return xml;
+    }
+    NSMutableString *decl =
+        [NSMutableString stringWithFormat:@"<?xml version=\"1.0\" encoding=\"%@\"",
+                                          self.encoding.length ? self.encoding : @"UTF-8"];
+    if (self.standalone.length) {
+        BOOL yes = [self.standalone isEqualToString:@"true"]
+            || [self.standalone isEqualToString:@"yes"]
+            || [self.standalone isEqualToString:@"1"];
+        [decl appendFormat:@" standalone=\"%@\"", yes ? @"yes" : @"no"];
+    }
+    [decl appendString:@"?>\n"];
+    return [decl stringByAppendingString:xml];
 }
 
 - (NSXMLElement *)relevantCopy:(NSXMLElement *)element
@@ -441,8 +482,26 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
         if (self.relevant && as && !as.relevant) {
             continue;
         }
-        NSXMLNode *ac = [attr copy];
-        [copy addAttribute:ac];
+        // A NAMESPACED attribute (xsi:type) must be rebuilt as a plain
+        // attribute with its prefixed name: GNUstep's addAttribute: of a
+        // URI-carrying copy declares the attribute's namespace as the
+        // element's DEFAULT xmlns and corrupts the source element (its
+        // children vanish from the serialization). The prefix is
+        // recovered from the source element's in-scope declarations and
+        // re-declared on the copy so the output stays well-formed.
+        NSString *aname = [attr name] ?: [attr localName];
+        if ([attr prefix].length == 0 && [attr URI].length) {
+            NSString *prefix = [element resolvePrefixForNamespaceURI:[attr URI]];
+            if (prefix.length) {
+                aname = [NSString stringWithFormat:@"%@:%@", prefix, [attr localName]];
+                if ([copy namespaceForPrefix:prefix] == nil) {
+                    [copy addNamespace:[NSXMLNode namespaceWithName:prefix
+                                                        stringValue:[attr URI]]];
+                }
+            }
+        }
+        [copy addAttribute:[NSXMLNode attributeWithName:aname
+                                            stringValue:[attr stringValue] ?: @""]];
     }
     BOOL cdata = [self.cdataSectionElements containsObject:[element localName] ?: @""];
     for (NSXMLNode *child in [element children]) {
@@ -524,6 +583,36 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     } else {
         req.mediaType = mediaType ?: @"application/xml";
     }
+    // SOAP binding (XForms 1.1 11.11.3): the action= parameter moves to
+    // the SOAPAction header and the content type falls back to text/xml
+    // (SOAP 1.1); @encoding's charset joins the content type when the
+    // mediatype names none.
+    BOOL soap = [self.mediatype hasPrefix:@"application/soap+xml"];
+    if (soap) {
+        NSCharacterSet *ws = [NSCharacterSet whitespaceCharacterSet];
+        NSArray *parts = [self.mediatype componentsSeparatedByString:@";"];
+        NSMutableArray *keep = [NSMutableArray array];
+        BOOL hasAction = NO;
+        BOOL hasCharset = NO;
+        for (NSString *p in (parts.count > 1 ? [parts subarrayWithRange:NSMakeRange(1, parts.count - 1)] : @[])) {
+            NSString *t = [p stringByTrimmingCharactersInSet:ws];
+            if ([t hasPrefix:@"action="]) {
+                hasAction = YES;
+                continue;
+            }
+            if ([t hasPrefix:@"charset="]) {
+                hasCharset = YES;
+            }
+            [keep addObject:t];
+        }
+        if (self.encoding.length && !hasCharset) {
+            [keep addObject:[NSString stringWithFormat:@"charset=%@", self.encoding]];
+        }
+        NSString *base = hasAction ? @"text/xml" : @"application/soap+xml";
+        req.mediaType = keep.count
+            ? [NSString stringWithFormat:@"%@; %@", base, [keep componentsJoinedByString:@"; "]]
+            : base;
+    }
     // XSLTForms submit(): headers are evaluated per @nodeset node, values
     // joined with ",", same-named headers combined per @combine (G-17).
     NSMutableDictionary *hdrs = [NSMutableDictionary dictionary];
@@ -592,7 +681,10 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     }
     if (!hasAccept) {
         BOOL replaceInstance = [[self.replace lowercaseString] isEqualToString:@"instance"];
-        if ([method isEqualToString:@"get"] || [method isEqualToString:@"delete"]) {
+        if (soap && ([method isEqualToString:@"get"] || [method isEqualToString:@"delete"])) {
+            // SOAP over get: the SOAP content type travels as Accept
+            hdrs[@"Accept"] = req.mediaType;
+        } else if ([method isEqualToString:@"get"] || [method isEqualToString:@"delete"]) {
             hdrs[@"Accept"] = replaceInstance ? @"application/xml,text/xml" : @"text/plain";
         } else if (replaceInstance) {
             hdrs[@"Accept"] = @"application/xml,text/xml";
@@ -667,6 +759,18 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
         @"resource-uri": action ?: @""
     } mutableCopy];
 
+    // an @instance IDREF that names no instance in the model is a fatal
+    // binding problem, not a submit-error: xforms-binding-exception and
+    // the submission stops (XForms 1.1 11.2)
+    if (self.instanceID.length
+        && [self.model instanceWithIdentifier:self.instanceID] == nil) {
+        [XFXMLEvents raise:@"xforms-binding-exception" on:self.element ?: (id)self.model
+                   message:[NSString stringWithFormat:@"no instance with id '%@'", self.instanceID]];
+        [du closeAction:@"submission"];
+        self.pending = NO;
+        return;
+    }
+
     NSXMLNode *node = [self submissionNode];
     if (self.validate && node && ![self nodeIsValid:node]) {
         evcontext[@"error-type"] = @"validation-error";
@@ -695,9 +799,26 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     NSData *bodyData = nil;
     NSString *mediaType = self.mediatype;
     if (![self.serialization isEqualToString:@"none"]) {
+        // XForms 1.1 11.3: xforms-submit-serialize carries an (empty)
+        // submission-body node; content a handler WRITES into it becomes
+        // the serialization in place of the default one.
+        NSXMLElement *bodyNode = [[NSXMLElement alloc] initWithName:@"submission-body"];
+        evcontext[@"submission-body"] = bodyNode;
         [XFXMLEvents dispatch:self name:@"xforms-submit-serialize" context:evcontext];
-        if ([self isMultipartSerialization] && node
-            && !([method isEqualToString:@"get"] || [method isEqualToString:@"delete"])) {
+        NSString *authored = [XFXML stringValueOfNode:bodyNode];
+        if (authored.length) {
+            body = authored;
+            self.lastSerialization = body;
+            self.lastBodyData = [body dataUsingEncoding:NSUTF8StringEncoding];
+            evcontext[@"submission-body"] = body;
+        } else if ([method isEqualToString:@"get"] || [method isEqualToString:@"delete"]) {
+            // the serialization traveled in the request URI — a get or
+            // delete request carries NO body (11.9.1)
+            body = @"";
+            self.lastSerialization = @"";
+            self.lastBodyData = nil;
+            evcontext[@"submission-body"] = @"";
+        } else if ([self isMultipartSerialization] && node) {
             NSString *mt = nil;
             bodyData = [self multipartBodyFromNode:node mediaType:&mt];
             mediaType = self.mediatype.length ? self.mediatype : mt;
@@ -767,6 +888,13 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     NSError *net = nil;
     XFSubmissionResponse *resp = [transport performRequest:req error:&net];
     [self finishWithResponse:resp error:net context:evcontext];
+    // Close the "submission" action opened at the top: without this the
+    // deferred-update queue's nesting count never returns to zero after a
+    // SUCCESSFUL synchronous submission, and every later value-change
+    // pipeline (recalculate/revalidate/refresh) silently stalls. The
+    // error paths above and the asynchronous hop each close it
+    // themselves.
+    [du closeAction:@"submission"];
 }
 
 - (void)fillResponseContext:(NSMutableDictionary *)evcontext
@@ -810,6 +938,16 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     XFInstance *inst = [self targetInstance];
     NSXMLNode *target = [self evaluateTargetref];
     NSError *parse = nil;
+    // replace="instance" with a targetref that names nothing (or names a
+    // non-element): the replacement target cannot be located —
+    // xforms-submit-error with error-type "target-error", and the target
+    // instance stays untouched. (replace="text" keeps the XSLTForms
+    // no-target no-op below, G-59.)
+    if (![replace isEqualToString:@"text"] && self.targetrefBinding != nil
+        && (target == nil || [target kind] != NSXMLElementKind)) {
+        [self fail:evcontext type:@"target-error"];
+        return NO;
+    }
     if ([replace isEqualToString:@"text"]) {
         if (target == nil) {
             // XFSubmission.js: replace="text" without a target is a no-op

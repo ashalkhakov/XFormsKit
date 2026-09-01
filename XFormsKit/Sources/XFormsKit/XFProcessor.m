@@ -281,6 +281,7 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
             }
         }
         for (XFSubmission *submission in model.submissions) {
+            submission.baseURL = baseURL;
             [[XFXMLEvents sharedEvents] registerElement:submission.element xfElement:submission];
         }
     }
@@ -1098,6 +1099,7 @@ static NSError *XFSubformError(NSString *message)
             }
         }
         for (XFSubmission *submission in model.submissions) {
+            submission.baseURL = url;   // the subform document's URL
             [[XFXMLEvents sharedEvents] registerElement:submission.element xfElement:submission];
         }
     }
@@ -1211,21 +1213,28 @@ static NSError *XFSubformError(NSString *message)
         [self blurFocusedControl];
         _focusedControl = control;
         control.focused = YES;
-        // XsltForms_repeat.selectItem for every enclosing repeat item
-        XFControl *child = control;
-        XFControl *parent = control.parentControl;
-        while (parent) {
-            if ([parent isKindOfClass:[XFRepeat class]]) {
-                XFRepeat *repeat = (XFRepeat *)parent;
-                for (XFRepeatItem *item in repeat.items) {
-                    if ([item.controls indexOfObjectIdenticalTo:child] != NSNotFound) {
-                        [repeat setIndex:item.position];
-                        break;
+        // XsltForms_repeat.selectItem for every enclosing repeat item —
+        // but only for a USER click into the widget. A programmatic
+        // xf:setfocus targets the occurrence at the repeat's CURRENT
+        // index (10.7.a: setindex 3 then setfocus must keep index 3);
+        // re-selecting the item that owns the resolved control object
+        // would yank the index back to that row.
+        if (fromUI) {
+            XFControl *child = control;
+            XFControl *parent = control.parentControl;
+            while (parent) {
+                if ([parent isKindOfClass:[XFRepeat class]]) {
+                    XFRepeat *repeat = (XFRepeat *)parent;
+                    for (XFRepeatItem *item in repeat.items) {
+                        if ([item.controls indexOfObjectIdenticalTo:child] != NSNotFound) {
+                            [repeat setIndex:item.position];
+                            break;
+                        }
                     }
                 }
+                child = parent;
+                parent = parent.parentControl;
             }
-            child = parent;
-            parent = parent.parentControl;
         }
         [XFXMLEvents dispatch:control name:@"DOMFocusIn"];
         [du closeAction:@"focus"];

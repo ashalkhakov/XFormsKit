@@ -14,6 +14,7 @@
 #import "XFEvent.h"
 #import "XFModel.h"
 #import "XFInstance.h"
+#import "XFProcessor.h"
 #import "XFControl.h"
 #import "XFXPath.h"
 #import "XFXPathValue.h"
@@ -224,13 +225,57 @@
     [self executeWithContextNode:ctx event:event];
 }
 
+/// A sequence's context node can belong to a DISCARDED document after an
+/// earlier xf:reset or replace="instance" swapped the instance's DOM
+/// (XSLTForms never sees this: it re-resolves element.node on every
+/// execution). A node no model instance owns any more falls back to the
+/// default instance root — what a fresh resolution would yield for a
+/// model-less handler.
+- (NSXMLNode *)liveContextNode:(NSXMLNode *)node
+{
+    if (node == nil) {
+        return nil;
+    }
+    XFModel *model = self.model;
+    if ([model instanceOwningNode:node]) {
+        return node;
+    }
+    if ([model.owner isKindOfClass:[XFProcessor class]]) {
+        for (XFModel *m in [(XFProcessor *)model.owner models]) {
+            if ([m instanceOwningNode:node]) {
+                return node;
+            }
+        }
+    }
+    return [[model defaultInstance] documentElement] ?: node;
+}
+
+/// The model this action's bindings evaluate in: @model="id" switches it
+/// (and, per XsltForms_binding.bind_evaluate, the context node moves to
+/// that model's default instance root unless it already belongs there).
+- (XFModel *)actionTargetModel
+{
+    NSString *mid = [[self.element attributeForName:@"model"] stringValue];
+    if (mid.length == 0 || [mid isEqualToString:self.model.identifier]) {
+        return self.model;
+    }
+    if ([self.model.owner isKindOfClass:[XFProcessor class]]) {
+        for (XFModel *m in [(XFProcessor *)self.model.owner models]) {
+            if ([m.identifier isEqualToString:mid]) {
+                return m;
+            }
+        }
+    }
+    return self.model;
+}
+
 - (void)executeWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
 {
     if (event.stopped) {
         return;
     }
     [self recordEvent:event];
-    NSXMLNode *ctx = contextNode;
+    NSXMLNode *ctx = [self liveContextNode:contextNode];
     if (ctx == nil) {
         ctx = [[self.model defaultInstance] documentElement];
     }

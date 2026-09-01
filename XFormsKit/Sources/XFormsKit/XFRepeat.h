@@ -33,6 +33,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable XFRepeatItem *)currentItem;
 - (nullable NSXMLNode *)currentNode;
 - (void)setIndex:(NSUInteger)index;
+/// XForms 1.1 repeat processing: when an outer repeat's index changes —
+/// or its indexed item is replaced by an insert/delete — the indexes of
+/// repeats NESTED in it re-initialize to their startindex.
+- (void)resetNestedRepeatIndexes;
+
 - (void)rebuildItemsWithContext:(XFExprContext *)context error:(NSError **)error;
 - (void)reloadTemplates;
 

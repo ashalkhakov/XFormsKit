@@ -244,6 +244,41 @@
     }
 }
 
+- (void)resetNestedRepeatIndexes
+{
+    // XForms 1.1 (repeat processing) / XSLTForms: moving an outer
+    // repeat's index re-initializes the indexes of repeats nested in it
+    // to their startindex — the newly selected item's inner repeats
+    // start fresh (10.3.h, 10.4.f).
+    if (self.element == nil) {
+        return;
+    }
+    for (XFRepeat *other in self.model.repeats) {
+        if (other == self || other.element == nil) {
+            continue;
+        }
+        BOOL nested = NO;
+        NSXMLNode *walk = [other.element parent];
+        while (walk) {
+            if (walk == self.element) {
+                nested = YES;
+                break;
+            }
+            walk = [walk parent];
+        }
+        if (!nested || other.nodes.count == 0) {
+            continue;
+        }
+        NSUInteger start = other.startIndex ?: 1;
+        if (start > other.nodes.count) {
+            start = other.nodes.count;
+        }
+        if (other.index != start) {
+            [other setIndex:start];   // recurses into deeper nestings
+        }
+    }
+}
+
 - (void)setIndex:(NSUInteger)index
 {
     if (self.nodes.count == 0) {
@@ -266,6 +301,7 @@
     XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
     [du openAction:@"setIndex"];
     _index = clamped;
+    [self resetNestedRepeatIndexes];
     self.boundNode = self.nodes[clamped - 1];
     if (self.model) {
         [du addChangedModel:self.model];

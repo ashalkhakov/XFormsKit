@@ -17,6 +17,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) NSXMLElement *element;
 @property (nonatomic, weak, nullable) XFModel *model;
 @property (nonatomic, copy, nullable) NSString *resource;
+/// The form document's URL. A relative @resource/@action resolves
+/// against it (in XSLTForms the browser resolves XMLHttpRequest URIs
+/// against the page; headless, the submission does it itself, the way
+/// instance/@src does).
+@property (nonatomic, copy, nullable) NSURL *baseURL;
 @property (nonatomic, strong, nullable) XFXPath *resourceExpr;
 @property (nonatomic, copy) NSString *method;
 @property (nonatomic, strong, nullable) XFXPath *methodExpr;
@@ -29,6 +34,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL asynchronous;
 @property (nonatomic, copy, nullable) NSString *lastAllReplacement;
 @property (nonatomic, copy, nullable) NSString *mediatype;
+/// XML-serialization attributes (XForms 1.1 11.1): the character encoding
+/// named in the XML declaration, the standalone declaration ("true"/
+/// "false", nil = omitted), and whether the declaration is omitted.
+@property (nonatomic, copy, nullable) NSString *encoding;
+@property (nonatomic, copy, nullable) NSString *standalone;
+@property (nonatomic, assign) BOOL omitXMLDeclaration;
 @property (nonatomic, assign) BOOL validate;
 @property (nonatomic, assign) BOOL relevant;
 /// `cdata-section-elements`: local names whose text is serialised as CDATA (G-58).

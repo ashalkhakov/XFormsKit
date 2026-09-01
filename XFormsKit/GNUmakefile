@@ -14,7 +14,7 @@ include $(GNUSTEP_MAKEFILES)/common.make
 
 PACKAGE_NAME = XFormsKit
 FRAMEWORK_NAME = XFormsKit
-BUNDLE_NAME = XFormsKitTests
+BUNDLE_NAME = XFormsKitTests XFW3CTests
 
 XFormsKit_NEEDS_GUI = yes
 XFormsKit_CURRENT_VERSION_NAME = A
@@ -184,6 +184,35 @@ XFormsKitTests_BUNDLE_LIBS += -lXFormsKit -lXCTest
 XFormsKitTests_LIB_DIRS += -L./XFormsKit.framework/Versions/Current
 XFormsKitTests_PRINCIPAL_CLASS = XCTestCase
 
+# The W3C XForms 1.1 suite as per-case XCTest assertions (Tests/W3CTests):
+# each test loads its suite form headlessly and asserts the behavior the
+# form's instruction text demands — widget state and model state, never
+# pixels. Spec-true by policy: a case the engine gets wrong stays RED, so
+# w3ccheck is a conformance report, not a regression gate — `make check`
+# (the unit bundle) remains the always-green gate.
+XFW3CTests_NEEDS_GUI = yes
+XFW3CTests_OBJC_FILES = \
+	Tests/W3CTests/XFW3CTestCase.m \
+	Tests/W3CTests/XFW3CChapter02Tests.m \
+	Tests/W3CTests/XFW3CChapter03Tests.m \
+	Tests/W3CTests/XFW3CChapter04Tests.m \
+	Tests/W3CTests/XFW3CChapter05Tests.m \
+	Tests/W3CTests/XFW3CChapter06Tests.m \
+	Tests/W3CTests/XFW3CChapter07Tests.m \
+	Tests/W3CTests/XFW3CChapter08Tests.m \
+	Tests/W3CTests/XFW3CChapter09Tests.m \
+	Tests/W3CTests/XFW3CChapter10Tests.m \
+	Tests/W3CTests/XFW3CChapter11Tests.m \
+	Tests/W3CTests/XFW3CAppendixBTests.m \
+	Tests/W3CTests/XFW3CAppendixGTests.m \
+	Tests/W3CTests/XFW3CAppendixHTests.m
+
+XFW3CTests_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath -ITests/W3CTests
+XFW3CTests_OBJCFLAGS += -fobjc-arc -Wall
+XFW3CTests_BUNDLE_LIBS += -lXFormsKit -lXCTest
+XFW3CTests_LIB_DIRS += -L./XFormsKit.framework/Versions/Current
+XFW3CTests_PRINCIPAL_CLASS = XCTestCase
+
 -include GNUmakefile.preamble
 include $(GNUSTEP_MAKEFILES)/framework.make
 include $(GNUSTEP_MAKEFILES)/bundle.make
@@ -200,6 +229,16 @@ check:: all
 
 viewer: all
 	$(MAKE) -C Apps/XFormsViewer
+
+# The W3C suite as XCTest assertions (spec-true: engine gaps stay red).
+w3ccheck: all
+	@if command -v xctest >/dev/null 2>&1; then \
+	  LD_LIBRARY_PATH="$(CURDIR)/XFormsKit.framework/Versions/Current:$$LD_LIBRARY_PATH" \
+	  xctest ./XFW3CTests.bundle; \
+	else \
+	  echo "xctest not on PATH. Install gnustep/tools-xctest and re-run make w3ccheck."; \
+	  exit 1; \
+	fi
 
 # The W3C XForms 1.1 suite, end to end and headless (TestSuite/README.md).
 testsuite: all

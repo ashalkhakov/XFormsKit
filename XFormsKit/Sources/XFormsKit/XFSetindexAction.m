@@ -52,8 +52,11 @@
     }
     // debugConsole: "setIndex index"
     XFTraceWrite(XFTraceKindAction, nil, self.element,
-                 @"setIndex %lu", (unsigned long)(NSUInteger)n);
-    [repeat setIndex:(NSUInteger)n];
+                 @"setIndex %ld", (long)n);
+    // a NEGATIVE index must land on "before the first" (scroll-first,
+    // index 1) — a raw NSUInteger cast would wrap it past the end and
+    // dispatch scroll-last instead (10.5.a)
+    [repeat setIndex:(n < 1 ? 0 : (NSUInteger)lround(n))];
 }
 
 @end

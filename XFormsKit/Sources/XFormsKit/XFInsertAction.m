@@ -144,9 +144,18 @@
 - (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
 {
     (void)event;
+    // @model switches the in-scope evaluation context BEFORE @context and
+    // the nodeset are applied (the 10.3.b "evaluation context changed b4
+    // special attributes" case): the context node moves to that model's
+    // default instance root unless it already belongs to it.
+    XFModel *model = [self actionTargetModel];
     NSXMLNode *ctxNode = contextNode;
+    if (model != self.model && ![model instanceOwningNode:ctxNode]) {
+        ctxNode = [[model defaultInstance] documentElement];
+    }
     if (self.contextExpr) {
-        XFExprContext *c = [self ctxWithNode:contextNode position:1 nodeList:contextNode ? @[ contextNode ] : @[]];
+        XFExprContext *c = [self ctxWithNode:ctxNode position:1 nodeList:ctxNode ? @[ ctxNode ] : @[]];
+        c.model = model;
         ctxNode = [self.contextExpr evaluateInContext:c error:NULL].firstNode;
     }
     if (ctxNode == nil) {
@@ -156,15 +165,22 @@
     NSArray<NSXMLNode *> *nodes = @[];
     if (self.nodesetBinding) {
         XFExprContext *c = [self ctxWithNode:ctxNode position:1 nodeList:@[ ctxNode ]];
+        c.model = model;
         nodes = [self.nodesetBinding evaluateInContext:c error:NULL].nodes ?: @[];
     }
 
     NSArray<NSXMLNode *> *originNodes = @[];
     if (self.originExpr) {
         XFExprContext *c = [self ctxWithNode:ctxNode position:1 nodeList:nodes.count ? nodes : @[ ctxNode ]];
+        c.model = model;
         originNodes = [self.originExpr evaluateInContext:c error:NULL].nodes ?: @[];
     }
     if (originNodes.count == 0) {
+        if (self.originExpr != nil) {
+            // an origin that is SPECIFIED but selects nothing terminates
+            // the insert with no effect (10.3.c) — no fallback clone
+            return;
+        }
         if (nodes.count == 0) {
             return;
         }
@@ -195,27 +211,43 @@
             }
             if ([parent kind] != NSXMLDocumentKind && [origin kind] != NSXMLAttributeKind) {
                 XFExprContext *atCtx = [self ctxWithNode:ctxNode position:1 nodeList:nodes];
+                atCtx.model = model;
                 double at = nodes.count;
                 if (self.atExpr) {
                     at = [self.atExpr evaluateInContext:atCtx error:NULL].numberValue;
                 }
                 // XSLTForms: res = at ? round(at)+i-1 : nodes.length-1;
-                // index = isNaN(res) ? nodes.length : res + pos
+                // index = isNaN(res) ? nodes.length : res + pos.
+                // An out-of-range @at CLAMPS (10.3.d: <1 → 1, >size → size;
+                // NaN → after the last node).
                 NSInteger index;
                 if (isnan(at)) {
                     index = (NSInteger)nodes.count;
                 } else {
-                    index = (NSInteger)lround(at) + (NSInteger)originIndex - 1 + pos;
+                    NSInteger atRound = (NSInteger)lround(at);
+                    if (atRound < 1) {
+                        atRound = 1;
+                    }
+                    if ((NSUInteger)atRound > nodes.count) {
+                        atRound = (NSInteger)nodes.count;
+                    }
+                    index = atRound + (NSInteger)originIndex - 1 + pos;
                 }
                 if (index < 0) {
                     index = 0;
                 }
                 location = (NSUInteger)index;
+                // the REFERENCE node picks the parent: a heterogeneous
+                // nodeset (chapter/*) spans sibling parents, so the
+                // clone must land beside the node @at names, not inside
+                // the first node's parent (b.15.a)
                 if ((NSUInteger)index >= nodes.count) {
                     NSXMLNode *last = nodes.lastObject;
                     before = [last nextSibling];
+                    parent = [last parent];
                 } else {
                     before = nodes[(NSUInteger)index];
+                    parent = [before parent];
                 }
             }
         }
@@ -240,26 +272,27 @@
 
     self.lastInsertedNodes = inserted;
     if (inserted.count && parent) {
-        [self.model addChange:parent];
-        [self.model setRebuilded:YES];
-        [du addChangedModel:self.model];
+        [model addChange:parent];
+        [model setRebuilded:YES];
+        [du addChangedModel:model];
         NSDictionary *evctx = @{
             @"inserted-nodes": inserted,
             @"origin-nodes": originNodes,
             @"insert-location-node": @(location),
             @"position": self.position ?: @"after"
         };
-        XFInstance *inst = [self.model instanceContainingNode:parent];
-        [XFXMLEvents dispatch:inst ?: self.model name:@"xforms-insert" context:evctx];
+        XFInstance *inst = [model instanceContainingNode:parent];
+        [XFXMLEvents dispatch:inst ?: model name:@"xforms-insert" context:evctx];
 
         NSXMLNode *last = inserted.lastObject;
         NSString *rid = [XFNodeState existingStateOnNode:nodes.firstObject].repeatIdentifier
             ?: [XFNodeState existingStateOnNode:last].repeatIdentifier;
         if (rid.length) {
-            XFRepeat *repeat = [self.model repeatWithIdentifier:rid];
-            XFExprContext *rctx = [self ctxWithNode:[[self.model defaultInstance] documentElement]
+            XFRepeat *repeat = [model repeatWithIdentifier:rid];
+            XFExprContext *rctx = [self ctxWithNode:[[model defaultInstance] documentElement]
                                            position:1
                                            nodeList:nil];
+            rctx.model = model;
             [repeat rebuildItemsWithContext:rctx error:NULL];
             NSUInteger idx = 1;
             for (NSXMLNode *n in repeat.nodes) {
@@ -269,6 +302,9 @@
                 }
                 idx++;
             }
+            // the indexed item is NEW even when the index number did not
+            // change — its inner repeats start at their startindex
+            [repeat resetNestedRepeatIndexes];
         }
     }
     [du closeAction:@"insert"];

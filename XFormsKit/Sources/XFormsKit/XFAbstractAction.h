@@ -40,6 +40,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL)wasInvokedForEvent:(NSString *)name;
 
+/// The model this action's bindings evaluate in: @model="id" switches it
+/// (XForms 1.1 in-scope evaluation context; XsltForms_binding.bind_evaluate).
+- (XFModel *)actionTargetModel;
+
 @end
 
 NS_ASSUME_NONNULL_END

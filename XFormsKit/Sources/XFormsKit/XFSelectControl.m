@@ -7,6 +7,7 @@
 #import "XFXMLEvents.h"
 #import "XFModel.h"
 #import "XFNodeState.h"
+#import "XFProcessor.h"
 #import <Foundation/NSXMLElement.h>
 #import <Foundation/NSXMLNode.h>
 #import <Foundation/NSXMLDocument.h>
@@ -401,6 +402,17 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
 
 - (void)notifyModel
 {
+    // XsltForms_select.change: committing a selection runs the SAME
+    // value-change pipeline as a keyboard edit — openAction / addChange /
+    // closeAction, so recalculate, revalidate and refresh follow and the
+    // refresh dispatches xforms-value-changed (G-11). Falling back to a
+    // bare addChange (no processor) keeps headless model-only setups
+    // working.
+    XFProcessor *processor = [self processor];
+    if (processor != nil) {
+        [processor controlDidChangeValue:self];
+        return;
+    }
     id owner = self.owner;
     if ([owner isKindOfClass:[XFModel class]] && self.boundNode) {
         [(XFModel *)owner addChange:self.boundNode];
@@ -545,6 +557,7 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
         BOOL ok = [self commitStringValue:[self joinedSelection] error:NULL];
         [self markSelected];
         if (ok) {
+            [self notifyModel];
             [XFXMLEvents dispatch:self name:@"xforms-select"];
         }
         return ok;

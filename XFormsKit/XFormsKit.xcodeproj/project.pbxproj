@@ -46,6 +46,21 @@
 		AA0000010000000000000022 /* XFHelloFormTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000022 /* XFHelloFormTests.m */; };
 		AA0000010000000000000023 /* hello.xhtml in Resources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000023 /* hello.xhtml */; };
 		AA0000010000000000000024 /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; };
+		AA0000030000000000000001 /* XFW3CTestCase.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000002 /* XFW3CTestCase.m */; };
+		AA0000030000000000000002 /* XFW3CChapter03Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000003 /* XFW3CChapter03Tests.m */; };
+		AA0000030000000000000003 /* XFW3CChapter04Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000004 /* XFW3CChapter04Tests.m */; };
+		AA0000030000000000000004 /* XFW3CChapter05Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000005 /* XFW3CChapter05Tests.m */; };
+		AA0000030000000000000005 /* XFW3CChapter06Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000006 /* XFW3CChapter06Tests.m */; };
+		AA0000030000000000000007 /* XFW3CChapter07Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000011 /* XFW3CChapter07Tests.m */; };
+		AA0000030000000000000008 /* XFW3CChapter08Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000012 /* XFW3CChapter08Tests.m */; };
+		AA0000030000000000000009 /* XFW3CChapter09Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000013 /* XFW3CChapter09Tests.m */; };
+		AA000003000000000000000A /* XFW3CChapter10Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000014 /* XFW3CChapter10Tests.m */; };
+		AA000003000000000000000B /* XFW3CChapter11Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000015 /* XFW3CChapter11Tests.m */; };
+		AA000003000000000000000C /* XFW3CChapter02Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000016 /* XFW3CChapter02Tests.m */; };
+		AA000003000000000000000D /* XFW3CAppendixBTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000017 /* XFW3CAppendixBTests.m */; };
+		AA000003000000000000000E /* XFW3CAppendixGTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000018 /* XFW3CAppendixGTests.m */; };
+		AA000003000000000000000F /* XFW3CAppendixHTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000019 /* XFW3CAppendixHTests.m */; };
+		AA0000030000000000000006 /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100; };
 		AA0000010000000000000030 /* XFXPathLexer.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000030 /* XFXPathLexer.m */; };
 		AA0000010000000000000031 /* XFXPathParser.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000031 /* XFXPathParser.m */; };
 		AA0000010000000000000040 /* XFExprs.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000040 /* XFExprs.m */; };
@@ -202,6 +217,13 @@
 			remoteInfo = XFormsKit;
 		};
 		CC0000020000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DD0000010000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE0000010000000000000001;
+			remoteInfo = XFormsKit;
+		};
+		CC0000030000000000000001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = DD0000010000000000000001 /* Project object */;
 			proxyType = 1;
@@ -422,6 +444,22 @@
 		BB0000020000000000000022 /* XFDDocumentWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDDocumentWindow.xib; sourceTree = "<group>"; };
 		BB0000020000000000000023 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BB0000020000000000000030 /* XFormsDesigner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = XFormsDesigner.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB0000030000000000000001 /* XFW3CTestCase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFW3CTestCase.h; sourceTree = "<group>"; };
+		BB0000030000000000000002 /* XFW3CTestCase.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CTestCase.m; sourceTree = "<group>"; };
+		BB0000030000000000000003 /* XFW3CChapter03Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CChapter03Tests.m; sourceTree = "<group>"; };
+		BB0000030000000000000004 /* XFW3CChapter04Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CChapter04Tests.m; sourceTree = "<group>"; };
+		BB0000030000000000000005 /* XFW3CChapter05Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CChapter05Tests.m; sourceTree = "<group>"; };
+		BB0000030000000000000006 /* XFW3CChapter06Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CChapter06Tests.m; sourceTree = "<group>"; };
+		BB0000030000000000000011 /* XFW3CChapter07Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CChapter07Tests.m; sourceTree = "<group>"; };
+		BB0000030000000000000012 /* XFW3CChapter08Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CChapter08Tests.m; sourceTree = "<group>"; };
+		BB0000030000000000000013 /* XFW3CChapter09Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CChapter09Tests.m; sourceTree = "<group>"; };
+		BB0000030000000000000014 /* XFW3CChapter10Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CChapter10Tests.m; sourceTree = "<group>"; };
+		BB0000030000000000000015 /* XFW3CChapter11Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CChapter11Tests.m; sourceTree = "<group>"; };
+		BB0000030000000000000016 /* XFW3CChapter02Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CChapter02Tests.m; sourceTree = "<group>"; };
+		BB0000030000000000000017 /* XFW3CAppendixBTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CAppendixBTests.m; sourceTree = "<group>"; };
+		BB0000030000000000000018 /* XFW3CAppendixGTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CAppendixGTests.m; sourceTree = "<group>"; };
+		BB0000030000000000000019 /* XFW3CAppendixHTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CAppendixHTests.m; sourceTree = "<group>"; };
+		BB0000030000000000000010 /* XFW3CTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XFW3CTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -456,6 +494,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		FF0000030000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000030000000000000006 /* XFormsKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -487,6 +533,7 @@
 			children = (
 				GG0000010000000000000006 /* XFormsKitTests */,
 				GG0000010000000000000007 /* Fixtures */,
+				GG0000030000000000000001 /* W3CTests */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -496,6 +543,7 @@
 			children = (
 				BB0000010000000000000100 /* XFormsKit.framework */,
 				BB0000010000000000000101 /* XFormsKitTests.xctest */,
+				BB0000030000000000000010 /* XFW3CTests.xctest */,
 				BB00000100000000000000F7 /* XFormsViewer.app */,
 				BB0000020000000000000030 /* XFormsDesigner.app */,
 			);
@@ -780,6 +828,28 @@
 			path = ThirdParty/JUInspectorView;
 			sourceTree = "<group>";
 		};
+		GG0000030000000000000001 /* W3CTests */ = {
+			isa = PBXGroup;
+			children = (
+				BB0000030000000000000001 /* XFW3CTestCase.h */,
+				BB0000030000000000000002 /* XFW3CTestCase.m */,
+				BB0000030000000000000003 /* XFW3CChapter03Tests.m */,
+				BB0000030000000000000004 /* XFW3CChapter04Tests.m */,
+				BB0000030000000000000005 /* XFW3CChapter05Tests.m */,
+				BB0000030000000000000006 /* XFW3CChapter06Tests.m */,
+				BB0000030000000000000011 /* XFW3CChapter07Tests.m */,
+				BB0000030000000000000012 /* XFW3CChapter08Tests.m */,
+				BB0000030000000000000013 /* XFW3CChapter09Tests.m */,
+				BB0000030000000000000014 /* XFW3CChapter10Tests.m */,
+				BB0000030000000000000015 /* XFW3CChapter11Tests.m */,
+				BB0000030000000000000016 /* XFW3CChapter02Tests.m */,
+				BB0000030000000000000017 /* XFW3CAppendixBTests.m */,
+				BB0000030000000000000018 /* XFW3CAppendixGTests.m */,
+				BB0000030000000000000019 /* XFW3CAppendixHTests.m */,
+			);
+			path = W3CTests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -921,6 +991,23 @@
 			productReference = BB0000020000000000000030 /* XFormsDesigner.app */;
 			productType = "com.apple.product-type.application";
 		};
+		EE0000030000000000000001 /* XFW3CTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = LL0000030000000000000001 /* Build configuration list for PBXNativeTarget "XFW3CTests" */;
+			buildPhases = (
+				SS0000030000000000000001 /* Sources */,
+				FF0000030000000000000001 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DP0000030000000000000001 /* PBXTargetDependency */,
+			);
+			name = XFW3CTests;
+			productName = XFW3CTests;
+			productReference = BB0000030000000000000010 /* XFW3CTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -955,6 +1042,7 @@
 				EE0000010000000000000002 /* XFormsKitTests */,
 				EE0000010000000000000003 /* XFormsViewer */,
 				EE0000020000000000000001 /* XFormsDesigner */,
+				EE0000030000000000000001 /* XFW3CTests */,
 			);
 		};
 /* End PBXProject section */
@@ -1130,6 +1218,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		SS0000030000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000030000000000000001 /* XFW3CTestCase.m in Sources */,
+				AA0000030000000000000002 /* XFW3CChapter03Tests.m in Sources */,
+				AA0000030000000000000003 /* XFW3CChapter04Tests.m in Sources */,
+				AA0000030000000000000004 /* XFW3CChapter05Tests.m in Sources */,
+				AA0000030000000000000005 /* XFW3CChapter06Tests.m in Sources */,
+				AA0000030000000000000007 /* XFW3CChapter07Tests.m in Sources */,
+				AA0000030000000000000008 /* XFW3CChapter08Tests.m in Sources */,
+				AA0000030000000000000009 /* XFW3CChapter09Tests.m in Sources */,
+				AA000003000000000000000A /* XFW3CChapter10Tests.m in Sources */,
+				AA000003000000000000000B /* XFW3CChapter11Tests.m in Sources */,
+				AA000003000000000000000C /* XFW3CChapter02Tests.m in Sources */,
+				AA000003000000000000000D /* XFW3CAppendixBTests.m in Sources */,
+				AA000003000000000000000E /* XFW3CAppendixGTests.m in Sources */,
+				AA000003000000000000000F /* XFW3CAppendixHTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1147,6 +1256,11 @@
 			isa = PBXTargetDependency;
 			target = EE0000010000000000000001 /* XFormsKit */;
 			targetProxy = CC0000020000000000000001 /* PBXContainerItemProxy */;
+		};
+		DP0000030000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE0000010000000000000001 /* XFormsKit */;
+			targetProxy = CC0000030000000000000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1382,6 +1496,56 @@
 			};
 			name = Release;
 		};
+		XC0000030000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"XFW3C_SUITE_ROOT=$(SRCROOT)/TestSuite/XForms1.1/Edition1",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Sources",
+					"$(SRCROOT)/Sources/XFormsKit",
+					"$(SRCROOT)/Sources/XFormsKit/XPath",
+				);
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFW3CTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		XC0000030000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"XFW3C_SUITE_ROOT=$(SRCROOT)/TestSuite/XForms1.1/Edition1",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Sources",
+					"$(SRCROOT)/Sources/XFormsKit",
+					"$(SRCROOT)/Sources/XFormsKit/XPath",
+				);
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFW3CTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1426,6 +1590,15 @@
 			buildConfigurations = (
 				XC0000020000000000000001 /* Debug */,
 				XC0000020000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		LL0000030000000000000001 /* Build configuration list for PBXNativeTarget "XFW3CTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				XC0000030000000000000001 /* Debug */,
+				XC0000030000000000000002 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

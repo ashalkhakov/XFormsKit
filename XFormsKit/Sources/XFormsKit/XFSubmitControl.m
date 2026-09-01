@@ -1,5 +1,6 @@
 #import "XFSubmitControl.h"
 #import "XFModel.h"
+#import "XFProcessor.h"
 #import "XFSubmission.h"
 #import "XFXMLEvents.h"
 #import "XFXPath.h"
@@ -59,7 +60,27 @@
         model = [self.owner model];
     }
     XFSubmission *sub = [model submissionWithIdentifier:self.submissionID];
-    if (sub == nil || ![self test:self.ifExpr]) {
+    if (sub == nil) {
+        // @submission is an IDREF into the DOCUMENT, not this control's
+        // model — a submission defined in another model must resolve
+        // (the 2.4.a two-form page)
+        XFProcessor *processor = [self processor];
+        for (XFModel *m in processor.models) {
+            sub = [m submissionWithIdentifier:self.submissionID];
+            if (sub) {
+                break;
+            }
+        }
+    }
+    if (sub == nil) {
+        // an IDREF that names nothing raises xforms-binding-exception
+        // (XForms 1.1 4.5.1) instead of silently doing nothing
+        [XFXMLEvents raise:@"xforms-binding-exception" on:self.element
+                   message:[NSString stringWithFormat:@"no submission with id '%@'",
+                            self.submissionID ?: @""]];
+        return;
+    }
+    if (![self test:self.ifExpr]) {
         return;
     }
     if (self.whileExpr) {

@@ -63,42 +63,70 @@
 - (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
 {
     (void)event;
+    // @model switches the in-scope evaluation context BEFORE @context and
+    // the nodeset are applied (the 10.4.b "evaluation context changed b4
+    // special attributes" case): the context node moves to that model's
+    // default instance root unless it already belongs to it.
+    XFModel *model = [self actionTargetModel];
     NSXMLNode *ctxNode = contextNode;
+    if (model != self.model && ![model instanceOwningNode:ctxNode]) {
+        ctxNode = [[model defaultInstance] documentElement];
+    }
     if (self.contextExpr) {
-        XFExprContext *c = [[XFExprContext alloc] initWithNode:contextNode];
-        c.model = self.model;
+        XFExprContext *c = [[XFExprContext alloc] initWithNode:ctxNode];
+        c.model = model;
         ctxNode = [self.contextExpr evaluateInContext:c error:NULL].firstNode;
     }
     if (ctxNode == nil || self.nodesetBinding == nil) {
         return;
     }
     XFExprContext *listCtx = [[XFExprContext alloc] initWithNode:ctxNode];
-    listCtx.model = self.model;
+    listCtx.model = model;
     NSArray<NSXMLNode *> *nodes = [self.nodesetBinding evaluateInContext:listCtx error:NULL].nodes ?: @[];
+    if (nodes.count == 0) {
+        return;
+    }
     NSUInteger location = 0;
     if (self.atExpr) {
         XFExprContext *atCtx = [[XFExprContext alloc] initWithNode:ctxNode];
-        atCtx.model = self.model;
+        atCtx.model = model;
         atCtx.nodeList = nodes;
         atCtx.size = nodes.count;
         atCtx.position = 1;
         double at = [self.atExpr evaluateInContext:atCtx error:NULL].numberValue;
+        // Out-of-range and NaN CLAMP (XForms 1.1 10.4 / errata): at < 1
+        // deletes the first node, at > size or NaN the last.
+        NSInteger index;
         if (isnan(at)) {
-            return;
-        }
-        NSInteger index = (NSInteger)lround(at);
-        if (index < 1 || (NSUInteger)index > nodes.count) {
-            return;
+            index = (NSInteger)nodes.count;
+        } else {
+            index = (NSInteger)lround(at);
+            if (index < 1) {
+                index = 1;
+            }
+            if ((NSUInteger)index > nodes.count) {
+                index = (NSInteger)nodes.count;
+            }
         }
         location = (NSUInteger)index;
         nodes = @[ nodes[location - 1] ];
     }
 
+    // The instance ROOT cannot be deleted (nodeset="instance('x')"):
+    // such nodes terminate with no effect.
+    NSMutableArray<NSXMLNode *> *deletable = [NSMutableArray array];
+    for (NSXMLNode *node in nodes) {
+        if ([[node parent] kind] == NSXMLDocumentKind) {
+            continue;
+        }
+        [deletable addObject:node];
+    }
+    nodes = deletable;
     if (nodes.count == 0) {
         return;
     }
 
-    XFInstance *instance = [self.model instanceContainingNode:nodes.firstObject];
+    XFInstance *instance = [model instanceContainingNode:nodes.firstObject];
     NSMutableArray<NSXMLNode *> *deleted = [NSMutableArray array];
     NSMutableSet<NSString *> *repeatIDs = [NSMutableSet set];
 
@@ -106,7 +134,7 @@
     [du openAction:@"delete"];
 
     for (NSXMLNode *node in nodes) {
-        [XFBind disposeNode:node model:self.model]; // XsltForms_mipbinding.nodedispose
+        [XFBind disposeNode:node model:model]; // XsltForms_mipbinding.nodedispose
         NSString *rid = [XFNodeState existingStateOnNode:node].repeatIdentifier;
         if (rid.length) {
             [repeatIDs addObject:rid];
@@ -133,7 +161,7 @@
             }
         }
         if (parent) {
-            [self.model addChange:parent];
+            [model addChange:parent];
         }
     }
 
@@ -145,17 +173,17 @@
                      @"delete %lu node(s), first %@",
                      (unsigned long)deleted.count,
                      XFTraceDescribeNode(deleted.firstObject));
-        [self.model setRebuilded:YES];
-        [du addChangedModel:self.model];
+        [model setRebuilded:YES];
+        [du addChangedModel:model];
         NSMutableDictionary *evctx = [@{ @"deleted-nodes": deleted } mutableCopy];
         if (location) {
             evctx[@"delete-location"] = @(location);
         }
-        [XFXMLEvents dispatch:instance ?: self.model name:@"xforms-delete" context:evctx];
+        [XFXMLEvents dispatch:instance ?: model name:@"xforms-delete" context:evctx];
         for (NSString *rid in repeatIDs) {
-            XFRepeat *repeat = [self.model repeatWithIdentifier:rid];
-            XFExprContext *rctx = [[XFExprContext alloc] initWithNode:[[self.model defaultInstance] documentElement]];
-            rctx.model = self.model;
+            XFRepeat *repeat = [model repeatWithIdentifier:rid];
+            XFExprContext *rctx = [[XFExprContext alloc] initWithNode:[[model defaultInstance] documentElement]];
+            rctx.model = model;
             NSUInteger old = repeat.index;
             [repeat rebuildItemsWithContext:rctx error:NULL];
             if (repeat.nodes.count == 0) {
@@ -164,6 +192,9 @@
                 [repeat setIndex:repeat.nodes.count];
             } else {
                 [repeat setIndex:old];
+                // the index kept its NUMBER but now names the next node —
+                // a different item, so its inner repeats start fresh
+                [repeat resetNestedRepeatIndexes];
             }
         }
     }

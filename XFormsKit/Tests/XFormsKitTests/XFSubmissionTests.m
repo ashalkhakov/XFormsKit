@@ -992,4 +992,64 @@
                           preview.headers[@"Authorization"]);
 }
 
+- (void)testRelativeSubmissionResourceResolvesAgainstBaseURL
+{
+    // A relative @action resolves against the document base URL the way
+    // instance/@src does (the browser does this for XSLTForms); an
+    // absolute URI passes through untouched.
+    NSString *xml =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
+        @"      xmlns:xf=\"http://www.w3.org/2002/xforms\">"
+        @"  <xf:model id=\"m\">"
+        @"    <xf:instance><data xmlns=\"\"><a>1</a></data></xf:instance>"
+        @"    <xf:submission id=\"rel\" method=\"post\" action=\"sub/echo.xml\"/>"
+        @"    <xf:submission id=\"abs\" method=\"post\" action=\"http://example.org/echo\"/>"
+        @"  </xf:model>"
+        @"</html>";
+    NSError *error = nil;
+    XFProcessor *p = [XFProcessor processorWithXMLString:xml
+                                                 baseURL:[NSURL URLWithString:@"file:///forms/test/form.xhtml"]
+                                                   error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFSubmission *rel = [p.model submissionWithIdentifier:@"rel"];
+    XFSubmission *abs = [p.model submissionWithIdentifier:@"abs"];
+    XCTAssertEqualObjects([rel previewRequest].URLString,
+                          @"file:///forms/test/sub/echo.xml");
+    XCTAssertEqualObjects([abs previewRequest].URLString,
+                          @"http://example.org/echo");
+}
+
+- (void)testSyncSubmissionLeavesDeferredQueueBalanced
+{
+    // A SUCCESSFUL synchronous submission must close the deferred-update
+    // action it opened — the leak left the queue's nesting count above
+    // zero, silently stalling every later recalculate/revalidate/refresh
+    // (a calculated field stopped updating after the first submit).
+    NSString *xml =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
+        @"      xmlns:xf=\"http://www.w3.org/2002/xforms\">"
+        @"  <xf:model id=\"m\">"
+        @"    <xf:instance><data xmlns=\"\"><a>1</a><b/></data></xf:instance>"
+        @"    <xf:bind nodeset=\"b\" calculate=\"../a * 2\"/>"
+        @"    <xf:submission id=\"s\" method=\"post\" action=\"http://echo.test/\" replace=\"none\"/>"
+        @"  </xf:model>"
+        @"  <body><xf:input id=\"in\" ref=\"a\"><xf:label>a</xf:label></xf:input></body>"
+        @"</html>";
+    NSError *error = nil;
+    XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFScriptedHTTPTransport *t = [[XFScriptedHTTPTransport alloc] init];
+    p.model.transport = t;
+    [[p.model submissionWithIdentifier:@"s"] submit];
+    XCTAssertEqual(t.hops.count, (NSUInteger)1, @"the submission went out");
+    // the pipeline must still be alive: an edit recalculates b
+    XFControl *input = [p controlForElement:
+        (NSXMLElement *)[XFXML elementWithID:@"in" inNode:p.hostDocument]];
+    XCTAssertNotNil(input);
+    XCTAssertTrue([p setValue:@"5" ofControl:input error:NULL]);
+    XCTAssertEqualObjects([XFXML stringValueOfNode:
+        [[[p.model defaultInstance] documentElement] elementsForName:@"b"].firstObject],
+        @"10", @"the calculate ran after the submission");
+}
+
 @end
