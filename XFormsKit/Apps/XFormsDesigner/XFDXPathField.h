@@ -36,6 +36,19 @@ typedef NS_ENUM(NSInteger, XFDXPathExpectation) {
 FOUNDATION_EXPORT NSDictionary *XFDSplitLocationPath(NSString *expression);
 FOUNDATION_EXPORT NSString *XFDJoinLocationPath(NSDictionary *path);
 
+/// The predicate sub-editor's preview (exposed for the selftest): how
+/// `predicates` filters the nodes `baseExpression` selects. A bare
+/// expression normalizes to one [bracketed] predicate; a bracket list
+/// passes through. Returns { ok, normalized, error?, total, matching,
+/// rows: [ { index, node, value, match } ] } — rows are the CANDIDATE
+/// nodes (capped at 200) with match flags, so the editor can show what
+/// the predicate keeps and what it drops.
+FOUNDATION_EXPORT NSDictionary *XFDPredicatePreview(NSString *baseExpression,
+                                                    NSString *predicates,
+                                                    NSXMLElement *_Nullable hostElement,
+                                                    NSXMLNode *_Nullable contextNode,
+                                                    XFModel *_Nullable model);
+
 /// Refs suggested from the data's implied schema, relative to `context`
 /// (positional clones collapse to one entry — the schema XForms infers).
 FOUNDATION_EXPORT NSArray *XFDSchemaPathsFromNode(NSXMLNode *context, NSUInteger cap);

@@ -689,6 +689,52 @@ static int XFDRunSelfTest(NSString *path)
         NSLog(@"SELFTEST xpath validation flagged a good path");
         return 1;
     }
+    // predicate sub-editor preview (headless: the modal panel's logic is
+    // XFDPredicatePreview): candidates, matches, bare-expression
+    // normalization, parse errors
+    {
+        NSError *pperr = nil;
+        XFProcessor *pp = [XFProcessor processorWithXMLString:
+            @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
+            @" xmlns:xf=\"http://www.w3.org/2002/xforms\">"
+            @"<head><xf:model><xf:instance><data xmlns=\"\">"
+            @"<item n=\"1\">a</item><item n=\"2\">b</item><item n=\"3\">c</item>"
+            @"</data></xf:instance></xf:model></head><body/></html>"
+                                                             error:&pperr];
+        if (pp == nil) {
+            NSLog(@"SELFTEST predicate probe form failed: %@", pperr);
+            return 1;
+        }
+        NSXMLNode *ppRoot = [[pp defaultInstance] documentElement];
+        NSDictionary *pre = XFDPredicatePreview(@"item", @"@n > 1", nil, ppRoot, pp.model);
+        if (![pre[@"ok"] boolValue]
+            || ![pre[@"normalized"] isEqualToString:@"[@n > 1]"]
+            || [pre[@"total"] unsignedIntegerValue] != 3
+            || [pre[@"matching"] unsignedIntegerValue] != 2
+            || [pre[@"rows"] count] != 3
+            || [[pre[@"rows"] firstObject][@"match"] boolValue]
+            || ![[pre[@"rows"] lastObject][@"match"] boolValue]) {
+            NSLog(@"SELFTEST predicate preview wrong: %@", pre);
+            return 1;
+        }
+        pre = XFDPredicatePreview(@"item", @"[position() = last()]", nil, ppRoot, pp.model);
+        if (![pre[@"ok"] boolValue] || [pre[@"matching"] unsignedIntegerValue] != 1
+            || [[pre[@"rows"] firstObject][@"match"] boolValue]) {
+            NSLog(@"SELFTEST predicate position()/last() preview wrong: %@", pre);
+            return 1;
+        }
+        pre = XFDPredicatePreview(@"item", @"[@n >]", nil, ppRoot, pp.model);
+        if ([pre[@"ok"] boolValue]) {
+            NSLog(@"SELFTEST predicate garbage not flagged");
+            return 1;
+        }
+        pre = XFDPredicatePreview(@"item", @"", nil, ppRoot, pp.model);
+        if (![pre[@"ok"] boolValue] || [pre[@"matching"] unsignedIntegerValue] != 3
+            || [pre[@"normalized"] length] != 0) {
+            NSLog(@"SELFTEST empty predicate preview wrong: %@", pre);
+            return 1;
+        }
+    }
     while ([undo canUndo]) {
         [undo undo];
     }

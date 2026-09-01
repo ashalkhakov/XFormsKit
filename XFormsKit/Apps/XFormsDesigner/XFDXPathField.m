@@ -227,6 +227,299 @@ NSString *XFDJoinLocationPath(NSDictionary *path)
     return tail.length ? tail : @".";
 }
 
+#pragma mark - Predicate sub-editing
+
+static NSString *XFDDisplayPathOfNode(NSXMLNode *node);
+
+NSDictionary *XFDPredicatePreview(NSString *baseExpression,
+                                  NSString *predicates,
+                                  NSXMLElement *hostElement,
+                                  NSXMLNode *contextNode,
+                                  XFModel *model)
+{
+    NSString *trimmed = [predicates ?: @"" stringByTrimmingCharactersInSet:
+        [NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSString *normalized = @"";
+    if (trimmed.length) {
+        // typing convenience: a bare expression IS one predicate
+        normalized = [trimmed hasPrefix:@"["]
+            ? trimmed : [NSString stringWithFormat:@"[%@]", trimmed];
+    }
+    if (normalized.length) {
+        // the list must parse AS predicates (brackets, order, nesting)
+        NSError *parse = nil;
+        if ([XFXPath xpathWithString:[@"self::node()" stringByAppendingString:normalized]
+                             element:hostElement error:&parse] == nil) {
+            return @{ @"ok": @NO,
+                      @"normalized": normalized,
+                      @"error": [parse localizedDescription] ?: @"does not parse" };
+        }
+    }
+    XFExprContext * (^makeContext)(void) = ^XFExprContext * {
+        XFExprContext *ctx = [[XFExprContext alloc] initWithNode:contextNode];
+        ctx.model = model;
+        return ctx;
+    };
+    XFXPath *base = [XFXPath xpathWithString:baseExpression element:hostElement error:NULL];
+    XFXPathValue *baseValue = [base evaluateInContext:makeContext() error:NULL];
+    if (baseValue == nil || baseValue.type != XFXPathValueTypeNodeSet) {
+        return @{ @"ok": @NO,
+                  @"normalized": normalized,
+                  @"error": @"the step selects no node-set here" };
+    }
+    NSArray *candidates = baseValue.nodes;
+    NSArray *kept = candidates;
+    if (normalized.length) {
+        XFXPath *filtered = [XFXPath xpathWithString:
+            [baseExpression stringByAppendingString:normalized]
+                                             element:hostElement error:NULL];
+        XFXPathValue *filteredValue = [filtered evaluateInContext:makeContext() error:NULL];
+        kept = filteredValue.type == XFXPathValueTypeNodeSet ? filteredValue.nodes : @[];
+    }
+    NSMutableArray *rows = [NSMutableArray array];
+    NSUInteger cap = MIN(candidates.count, (NSUInteger)200);
+    for (NSUInteger i = 0; i < cap; i++) {
+        NSXMLNode *node = candidates[i];
+        NSString *text = [node stringValue] ?: @"";
+        if (text.length > 80) {
+            text = [[text substringToIndex:79] stringByAppendingString:@"\u2026"];
+        }
+        [rows addObject:@{ @"index": @(i + 1),
+                           @"node": XFDDisplayPathOfNode(node),
+                           @"value": text,
+                           @"match": @([kept indexOfObjectIdenticalTo:node] != NSNotFound) }];
+    }
+    return @{ @"ok": @YES,
+              @"normalized": normalized,
+              @"total": @(candidates.count),
+              @"matching": @(kept.count),
+              @"rows": rows };
+}
+
+/// Modal predicate editor for ONE step of the picker's Steps table: the
+/// field takes a predicate list ([a][b]) or a bare expression (one
+/// predicate, brackets added), validated live; the table shows every
+/// node the step selects WITHOUT its predicates and which of them the
+/// current predicates keep \u2014 position() and last() run against that
+/// candidate set, exactly as they will at refresh time.
+@interface XFDPredicateEditor : NSObject <NSTextFieldDelegate, NSTableViewDataSource, NSTableViewDelegate>
+{
+    NSPanel *_panel;
+    NSTextField *_field;
+    NSTextField *_statusField;
+    NSTableView *_table;
+    NSButton *_okButton;
+    NSString *_baseExpression;
+    NSXMLElement *_hostElement;
+    NSXMLNode *_contextNode;
+    XFModel *_model;
+    NSArray *_rows;
+    NSString *_normalized;
+    BOOL _valid;
+    NSString *_result;
+}
++ (NSString *)runWithBaseExpression:(NSString *)base
+                         predicates:(NSString *)predicates
+                        hostElement:(NSXMLElement *)hostElement
+                        contextNode:(NSXMLNode *)contextNode
+                              model:(XFModel *)model;
+@end
+
+@implementation XFDPredicateEditor
+
+- (void)buildPanel
+{
+    const CGFloat W = 500, H = 420;
+    _panel = [[NSPanel alloc] initWithContentRect:NSMakeRect(0, 0, W, H)
+                                        styleMask:NSTitledWindowMask | NSClosableWindowMask
+                                          backing:NSBackingStoreBuffered
+                                            defer:NO];
+    [_panel setTitle:@"Edit Predicates"];
+    NSView *content = [_panel contentView];
+
+    NSTextField * (^label)(NSString *, NSRect) = ^NSTextField *(NSString *text, NSRect frame) {
+        NSTextField *l = [[NSTextField alloc] initWithFrame:frame];
+        [l setEditable:NO];
+        [l setBordered:NO];
+        [l setDrawsBackground:NO];
+        [l setFont:[NSFont systemFontOfSize:11]];
+        [[l cell] setWraps:YES];
+        [l setStringValue:text];
+        [content addSubview:l];
+        return l;
+    };
+    label([NSString stringWithFormat:
+        @"Filters the nodes  %@  selects \u2014 the predicates run per node; "
+        @"position() and last() see the candidate set below.", _baseExpression],
+        NSMakeRect(12, H - 48, W - 24, 32));
+
+    label(@"Predicates:", NSMakeRect(12, H - 74, 80, 17));
+    _field = [[NSTextField alloc] initWithFrame:NSMakeRect(96, H - 78, W - 108, 22)];
+    [_field setFont:[NSFont userFixedPitchFontOfSize:11]];
+    [[_field cell] setPlaceholderString:@"[price > 10]  \u2014 or a bare expression"];
+    [_field setDelegate:self];
+    [content addSubview:_field];
+
+    _statusField = label(@"", NSMakeRect(12, H - 100, W - 24, 17));
+
+    NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:
+        NSMakeRect(12, 44, W - 24, H - 152)];
+    [scroll setHasVerticalScroller:YES];
+    [scroll setBorderType:NSBezelBorder];
+    _table = [[NSTableView alloc] initWithFrame:NSMakeRect(0, 0, W - 24, H - 152)];
+    struct { NSString *ident; NSString *title; CGFloat width; } cols[] = {
+        { @"match", @"\u2713", 28 },
+        { @"index", @"#", 36 },
+        { @"node", @"Node", 210 },
+        { @"value", @"Value", 170 },
+    };
+    for (NSUInteger i = 0; i < 4; i++) {
+        NSTableColumn *c = [[NSTableColumn alloc] initWithIdentifier:cols[i].ident];
+        [[c headerCell] setStringValue:cols[i].title];
+        [c setWidth:cols[i].width];
+        [[c dataCell] setEditable:NO];
+        [[c dataCell] setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+        [_table addTableColumn:c];
+    }
+    [_table setDataSource:self];
+    [_table setDelegate:self];
+    [scroll setDocumentView:_table];
+    [content addSubview:scroll];
+
+    NSButton *cancel = [[NSButton alloc] initWithFrame:NSMakeRect(W - 190, 8, 84, 28)];
+    [cancel setTitle:@"Cancel"];
+    [cancel setBezelStyle:NSRoundedBezelStyle];
+    [cancel setKeyEquivalent:@"\033"];
+    [cancel setTarget:self];
+    [cancel setAction:@selector(cancelClicked:)];
+    [content addSubview:cancel];
+    _okButton = [[NSButton alloc] initWithFrame:NSMakeRect(W - 100, 8, 84, 28)];
+    [_okButton setTitle:@"OK"];
+    [_okButton setBezelStyle:NSRoundedBezelStyle];
+    [_okButton setKeyEquivalent:@"\r"];
+    [_okButton setTarget:self];
+    [_okButton setAction:@selector(okClicked:)];
+    [content addSubview:_okButton];
+    [_panel setDelegate:(id)self];
+}
+
+- (void)preview
+{
+    NSDictionary *p = XFDPredicatePreview(_baseExpression, [_field stringValue],
+                                          _hostElement, _contextNode, _model);
+    _valid = [p[@"ok"] boolValue];
+    _normalized = p[@"normalized"] ?: @"";
+    _rows = p[@"rows"] ?: @[];
+    [_table reloadData];
+    [_okButton setEnabled:_valid];
+    XFDApplyXPathHighlight(_field, !_valid);
+    if (!_valid) {
+        [_statusField setStringValue:[@"\u2717 " stringByAppendingString:p[@"error"] ?: @""]];
+        [_statusField setTextColor:[NSColor redColor]];
+        return;
+    }
+    NSUInteger total = [p[@"total"] unsignedIntegerValue];
+    NSUInteger matching = [p[@"matching"] unsignedIntegerValue];
+    NSString *text = _normalized.length == 0
+        ? [NSString stringWithFormat:@"No predicates \u2014 all %lu node%s kept.",
+           (unsigned long)total, total == 1 ? "" : "s"]
+        : [NSString stringWithFormat:@"\u2713 %lu of %lu node%s match.",
+           (unsigned long)matching, (unsigned long)total, total == 1 ? "" : "s"];
+    [_statusField setStringValue:text];
+    [_statusField setTextColor:matching == 0 && _normalized.length
+        ? [NSColor colorWithCalibratedRed:0.72 green:0.45 blue:0.10 alpha:1]
+        : [NSColor disabledControlTextColor]];
+}
+
+- (void)controlTextDidChange:(NSNotification *)note
+{
+    (void)note;
+    [self preview];
+}
+
+- (NSInteger)numberOfRowsInTableView:(NSTableView *)table
+{
+    (void)table;
+    return (NSInteger)_rows.count;
+}
+
+- (id)tableView:(NSTableView *)table
+    objectValueForTableColumn:(NSTableColumn *)column
+                          row:(NSInteger)row
+{
+    (void)table;
+    if ((NSUInteger)row >= _rows.count) {
+        return nil;
+    }
+    NSDictionary *r = _rows[(NSUInteger)row];
+    if ([[column identifier] isEqualToString:@"match"]) {
+        return [r[@"match"] boolValue] ? @"\u2713" : @"\u2014";
+    }
+    return r[[column identifier]];
+}
+
+- (BOOL)tableView:(NSTableView *)table shouldSelectRow:(NSInteger)row
+{
+    (void)table; (void)row;
+    return NO;
+}
+
+- (void)okClicked:(id)sender
+{
+    (void)sender;
+    if (!_valid) {
+        XFDBeep();
+        return;
+    }
+    _result = _normalized;
+    [NSApp stopModal];
+    [_panel orderOut:nil];
+}
+
+- (void)cancelClicked:(id)sender
+{
+    (void)sender;
+    _result = nil;
+    [NSApp abortModal];
+    [_panel orderOut:nil];
+}
+
+- (BOOL)windowShouldClose:(id)sender
+{
+    (void)sender;
+    [self cancelClicked:sender];
+    return NO;
+}
+
++ (NSString *)runWithBaseExpression:(NSString *)base
+                         predicates:(NSString *)predicates
+                        hostElement:(NSXMLElement *)hostElement
+                        contextNode:(NSXMLNode *)contextNode
+                              model:(XFModel *)model
+{
+    XFDPredicateEditor *editor = [[XFDPredicateEditor alloc] init];
+    editor->_baseExpression = base ?: @".";
+    editor->_hostElement = hostElement;
+    editor->_contextNode = contextNode;
+    editor->_model = model;
+    [editor buildPanel];
+    // brackets stripped for the common single-predicate case: the field
+    // edits the EXPRESSION, the brackets come back on OK
+    NSString *initial = predicates ?: @"";
+    if ([initial hasPrefix:@"["] && [initial hasSuffix:@"]"]
+        && [initial rangeOfString:@"]["].location == NSNotFound) {
+        initial = [initial substringWithRange:NSMakeRange(1, initial.length - 2)];
+    }
+    [editor->_field setStringValue:initial];
+    [editor preview];
+    [editor->_panel center];
+    [editor->_panel makeFirstResponder:editor->_field];
+    [NSApp runModalForWindow:editor->_panel];
+    return editor->_result;
+}
+
+@end
+
 #pragma mark - Schema suggestions & function knowledge
 
 static void XFDCollectSchemaPaths(NSXMLElement *element, NSString *prefix,
@@ -333,8 +626,7 @@ NSArray *XFDEventContextProperties(NSString *eventName)
 /// disables the steps table), and EVALUATES LIVE into a result table
 /// with cardinality warnings. OK requires only that the expression
 /// compiles.
-@interface XFDXPathPicker : NSObject <NSOutlineViewDataSource, NSOutlineViewDelegate,
-                                      NSTableViewDataSource, NSTableViewDelegate>
+@interface XFDXPathPicker : NSObject <NSTableViewDataSource, NSTableViewDelegate>
 {
     NSPanel *_panel;
     NSTextField *_contextField;
@@ -361,6 +653,7 @@ NSArray *XFDEventContextProperties(NSString *eventName)
                                        label / source / path / depth /
                                        editable */
     NSButton *_editPathButton;
+    NSButton *_predicateButton;
     NSPopUpButton *_suggestPopup;
     NSTextField *_functionInfoField;
     BOOL _syncing;
@@ -550,14 +843,14 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
     [_tree addTableColumn:col];
     [_tree setOutlineTableColumn:col];
     [_tree setHeaderView:nil];
-    [_tree setDataSource:self];
-    [_tree setDelegate:self];
+    [_tree setDataSource:(id)self];
+    [_tree setDelegate:(id)self];
     [treeScroll setDocumentView:_tree];
     [content addSubview:treeScroll];
 
     // editable steps
     [self makeLabel:@"Steps:" frame:NSMakeRect(12, H - 264, 50, 17) in:content];
-    _stepsStatusField = [self makeLabel:@"" frame:NSMakeRect(64, H - 264, W - 160, 17) in:content];
+    _stepsStatusField = [self makeLabel:@"" frame:NSMakeRect(64, H - 264, W - 286, 17) in:content];
     _stepsControl = [[NSSegmentedControl alloc] initWithFrame:NSMakeRect(W - 82, H - 268, 70, 24)];
     [_stepsControl setSegmentCount:2];
     [_stepsControl setLabel:@"+" forSegment:0];
@@ -566,6 +859,17 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
     [_stepsControl setTarget:self];
     [_stepsControl setAction:@selector(stepsPlusMinusClicked:)];
     [content addSubview:_stepsControl];
+
+    _predicateButton = [[NSButton alloc] initWithFrame:NSMakeRect(W - 198, H - 268, 110, 24)];
+    [_predicateButton setTitle:@"Predicate\u2026"];
+    [_predicateButton setBezelStyle:NSRoundedBezelStyle];
+    [[_predicateButton cell] setControlSize:NSSmallControlSize];
+    [_predicateButton setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
+    [_predicateButton setToolTip:@"Edit the selected step's predicates with live per-node match preview."];
+    [_predicateButton setTarget:self];
+    [_predicateButton setAction:@selector(predicateClicked:)];
+    [_predicateButton setEnabled:NO];
+    [content addSubview:_predicateButton];
 
     _editPathButton = [[NSButton alloc] initWithFrame:NSMakeRect(W - 122, H - 268, 110, 24)];
     [_editPathButton setTitle:@"Edit Path…"];
@@ -676,7 +980,7 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
     [_suggestPopup addItemWithTitle:@"Suggest"];   // pull-down title slot
     NSMenu *menu = [_suggestPopup menu];
     void (^add)(NSString *) = ^(NSString *expression) {
-        NSMenuItem *item = [menu addItemWithTitle:expression
+        NSMenuItem *item = (NSMenuItem *)[menu addItemWithTitle:expression
                                            action:@selector(suggestPicked:)
                                     keyEquivalent:@""];
         [item setTarget:self];
@@ -912,6 +1216,8 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
     [_stepsControl setHidden:tree];
     [_editPathButton setHidden:!tree];
     [_editPathButton setEnabled:NO];
+    [_predicateButton setHidden:tree];
+    [_predicateButton setEnabled:NO];
 }
 
 /// Steps were edited: render them back into the expression, evaluate.
@@ -1343,7 +1649,53 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
             [_editPathButton setEnabled:editable];
         } else {
             [_stepsControl setEnabled:_steps != nil && row >= 0 forSegment:1];
+            [_predicateButton setEnabled:_steps != nil && row >= 0
+                && (NSUInteger)row < _steps.count];
         }
+    }
+}
+
+/// The predicate sub-editor on the selected step: candidates = the path
+/// THROUGH that step with its own predicates stripped (what the
+/// predicates will filter), evaluated in the picker's context.
+- (void)predicateClicked:(id)sender
+{
+    (void)sender;
+    NSInteger row = [_stepsTable selectedRow];
+    if (_steps == nil || row < 0 || (NSUInteger)row >= _steps.count) {
+        return;
+    }
+    NSMutableArray *baseSteps = [NSMutableArray array];
+    for (NSInteger i = 0; i <= row; i++) {
+        NSMutableDictionary *step = [_steps[(NSUInteger)i] mutableCopy];
+        if (i == row) {
+            step[@"predicates"] = @"";
+        }
+        [baseSteps addObject:step];
+    }
+    NSMutableDictionary *path = [NSMutableDictionary dictionaryWithDictionary:
+        @{ @"start": _startKind ?: @"context", @"steps": baseSteps }];
+    if (_startInstance) {
+        path[@"instance"] = _startInstance;
+    }
+    NSString *edited = [XFDPredicateEditor
+        runWithBaseExpression:XFDJoinLocationPath(path)
+                   predicates:_steps[(NSUInteger)row][@"predicates"]
+                  hostElement:_hostElement
+                  contextNode:_contextNode
+                            ?: [[_processor defaultInstance] documentElement]
+                        model:_processor.model];
+    if (edited == nil) {
+        return;
+    }
+    NSMutableDictionary *step = [_steps[(NSUInteger)row] mutableCopy];
+    step[@"predicates"] = edited;
+    _steps[(NSUInteger)row] = step;
+    [self stepsChanged];
+    [_stepsTable reloadData];
+    if (row < [_stepsTable numberOfRows]) {
+        [_stepsTable selectRowIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)row]
+                 byExtendingSelection:NO];
     }
 }
 
