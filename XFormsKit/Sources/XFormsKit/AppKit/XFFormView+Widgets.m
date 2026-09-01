@@ -173,15 +173,38 @@ void XFAppKitHasWidgetsFile(void) {}
     if ([control isKindOfClass:[XFOutputControl class]]) {
         XFOutputControl *output = (XFOutputControl *)control;
         if (output.displaysImage) {
-            NSImageView *img = [[NSImageView alloc] initWithFrame:NSZeroRect];
+            // XFOutput.js writes an <img>: the picture shows at its
+            // NATURAL size, capped to a sane page width. A tiny swatch
+            // (a 1x1 data-URI test pixel) scales UP to a visible square:
+            // NSImageView's default proportionally-DOWN scaling would
+            // paint it as one invisible pixel in an unmarked hole.
             NSData *data = [output imageData];
-            if (data) {
-                NSImage *picture = [[NSImage alloc] initWithData:data];
-                if (picture) {
-                    [img setImage:picture];
+            NSImage *picture = data.length ? [[NSImage alloc] initWithData:data] : nil;
+            CGFloat w = 96, h = 72;   // the empty slot (the bezel shows it)
+            if (picture != nil) {
+                NSSize natural = [picture size];
+                w = MAX(natural.width, 1);
+                h = MAX(natural.height, 1);
+                if (w < 24 && h < 24) {
+                    CGFloat up = 48 / MAX(w, h);
+                    w *= up;
+                    h *= up;
                 }
+                if (w > 320) { h *= 320 / w; w = 320; }
+                if (h > 240) { w *= 240 / h; h = 240; }
+                w = ceil(w);
+                h = ceil(h);
             }
-            *height = 72;
+            NSImageView *img = [[NSImageView alloc] initWithFrame:NSMakeRect(0, 0, w, h)];
+            [img setEditable:NO];
+            [img setImageScaling:NSImageScaleProportionallyUpOrDown];
+            if (picture != nil) {
+                [img setImage:picture];
+            } else {
+                // nothing decodable: show the slot, not blank nothing
+                [img setImageFrameStyle:NSImageFrameGrayBezel];
+            }
+            *height = h;
             return img;
         }
     }

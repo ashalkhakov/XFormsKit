@@ -424,9 +424,16 @@ NSView *XFKeyViewOf(NSView *view)
         [label setFrame:NSMakeRect(kMargin + indent, y, kLabelWidth, kRowHeight)];
         [self addSubview:label];
         w.labelField = label;
-        [view setFrame:NSMakeRect(kMargin + indent + kLabelWidth + 8, y, kFieldWidth, height)];
+        // an image view keeps the width the factory derived from the
+        // picture (natural size, capped); text-ish fields fill the row
+        CGFloat fieldWidth = [view isKindOfClass:[NSImageView class]]
+            && [view frame].size.width > 0 ? [view frame].size.width : kFieldWidth;
+        [view setFrame:NSMakeRect(kMargin + indent + kLabelWidth + 8, y, fieldWidth, height)];
     } else {
-        [view setFrame:NSMakeRect(kMargin + indent, y, kLabelWidth + 8 + kFieldWidth, height)];
+        CGFloat fullWidth = [view isKindOfClass:[NSImageView class]]
+            && [view frame].size.width > 0
+            ? [view frame].size.width : kLabelWidth + 8 + kFieldWidth;
+        [view setFrame:NSMakeRect(kMargin + indent, y, fullWidth, height)];
     }
     [self addSubview:view];
     [self.widgets addObject:w];

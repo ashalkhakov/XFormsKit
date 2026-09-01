@@ -294,7 +294,8 @@ void XFAppKitHasLayoutFile(void) {}
     } else if ([view isKindOfClass:[NSScrollView class]]) {
         width = kFieldWidth;
     } else if ([view isKindOfClass:[NSImageView class]]) {
-        width = 96;
+        // the factory sized the view to the image (natural, capped)
+        width = [view frame].size.width > 0 ? [view frame].size.width : 96;
     } else {
         width = kInlineFieldWidth;
     }

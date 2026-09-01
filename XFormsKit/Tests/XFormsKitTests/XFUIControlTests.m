@@ -618,6 +618,44 @@
     XCTAssertTrue([[bold attribute:XFRichBoldAttributeName atIndex:0 effectiveRange:&r] boolValue]);
 }
 
+// xf:output mediatype="image/*" renders an image at natural size; a tiny
+// data-URI swatch scales UP to a visible square (NSImageView's default
+// proportionally-DOWN scaling paints a 1x1 test pixel invisibly), and an
+// empty value shows a bezeled slot instead of blank nothing.
+- (void)testOutputImageRendersScaledSwatchAndEmptySlot
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+        @"<xf:instance><data xmlns=\"\">"
+        @"<img>iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==</img>"
+        @"<empty/></data></xf:instance>"
+        extra:
+        @"<xf:output ref=\"img\" mediatype=\"image/png\"><xf:label>Pixel</xf:label></xf:output>"
+        @"<xf:output ref=\"empty\" mediatype=\"image/png\"><xf:label>Hole</xf:label></xf:output>"
+        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *fv = [[XFFormView alloc] initWithProcessor:p];
+    NSMutableArray *imageViews = [NSMutableArray array];
+    for (NSView *v in [fv subviews]) {
+        if ([v isKindOfClass:[NSImageView class]]) {
+            [imageViews addObject:v];
+        }
+    }
+    XCTAssertEqual(imageViews.count, (NSUInteger)2);
+    NSImageView *pixel = imageViews[0];
+    XCTAssertNotNil([pixel image], @"the base64 png decodes");
+    XCTAssertEqual([pixel imageScaling], NSImageScaleProportionallyUpOrDown,
+                   @"a 1x1 swatch must scale UP to be visible");
+    XCTAssertTrue(NSWidth([pixel frame]) >= 48 && NSHeight([pixel frame]) >= 48,
+                  @"tiny images get a visible square, got %@",
+                  NSStringFromRect([pixel frame]));
+    NSImageView *hole = imageViews[1];
+    XCTAssertNil([hole image]);
+    XCTAssertEqual([hole imageFrameStyle], NSImageFrameGrayBezel,
+                   @"an empty image output shows its slot");
+}
+
 // Hints and alerts on the form (XSLTForms icones.css: hint icon always,
 // alert icon only while .xforms-invalid; minimal hint = title/placeholder).
 - (void)testValidationBadgesAndMinimalHintPlaceholder
