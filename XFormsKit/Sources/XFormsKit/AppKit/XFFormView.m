@@ -408,11 +408,20 @@ NSView *XFKeyViewOf(NSView *view)
 - (XFWidget *)addWidget:(XFControl *)control view:(NSView *)view height:(CGFloat)height
                   atY:(CGFloat)y indent:(CGFloat)indent
 {
+    return [self addWidget:control view:view height:height atY:y indent:indent caption:YES];
+}
+
+/// caption:NO for a control whose label the caller already drew itself —
+/// a full-appearance select puts one caption above the whole button list,
+/// so the per-item widgets must not each repeat it.
+- (XFWidget *)addWidget:(XFControl *)control view:(NSView *)view height:(CGFloat)height
+                  atY:(CGFloat)y indent:(CGFloat)indent caption:(BOOL)caption
+{
     XFWidget *w = [[XFWidget alloc] init];
     w.control = control;
     w.view = view;
     w.height = height;
-    if (control.label.length && ![control isKindOfClass:[XFTriggerControl class]]
+    if (caption && control.label.length && ![control isKindOfClass:[XFTriggerControl class]]
         && ![control isKindOfClass:[XFGroup class]]) {
         NSString *caption = control.required
             ? [NSString stringWithFormat:@"%@ *", control.label]

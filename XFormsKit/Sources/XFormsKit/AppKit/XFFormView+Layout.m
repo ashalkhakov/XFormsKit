@@ -40,8 +40,15 @@ void XFAppKitHasLayoutFile(void) {}
         XFSelectControl *select = (XFSelectControl *)control;
         if (select.multiple || [select.appearance isEqualToString:@"full"]) {
             CGFloat cursor = y;
+            NSTextField *caption = nil;
             if (control.label.length) {
-                NSTextField *caption = [self makeLabel:control.label];
+                NSString *text = control.required
+                    ? [NSString stringWithFormat:@"%@ *", control.label]
+                    : control.label;
+                caption = [self makeLabel:text];
+                if (!control.valid && [caption respondsToSelector:@selector(setTextColor:)]) {
+                    [caption setTextColor:XFInvalidTextColor()];
+                }
                 [caption setFrame:NSMakeRect(kMargin + indent, cursor, kLabelWidth + kFieldWidth, kRowHeight)];
                 [self addSubview:caption];
                 [self noteRight:NSMaxX([caption frame])];
@@ -62,9 +69,17 @@ void XFAppKitHasLayoutFile(void) {}
                 [box setState:item.selected ? NSOnState : NSOffState];
                 [box setTarget:self];
                 [box setAction:@selector(checkClicked:)];
-                XFWidget *w = [self addWidget:control view:box height:kRowHeight atY:cursor indent:indent];
+                // caption:NO — the caption above the list already is the
+                // control label; a per-button one would repeat it per item
+                XFWidget *w = [self addWidget:control view:box height:kRowHeight
+                                         atY:cursor indent:indent caption:NO];
                 w.view.toolTip = item.value;
-                (void)w;
+                if (caption) {
+                    // the first button owns the caption, so a refresh keeps
+                    // hiding / recolouring it with the control
+                    w.labelField = caption;
+                    caption = nil;
+                }
                 cursor += kRowHeight + 4;
             }
             return cursor + kRowGap;

@@ -198,6 +198,7 @@ FOUNDATION_EXPORT NSColor *XFInvalidTextColor(void);
 - (void)showBadgeInfo:(XFBadgeView *)badge;
 - (void)hideBadgeInfo;
 - (XFWidget *)addWidget:(XFControl *)control view:(NSView *)view height:(CGFloat)height atY:(CGFloat)y indent:(CGFloat)indent;
+- (XFWidget *)addWidget:(XFControl *)control view:(NSView *)view height:(CGFloat)height atY:(CGFloat)y indent:(CGFloat)indent caption:(BOOL)caption;
 - (void)noteRight:(CGFloat)right;
 - (XFControl *)controlForSender:(id)sender;
 - (NSTextField *)textFieldEditable:(BOOL)editable secure:(BOOL)secure;

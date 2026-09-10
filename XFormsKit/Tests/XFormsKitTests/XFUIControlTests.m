@@ -1137,6 +1137,41 @@
     XCTAssertFalse(NSIsEmptyRect([fv layoutFrameOfControl:[p controlForElement:a]]));
 }
 
+// A full-appearance select1 draws ONE caption above its radio buttons —
+// the per-item widgets share the control, so a caption per widget would
+// repeat the label once for every item.
+- (void)testFullAppearanceSelectDrawsLabelOnce
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+        @"<xf:instance><data xmlns=\"\"><usTaxpayer>no</usTaxpayer></data></xf:instance>"
+        extra:
+        @"<xf:select1 ref=\"usTaxpayer\" appearance=\"full\">"
+        @"<xf:label>Are you a US taxpayer?</xf:label>"
+        @"<xf:item><xf:label>No</xf:label><xf:value>no</xf:value></xf:item>"
+        @"<xf:item><xf:label>Yes</xf:label><xf:value>yes</xf:value></xf:item>"
+        @"</xf:select1>"
+        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFSelectControl *select = [self firstControlOfClass:[XFSelectControl class] in:p];
+    XCTAssertEqual(select.items.count, (NSUInteger)2);
+    XFFormView *fv = [[XFFormView alloc] initWithProcessor:p];
+
+    NSUInteger captions = 0, radios = 0;
+    for (NSView *v in [fv subviews]) {
+        if ([v isKindOfClass:[NSButton class]]) {
+            radios++;
+        } else if ([v isKindOfClass:[NSTextField class]]
+                   && [[(NSTextField *)v stringValue]
+                          isEqualToString:@"Are you a US taxpayer?"]) {
+            captions++;
+        }
+    }
+    XCTAssertEqual(radios, (NSUInteger)2, @"one radio button per item");
+    XCTAssertEqual(captions, (NSUInteger)1, @"the label belongs above the list, once");
+}
+
 // The design-support introspection the designer's overlay draws from:
 // layoutFrameOfControl / controlAtPoint on XFFormView.
 - (void)testFormViewDesignIntrospection
