@@ -2,8 +2,55 @@
 
 XFormsKit's test suite (and the apps) exercise gnustep-base harder than
 most projects in two places: heavy NSXML mutation, and run-loop-driven
-asynchrony. The notes below are what a fresh Linux setup needs to know;
-the one patch this directory used to carry is now upstream.
+asynchrony. The notes below are what a fresh Linux setup needs to know.
+This directory carries one patch to gnustep-base (section 0); the one it
+used to carry is now upstream (section 1).
+
+## 0. The NSXML addAttribute: use-after-free (patch applied by CI)
+
+`gnustep-base-nsxmlelement-addattribute-value-doc.patch` — applied to
+libs-base by `.github/scripts/dependencies.sh` before building, and needed
+by any hand-built gnustep-base too. `nsxml-addattribute-dangling-doc.m`
+beside it is a Foundation-only reproduction that exits 1 on an unpatched
+library and shows the invalid read under valgrind.
+
+Symptom: `make check` (NSXML configuration) segfaults in
+`XFUIControlTests testActionAuthoring` on Ubuntu 24.04 —
+
+```
+xmlDictOwns (dict=…, str="DOMActivate") at dict.c:1223
+adoptString → setTreeDoc → -[NSXMLNode detach] → -[XFHostEdit deleteElement:]
+```
+
+— and passes on a workstation whose gnustep-base was built against
+libxml2 2.12 or newer. It is not flaky in the usual sense: the dangling
+pointer is created deterministically, and only whether *reading* it
+crashes depends on what the allocator has since put in the freed chunk.
+
+Mechanism: `-[NSXMLNode setName:]` with a prefix it cannot resolve (an
+`ev:event` attribute built before its element is in the document) makes a
+placeholder `xmlNs` with no href and a private `xmlDoc` to hold it.
+`-[NSXMLElement addAttribute:]` then moves the attribute into the element
+with `xmlDOMWrapAdoptNode()`, which refuses a namespace without an href —
+after setting `attr->doc`, before walking the value nodes — and returns
+-1. `addAttribute:` ignores the result and frees the private document, so
+the attribute's text node still points at it. Every libxml2 from 2.9 to
+2.13 fails the adoption the same way; the difference is that a gnustep-base
+compiled against 2.12+ uses its own `updateTreeDocManually()` when the
+element is later inserted, which rewrites every pointer under the element
+and repairs the attribute by accident, whereas against 2.9.x it uses
+`xmlDOMWrapAdoptNode()` again, whose source-document sanity check skips
+exactly the node that needs fixing.
+
+The patch checks the result of `xmlDOMWrapAdoptNode()` and, when it fails,
+moves the attribute subtree with `xmlSetTreeDoc()` before the private
+document is freed. gnustep-base's own NSXML suites (524 tests) pass with it
+on libxml2 2.9.14 and 2.13.8; the XFormsKit suites pass on both.
+
+This is distinct from the `xmlns:`-attribute crash RDLKit carries a patch
+for (a placeholder namespace with the reserved `xmlns` prefix, torn down
+through `-detach`); both live in the same "fake the namespace, fix it
+later" corner of NSXMLNode, and neither is upstream yet.
 
 ## 1. The NSXML detached-attribute bug (fixed upstream — nothing to do)
 

@@ -24,6 +24,10 @@
 # Expects: CC, CXX, LIBRARY_COMBO, RUNTIME_VERSION, DEPS_PATH, INSTALL_PATH.
 set -ex
 
+# Captured before anything cds away: the patch below is named relative to the
+# checkout.
+WORKSPACE_DIR=$(pwd)
+
 mkdir -p "$DEPS_PATH"
 
 # With --with-layout=gnustep this is where tools-make puts the makefiles.
@@ -98,9 +102,19 @@ install_libs_base() {
     . "$GNUSTEP_SH"
     git clone -q -b ${LIBS_BASE_BRANCH:-master} https://github.com/gnustep/libs-base.git
     cd libs-base
-    # No patches are applied here any more: the NSXMLNode detached-attribute
-    # fix this project used to carry has been upstreamed into libs-base.
+    # Required for this project: -[NSXMLElement addAttribute:] frees the
+    # private document of a prefixed attribute while the attribute's value
+    # nodes still point at it, and the next -detach reads freed memory. With
+    # the libxml2 2.9.x Ubuntu ships that is a segfault in the designer's
+    # host-XML editing (testActionAuthoring); a libs-base built against
+    # libxml2 2.12+ repairs the pointer by accident, which is why the crash
+    # is invisible on a workstation. See patches/gnustep/README.md, which
+    # also carries a standalone reproduction. (The earlier detached-attribute
+    # patch this project carried has been upstreamed and is not applied.)
     #
+    # Only the default (NSXML) configuration depends on this. Built against
+    # XFDOM the engine never touches gnustep-base's NSXML at all.
+    patch -p1 < "$WORKSPACE_DIR/patches/gnustep/gnustep-base-nsxmlelement-addattribute-value-doc.patch"
     # The reference recipe names $PREFIX/etc/GNUstep.conf here. This
     # gnustep-make writes it to $PREFIX/etc/GNUstep/GNUstep.conf instead, and
     # when the named file does not exist libs-base falls back to the built-in
