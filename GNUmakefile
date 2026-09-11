@@ -159,6 +159,7 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/DOM/XFDOMElement.m \
 	Sources/XFormsKit/DOM/XFDOMDocument.m \
 	Sources/XFormsKit/DOM/XFDOMParser.m \
+	Sources/XFormsKit/SVG/XFSVGDocument.m \
 	Sources/XFormsKit/AppKit/XFFormView.m \
 	Sources/XFormsKit/AppKit/XFFormView+Widgets.m \
 	Sources/XFormsKit/AppKit/XFFormView+Layout.m \
@@ -170,7 +171,10 @@ XFormsKit_OBJC_FILES = \
 
 XFormsKit_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath
 XFormsKit_OBJCFLAGS += -fobjc-arc -Wall -Wextra
-XFormsKit_LIBRARIES_DEPEND_UPON += -ldispatch -lcrypto
+# Opal supplies CoreGraphics and CoreText on GNUstep; the SVG renderer
+# draws through both. Apple platforms get them from the system frameworks,
+# which the Xcode project links instead.
+XFormsKit_LIBRARIES_DEPEND_UPON += -ldispatch -lcrypto -lopal
 
 XFormsKitTests_NEEDS_GUI = yes
 XFormsKitTests_OBJC_FILES = \

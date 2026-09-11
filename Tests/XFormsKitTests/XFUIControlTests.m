@@ -760,40 +760,53 @@
 {
     [NSApplication sharedApplication];
     // a unit square, closed
-    NSBezierPath *square = [XFSVGDocument bezierPathWithSVGPathData:@"M 0 0 L 10 0 L 10 10 L 0 10 Z"];
-    XCTAssertNotNil(square);
-    NSRect b = [square bounds];
-    XCTAssertEqualWithAccuracy(NSWidth(b), 10.0, 0.001);
-    XCTAssertEqualWithAccuracy(NSHeight(b), 10.0, 0.001);
+    CGPathRef square = [XFSVGDocument createPathWithSVGPathData:@"M 0 0 L 10 0 L 10 10 L 0 10 Z"];
+    XCTAssertTrue(square != NULL);
+    CGRect b = CGPathGetBoundingBox(square);
+    XCTAssertEqualWithAccuracy(CGRectGetWidth(b), 10.0, 0.001);
+    XCTAssertEqualWithAccuracy(CGRectGetHeight(b), 10.0, 0.001);
+    CGPathRelease(square);
 
     // quarter-circle arc from (100,0) to (0,100) sweeping through (~70.7,~70.7)
-    NSBezierPath *arc = [XFSVGDocument bezierPathWithSVGPathData:@"M 100 0 A 100 100 0 0 1 0 100"];
-    NSRect ab = [arc bounds];
-    XCTAssertTrue(NSMaxX(ab) > 99 && NSMaxY(ab) > 99, @"%@", NSStringFromRect(ab));
-    XCTAssertEqualWithAccuracy([arc currentPoint].x, 0.0, 0.01);
-    XCTAssertEqualWithAccuracy([arc currentPoint].y, 100.0, 0.01);
+    CGPathRef arc = [XFSVGDocument createPathWithSVGPathData:@"M 100 0 A 100 100 0 0 1 0 100"];
+    CGRect ab = CGPathGetBoundingBox(arc);
+    XCTAssertTrue(CGRectGetMaxX(ab) > 99 && CGRectGetMaxY(ab) > 99);
+    CGPoint end = CGPathGetCurrentPoint(arc);
+    XCTAssertEqualWithAccuracy(end.x, 0.0, 0.01);
+    XCTAssertEqualWithAccuracy(end.y, 100.0, 0.01);
+    CGPathRelease(arc);
 
     // relative commands and implicit linetos after moveto
-    NSBezierPath *rel = [XFSVGDocument bezierPathWithSVGPathData:@"m 5 5 10 0 l 0 10"];
-    XCTAssertEqualWithAccuracy([rel currentPoint].x, 15.0, 0.001);
-    XCTAssertEqualWithAccuracy([rel currentPoint].y, 15.0, 0.001);
+    CGPathRef rel = [XFSVGDocument createPathWithSVGPathData:@"m 5 5 10 0 l 0 10"];
+    CGPoint relEnd = CGPathGetCurrentPoint(rel);
+    XCTAssertEqualWithAccuracy(relEnd.x, 15.0, 0.001);
+    XCTAssertEqualWithAccuracy(relEnd.y, 15.0, 0.001);
+    CGPathRelease(rel);
 
     // transform lists apply left to right with the rightmost hitting the
     // point first: translate(10,0) rotate(90) maps (1,0) to (10,1)
-    NSAffineTransform *t = [XFSVGDocument transformWithSVGString:@"translate(10,0) rotate(90)"];
-    NSPoint p = [t transformPoint:NSMakePoint(1, 0)];
+    CGAffineTransform t = [XFSVGDocument transformWithSVGString:@"translate(10,0) rotate(90)"];
+    CGPoint p = CGPointApplyAffineTransform(CGPointMake(1, 0), t);
     XCTAssertEqualWithAccuracy(p.x, 10.0, 0.001);
     XCTAssertEqualWithAccuracy(p.y, 1.0, 0.001);
 
-    NSColor *hex = [[XFSVGDocument colorWithSVGString:@"#0685C6"]
-        colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
-    XCTAssertEqualWithAccuracy([hex redComponent], 0x06 / 255.0, 0.005);
-    XCTAssertEqualWithAccuracy([hex blueComponent], 0xC6 / 255.0, 0.005);
-    XCTAssertNotNil([XFSVGDocument colorWithSVGString:@"#ab0"]);
-    XCTAssertNotNil([XFSVGDocument colorWithSVGString:@"black"]);
-    XCTAssertNil([XFSVGDocument colorWithSVGString:@"none"]);
-    XCTAssertNotNil([XFSVGDocument colorWithSVGString:@"url(#pattern)"],
-                    @"paint servers degrade to a neutral wash, not to nothing");
+    CGColorRef hex = [XFSVGDocument createColorWithSVGString:@"#0685C6"];
+    XCTAssertTrue(hex != NULL);
+    const CGFloat *rgba = CGColorGetComponents(hex);
+    XCTAssertEqualWithAccuracy(rgba[0], 0x06 / 255.0, 0.005);
+    XCTAssertEqualWithAccuracy(rgba[2], 0xC6 / 255.0, 0.005);
+    CGColorRelease(hex);
+
+    CGColorRef shorthand = [XFSVGDocument createColorWithSVGString:@"#ab0"];
+    XCTAssertTrue(shorthand != NULL);
+    CGColorRelease(shorthand);
+    CGColorRef named = [XFSVGDocument createColorWithSVGString:@"black"];
+    XCTAssertTrue(named != NULL);
+    CGColorRelease(named);
+    XCTAssertTrue([XFSVGDocument createColorWithSVGString:@"none"] == NULL);
+    CGColorRef wash = [XFSVGDocument createColorWithSVGString:@"url(#pattern)"];
+    XCTAssertTrue(wash != NULL, @"paint servers degrade to a neutral wash, not to nothing");
+    CGColorRelease(wash);
 
     NSDictionary *style = [XFSVGDocument declarationsWithSVGStyle:
         @"fill:{#404040}; stroke : black ;stroke-width:1;"];
@@ -946,11 +959,18 @@
     XCTAssertEqual([fv svgElementAtPoint:inForm], byID(@"gr"));
     XCTAssertFalse(NSIsEmptyRect([fv layoutFrameOfSVGElement:byID(@"gr")]));
 
-    // the draw paths run headless (gradient, pattern tiling, use)
-    NSImage *image = [[NSImage alloc] initWithSize:doc.size];
-    [image lockFocus];
-    [doc drawInRect:NSMakeRect(0, 0, doc.size.width, doc.size.height)];
-    [image unlockFocus];
+    // the draw paths run headless (gradient, pattern tiling, use, text).
+    // Into a bitmap context rather than a locked-focus NSImage: the
+    // renderer draws through CoreGraphics now, and a bitmap context is the
+    // one way to get one that needs no window server.
+    CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
+    CGContextRef bitmap = CGBitmapContextCreate(NULL,
+        (size_t)MAX(doc.size.width, 1), (size_t)MAX(doc.size.height, 1),
+        8, 0, space, (CGBitmapInfo)kCGImageAlphaPremultipliedLast);
+    CGColorSpaceRelease(space);
+    XCTAssertTrue(bitmap != NULL);
+    [doc drawInContext:bitmap rect:CGRectMake(0, 0, doc.size.width, doc.size.height)];
+    CGContextRelease(bitmap);
 
     // SVG shapes reorder among SVG parents (paint order), but an xf
     // control never moves INTO svg markup through the zone bypass

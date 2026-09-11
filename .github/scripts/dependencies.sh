@@ -169,6 +169,35 @@ install_libs_back() {
     echo "::endgroup::"
 }
 
+# CoreGraphics and CoreText for GNUstep. The SVG renderer draws through
+# both, and they are the one drawing API present on all three targets --
+# see docs/ios-port-plan.md phase 2. Built after libs-back so it can pick
+# up the same cairo the backend uses.
+#
+# libs-corebase first: Opal falls back to stub CF types without it, and
+# the renderer wants real CFStringRef for font names.
+install_libs_corebase() {
+    echo "::group::GNUstep CoreBase"
+    cd "$DEPS_PATH"
+    . "$GNUSTEP_SH"
+    git clone -q https://github.com/gnustep/libs-corebase.git
+    cd libs-corebase
+    ./configure --prefix="$INSTALL_PATH" || cat config.log
+    make install
+    echo "::endgroup::"
+}
+
+install_libs_opal() {
+    echo "::group::Opal (CoreGraphics + CoreText)"
+    cd "$DEPS_PATH"
+    . "$GNUSTEP_SH"
+    git clone -q https://github.com/gnustep/libs-opal.git
+    cd libs-opal
+    ./configure --prefix="$INSTALL_PATH" || cat config.log
+    make install
+    echo "::endgroup::"
+}
+
 install_tools_xctest() {
     echo "::group::tools-xctest"
     cd "$DEPS_PATH"
@@ -189,6 +218,8 @@ install_tools_make
 install_libs_base
 install_libs_gui
 install_libs_back
+install_libs_corebase
+install_libs_opal
 install_tools_xctest
 
 echo "=== the prefix ==="

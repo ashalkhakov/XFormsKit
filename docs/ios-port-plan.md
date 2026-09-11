@@ -198,7 +198,7 @@ Two properties of the existing code make B much cheaper than it sounds:
 B is roughly a week more than A up front and pays for itself the first
 time a layout rule changes.
 
-### SVG: retarget to Core Graphics, once
+### SVG: one tree walk, two drawing backends
 
 [XFSVGView.m](../Sources/XFormsKit/AppKit/XFSVGView.m) is 1,404 lines, of which
 parsing, the render tree and hit testing (lines 1–1020) are portable in
@@ -206,11 +206,12 @@ substance but written against `NSBezierPath`, `NSAffineTransform`,
 `NSGradient` and `NSColor`. `NSAffineTransform` and `NSGradient` do not
 exist on iOS at all.
 
-Rather than maintain two drawing backends, port the renderer to Core
-Graphics (`CGPath`, `CGAffineTransform`, `CGGradient`, `CGContext`) — one
-implementation that compiles for both platforms, and a simplification of
-the macOS side as a side effect. `XFSVGView`/`XFSVGViewIOS` then shrink
-to a thin `drawRect:` host each.
+Core Graphics cannot be the single answer: GNUstep does not have it (see
+phase 2, which corrects this). Instead the renderer keeps one portable
+tree walk and puts its dozen leaf drawing operations behind a seam, with
+an AppKit backend for macOS and GNUstep and a Core Graphics backend for
+iOS. `XFSVGView` then shrinks to a thin `drawRect:` host on each
+platform.
 
 ## Phases
 
@@ -252,11 +253,48 @@ and whitespace handling are where a hand-written DOM bleeds. The lift
 helps least exactly here — it hands over a good tree, not a good
 serializer.
 
-### Phase 2 — Core Graphics SVG (≈1–1.5 weeks)
+### Phase 2 — Portable SVG — **DONE (macOS and iOS; GNUstep pending CI)**
 
-Retarget the renderer; keep `XFSVGView` as the macOS host. Exit: the SVG
-tests in `XFUIControlTests` pass and the samples render identically
-(compare screenshots of `Samples/` before and after).
+The plan here said "retarget to Core Graphics, one implementation for both
+platforms". A first attempt found that GNUstep has no Core Graphics —
+across `Sources/` and `Apps/` the only CG identifier that appeared
+anywhere was `CGFloat` — and the phase was rewritten around two drawing
+backends. Then the project decided to adopt **Opal**, GNUstep's
+Quartz-2D-compatible library, which puts the single-implementation plan
+back: Opal ships CoreGraphics *and* CoreText, and gnustep-gui's
+`NSGraphicsContext` already declares `- (CGContextRef)CGContext`, the same
+accessor Apple's has.
+
+`Sources/XFormsKit/SVG/XFSVGDocument.m` (1,510 lines) is now the renderer:
+scanning, path data, the arc conversion, transforms, colours, the render
+tree, paint servers, drawing, hit testing — all through `CGPath`,
+`CGAffineTransform`, `CGColor`, `CGGradient`, `CGContext` and `CTFont`,
+with no view layer. `Sources/XFormsKit/AppKit/XFSVGView.m` is what remains
+of the AppKit host: 80 lines, excluded from the iOS build.
+
+Three things were written around gaps in Opal rather than into them:
+
+- `CGPathCreateWithEllipseInRect` is missing, `CGPathAddEllipseInRect` is
+  not, so circles and ellipses are built the second way.
+- `CGGradientCreateWithColors` wants a `CFArrayRef`; the renderer uses
+  `CGGradientCreateWithColorComponents` and plain C arrays instead, so
+  nothing depends on toll-free bridging an `NSArray`.
+- `CFAutorelease` is not dependable where CoreFoundation is optional, so
+  every created path, colour and gradient is explicitly owned and
+  released. The two public factories say so in their names:
+  `+createPathWithSVGPathData:` and `+createColorWithSVGString:`.
+
+The iOS framework now carries `XFSVGDocument` and `XFSVGNode` and links
+CoreGraphics and CoreText; CI asserts that, and that no view class comes
+with them. `.github/scripts/dependencies.sh` builds libs-corebase and Opal
+into the GNUstep prefix, and the GNUmakefile links `-lopal`.
+
+What is unverified is GNUstep itself: whether Opal builds cleanly in CI,
+whether its CoreText covers `CTFontDrawGlyphs` well enough for SVG text,
+and whether `-[NSGraphicsContext CGContext]` answers a usable context
+under the cairo backend (if it does not, the form view's SVG widget needs
+libs-back built with `--enable-graphics=opal`, or an offscreen bitmap
+context to draw into). Issues found there are for patching upstream.
 
 ### Phase 3 — Portable text and layout (≈2–3 weeks)
 
@@ -316,13 +354,13 @@ A minimal iOS viewer, an iOS test target in CI, README updates.
 | --- | --- | ---: |
 | 0 | Module split | **done** |
 | 1 | Portable DOM (clean-room `XFDOM*`) | **done** |
-| 2 | Core Graphics SVG | 1–1.5 w |
+| 2 | Portable SVG (Core Graphics + Opal) | **done** (GNUstep unverified) |
 | 3 | Portable text + layout extraction | 2–3 w |
 | 4 | iOS Core green | **done** (tests on-device outstanding) |
 | 5 | UIKit widget factory | 2–3 w |
 | 6 | iOS interaction gaps | 1–2 w |
 | 7 | Host app + CI | 1 w |
-| | **Total** | **10–15 weeks** |
+| | **Total** | **11–16 weeks** |
 
 One engineer already familiar with this codebase. The spread is
 dominated by phase 1: if the DOM's serialization matches quickly it is

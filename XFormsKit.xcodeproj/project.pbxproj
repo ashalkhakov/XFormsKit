@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA00000100000000000000300 /* XFSVGDocument.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000300 /* XFSVGDocument.m */; };
 		AA00000100000000000000210 /* XFXMLTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000210 /* XFXMLTypes.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA00000100000000000000200 /* XFDOMNode.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000200 /* XFDOMNode.m */; };
 		AA00000100000000000000201 /* XFDOMElement.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000201 /* XFDOMElement.m */; };
@@ -243,6 +244,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		BB00000100000000000000300 /* XFSVGDocument.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFSVGDocument.m; sourceTree = "<group>"; };
+		BB00000100000000000000301 /* XFSVGPriv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFSVGPriv.h; sourceTree = "<group>"; };
 		BB00000100000000000000210 /* XFXMLTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFXMLTypes.h; sourceTree = "<group>"; };
 		BB00000100000000000000200 /* XFDOMNode.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMNode.m; sourceTree = "<group>"; };
 		BB00000100000000000000201 /* XFDOMElement.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMElement.m; sourceTree = "<group>"; };
@@ -685,6 +688,7 @@
 				BB0000010000000000000055 /* XFXMLEvents.m */,
 				BB000001000000000000001E /* XFFormView.h */,
 				GG0000010000000000000200 /* DOM */,
+				GG00000100000000000000300 /* SVG */,
 				BB00000100000000000000204 /* XFDOM.h */,
 				BB00000100000000000000210 /* XFXMLTypes.h */,
 				BB00000100000000000000205 /* XFDOMNode.h */,
@@ -721,6 +725,15 @@
 				BB0000010000000000000023 /* hello.xhtml */,
 			);
 			path = Fixtures;
+			sourceTree = "<group>";
+		};
+		GG00000100000000000000300 /* SVG */ = {
+			isa = PBXGroup;
+			children = (
+				BB00000100000000000000300 /* XFSVGDocument.m */,
+				BB00000100000000000000301 /* XFSVGPriv.h */,
+			);
+			path = SVG;
 			sourceTree = "<group>";
 		};
 		GG0000010000000000000200 /* DOM */ = {
@@ -1128,6 +1141,7 @@
 				AA0000010000000000000001 /* XFNamespaces.m in Sources */,
 				AA0000010000000000000002 /* XFErrors.m in Sources */,
 				AA00000100000000000000200 /* XFDOMNode.m in Sources */,
+				AA00000100000000000000300 /* XFSVGDocument.m in Sources */,
 				AA00000100000000000000201 /* XFDOMElement.m in Sources */,
 				AA00000100000000000000202 /* XFDOMDocument.m in Sources */,
 				AA00000100000000000000203 /* XFDOMParser.m in Sources */,
