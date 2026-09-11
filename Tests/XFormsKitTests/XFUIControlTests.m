@@ -589,7 +589,7 @@
         @"",
     ];
     for (NSString *html in stable) {
-        NSAttributedString *rich = [XFRichText attributedStringFromHTML:html baseFont:nil];
+        NSAttributedString *rich = [XFRichText attributedStringFromHTML:html];
         XCTAssertEqualObjects([XFRichText htmlFromAttributedString:rich], html);
     }
     // canonicalisation: b→strong, i→em, div→p, bare fragments wrapped
@@ -599,23 +599,37 @@
         @"just text": @"<p>just text</p>",
     };
     for (NSString *html in canonical) {
-        NSAttributedString *rich = [XFRichText attributedStringFromHTML:html baseFont:nil];
+        NSAttributedString *rich = [XFRichText attributedStringFromHTML:html];
         XCTAssertEqualObjects([XFRichText htmlFromAttributedString:rich], canonical[html]);
     }
     // not well-formed → plain text, fully escaped on the way back
-    NSAttributedString *broken = [XFRichText attributedStringFromHTML:@"<p>broken <em>markup</p>" baseFont:nil];
+    NSAttributedString *broken = [XFRichText attributedStringFromHTML:@"<p>broken <em>markup</p>"];
     XCTAssertEqualObjects([broken string], @"<p>broken <em>markup</p>");
     XCTAssertEqualObjects([XFRichText htmlFromAttributedString:broken],
                           @"<p>&lt;p&gt;broken &lt;em&gt;markup&lt;/p&gt;</p>");
     // display text: bullets / numbering / line separator
-    NSAttributedString *list = [XFRichText attributedStringFromHTML:@"<ol><li>a</li><li>b</li></ol>" baseFont:nil];
+    NSAttributedString *list = [XFRichText attributedStringFromHTML:@"<ol><li>a</li><li>b</li></ol>"];
     XCTAssertEqualObjects([list string], @"1. a\n2. b");
-    NSAttributedString *br = [XFRichText attributedStringFromHTML:@"<p>a<br/>b</p>" baseFont:nil];
+    NSAttributedString *br = [XFRichText attributedStringFromHTML:@"<p>a<br/>b</p>"];
     XCTAssertEqualObjects([br string], ([NSString stringWithFormat:@"a%Cb", (unichar)0x2028]));
     // markers drive the serialisation (font-independent)
     NSRange r;
-    NSAttributedString *bold = [XFRichText attributedStringFromHTML:@"<p><strong>x</strong></p>" baseFont:nil];
+    NSAttributedString *bold = [XFRichText attributedStringFromHTML:@"<p><strong>x</strong></p>"];
     XCTAssertTrue([[bold attribute:XFRichBoldAttributeName atIndex:0 effectiveRange:&r] boolValue]);
+    XCTAssertNil([bold attribute:NSFontAttributeName atIndex:0 effectiveRange:&r],
+                 @"the converter emits markers only — no presentation");
+
+    // and the AppKit half turns those markers into something a view shows
+    NSAttributedString *shown = [XFRichText decoratedString:bold baseFont:nil];
+    NSFont *font = [shown attribute:NSFontAttributeName atIndex:0 effectiveRange:&r];
+    XCTAssertNotNil(font);
+    XCTAssertTrue(([[NSFontManager sharedFontManager] traitsOfFont:font] & NSBoldFontMask) != 0
+                  || [[font fontName] rangeOfString:@"Bold"].location != NSNotFound,
+                  @"bold marker becomes a bold font: %@", [font fontName]);
+    NSAttributedString *underlined = [XFRichText decoratedString:
+        [XFRichText attributedStringFromHTML:@"<p><u>x</u></p>"] baseFont:nil];
+    XCTAssertEqualObjects([underlined attribute:NSUnderlineStyleAttributeName atIndex:0 effectiveRange:&r],
+                          @(NSUnderlineStyleSingle));
 }
 
 // xf:output mediatype="image/*" renders an image at natural size; a tiny

@@ -116,6 +116,12 @@ against Foundation alone:
     xcodebuild -project XFormsKit.xcodeproj -target XFormsKit \
       -sdk iphonesimulator -configuration Debug build
 
+The engine is tested there, not merely built: 172 unit tests and all 458
+W3C conformance cases run in the simulator.
+
+    xcodebuild -project XFormsKit.xcodeproj -scheme XFormsKit \
+      -destination 'platform=iOS Simulator,name=iPhone 17' test
+
 There is no UI layer for iOS yet — see `docs/ios-port-plan.md`.
 
 ### GNUstep

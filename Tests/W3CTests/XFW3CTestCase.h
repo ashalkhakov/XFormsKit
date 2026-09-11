@@ -17,7 +17,9 @@
    engine is separate work. `make check` stays the green gate. */
 #pragma once
 #import <XCTest/XCTest.h>
+#if __has_include(<AppKit/AppKit.h>)
 #import <AppKit/AppKit.h>
+#endif
 #import <XFormsKit/XFormsKit.h>
 #import <XFormsKit/XFXMLEvents.h>
 #import <XFormsKit/XFTriggerControl.h>
@@ -37,7 +39,12 @@ NS_ASSUME_NONNULL_BEGIN
 @interface XFW3CTestCase : XCTestCase <XFEventTraceSink>
 
 @property (nonatomic, strong, nullable) XFProcessor *processor;
+#if __has_include(<AppKit/AppKit.h>)
+/// Built so every case exercises the widget layer too, not just the
+/// engine. There is no view layer on iOS yet, where the same cases run
+/// against the engine alone.
 @property (nonatomic, strong, nullable) XFFormView *formView;
+#endif
 /// The live echo transport after useEchoTransport (it records requests).
 @property (nonatomic, strong, nullable) id echoTransport;
 @property (nonatomic, strong, nullable) NSError *loadError;

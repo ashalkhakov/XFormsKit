@@ -91,7 +91,7 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
         text = cell.text;
     } else if ([control isKindOfClass:[XFOutputControl class]]) {
         text = [(XFOutputControl *)control displaysHTML]
-            ? [[XFRichText attributedStringFromHTML:control.stringValue ?: @"" baseFont:[self.formView bodyFont]] string]
+            ? [[XFRichText attributedStringFromHTML:control.stringValue ?: @""] string]
             : control.stringValue;
     } else {
         return @[];   // widgets are single-line
@@ -239,7 +239,8 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
         return @(NSOffState);
     }
     if ([control isKindOfClass:[XFOutputControl class]] && [(XFOutputControl *)control displaysHTML]) {
-        return [XFRichText attributedStringFromHTML:control.stringValue ?: @"" baseFont:nil];
+        return [XFRichText decoratedString:
+            [XFRichText attributedStringFromHTML:control.stringValue ?: @""] baseFont:nil];
     }
     if ([control isKindOfClass:[XFSelectControl class]]) {
         // popup cells carry a blank first entry (G-25): index + 1

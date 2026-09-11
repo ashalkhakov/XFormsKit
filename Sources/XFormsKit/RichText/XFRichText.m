@@ -1,11 +1,12 @@
 #import "XFRichText.h"
 #import <XFormsKit/XFXMLTypes.h>
 
-void XFAppKitHasRichTextFile(void) {}
 
 NSString * const XFRichBlockAttributeName = @"XFRichBlock";
 NSString * const XFRichBoldAttributeName = @"XFRichBold";
 NSString * const XFRichItalicAttributeName = @"XFRichItalic";
+NSString * const XFRichUnderlineAttributeName = @"XFRichUnderline";
+NSString * const XFRichStrikeAttributeName = @"XFRichStrike";
 
 /// U+2028 LINE SEPARATOR: `<br/>` inside a paragraph (NSTextView renders
 /// it as a line break; "\n" is reserved for paragraph boundaries).
@@ -15,42 +16,6 @@ static NSString * const XFRichLineBreak = @" ";
 
 #pragma mark - Fonts
 
-+ (NSFont *)baseFontOrDefault:(NSFont *)baseFont
-{
-    return baseFont ?: [NSFont systemFontOfSize:13];
-}
-
-+ (NSFont *)fontForBlock:(NSString *)blockKind
-                    bold:(BOOL)bold
-                  italic:(BOOL)italic
-                baseFont:(NSFont *)baseFont
-{
-    NSFont *font = [self baseFontOrDefault:baseFont];
-    CGFloat size = [font pointSize];
-    BOOL heading = NO;
-    if ([blockKind isEqualToString:@"h1"]) {
-        size = round(size * 1.6);
-        heading = YES;
-    } else if ([blockKind isEqualToString:@"h2"]) {
-        size = round(size * 1.35);
-        heading = YES;
-    } else if ([blockKind isEqualToString:@"h3"]) {
-        size = round(size * 1.15);
-        heading = YES;
-    }
-    NSFontManager *fm = [NSFontManager sharedFontManager];
-    font = [fm convertFont:font toSize:size] ?: font;
-    if (bold || heading) {
-        font = [fm convertFont:font toHaveTrait:NSBoldFontMask] ?: font;
-    }
-    if (italic) {
-        font = [fm convertFont:font toHaveTrait:NSItalicFontMask] ?: font;
-    }
-    return font;
-}
-
-#pragma mark - HTML → attributed string
-
 typedef struct {
     BOOL bold;
     BOOL italic;
@@ -58,15 +23,14 @@ typedef struct {
     BOOL strike;
 } XFRichInline;
 
+/// Markers only -- no font, no underline style. Those are presentation,
+/// and the portable converter cannot name them: their constants live in
+/// AppKit on macOS and UIKit on iOS. +decoratedString:baseFont: adds them
+/// where there is a view to show them.
 + (NSDictionary *)attributesForBlock:(NSString *)block
                               inline:(XFRichInline)st
-                            baseFont:(NSFont *)baseFont
 {
     NSMutableDictionary *attrs = [NSMutableDictionary dictionary];
-    NSFont *font = [self fontForBlock:block bold:st.bold italic:st.italic baseFont:baseFont];
-    if (font) {
-        attrs[NSFontAttributeName] = font;
-    }
     if (block.length && ![block isEqualToString:@"p"]) {
         attrs[XFRichBlockAttributeName] = block;
     }
@@ -77,10 +41,10 @@ typedef struct {
         attrs[XFRichItalicAttributeName] = @YES;
     }
     if (st.underline) {
-        attrs[NSUnderlineStyleAttributeName] = @(NSUnderlineStyleSingle);
+        attrs[XFRichUnderlineAttributeName] = @YES;
     }
     if (st.strike) {
-        attrs[NSStrikethroughStyleAttributeName] = @(NSUnderlineStyleSingle);
+        attrs[XFRichStrikeAttributeName] = @YES;
     }
     return attrs;
 }
@@ -114,7 +78,6 @@ typedef struct {
 + (void)appendInlineNodes:(NSArray<XFXMLNode *> *)nodes
                     block:(NSString *)block
                    style:(XFRichInline)style
-                 baseFont:(NSFont *)baseFont
                      into:(NSMutableAttributedString *)out
 {
     for (XFXMLNode *node in nodes) {
@@ -130,7 +93,7 @@ typedef struct {
             if (text.length) {
                 [out appendAttributedString:
                     [[NSAttributedString alloc] initWithString:text
-                                                    attributes:[self attributesForBlock:block inline:style baseFont:baseFont]]];
+                                                    attributes:[self attributesForBlock:block inline:style]]];
             }
             continue;
         }
@@ -141,7 +104,7 @@ typedef struct {
         if ([tag isEqualToString:@"br"]) {
             [out appendAttributedString:
                 [[NSAttributedString alloc] initWithString:XFRichLineBreak
-                                                attributes:[self attributesForBlock:block inline:style baseFont:baseFont]]];
+                                                attributes:[self attributesForBlock:block inline:style]]];
             continue;
         }
         XFRichInline st = style;
@@ -155,28 +118,27 @@ typedef struct {
             st.strike = YES;
         }
         // every other element (span, a, font, …) is transparent: children only
-        [self appendInlineNodes:[node children] block:block style:st baseFont:baseFont into:out];
+        [self appendInlineNodes:[node children] block:block style:st into:out];
     }
 }
 
 + (void)appendParagraph:(NSArray<XFXMLNode *> *)content
                   block:(NSString *)block
                  prefix:(NSString *)prefix
-               baseFont:(NSFont *)baseFont
                    into:(NSMutableAttributedString *)out
 {
     if (out.length) {
         [out appendAttributedString:
             [[NSAttributedString alloc] initWithString:@"\n"
-                                            attributes:[self attributesForBlock:block inline:(XFRichInline){0} baseFont:baseFont]]];
+                                            attributes:[self attributesForBlock:block inline:(XFRichInline){0}]]];
     }
     if (prefix.length) {
         [out appendAttributedString:
             [[NSAttributedString alloc] initWithString:prefix
-                                            attributes:[self attributesForBlock:block inline:(XFRichInline){0} baseFont:baseFont]]];
+                                            attributes:[self attributesForBlock:block inline:(XFRichInline){0}]]];
     }
     NSUInteger start = out.length;
-    [self appendInlineNodes:content block:block style:(XFRichInline){0} baseFont:baseFont into:out];
+    [self appendInlineNodes:content block:block style:(XFRichInline){0} into:out];
     // trim the leading/trailing space HTML collapsing leaves at the edges
     while (out.length > start && [[out string] characterAtIndex:start] == ' ') {
         [out deleteCharactersInRange:NSMakeRange(start, 1)];
@@ -186,9 +148,8 @@ typedef struct {
     }
 }
 
-+ (NSAttributedString *)attributedStringFromHTML:(NSString *)html baseFont:(NSFont *)baseFont
++ (NSAttributedString *)attributedStringFromHTML:(NSString *)html
 {
-    baseFont = [self baseFontOrDefault:baseFont];
     NSString *source = html ?: @"";
     // tolerate the usual non-XML entity
     source = [source stringByReplacingOccurrencesOfString:@"&nbsp;" withString:@" "];
@@ -198,14 +159,13 @@ typedef struct {
     NSMutableAttributedString *out = [[NSMutableAttributedString alloc] init];
     if (doc == nil) {
         // not our subset: plain text with the base font
-        return [[NSAttributedString alloc] initWithString:source
-                                               attributes:@{ NSFontAttributeName: baseFont }];
+        return [[NSAttributedString alloc] initWithString:source attributes:@{}];
     }
 
     NSMutableArray<XFXMLNode *> *pending = [NSMutableArray array];   // loose inline content
     void (^flushPending)(void) = ^{
         if (pending.count) {
-            [self appendParagraph:pending block:@"p" prefix:nil baseFont:baseFont into:out];
+            [self appendParagraph:pending block:@"p" prefix:nil into:out];
             [pending removeAllObjects];
         }
     };
@@ -215,7 +175,7 @@ typedef struct {
             || [tag isEqualToString:@"h1"] || [tag isEqualToString:@"h2"] || [tag isEqualToString:@"h3"]) {
             flushPending();
             NSString *block = [tag hasPrefix:@"h"] ? tag : @"p";
-            [self appendParagraph:[node children] block:block prefix:nil baseFont:baseFont into:out];
+            [self appendParagraph:[node children] block:block prefix:nil into:out];
         } else if ([tag isEqualToString:@"ul"] || [tag isEqualToString:@"ol"]) {
             flushPending();
             NSUInteger number = 1;
@@ -227,7 +187,7 @@ typedef struct {
                 NSString *prefix = [tag isEqualToString:@"ol"]
                     ? [NSString stringWithFormat:@"%lu. ", (unsigned long)number++]
                     : @"• ";
-                [self appendParagraph:[item children] block:tag prefix:prefix baseFont:baseFont into:out];
+                [self appendParagraph:[item children] block:tag prefix:prefix into:out];
             }
         } else if ([node kind] == XFXMLTextKind
                    && [self collapse:[node stringValue] ?: @""].length == 0) {
@@ -267,10 +227,10 @@ static NSArray<NSString *> *XFRichTagsForAttributes(NSDictionary *attrs)
     if ([attrs[XFRichItalicAttributeName] boolValue]) {
         [tags addObject:@"em"];
     }
-    if ([attrs[NSUnderlineStyleAttributeName] integerValue] != 0) {
+    if ([attrs[XFRichUnderlineAttributeName] boolValue]) {
         [tags addObject:@"u"];
     }
-    if ([attrs[NSStrikethroughStyleAttributeName] integerValue] != 0) {
+    if ([attrs[XFRichStrikeAttributeName] boolValue]) {
         [tags addObject:@"s"];
     }
     return tags;

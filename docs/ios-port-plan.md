@@ -296,34 +296,74 @@ under the cairo backend (if it does not, the form view's SVG widget needs
 libs-back built with `--enable-graphics=opal`, or an offscreen bitmap
 context to draw into). Issues found there are for patching upstream.
 
-### Phase 3 — Portable text and layout (≈2–3 weeks)
+### Phase 3 — Portable text and layout extraction — **text done, layout next**
 
-`XFRichText` off `NSFontManager` onto `UIFontDescriptor`-style trait
-queries behind a small font abstraction; extract the layout pass per
-option B. Exit: macOS form rendering pixel-identical; the layout pass has
-its own unit tests asserting widget specs (which is also the first time
-the label-per-item class of bug becomes directly testable without a view).
+**Rich text: done.** `XFRichText` was one class doing two jobs — converting
+between the instance's XHTML subset and an attributed string, and deciding
+what that should look like. The second job made it unportable, because the
+attribute names it applied (`NSFontAttributeName`,
+`NSUnderlineStyleAttributeName`) come from AppKit on macOS and UIKit on
+iOS, and the portable core may import neither.
 
-### Phase 4 — iOS Core lands — **DONE (build), test host outstanding**
+They are now separate:
 
-`XFormsKit.framework` builds for both iOS SDKs:
+- `Sources/XFormsKit/RichText/XFRichText.m` — the converter, Foundation and
+  the DOM only. It reads and writes **markers**: `XFRichBlock`,
+  `XFRichBold`, `XFRichItalic`, and the two this split added,
+  `XFRichUnderline` and `XFRichStrike`. Underline and strikethrough used to
+  be carried by the AppKit constants themselves, which is what tied the
+  serializer to a UI framework.
+- `Sources/XFormsKit/AppKit/XFRichTextPresentation.m` — a category that
+  turns those markers into a font, an underline style and a strikethrough.
+  A UIKit twin of this one file is what an iOS text widget will want; the
+  converter it decorates needs no twin.
 
-    xcodebuild -project XFormsKit.xcodeproj -target XFormsKit \
-      -sdk iphonesimulator -configuration Debug build
-    xcodebuild -project XFormsKit.xcodeproj -target XFormsKit \
-      -sdk iphoneos -configuration Debug build CODE_SIGNING_ALLOWED=NO
+The editor toggles markers now and recomputes presentation from them, so
+what the serializer reads and what the text view shows cannot drift apart.
+The round-trip test additionally pins that the converter emits *no*
+presentation, and that decorating adds it back.
+
+`XFRichText` is in the iOS framework, which still links no UI framework.
+
+**Layout extraction: still to do.** This is the half that blocks phase 5.
+`XFFormView+Layout.m` computes frames and builds AppKit views in the same
+pass; the geometry has to come out as a list of widget specs that a
+per-platform factory instantiates. Two things already make it cheaper than
+it looks: the views are flipped, so the arithmetic is UIKit's orientation
+already, and measurement funnels through one `widthOfText:font:`.
+
+### Phase 4 — iOS Core lands — **DONE**
+
+`XFormsKit.framework` builds for both iOS SDKs, and **the engine is proven
+on iOS by running, not only by compiling**:
+
+    xcodebuild -scheme XFormsKit  -destination 'platform=iOS Simulator,name=iPhone 17' test
+    xcodebuild -scheme XFW3CTests -destination 'platform=iOS Simulator,name=iPhone 17' test
+
+| | macOS | iOS Simulator |
+| --- | ---: | ---: |
+| Unit tests | 225 | 172 |
+| W3C conformance | 458 | **458** |
+
+The whole XForms 1.1 conformance suite passes on iOS against XFDOM. The
+53 unit tests that do not run there are the AppKit widget tests
+(`XFUIControlTests`) and the NSXML differential tests (`XFDOMTests`, which
+needs an NSXML to differ from); both test bundles exclude them on an
+iPhone SDK, the same way the framework excludes its view layer.
+
+Two lines of the W3C harness held the suite back: it brought up
+`NSApplication` and built an `XFFormView` for every case, so that the
+widget layer got exercised too. Both are now behind
+`#if __has_include(<AppKit/AppKit.h>)`, and on iOS the same cases run
+against the engine alone.
 
 The simulator slice is a universal x86_64 + arm64 Mach-O with a minimum of
-iOS 15, carrying 99 Objective-C classes — the engine, the XPath layer and
-XFDOM — and linking **Foundation, CoreFoundation and libobjc only**. No
-AppKit, no UIKit, no libxml2. CI asserts that shape on every run rather
-than trusting the exclusion list: it fails if a view class appears in the
-binary or if anything but Foundation is linked.
-
-What is left of this phase is running the ~630 engine tests *on* iOS.
-That needs an iOS unit-test target and a host app, which is a scheme and
-signing question rather than a porting one — the same test sources should
-run unchanged, since only `XFUIControlTests` touches AppKit.
+iOS 15, carrying the engine, the XPath layer, XFDOM, the SVG renderer and
+the rich-text converter, and linking **Foundation, CoreFoundation,
+CoreGraphics and CoreText only**. No AppKit, no UIKit. CI asserts that
+shape on every run rather than trusting the exclusion lists, and runs both
+suites in the simulator on a device it resolves by UDID (naming a model
+would pin the job to an Xcode version).
 
 ### Phase 5 — The UIKit widget factory (≈2–3 weeks)
 
@@ -355,8 +395,8 @@ A minimal iOS viewer, an iOS test target in CI, README updates.
 | 0 | Module split | **done** |
 | 1 | Portable DOM (clean-room `XFDOM*`) | **done** |
 | 2 | Portable SVG (Core Graphics + Opal) | **done** (GNUstep unverified) |
-| 3 | Portable text + layout extraction | 2–3 w |
-| 4 | iOS Core green | **done** (tests on-device outstanding) |
+| 3 | Portable text (**done**) + layout extraction | 1.5–2 w |
+| 4 | iOS Core green | **done** (630 tests green on iOS) |
 | 5 | UIKit widget factory | 2–3 w |
 | 6 | iOS interaction gaps | 1–2 w |
 | 7 | Host app + CI | 1 w |

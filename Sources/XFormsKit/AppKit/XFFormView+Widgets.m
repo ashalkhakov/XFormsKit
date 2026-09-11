@@ -215,7 +215,9 @@ void XFAppKitHasWidgetsFile(void) {}
         // no WebKit (G-44)
         NSTextField *field = [self textFieldEditable:NO secure:NO];
         [field setAttributedStringValue:
-            [XFRichText attributedStringFromHTML:control.stringValue ?: @"" baseFont:[self bodyFont]]];
+            [XFRichText decoratedString:
+                [XFRichText attributedStringFromHTML:control.stringValue ?: @""]
+                           baseFont:[self bodyFont]]];
         return field;
     }
 

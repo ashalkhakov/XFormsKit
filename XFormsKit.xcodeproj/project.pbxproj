@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA00000100000000000000400 /* XFRichText.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000400 /* XFRichText.m */; };
 		AA00000100000000000000300 /* XFSVGDocument.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000300 /* XFSVGDocument.m */; };
 		AA00000100000000000000210 /* XFXMLTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000210 /* XFXMLTypes.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA00000100000000000000200 /* XFDOMNode.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000200 /* XFDOMNode.m */; };
@@ -137,7 +138,7 @@
 		AA0000010000000000000116 /* XFDialog.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000116 /* XFDialog.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0000010000000000000119 /* XFSubform.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000119 /* XFSubform.m */; };
 		AA0000010000000000000118 /* XFSubform.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000118 /* XFSubform.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA000001000000000000011B /* XFRichText.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000011B /* XFRichText.m */; };
+		AA000001000000000000011B /* XFRichTextPresentation.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000011B /* XFRichTextPresentation.m */; };
 		AA000001000000000000011A /* XFRichText.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000001000000000000011A /* XFRichText.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0000010000000000000111 /* XFHostNode.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000110 /* XFHostNode.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA00000100000000000000C1 /* XFGroup.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000C0 /* XFGroup.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -244,6 +245,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		BB00000100000000000000400 /* XFRichText.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFRichText.m; sourceTree = "<group>"; };
+		BB00000100000000000000401 /* XFRichTextPriv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFRichTextPriv.h; sourceTree = "<group>"; };
 		BB00000100000000000000300 /* XFSVGDocument.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFSVGDocument.m; sourceTree = "<group>"; };
 		BB00000100000000000000301 /* XFSVGPriv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFSVGPriv.h; sourceTree = "<group>"; };
 		BB00000100000000000000210 /* XFXMLTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFXMLTypes.h; sourceTree = "<group>"; };
@@ -367,7 +370,7 @@
 		BB0000010000000000000118 /* XFSubform.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFSubform.h; sourceTree = "<group>"; };
 		BB0000010000000000000119 /* XFSubform.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFSubform.m; sourceTree = "<group>"; };
 		BB000001000000000000011A /* XFRichText.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFRichText.h; sourceTree = "<group>"; };
-		BB000001000000000000011B /* XFRichText.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFRichText.m; sourceTree = "<group>"; };
+		BB000001000000000000011B /* XFRichTextPresentation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFRichTextPresentation.m; sourceTree = "<group>"; };
 		BB00000100000000000000C2 /* XFRepeat.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFRepeat.h; sourceTree = "<group>"; };
 		BB00000100000000000000C3 /* XFRepeat.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFRepeat.m; sourceTree = "<group>"; };
 		BB00000100000000000000C4 /* XFSetindexAction.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFSetindexAction.h; sourceTree = "<group>"; };
@@ -689,6 +692,7 @@
 				BB000001000000000000001E /* XFFormView.h */,
 				GG0000010000000000000200 /* DOM */,
 				GG00000100000000000000300 /* SVG */,
+				GG00000100000000000000400 /* RichText */,
 				BB00000100000000000000204 /* XFDOM.h */,
 				BB00000100000000000000210 /* XFXMLTypes.h */,
 				BB00000100000000000000205 /* XFDOMNode.h */,
@@ -725,6 +729,15 @@
 				BB0000010000000000000023 /* hello.xhtml */,
 			);
 			path = Fixtures;
+			sourceTree = "<group>";
+		};
+		GG00000100000000000000400 /* RichText */ = {
+			isa = PBXGroup;
+			children = (
+				BB00000100000000000000400 /* XFRichText.m */,
+				BB00000100000000000000401 /* XFRichTextPriv.h */,
+			);
+			path = RichText;
 			sourceTree = "<group>";
 		};
 		GG00000100000000000000300 /* SVG */ = {
@@ -782,7 +795,7 @@
 				BB00000100000000000011E /* XFFormView+Editing.m */,
 				BB00000100000000000011F /* XFTableAdapter.m */,
 				BB000001000000000000120 /* XFRichTextEditor.m */,
-				BB000001000000000000011B /* XFRichText.m */,
+				BB000001000000000000011B /* XFRichTextPresentation.m */,
 				BB0000010000000000000129 /* XFSVGView.m */,
 			);
 			path = AppKit;
@@ -1142,6 +1155,7 @@
 				AA0000010000000000000002 /* XFErrors.m in Sources */,
 				AA00000100000000000000200 /* XFDOMNode.m in Sources */,
 				AA00000100000000000000300 /* XFSVGDocument.m in Sources */,
+				AA00000100000000000000400 /* XFRichText.m in Sources */,
 				AA00000100000000000000201 /* XFDOMElement.m in Sources */,
 				AA00000100000000000000202 /* XFDOMDocument.m in Sources */,
 				AA00000100000000000000203 /* XFDOMParser.m in Sources */,
@@ -1215,7 +1229,7 @@
 				AA00000100000000000011E /* XFFormView+Editing.m in Sources */,
 				AA00000100000000000011F /* XFTableAdapter.m in Sources */,
 				AA000001000000000000120 /* XFRichTextEditor.m in Sources */,
-				AA000001000000000000011B /* XFRichText.m in Sources */,
+				AA000001000000000000011B /* XFRichTextPresentation.m in Sources */,
 				AA0000010000000000000050 /* XFEvent.m in Sources */,
 				AA0000010000000000000052 /* XFListener.m in Sources */,
 				AA0000010000000000000054 /* XFXMLEvents.m in Sources */,
@@ -1384,7 +1398,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
-				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphone*]" = "XFFormView.m XFFormView+Widgets.m XFFormView+Layout.m XFFormView+Editing.m XFTableAdapter.m XFRichTextEditor.m XFRichText.m XFSVGView.m XFFormView.h XFSVG.h XFRichText.h XFRichTextEditor.h";
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphone*]" = "XFFormView.m XFFormView+Widgets.m XFFormView+Layout.m XFFormView+Editing.m XFTableAdapter.m XFRichTextEditor.m XFRichTextPresentation.m XFSVGView.m XFFormView.h XFRichTextEditor.h";
 				"GCC_PREPROCESSOR_DEFINITIONS[sdk=iphone*]" = "$(inherited) XF_PORTABLE_DOM=1";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				SDKROOT = auto;
@@ -1415,7 +1429,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
-				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphone*]" = "XFFormView.m XFFormView+Widgets.m XFFormView+Layout.m XFFormView+Editing.m XFTableAdapter.m XFRichTextEditor.m XFRichText.m XFSVGView.m XFFormView.h XFSVG.h XFRichText.h XFRichTextEditor.h";
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphone*]" = "XFFormView.m XFFormView+Widgets.m XFFormView+Layout.m XFFormView+Editing.m XFTableAdapter.m XFRichTextEditor.m XFRichTextPresentation.m XFSVGView.m XFFormView.h XFRichTextEditor.h";
 				"GCC_PREPROCESSOR_DEFINITIONS[sdk=iphone*]" = "$(inherited) XF_PORTABLE_DOM=1";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				SDKROOT = auto;
@@ -1456,8 +1470,14 @@
 					"@loader_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphone*]" = "XFUIControlTests.m XFDOMTests.m";
+				"GCC_PREPROCESSOR_DEFINITIONS[sdk=iphone*]" = "$(inherited) XF_PORTABLE_DOM=1";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsKitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -1477,8 +1497,14 @@
 					"@loader_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphone*]" = "XFUIControlTests.m XFDOMTests.m";
+				"GCC_PREPROCESSOR_DEFINITIONS[sdk=iphone*]" = "$(inherited) XF_PORTABLE_DOM=1";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsKitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -1592,8 +1618,13 @@
 					"@loader_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				"GCC_PREPROCESSOR_DEFINITIONS[sdk=iphone*]" = "$(inherited) XF_PORTABLE_DOM=1";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFW3CTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -1617,8 +1648,13 @@
 					"@loader_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				"GCC_PREPROCESSOR_DEFINITIONS[sdk=iphone*]" = "$(inherited) XF_PORTABLE_DOM=1";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFW3CTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};

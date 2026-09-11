@@ -113,6 +113,33 @@ jobs:
           xcodebuild -project XFormsKit.xcodeproj -target XFormsKit \
             -sdk iphoneos -configuration Debug build CODE_SIGNING_ALLOWED=NO
 
+      # Building proves the engine compiles for iOS; this proves it WORKS
+      # there. Both test bundles are multiplatform: on an iPhone SDK they
+      # drop the AppKit widget tests and the NSXML differential tests, and
+      # what is left -- the engine and the whole W3C conformance suite --
+      # runs against XFDOM in the simulator.
+      - name: Test on the iOS Simulator
+        if: ${{ matrix.portable }}
+        run: |
+          # Whatever iPhone this runner's Xcode ships with, by UDID: naming a
+          # model pins the job to an Xcode version, and the name changes
+          # every autumn.
+          udid=$(xcrun simctl list devices available \
+                 | grep -E '^ +iPhone' | head -1 \
+                 | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/')
+          if [ -z "$udid" ]; then
+            echo "::error::no iOS Simulator device is available on this runner"
+            xcrun simctl list devices available
+            exit 1
+          fi
+          echo "simulator: $udid"
+          for scheme in XFormsKit XFW3CTests; do
+            xcodebuild -project XFormsKit.xcodeproj -scheme "$scheme" \
+              -destination "platform=iOS Simulator,id=$udid" \
+              -configuration Debug \
+              -resultBundlePath "$RUNNER_TEMP/$scheme-iOS.xcresult" test
+          done
+
       # A framework that builds but quietly drags in the view layer, or links
       # something not on iOS, would defeat the point -- so assert the shape of
       # what came out rather than trusting the build to have excluded it.
@@ -135,15 +162,15 @@ jobs:
             fi
           done
           classes=$(nm -arch arm64 -gU "$binary" | sed -n 's/.*_OBJC_CLASS_\$_//p')
-          for c in XFProcessor XFDOMDocument XFXPath XFSubmission XFSVGDocument; do
+          for c in XFProcessor XFDOMDocument XFXPath XFSubmission XFSVGDocument XFRichText; do
             echo "$classes" | grep -qx "$c" \
               || { echo "::error::$c is missing from the iOS framework"; exit 1; }
           done
-          for c in XFFormView XFSVGView XFRichTextEditor XFTableAdapter; do
+          for c in XFFormView XFSVGView XFRichTextEditor XFTableAdapter XFBadgeView; do
             echo "$classes" | grep -qx "$c" \
               && { echo "::error::the view layer leaked into the iOS framework ($c)"; exit 1; }
           done
-          echo "engine and SVG renderer present, view layer excluded"
+          echo "engine, SVG renderer and rich-text converter present, view layer excluded"
 
       # XFDOMTests is a differential suite: it asserts XFDOM and NSXML agree.
       # A rename that quietly points both sides at the same implementation

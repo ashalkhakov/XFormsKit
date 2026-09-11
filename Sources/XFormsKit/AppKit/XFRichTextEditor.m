@@ -77,7 +77,8 @@ static const CGFloat kRichToolbarHeight = 24;
 
 - (void)setHTML:(NSString *)html
 {
-    NSAttributedString *rich = [XFRichText attributedStringFromHTML:html ?: @"" baseFont:self.baseFont];
+    NSAttributedString *rich = [XFRichText decoratedString:
+        [XFRichText attributedStringFromHTML:html ?: @""] baseFont:self.baseFont];
     [[self.textView textStorage] setAttributedString:rich];
     [self.textView setTypingAttributes:@{ NSFontAttributeName: self.baseFont }];
 }
@@ -90,36 +91,27 @@ static const CGFloat kRichToolbarHeight = 24;
 #pragma mark inline formatting
 
 /// Toggle `marker` over the selection (or the typing attributes when the
-/// selection is empty); bold/italic also swap the font of each run.
+/// selection is empty). Every marker is a plain @YES now — bold, italic,
+/// underline and strikethrough alike — and the presentation each implies
+/// is recomputed from the markers afterwards, so what the serializer reads
+/// and what the view shows cannot drift apart.
 - (void)toggleMarker:(NSString *)marker
 {
     NSTextView *tv = self.textView;
     NSRange sel = [tv selectedRange];
-    BOOL fontTrait = [marker isEqualToString:XFRichBoldAttributeName]
-        || [marker isEqualToString:XFRichItalicAttributeName];
     if (sel.length == 0) {
         NSMutableDictionary *typing = [[tv typingAttributes] mutableCopy] ?: [NSMutableDictionary dictionary];
-        BOOL on = [typing[marker] boolValue] || [typing[marker] integerValue];
-        if ([marker isEqualToString:(NSString *)NSUnderlineStyleAttributeName]
-            || [marker isEqualToString:(NSString *)NSStrikethroughStyleAttributeName]) {
-            if (on) [typing removeObjectForKey:marker];
-            else typing[marker] = @(NSUnderlineStyleSingle);
+        if ([typing[marker] boolValue]) {
+            [typing removeObjectForKey:marker];
         } else {
-            if (on) [typing removeObjectForKey:marker];
-            else typing[marker] = @YES;
+            typing[marker] = @YES;
         }
-        if (fontTrait) {
-            typing[NSFontAttributeName] =
-                [XFRichText fontForBlock:typing[XFRichBlockAttributeName]
-                                    bold:[typing[XFRichBoldAttributeName] boolValue]
-                                  italic:[typing[XFRichItalicAttributeName] boolValue]
-                                baseFont:self.baseFont];
-        }
-        [tv setTypingAttributes:typing];
+        [tv setTypingAttributes:[XFRichText attributesWithPresentation:typing
+                                                             baseFont:self.baseFont]];
         return;
     }
     NSTextStorage *storage = [tv textStorage];
-    BOOL on = [storage attribute:marker atIndex:sel.location effectiveRange:NULL] != nil;
+    BOOL on = [[storage attribute:marker atIndex:sel.location effectiveRange:NULL] boolValue];
     [storage beginEditing];
     NSUInteger i = sel.location;
     while (i < NSMaxRange(sel)) {   // no GNUstep enumerateAttributesInRange:
@@ -128,19 +120,11 @@ static const CGFloat kRichToolbarHeight = 24;
         range = NSIntersectionRange(range, sel);
         if (on) {
             [a removeObjectForKey:marker];
-        } else if ([marker isEqualToString:(NSString *)NSUnderlineStyleAttributeName]
-                   || [marker isEqualToString:(NSString *)NSStrikethroughStyleAttributeName]) {
-            a[marker] = @(NSUnderlineStyleSingle);
         } else {
             a[marker] = @YES;
         }
-        if (fontTrait) {
-            a[NSFontAttributeName] = [XFRichText fontForBlock:a[XFRichBlockAttributeName]
-                                                         bold:[a[XFRichBoldAttributeName] boolValue]
-                                                       italic:[a[XFRichItalicAttributeName] boolValue]
-                                                     baseFont:self.baseFont];
-        }
-        [storage setAttributes:a range:range];
+        [storage setAttributes:[XFRichText attributesWithPresentation:a baseFont:self.baseFont]
+                         range:range];
         i = NSMaxRange(range);
     }
     [storage endEditing];
@@ -149,8 +133,8 @@ static const CGFloat kRichToolbarHeight = 24;
 
 - (void)toggleRichBold:(id)sender { (void)sender; [self toggleMarker:XFRichBoldAttributeName]; }
 - (void)toggleRichItalic:(id)sender { (void)sender; [self toggleMarker:XFRichItalicAttributeName]; }
-- (void)toggleRichUnderline:(id)sender { (void)sender; [self toggleMarker:(NSString *)NSUnderlineStyleAttributeName]; }
-- (void)toggleRichStrike:(id)sender { (void)sender; [self toggleMarker:(NSString *)NSStrikethroughStyleAttributeName]; }
+- (void)toggleRichUnderline:(id)sender { (void)sender; [self toggleMarker:XFRichUnderlineAttributeName]; }
+- (void)toggleRichStrike:(id)sender { (void)sender; [self toggleMarker:XFRichStrikeAttributeName]; }
 
 #pragma mark block formatting
 

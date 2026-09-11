@@ -160,13 +160,14 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/DOM/XFDOMDocument.m \
 	Sources/XFormsKit/DOM/XFDOMParser.m \
 	Sources/XFormsKit/SVG/XFSVGDocument.m \
+	Sources/XFormsKit/RichText/XFRichText.m \
 	Sources/XFormsKit/AppKit/XFFormView.m \
 	Sources/XFormsKit/AppKit/XFFormView+Widgets.m \
 	Sources/XFormsKit/AppKit/XFFormView+Layout.m \
 	Sources/XFormsKit/AppKit/XFFormView+Editing.m \
 	Sources/XFormsKit/AppKit/XFTableAdapter.m \
 	Sources/XFormsKit/AppKit/XFRichTextEditor.m \
-	Sources/XFormsKit/AppKit/XFRichText.m \
+	Sources/XFormsKit/AppKit/XFRichTextPresentation.m \
 	Sources/XFormsKit/AppKit/XFSVGView.m
 
 XFormsKit_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath
