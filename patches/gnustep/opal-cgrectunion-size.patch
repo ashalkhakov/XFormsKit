@@ -1,0 +1,34 @@
+Fix CGRectUnion returning the union's maximum edges as its SIZE
+
+CGRectUnion computes the union's origin as the minimum of the two
+origins, and then stores the maximum of the two far edges directly into
+size.width and size.height. Those are absolute coordinates, not
+extents: the size has to be the far edge MINUS the origin that was just
+chosen.
+
+For rectangles at the origin the two happen to agree, which is why this
+survives casual use. Away from the origin the union comes out far too
+large: unioning a point at (100,10) with one at (120,10) answers
+origin (100,10) with width 120 instead of width 20.
+
+XFormsKit's SVG renderer hits this when it maps a shape's bounding box
+through its transform and unions the four mapped corners, which is how
+-[XFSVGDocument frameOfElement:] answers (testSVGPaintServersUseAndHitTesting
+in XFUIControlTests: a 20x20 rect under translate(100,10) reported a
+width of 120).
+
+--- a/Source/OpalGraphics/CGGeometry.m
++++ b/Source/OpalGraphics/CGGeometry.m
+@@ -182,8 +182,10 @@ CGRect CGRectUnion(CGRect r1, CGRect r2)
+   r1 = CGRectStandardize(r1);
+   r2 = CGRectStandardize(r2);
+   rect.origin.x = MIN(r1.origin.x, r2.origin.x);
+   rect.origin.y = MIN(r1.origin.y, r2.origin.y);
+-  rect.size.width = MAX(r1.origin.x + r1.size.width, r2.origin.x + r2.size.width);
+-  rect.size.height = MAX(r1.origin.y + r1.size.height, r2.origin.y + r2.size.height);
++  rect.size.width = MAX(r1.origin.x + r1.size.width,
++                        r2.origin.x + r2.size.width) - rect.origin.x;
++  rect.size.height = MAX(r1.origin.y + r1.size.height,
++                         r2.origin.y + r2.size.height) - rect.origin.y;
+   return rect;
+ }

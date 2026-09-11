@@ -1,12 +1,15 @@
 # GNUstep notes for running XFormsKit on Linux
 
-XFormsKit's test suite (and the apps) exercise gnustep-base harder than
-most projects in two places: heavy NSXML mutation, and run-loop-driven
-asynchrony. The notes below are what a fresh Linux setup needs to know.
-This directory carries one patch to gnustep-base (section 0); the one it
-used to carry is now upstream (section 1).
+XFormsKit exercises the GNUstep stack harder than most projects in three
+places: heavy NSXML mutation, run-loop-driven asynchrony, and — since the
+SVG renderer moved to CoreGraphics — Opal. The notes below are what a
+fresh Linux setup needs to know.
 
-## 0. The NSXML addAttribute: use-after-free (patch applied by CI)
+This directory carries two patches, both applied by
+`.github/scripts/dependencies.sh`: one to gnustep-base (section 1) and one
+to Opal (section 2). A third, older one is now upstream (section 3).
+
+## 1. gnustep-base: the NSXML addAttribute: use-after-free (patch applied)
 
 `gnustep-base-nsxmlelement-addattribute-value-doc.patch` — applied to
 libs-base by `.github/scripts/dependencies.sh` before building, and needed
@@ -52,7 +55,29 @@ for (a placeholder namespace with the reserved `xmlns` prefix, torn down
 through `-detach`); both live in the same "fake the namespace, fix it
 later" corner of NSXMLNode, and neither is upstream yet.
 
-## 1. The NSXML detached-attribute bug (fixed upstream — nothing to do)
+## 2. Opal: CGRectUnion returns the far edges as the size (patch applied)
+
+`opal-cgrectunion-size.patch` — applied to libs-opal by
+`.github/scripts/dependencies.sh` before building.
+
+`CGRectUnion` in `Source/OpalGraphics/CGGeometry.m` takes the minimum of
+the two origins, and then stores the maximum of the two far edges
+**directly into `size`**. Those are absolute coordinates; the size has to
+be that far edge minus the origin just chosen. Rectangles at the origin
+come out right, which is why it survives casual use; everything else
+comes out far too large.
+
+XFormsKit's SVG renderer meets it in `-[XFSVGDocument frameOfElement:]`,
+which maps a shape's bounding box through its transform and unions the
+four mapped corners. A 20×20 rect under `translate(100,10)` answered a
+width of 320 rather than 20 (origin and height-origin were right, which
+is the tell: only the size was wrong). `testSVGPaintServersUseAndHitTesting`
+catches it.
+
+This one is worth sending upstream; unlike section 3 it is not fixed
+there yet.
+
+## 3. gnustep-base: the NSXML detached-attribute bug (fixed upstream — nothing to do)
 
 This project used to carry
 `gnustep-base-nsxmlnode-detached-attribute-dict-strings.patch`, which had
@@ -81,7 +106,7 @@ Worth knowing either way: built against XFDOM (`XF_PORTABLE_DOM=1`) the
 engine never touches gnustep-base's NSXML at all, so this class of
 gnustep-base XML bug cannot reach it.
 
-## 2. Run-loop asynchrony without GS_USE_LIBDISPATCH_RUNLOOP
+## 4. Run-loop asynchrony without GS_USE_LIBDISPATCH_RUNLOOP
 
 gnustep-base only drains the libdispatch MAIN queue from NSRunLoop when
 it was configured with libdispatch development headers available
@@ -110,7 +135,7 @@ testDispatchChildrenPropertiesDelayAndDefaultSubmitTarget FAILED
 To check a gnustep-base build:
 `grep GS_USE_LIBDISPATCH_RUNLOOP $(gnustep-config --variable=GNUSTEP_SYSTEM_HEADERS)/GNUstepBase/GSConfig.h`
 
-## 3. Run-loop mode gotcha (engine-internal, for the record)
+## 5. Run-loop mode gotcha (engine-internal, for the record)
 
 GNUstep takes `NSRunLoopCommonModes` literally — a timer added ONLY for
 that "mode" never fires, because no run loop ever runs a mode by that

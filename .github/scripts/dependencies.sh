@@ -24,8 +24,8 @@
 # Expects: CC, CXX, LIBRARY_COMBO, RUNTIME_VERSION, DEPS_PATH, INSTALL_PATH.
 set -ex
 
-# Captured before anything cds away: the patch below is named relative to the
-# checkout.
+# Captured before anything cds away: the patches below are named relative
+# to the checkout.
 WORKSPACE_DIR=$(pwd)
 
 mkdir -p "$DEPS_PATH"
@@ -207,6 +207,10 @@ install_libs_opal() {
     # Source subproject is built -- the aggregate also builds Tests, which
     # is a set of example tools this build has no use for and would only
     # add ways to fail.
+    # CGRectUnion stores the union's far edges as its SIZE instead of
+    # subtracting the origin it just chose, so any union away from the
+    # origin comes out far too large. See patches/gnustep/README.md.
+    patch -p1 < "$WORKSPACE_DIR/patches/gnustep/opal-cgrectunion-size.patch"
     make -C Source
     # OpalGraphics/GNUmakefile.postamble finishes the install by copying the
     # ImageIO headers into GNUSTEP_SYSTEM_HEADERS with a bare `cp -r`: no
