@@ -1,14 +1,28 @@
 name: CI
 
+# pull_request fires for a PR against any branch, and uses the workflow file
+# from the PR's own head -- so a branch can run CI through a PR before this
+# file has ever existed on master.
+#
+# workflow_dispatch is the opposite: GitHub only offers the "Run workflow"
+# button for workflows present on the repository's DEFAULT branch. Until this
+# lands on master there is no button, however the file is written.
 on:
   push:
   pull_request:
   workflow_dispatch:
 
-# A push that lands while an earlier one is still running supersedes it; there
-# is no value in finishing CI for a commit nobody will look at again.
+# A run that lands while an earlier one is still going supersedes it; there is
+# no value in finishing CI for a commit nobody will look at again.
+#
+# The key is the branch NAME rather than the ref, so that a push and the pull
+# request for the same branch share one group: pushing to a branch with an
+# open PR would otherwise start two nearly identical runs, and on a private
+# repository the macOS half of each bills at 10x. github.head_ref is set only
+# for pull_request events, where it is the source branch; github.ref_name is
+# the branch for a push.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
