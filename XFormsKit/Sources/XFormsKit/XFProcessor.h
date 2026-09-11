@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 #import "XFModel.h"
 
 @class XFInstance;
@@ -14,13 +15,12 @@
 @class XFAbstractAction;
 @class XFGroup;
 @class XFRepeat;
-@class NSXMLDocument;
 
 @class XFHostNode;
 
 /// Serialise the host document without the whitespace marker comments the
 /// parser pre-pass adds inside <body> (see XFProcessor documentFromData:).
-FOUNDATION_EXPORT NSString *XFHostXMLString(NSXMLDocument *document, NSUInteger options);
+FOUNDATION_EXPORT NSString *XFHostXMLString(XFXMLDocument *document, NSUInteger options);
 /// The marker comment / its text (`<!--xf:ws-->`).
 FOUNDATION_EXPORT NSString * const XFWhitespaceMarkerComment;
 FOUNDATION_EXPORT NSString * const XFWhitespaceMarkerText;
@@ -31,7 +31,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface XFProcessor : NSObject <XFModelOwner>
 
-@property (nonatomic, strong, readonly) NSXMLDocument *hostDocument;
+@property (nonatomic, strong, readonly) XFXMLDocument *hostDocument;
 @property (nonatomic, copy, nullable) NSURL *baseURL;
 @property (nonatomic, strong, readonly) XFModel *model;
 @property (nonatomic, copy, readonly) NSArray<XFModel *> *models;
@@ -40,7 +40,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// `controls` are the top-level controls found in it, document order.
 @property (nonatomic, copy, readonly) NSArray<XFHostNode *> *hostNodes;
 /// The element the host tree was built from (`body`, else the root).
-@property (nonatomic, strong, readonly, nullable) NSXMLElement *hostRootElement;
+@property (nonatomic, strong, readonly, nullable) XFXMLElement *hostRootElement;
 @property (nonatomic, copy, readonly) NSArray<XFInputControl *> *inputControls;
 @property (nonatomic, copy, readonly) NSArray<XFOutputControl *> *outputControls;
 @property (nonatomic, copy, readonly) NSArray<XFAbstractAction *> *actions;
@@ -76,7 +76,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// one template element, so the owner keeps each item's subform its own.
 - (nullable XFSubform *)loadSubformAtURL:(NSURL *)url
                             intoTargetID:(NSString *)targetID
-                             contextNode:(nullable NSXMLNode *)contextNode
+                             contextNode:(nullable XFXMLNode *)contextNode
                                    error:(NSError **)error;
 /// XsltForms_subform.dispose (xf:unload): remove the subform loaded into the
 /// element with id `targetID`. Returns NO when none is loaded there.
@@ -84,9 +84,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// Context-aware unload: inside a repeat template only the item owning
 /// the subform unloads (the writers.xhtml Show/Hide pair).
 - (BOOL)unloadSubformAtTargetID:(NSString *)targetID
-                    contextNode:(nullable NSXMLNode *)contextNode;
+                    contextNode:(nullable XFXMLNode *)contextNode;
 /// The subform whose imported content holds `element` (nil = main form).
-- (nullable XFSubform *)subformContainingElement:(NSXMLNode *)element;
+- (nullable XFSubform *)subformContainingElement:(XFXMLNode *)element;
 /// The document's default HTTP transport (created lazily): ONE per
 /// processor, so its cookie jar and credential retries persist across
 /// this document's submissions and loads (never the process-shared
@@ -151,18 +151,18 @@ NS_ASSUME_NONNULL_BEGIN
 /// rebuild/recalculate/revalidate/refresh as needed.
 - (void)controlDidChangeValue:(XFControl *)control;
 /// The model whose instances hold `node` (nil if none).
-- (nullable XFModel *)modelContainingNode:(nullable NSXMLNode *)node;
+- (nullable XFModel *)modelContainingNode:(nullable XFXMLNode *)node;
 
 
 - (void)activateControl:(XFTriggerControl *)control;
 
-- (nullable XFControl *)controlForElement:(NSXMLElement *)element;
+- (nullable XFControl *)controlForElement:(XFXMLElement *)element;
 
 /// Live document edits: instantiate / drop / refresh a subtree without
 /// reparsing the host document.
-- (nullable XFControl *)attachElement:(NSXMLElement *)element error:(NSError **)error;
-- (void)detachElement:(NSXMLElement *)element;
-- (void)noteElementChanged:(NSXMLElement *)element;
+- (nullable XFControl *)attachElement:(XFXMLElement *)element error:(NSError **)error;
+- (void)detachElement:(XFXMLElement *)element;
+- (void)noteElementChanged:(XFXMLElement *)element;
 
 @end
 

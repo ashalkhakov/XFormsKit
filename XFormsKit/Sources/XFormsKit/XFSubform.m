@@ -12,12 +12,12 @@ static const void *kXFSubformOwnerKey = &kXFSubformOwnerKey;
     return self.models.firstObject;
 }
 
-- (BOOL)containsElement:(NSXMLNode *)element
+- (BOOL)containsElement:(XFXMLNode *)element
 {
     // the target element itself belongs to the enclosing form; the content
     // below it belongs to this subform unless a nested subform's target
     // lies in between
-    NSXMLNode *walk = [element parent];
+    XFXMLNode *walk = [element parent];
     while (walk) {
         if (walk == self.targetElement) {
             return YES;
@@ -32,13 +32,13 @@ static const void *kXFSubformOwnerKey = &kXFSubformOwnerKey;
     return NO;
 }
 
-+ (void)tagImportedNode:(NSXMLNode *)node ownerNode:(NSXMLNode *)owner
++ (void)tagImportedNode:(XFXMLNode *)node ownerNode:(XFXMLNode *)owner
 {
     objc_setAssociatedObject(node, kXFSubformOwnerKey, owner,
                              OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-+ (NSXMLNode *)ownerNodeOfImportedNode:(NSXMLNode *)node
++ (XFXMLNode *)ownerNodeOfImportedNode:(XFXMLNode *)node
 {
     return objc_getAssociatedObject(node, kXFSubformOwnerKey);
 }

@@ -7,7 +7,7 @@
 
 @implementation XFDialog
 
-+ (instancetype)dialogWithElement:(NSXMLElement *)element
++ (instancetype)dialogWithElement:(XFXMLElement *)element
                             model:(id)model
                             error:(NSError **)error
 {

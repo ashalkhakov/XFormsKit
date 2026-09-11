@@ -1,11 +1,10 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFXPath;
 @class XFExprContext;
 @class XFXPathValue;
-@class NSXMLNode;
 
-@class NSXMLElement;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -25,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// The binding an element carries: `bind="id"` wins, else the expression
 /// in `attribute` (nil = first of nodeset / ref / value). nil when the
 /// element has none (and no error).
-+ (nullable instancetype)bindingForElement:(NSXMLElement *)element
++ (nullable instancetype)bindingForElement:(XFXMLElement *)element
                                  attribute:(nullable NSString *)attribute
                                      error:(NSError **)error;
 
@@ -34,13 +33,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// Same, registering namespace prefixes from the element carrying the
 /// expression (see -[XFXPath xpathWithString:element:error:]).
 + (nullable instancetype)bindingWithExpression:(NSString *)expression
-                                       element:(nullable NSXMLElement *)element
+                                       element:(nullable XFXMLElement *)element
                                          error:(NSError **)error;
 
 - (nullable XFXPathValue *)evaluateInContext:(XFExprContext *)context
                                        error:(NSError **)error;
 
-- (nullable NSXMLNode *)boundNodeInContext:(XFExprContext *)context
+- (nullable XFXMLNode *)boundNodeInContext:(XFExprContext *)context
                                      error:(NSError **)error;
 
 - (nullable NSString *)stringValueInContext:(XFExprContext *)context

@@ -1,6 +1,6 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 
-@class NSXMLNode;
 @class XFBind;
 
 NS_ASSUME_NONNULL_BEGIN
@@ -21,9 +21,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, nullable) NSString *mediaType;
 @property (nonatomic, copy, nullable) NSData *fileData;
 
-+ (instancetype)stateOnNode:(NSXMLNode *)node;
-+ (nullable instancetype)existingStateOnNode:(NSXMLNode *)node;
-+ (void)attachBind:(NSString *)bindIdentifier toNode:(NSXMLNode *)node;
++ (instancetype)stateOnNode:(XFXMLNode *)node;
++ (nullable instancetype)existingStateOnNode:(XFXMLNode *)node;
++ (void)attachBind:(NSString *)bindIdentifier toNode:(XFXMLNode *)node;
 
 @end
 

@@ -1,47 +1,45 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 
-@class NSXMLNode;
-@class NSXMLElement;
-@class NSXMLDocument;
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface XFXML : NSObject
 
-+ (NSArray<NSXMLElement *> *)elementsWithLocalName:(NSString *)localName
++ (NSArray<XFXMLElement *> *)elementsWithLocalName:(NSString *)localName
                                      namespaceURI:(NSString *)namespaceURI
-                                           inNode:(NSXMLNode *)node;
+                                           inNode:(XFXMLNode *)node;
 
 /// First DIRECT child element with the given name (label/hint/help/alert
 /// belong to their parent control only, XForms 1.1 8.3).
-+ (nullable NSXMLElement *)childElementWithLocalName:(NSString *)localName
++ (nullable XFXMLElement *)childElementWithLocalName:(NSString *)localName
                                         namespaceURI:(nullable NSString *)namespaceURI
-                                           ofElement:(NSXMLElement *)element;
-+ (nullable NSXMLElement *)firstElementWithLocalName:(NSString *)localName
+                                           ofElement:(XFXMLElement *)element;
++ (nullable XFXMLElement *)firstElementWithLocalName:(NSString *)localName
                                        namespaceURI:(NSString *)namespaceURI
-                                             inNode:(NSXMLNode *)node;
+                                             inNode:(XFXMLNode *)node;
 
-+ (NSString *)stringValueOfNode:(NSXMLNode *)node;
++ (NSString *)stringValueOfNode:(XFXMLNode *)node;
 
-+ (void)setStringValue:(NSString *)value ofNode:(NSXMLNode *)node;
++ (void)setStringValue:(NSString *)value ofNode:(XFXMLNode *)node;
 /// XPath normalize-space().
 + (NSString *)normalizeSpace:(NSString *)string;
 
-+ (BOOL)element:(NSXMLElement *)element
++ (BOOL)element:(XFXMLElement *)element
    hasLocalName:(NSString *)localName
   namespaceURI:(NSString *)namespaceURI;
 
 + (nullable NSString *)attributeValue:(NSString *)localName
                         namespaceURI:(nullable NSString *)namespaceURI
-                           onElement:(NSXMLElement *)element;
+                           onElement:(XFXMLElement *)element;
 
-+ (nullable NSXMLElement *)elementWithID:(NSString *)identifier
-                                  inNode:(NSXMLNode *)node;
++ (nullable XFXMLElement *)elementWithID:(NSString *)identifier
+                                  inNode:(XFXMLNode *)node;
 
 /// Direct children only (nested `xf:bind` must be walked via the parent bind).
-+ (NSArray<NSXMLElement *> *)childElementsWithLocalName:(NSString *)localName
++ (NSArray<XFXMLElement *> *)childElementsWithLocalName:(NSString *)localName
                                           namespaceURI:(NSString *)namespaceURI
-                                             ofElement:(NSXMLElement *)element;
+                                             ofElement:(XFXMLElement *)element;
 
 @end
 

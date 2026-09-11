@@ -28,7 +28,7 @@
     return [XFProcessor processorWithXMLString:xml error:error];
 }
 
-- (NSArray<NSXMLElement *> *)items:(XFProcessor *)p
+- (NSArray<XFXMLElement *> *)items:(XFProcessor *)p
 {
     return [[[p.model defaultInstance] documentElement] elementsForName:@"item"];
 }
@@ -74,7 +74,7 @@
                       @"<xf:insert ev:event=\"xforms-ready\" context=\"/data\" nodeset=\"item\" origin=\"proto\"/>"
                       extra:nil error:&error];
     XCTAssertNotNil(p, @"%@", error);
-    NSXMLElement *root = [[p.model defaultInstance] documentElement];
+    XFXMLElement *root = [[p.model defaultInstance] documentElement];
     // nodeset "item" is empty, so the origin (proto) is cloned as a child of
     // the context node /data (XForms 1.1 10.3, XsltForms_insert). The clone
     // keeps its name, so there are now two proto elements and still no item.
@@ -222,10 +222,10 @@
                       @"<xf:insert ev:event=\"xforms-ready\" context=\"/data\" nodeset=\"item\" origin=\"proto\"/>"
                       extra:nil error:&error];
     XCTAssertNotNil(p, @"%@", error);
-    NSXMLElement *root = [[p.model defaultInstance] documentElement];
+    XFXMLElement *root = [[p.model defaultInstance] documentElement];
     NSMutableArray *names = [NSMutableArray array];
-    for (NSXMLNode *c in [root children]) {
-        if ([c kind] == NSXMLElementKind) {
+    for (XFXMLNode *c in [root children]) {
+        if ([c kind] == XFXMLElementKind) {
             [names addObject:[c name]];
         }
     }
@@ -308,8 +308,8 @@
     // …and a toggle writes the case id back into the caseref node
     [XFXMLEvents dispatch:p.model name:@"go2"];
     XCTAssertEqualObjects(sw.selectedCase.identifier, @"c2");
-    NSXMLElement *root = [[p defaultInstance] documentElement];
-    XCTAssertEqualObjects([XFXML stringValueOfNode:[root nodesForXPath:@"g/which" error:NULL].firstObject], @"c2");
+    XFXMLElement *root = [[p defaultInstance] documentElement];
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[[[root elementsForName:@"g"].firstObject elementsForName:@"which"] firstObject]], @"c2");
     // switch/@ref: non-relevant bound node hides the switch
     [XFXMLEvents dispatch:p.model name:@"hide"];
     XCTAssertFalse(sw.relevant);

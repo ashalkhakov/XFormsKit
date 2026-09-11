@@ -25,7 +25,7 @@
     return YES;
 }
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                         binding:(XFBinding *)binding
                           label:(NSString *)label
 {
@@ -103,7 +103,7 @@
 @property (nonatomic, strong) NSMutableArray<XFCase *> *mutableCases;
 @property (nonatomic, weak, readwrite) XFCase *selectedCase;
 @property (nonatomic, strong, readwrite) XFBinding *caserefBinding;
-@property (nonatomic, strong) NSXMLNode *caserefNode;
+@property (nonatomic, strong) XFXMLNode *caserefNode;
 @end
 
 @implementation XFSwitch
@@ -118,7 +118,7 @@
     return YES;
 }
 
-+ (instancetype)switchWithElement:(NSXMLElement *)element
++ (instancetype)switchWithElement:(XFXMLElement *)element
                             model:(id)model
                             error:(NSError **)error
 {
@@ -145,11 +145,11 @@
         }
     }
     sw.mutableCases = [NSMutableArray array];
-    for (NSXMLNode *child in [element children]) {
-        if ([child kind] != NSXMLElementKind) {
+    for (XFXMLNode *child in [element children]) {
+        if ([child kind] != XFXMLElementKind) {
             continue;
         }
-        NSXMLElement *el = (NSXMLElement *)child;
+        XFXMLElement *el = (XFXMLElement *)child;
         if (![XFXML element:el hasLocalName:@"case" namespaceURI:XFXFormsNamespaceURI]) {
             continue;
         }
@@ -244,7 +244,7 @@
     XFExprContext *childCtx = context;
     if (self.binding) {
         NSError *inner = nil;
-        NSXMLNode *node = [self.binding boundNodeInContext:context error:&inner];
+        XFXMLNode *node = [self.binding boundNodeInContext:context error:&inner];
         if (inner) {
             if (error) {
                 *error = inner;

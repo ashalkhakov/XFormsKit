@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA00000100000000000000210 /* XFXMLTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000210 /* XFXMLTypes.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA00000100000000000000200 /* XFDOMNode.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000200 /* XFDOMNode.m */; };
 		AA00000100000000000000201 /* XFDOMElement.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000201 /* XFDOMElement.m */; };
 		AA00000100000000000000202 /* XFDOMDocument.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000202 /* XFDOMDocument.m */; };
@@ -242,6 +243,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		BB00000100000000000000210 /* XFXMLTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFXMLTypes.h; sourceTree = "<group>"; };
 		BB00000100000000000000200 /* XFDOMNode.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMNode.m; sourceTree = "<group>"; };
 		BB00000100000000000000201 /* XFDOMElement.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMElement.m; sourceTree = "<group>"; };
 		BB00000100000000000000202 /* XFDOMDocument.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMDocument.m; sourceTree = "<group>"; };
@@ -684,6 +686,7 @@
 				BB000001000000000000001E /* XFFormView.h */,
 				GG0000010000000000000200 /* DOM */,
 				BB00000100000000000000204 /* XFDOM.h */,
+				BB00000100000000000000210 /* XFXMLTypes.h */,
 				BB00000100000000000000205 /* XFDOMNode.h */,
 				BB00000100000000000000206 /* XFDOMElement.h */,
 				BB00000100000000000000207 /* XFDOMDocument.h */,
@@ -903,6 +906,7 @@
 				AA0000010000000000000016 /* XFExprContext.h in Headers */,
 				AA0000010000000000000017 /* XFXPathValue.h in Headers */,
 				AA00000100000000000000204 /* XFDOM.h in Headers */,
+				AA00000100000000000000210 /* XFXMLTypes.h in Headers */,
 				AA00000100000000000000205 /* XFDOMNode.h in Headers */,
 				AA00000100000000000000206 /* XFDOMElement.h in Headers */,
 				AA00000100000000000000207 /* XFDOMDocument.h in Headers */,

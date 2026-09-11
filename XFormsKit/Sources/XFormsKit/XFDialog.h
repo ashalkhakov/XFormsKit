@@ -1,4 +1,5 @@
 #import <XFormsKit/XFGroup.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -12,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// YES between xforms-dialog-open and xforms-dialog-close.
 @property (nonatomic, assign, readonly) BOOL shown;
 
-+ (nullable instancetype)dialogWithElement:(NSXMLElement *)element
++ (nullable instancetype)dialogWithElement:(XFXMLElement *)element
                                      model:(nullable id)model
                                      error:(NSError **)error;
 

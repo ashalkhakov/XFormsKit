@@ -11,8 +11,7 @@
 #import "XFNamespaces.h"
 #import "XFType.h"
 #import "XFXMLEvents.h"
-#import <Foundation/NSXMLElement.h>
-#import <Foundation/NSXMLNode.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 static NSInteger XFNextDepsId(void)
 {
@@ -23,10 +22,10 @@ static NSInteger XFNextDepsId(void)
 }
 
 @interface XFBind ()
-@property (nonatomic, strong, readwrite) NSXMLElement *element;
+@property (nonatomic, strong, readwrite) XFXMLElement *element;
 @property (nonatomic, strong, readwrite) XFBinding *nodesetBinding;
-@property (nonatomic, strong, readwrite) NSMutableArray<NSXMLNode *> *nodes;
-@property (nonatomic, strong, readwrite) NSMutableArray<NSXMLNode *> *depsNodes;
+@property (nonatomic, strong, readwrite) NSMutableArray<XFXMLNode *> *nodes;
+@property (nonatomic, strong, readwrite) NSMutableArray<XFXMLNode *> *depsNodes;
 @property (nonatomic, strong, readwrite) NSMutableArray *depsElements;
 @property (nonatomic, strong, readwrite) NSMutableArray<XFBind *> *binds;
 /// A calculate expression that failed to COMPILE: kept so the model still
@@ -36,7 +35,7 @@ static NSInteger XFNextDepsId(void)
 
 @implementation XFBind
 
-+ (instancetype)bindWithElement:(NSXMLElement *)element
++ (instancetype)bindWithElement:(XFXMLElement *)element
                           model:(XFModel *)model
                          parent:(XFBind *)parent
                           error:(NSError **)error
@@ -119,11 +118,11 @@ static NSInteger XFNextDepsId(void)
         [bind setValue:mip forKey:mips[attr]];
     }
 
-    NSArray<NSXMLElement *> *children =
+    NSArray<XFXMLElement *> *children =
         [XFXML childElementsWithLocalName:@"bind"
                             namespaceURI:XFXFormsNamespaceURI
                                ofElement:element];
-    for (NSXMLElement *child in children) {
+    for (XFXMLElement *child in children) {
         XFBind *childBind = [XFBind bindWithElement:child
                                               model:model
                                              parent:bind
@@ -156,9 +155,9 @@ static NSInteger XFNextDepsId(void)
     }
 }
 
-- (XFExprContext *)contextWithNode:(NSXMLNode *)node
+- (XFExprContext *)contextWithNode:(XFXMLNode *)node
                           position:(NSUInteger)position
-                          nodeList:(NSArray<NSXMLNode *> *)nodeList
+                          nodeList:(NSArray<XFXMLNode *> *)nodeList
 {
     XFExprContext *ctx = [[XFExprContext alloc] initWithNode:node];
     ctx.model = self.model;
@@ -177,7 +176,7 @@ static NSInteger XFNextDepsId(void)
     [self refreshWithContextNode:nil index:0];
 }
 
-- (void)refreshWithContextNode:(NSXMLNode *)ctx index:(NSUInteger)index
+- (void)refreshWithContextNode:(XFXMLNode *)ctx index:(NSUInteger)index
 {
     (void)index;
     if (ctx == nil) {
@@ -188,10 +187,10 @@ static NSInteger XFNextDepsId(void)
     if (self.nodesetBinding) {
         XFExprContext *eval = [self contextWithNode:ctx position:1 nodeList:ctx ? @[ ctx ] : @[]];
         NSError *inner = nil;
-        NSArray<NSXMLNode *> *selected = [self.nodesetBinding evaluateInContext:eval error:&inner].nodes;
+        NSArray<XFXMLNode *> *selected = [self.nodesetBinding evaluateInContext:eval error:&inner].nodes;
         [self.nodes removeAllObjects];
         [self.nodes addObjectsFromArray:selected ?: @[]];
-        for (NSXMLNode *dep in eval.dependencyNodes) {
+        for (XFXMLNode *dep in eval.dependencyNodes) {
             if (![self.depsNodes containsObject:dep]) {
                 [self.depsNodes addObject:dep];
             }
@@ -205,12 +204,12 @@ static NSInteger XFNextDepsId(void)
     }
 
     NSUInteger i = 0;
-    for (NSXMLNode *node in [self.nodes copy]) {
+    for (XFXMLNode *node in [self.nodes copy]) {
         [XFNodeState attachBind:self.identifier toNode:node];
         if (self.typeName.length) {
             // XFBind.js: a node typed by xsi:type cannot also be typed by a bind
-            NSXMLNode *xsi = [node kind] == NSXMLElementKind
-                ? [(NSXMLElement *)node attributeForLocalName:@"type" URI:@"http://www.w3.org/2001/XMLSchema-instance"] : nil;
+            XFXMLNode *xsi = [node kind] == XFXMLElementKind
+                ? [(XFXMLElement *)node attributeForLocalName:@"type" URI:@"http://www.w3.org/2001/XMLSchema-instance"] : nil;
             if (xsi) {
                 [XFXMLEvents raise:@"xforms-binding-exception" on:self.element
                            message:@"Type especified in xsi:type attribute"];
@@ -237,7 +236,7 @@ static NSInteger XFNextDepsId(void)
     }
     if (self.calculate) {
         NSUInteger i = 0;
-        for (NSXMLNode *node in [self.nodes copy]) {
+        for (XFXMLNode *node in [self.nodes copy]) {
             XFExprContext *ctx = [self contextWithNode:node
                                               position:i + 1
                                               nodeList:self.nodes];
@@ -269,7 +268,7 @@ static NSInteger XFNextDepsId(void)
 }
 
 
-+ (void)disposeNode:(NSXMLNode *)node model:(XFModel *)model
++ (void)disposeNode:(XFXMLNode *)node model:(XFModel *)model
 {
     if (node == nil) {
         return;
@@ -288,12 +287,12 @@ static NSInteger XFNextDepsId(void)
             [bind.nodes removeObjectAtIndex:i];
         }
     }
-    if ([node kind] == NSXMLElementKind) {
-        for (NSXMLNode *attr in [(NSXMLElement *)node attributes]) {
+    if ([node kind] == XFXMLElementKind) {
+        for (XFXMLNode *attr in [(XFXMLElement *)node attributes]) {
             [self disposeNode:attr model:model];
         }
     }
-    for (NSXMLNode *child in [node children]) {
+    for (XFXMLNode *child in [node children]) {
         [self disposeNode:child model:model];
     }
 }

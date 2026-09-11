@@ -15,6 +15,13 @@
     return [[self alloc] initWithName:name URI:URI];
 }
 
++ (instancetype)elementWithName:(NSString *)name stringValue:(NSString *)stringValue
+{
+    XFDOMElement *element = [[self alloc] initWithName:name URI:nil];
+    element.stringValue = stringValue;
+    return element;
+}
+
 - (instancetype)initWithName:(NSString *)name
 {
     return [self initWithName:name URI:nil];
@@ -119,6 +126,24 @@
     return nil;
 }
 
+/// The prefix in scope for a URI — the reverse of resolveNamespaceForName:,
+/// used when submission has to re-declare a namespace on a copied subtree.
+- (NSString *)resolvePrefixForNamespaceURI:(NSString *)namespaceURI
+{
+    XFDOMNode *walk = self;
+    while (walk != nil) {
+        if ([walk isKindOfClass:[XFDOMElement class]]) {
+            for (XFDOMNode *declaration in [(XFDOMElement *)walk mutableNamespaces]) {
+                if ([(declaration.stringValue ?: @"") isEqualToString:namespaceURI ?: @""]) {
+                    return declaration.name ?: @"";
+                }
+            }
+        }
+        walk = walk.parent;
+    }
+    return nil;
+}
+
 - (XFDOMNode *)resolveNamespaceForName:(NSString *)name
 {
     NSString *prefix = @"";
@@ -136,38 +161,48 @@
         }
         walk = walk.parent;
     }
+    // The two prefixes XML Namespaces reserves are bound without any
+    // declaration, so xml:id and xml:lang resolve in any document. NSXML
+    // does the same, and likewise keeps them out of `namespaces`.
+    if ([prefix isEqualToString:@"xml"]) {
+        return [XFDOMNode namespaceWithName:@"xml"
+                                stringValue:@"http://www.w3.org/XML/1998/namespace"];
+    }
+    if ([prefix isEqualToString:@"xmlns"]) {
+        return [XFDOMNode namespaceWithName:@"xmlns"
+                                stringValue:@"http://www.w3.org/2000/xmlns/"];
+    }
     return nil;
 }
 
 #pragma mark Children
 
-- (void)addChild:(XFDOMNode *)child
+#pragma mark Lookup
+
+- (NSArray<XFDOMElement *> *)elementsForName:(NSString *)name
 {
-    if (child == nil) {
-        return;
+    NSMutableArray<XFDOMElement *> *found = [NSMutableArray array];
+    for (XFDOMNode *child in self.mutableChildren) {
+        if (child.kind == XFDOMElementKind && [child.name isEqualToString:name]) {
+            [found addObject:(XFDOMElement *)child];
+        }
     }
-    [self adoptNode:child];
-    [self.mutableChildren addObject:child];
+    return found;
 }
 
-- (void)insertChild:(XFDOMNode *)child atIndex:(NSUInteger)index
+- (NSArray<XFDOMElement *> *)elementsForLocalName:(NSString *)localName URI:(NSString *)URI
 {
-    if (child == nil) {
-        return;
+    NSMutableArray<XFDOMElement *> *found = [NSMutableArray array];
+    for (XFDOMNode *child in self.mutableChildren) {
+        if (child.kind != XFDOMElementKind || ![child.localName isEqualToString:localName]) {
+            continue;
+        }
+        NSString *childURI = child.URI;
+        if (URI.length == 0 ? childURI.length == 0 : [childURI isEqualToString:URI]) {
+            [found addObject:(XFDOMElement *)child];
+        }
     }
-    [self adoptNode:child];
-    NSUInteger at = MIN(index, self.mutableChildren.count);
-    [self.mutableChildren insertObject:child atIndex:at];
-}
-
-- (void)removeChildAtIndex:(NSUInteger)index
-{
-    if (index >= self.mutableChildren.count) {
-        return;
-    }
-    XFDOMNode *child = self.mutableChildren[index];
-    child.parent = nil;
-    [self.mutableChildren removeObjectAtIndex:index];
+    return found;
 }
 
 #pragma mark Copying

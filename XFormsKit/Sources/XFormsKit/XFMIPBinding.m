@@ -3,12 +3,12 @@
 #import "XFExprContext.h"
 #import "XFXPathValue.h"
 #import "XFModel.h"
-#import <Foundation/NSXMLNode.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @interface XFMIPNodeCache : NSObject
-@property (nonatomic, weak) NSXMLNode *node;
+@property (nonatomic, weak) XFXMLNode *node;
 @property (nonatomic, strong) XFXPathValue *result;
-@property (nonatomic, strong) NSMutableArray<NSXMLNode *> *depsN;
+@property (nonatomic, strong) NSMutableArray<XFXMLNode *> *depsN;
 @property (nonatomic, strong) NSMutableArray *deps;
 @end
 
@@ -29,7 +29,7 @@
 }
 
 + (instancetype)mipBindingWithExpression:(NSString *)expression
-                                 element:(NSXMLElement *)element
+                                 element:(XFXMLElement *)element
                                    error:(NSError **)error
 {
     XFBinding *binding = [XFBinding bindingWithExpression:expression element:element error:error];
@@ -43,7 +43,7 @@
     return mip;
 }
 
-- (XFMIPNodeCache *)cacheForNode:(NSXMLNode *)node create:(BOOL)create
+- (XFMIPNodeCache *)cacheForNode:(XFXMLNode *)node create:(BOOL)create
 {
     for (XFMIPNodeCache *entry in self.nodes) {
         if (entry.node == node) {
@@ -69,10 +69,10 @@
     if (model.rebuilded || model.pendingRebuild) {
         return YES;
     }
-    for (NSXMLNode *dep in entry.depsN) {
+    for (XFXMLNode *dep in entry.depsN) {
         // XsltForms_mipbinding.evaluate: a dependency that was deleted
         // (nodeName === "") forces a re-evaluation
-        if ([dep kind] != NSXMLDocumentKind && [dep parent] == nil) {
+        if ([dep kind] != XFXMLDocumentKind && [dep parent] == nil) {
             return YES;
         }
         if ([model.nodesChanged indexOfObjectIdenticalTo:dep] != NSNotFound) {
@@ -86,7 +86,7 @@
 }
 
 - (XFXPathValue *)evaluateInContext:(XFExprContext *)context
-                               node:(NSXMLNode *)node
+                               node:(XFXMLNode *)node
                               model:(XFModel *)model
                               error:(NSError **)error
 {
@@ -106,7 +106,7 @@
     if (inner && error) {
         *error = inner;
     }
-    for (NSXMLNode *dep in eval.dependencyNodes) {
+    for (XFXMLNode *dep in eval.dependencyNodes) {
         if (![entry.depsN containsObject:dep]) {
             [entry.depsN addObject:dep];
         }
@@ -118,7 +118,7 @@
     return value;
 }
 
-- (void)disposeNode:(NSXMLNode *)node
+- (void)disposeNode:(XFXMLNode *)node
 {
     NSUInteger i = 0;
     while (i < self.nodes.count) {

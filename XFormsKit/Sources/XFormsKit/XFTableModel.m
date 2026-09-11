@@ -6,7 +6,7 @@
 #import "XFSwitch.h"
 #import "XFDialog.h"
 #import "XFVarControl.h"
-#import <Foundation/NSXMLElement.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @implementation XFTableCell
 - (instancetype)init

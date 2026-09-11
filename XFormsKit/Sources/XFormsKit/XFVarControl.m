@@ -3,7 +3,7 @@
 #import "XFXPathValue.h"
 #import "XFExprContext.h"
 #import "XFDeferredUpdates.h"
-#import <Foundation/NSXMLElement.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @interface XFVarControl ()
 @property (nonatomic, copy, readwrite) NSString *name;
@@ -12,7 +12,7 @@
 
 @implementation XFVarControl
 
-+ (instancetype)varWithElement:(NSXMLElement *)element
++ (instancetype)varWithElement:(XFXMLElement *)element
                          model:(id)model
                          error:(NSError **)error
 {

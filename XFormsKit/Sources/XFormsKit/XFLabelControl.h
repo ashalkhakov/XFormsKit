@@ -1,4 +1,5 @@
 #import "XFControl.h"
+#import <XFormsKit/XFXMLTypes.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -7,7 +8,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// carry `ref`/`value` or sit outside a control become XFLabelControl.
 @interface XFLabelControl : XFControl
 
-+ (nullable instancetype)labelWithElement:(NSXMLElement *)element
++ (nullable instancetype)labelWithElement:(XFXMLElement *)element
                                     model:(nullable id)model
                                     error:(NSError **)error;
 

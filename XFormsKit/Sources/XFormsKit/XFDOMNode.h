@@ -54,6 +54,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// Unlink from the parent, leaving the node usable and re-insertable.
 - (void)detach;
 
+/* Child mutation. Meaningful on the two container kinds, element and
+   document; a no-op on leaves. */
+
+- (void)addChild:(XFDOMNode *)child;
+- (void)insertChild:(XFDOMNode *)child atIndex:(NSUInteger)index;
+- (void)removeChildAtIndex:(NSUInteger)index;
+
 @property (nonatomic, readonly) NSString *XMLString;
 - (NSString *)XMLStringWithOptions:(XFDOMNodeOptions)options;
 

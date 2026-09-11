@@ -1,6 +1,6 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 
-@class NSXMLNode;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -17,12 +17,12 @@ FOUNDATION_EXPORT NSString *XFNumberToString(double n);
 @interface XFXPathValue : NSObject
 
 @property (nonatomic, readonly) XFXPathValueType type;
-@property (nonatomic, copy, readonly) NSArray<NSXMLNode *> *nodes;
+@property (nonatomic, copy, readonly) NSArray<XFXMLNode *> *nodes;
 @property (nonatomic, copy, readonly) NSString *string;
 @property (nonatomic, readonly) double number;
 @property (nonatomic, readonly) BOOL boolean;
 
-+ (instancetype)nodeSet:(NSArray<NSXMLNode *> *)nodes;
++ (instancetype)nodeSet:(NSArray<XFXMLNode *> *)nodes;
 + (instancetype)string:(NSString *)string;
 + (instancetype)number:(double)number;
 + (instancetype)boolean:(BOOL)flag;
@@ -30,7 +30,7 @@ FOUNDATION_EXPORT NSString *XFNumberToString(double n);
 - (NSString *)stringValue;
 - (double)numberValue;
 - (BOOL)booleanValue;
-- (nullable NSXMLNode *)firstNode;
+- (nullable XFXMLNode *)firstNode;
 
 @end
 

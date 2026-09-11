@@ -19,7 +19,7 @@
 
 @implementation XFSetvalueAction
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                           model:(XFModel *)model
                           error:(NSError **)error
 {
@@ -44,8 +44,8 @@
     } else {
         // setvalue.xsl: normalize-space(text()) (G-49)
         NSMutableString *text = [NSMutableString string];
-        for (NSXMLNode *c in [element children]) {
-            if ([c kind] == NSXMLTextKind) {
+        for (XFXMLNode *c in [element children]) {
+            if ([c kind] == XFXMLTextKind) {
                 [text appendString:[c stringValue] ?: @""];
             }
         }
@@ -61,7 +61,7 @@
     return self;
 }
 
-- (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+- (void)runWithContextNode:(XFXMLNode *)contextNode event:(XFEvent *)event
 {
     (void)event;
     if (self.binding == nil || contextNode == nil) {
@@ -69,7 +69,7 @@
     }
     XFExprContext *ctx = [[XFExprContext alloc] initWithNode:contextNode];
     ctx.model = self.model;
-    NSXMLNode *node = [self.binding boundNodeInContext:ctx error:NULL];
+    XFXMLNode *node = [self.binding boundNodeInContext:ctx error:NULL];
     if (node == nil) {
         return;
     }
@@ -77,7 +77,7 @@
     if (self.valueExpr) {
         // XFSetvalue.js: @value evaluates against the bound node, or against
         // the @context node when there is one (G-49)
-        NSXMLNode *valueNode = node;
+        XFXMLNode *valueNode = node;
         if (self.contextExpr) {
             valueNode = [self.contextExpr evaluateInContext:ctx error:NULL].firstNode ?: node;
         }
@@ -109,7 +109,7 @@
 
 @implementation XFSetvarAction
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                           model:(XFModel *)model
                           error:(NSError **)error
 {
@@ -129,7 +129,7 @@
     return self;
 }
 
-- (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+- (void)runWithContextNode:(XFXMLNode *)contextNode event:(XFEvent *)event
 {
     (void)event;
     XFExprContext *ctx = [[XFExprContext alloc] initWithNode:contextNode];
@@ -149,7 +149,7 @@
 
 @implementation XFSetnodeAction
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                           model:(XFModel *)model
                           error:(NSError **)error
 {
@@ -183,7 +183,7 @@
     return self;
 }
 
-- (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+- (void)runWithContextNode:(XFXMLNode *)contextNode event:(XFEvent *)event
 {
     (void)event;
     if (self.binding == nil || contextNode == nil) {
@@ -191,11 +191,11 @@
     }
     XFExprContext *ctx = [[XFExprContext alloc] initWithNode:contextNode];
     ctx.model = self.model;
-    NSXMLNode *node = [self.binding boundNodeInContext:ctx error:NULL];
-    if ([node kind] != NSXMLElementKind) {
+    XFXMLNode *node = [self.binding boundNodeInContext:ctx error:NULL];
+    if ([node kind] != XFXMLElementKind) {
         return;
     }
-    NSXMLNode *valueNode = node;
+    XFXMLNode *valueNode = node;
     if (self.contextExpr) {
         valueNode = [self.contextExpr evaluateInContext:ctx error:NULL].firstNode ?: node;
     }
@@ -205,10 +205,10 @@
     // parse as a fragment (several elements / text allowed); the inserted
     // nodes are standalone copies — on Apple, insertChild:atIndex: with a
     // node detached from another document loses that node's content
-    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithXMLString:[NSString stringWithFormat:@"<x>%@</x>", value]
+    XFXMLDocument *doc = [[XFXMLDocument alloc] initWithXMLString:[NSString stringWithFormat:@"<x>%@</x>", value]
                                                           options:0 error:NULL];
-    NSMutableArray<NSXMLNode *> *parsed = [NSMutableArray array];
-    for (NSXMLNode *n in [[doc rootElement] children]) {
+    NSMutableArray<XFXMLNode *> *parsed = [NSMutableArray array];
+    for (XFXMLNode *n in [[doc rootElement] children]) {
         [parsed addObject:[n copy]];
     }
     XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
@@ -217,30 +217,30 @@
     XFTraceWrite(XFTraceKindAction, nil, self.element,
                  @"Setnode %@%@ = %@", XFTraceDescribeNode(node),
                  self.inner ? @" inner" : @" outer", value);
-    NSXMLElement *element = (NSXMLElement *)node;
-    NSXMLNode *changed = node;
+    XFXMLElement *element = (XFXMLElement *)node;
+    XFXMLNode *changed = node;
     if (self.inner) {
-        for (NSXMLNode *c in [[element children] copy]) {
+        for (XFXMLNode *c in [[element children] copy]) {
             [c detach];
         }
-        for (NSXMLNode *n in parsed) {
+        for (XFXMLNode *n in parsed) {
             [element addChild:n];
         }
     } else {
-        NSXMLElement *parent = (NSXMLElement *)[element parent];
-        if ([parent kind] == NSXMLElementKind) {
+        XFXMLElement *parent = (XFXMLElement *)[element parent];
+        if ([parent kind] == XFXMLElementKind) {
             NSUInteger at = [element index];
             [element detach];
-            for (NSXMLNode *n in parsed) {
+            for (XFXMLNode *n in parsed) {
                 [parent insertChild:n atIndex:at++];
             }
             changed = parent;
         } else {
             // the document element: keep it, replace its content
-            for (NSXMLNode *c in [[element children] copy]) {
+            for (XFXMLNode *c in [[element children] copy]) {
                 [c detach];
             }
-            for (NSXMLNode *n in parsed) {
+            for (XFXMLNode *n in parsed) {
                 [element addChild:n];
             }
         }

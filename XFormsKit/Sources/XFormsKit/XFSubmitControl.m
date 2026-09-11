@@ -14,7 +14,7 @@
 
 @implementation XFSubmitControl
 
-+ (instancetype)submitWithElement:(NSXMLElement *)element
++ (instancetype)submitWithElement:(XFXMLElement *)element
                             model:(id)model
                             error:(NSError **)error
 {
@@ -42,7 +42,7 @@
     if (expr == nil) {
         return YES;
     }
-    NSXMLNode *node = self.boundNode ?: self.inScopeContextNode;
+    XFXMLNode *node = self.boundNode ?: self.inScopeContextNode;
     XFExprContext *ctx = [[XFExprContext alloc] initWithNode:node];
     id owner = self.owner;
     ctx.model = [owner isKindOfClass:[XFModel class]] ? owner : [owner model];

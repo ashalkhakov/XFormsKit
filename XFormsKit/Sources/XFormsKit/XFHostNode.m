@@ -4,7 +4,7 @@
 #import "XFXML.h"
 #import "XFSubform.h"
 #import "XFProcessor.h"
-#import <Foundation/NSXMLElement.h>
+#import <XFormsKit/XFXMLTypes.h>
 #import <dispatch/dispatch.h>
 #import <ctype.h>
 
@@ -77,24 +77,24 @@ static NSString * const XFSVGNamespaceURI = @"http://www.w3.org/2000/svg";
 /// valueWithNonretainedObject: — on GNUstep two NSXMLElements with the
 /// same content compare equal, so a re-imported copy would match the
 /// control of the element it replaced.)
-static NSNumber *XFElementKey(NSXMLElement *element)
+static NSNumber *XFElementKey(XFXMLElement *element)
 {
     return @((unsigned long long)(uintptr_t)element);
 }
 
-static NSXMLNode *XFCurrentRepeatItemNode = nil;
+static XFXMLNode *XFCurrentRepeatItemNode = nil;
 
-+ (NSXMLNode *)currentRepeatItemNode
++ (XFXMLNode *)currentRepeatItemNode
 {
     return XFCurrentRepeatItemNode;
 }
 
-+ (void)setCurrentRepeatItemNode:(NSXMLNode *)node
++ (void)setCurrentRepeatItemNode:(XFXMLNode *)node
 {
     XFCurrentRepeatItemNode = node;
 }
 
-+ (NSArray<XFHostNode *> *)hostNodesForChildrenOf:(NSXMLElement *)element
++ (NSArray<XFHostNode *> *)hostNodesForChildrenOf:(XFXMLElement *)element
                                             model:(id)model
                                          controls:(NSMutableArray<XFControl *> *)controls
                                          existing:(NSDictionary<NSValue *, XFControl *> *)existing
@@ -108,7 +108,7 @@ static NSXMLNode *XFCurrentRepeatItemNode = nil;
                               error:error];
 }
 
-+ (NSArray<XFHostNode *> *)nodesForChildrenOf:(NSXMLElement *)element
++ (NSArray<XFHostNode *> *)nodesForChildrenOf:(XFXMLElement *)element
                                         model:(id)model
                                      controls:(NSMutableArray<XFControl *> *)controls
                                      existing:(NSDictionary<NSValue *, XFControl *> *)existing
@@ -116,17 +116,17 @@ static NSXMLNode *XFCurrentRepeatItemNode = nil;
                                         error:(NSError **)error
 {
     NSMutableArray<XFHostNode *> *out = [NSMutableArray array];
-    for (NSXMLNode *child in [element children]) {
+    for (XFXMLNode *child in [element children]) {
         // per-item subform content: an imported node owned by another
         // repeat item stays out of this item's tree (writers.xhtml —
         // one shared <group id="subform"/> template, one subform per
         // item, XSLTForms' per-clone IdManager behavior)
-        NSXMLNode *owner = [XFSubform ownerNodeOfImportedNode:child];
+        XFXMLNode *owner = [XFSubform ownerNodeOfImportedNode:child];
         if (owner != nil && owner != XFCurrentRepeatItemNode) {
             continue;
         }
-        NSXMLNodeKind kind = [child kind];
-        if (kind == NSXMLTextKind) {
+        XFXMLNodeKind kind = [child kind];
+        if (kind == XFXMLTextKind) {
             NSString *raw = [child stringValue] ?: @"";
             NSString *text = pre ? raw : [self collapseWhitespace:raw];
             if (text.length == 0) {
@@ -138,7 +138,7 @@ static NSXMLNode *XFCurrentRepeatItemNode = nil;
             [out addObject:t];
             continue;
         }
-        if (kind == NSXMLCommentKind && [[child stringValue] isEqualToString:XFWhitespaceMarkerText]) {
+        if (kind == XFXMLCommentKind && [[child stringValue] isEqualToString:XFWhitespaceMarkerText]) {
             // the parser pre-pass marks a whitespace-only gap between two
             // tags; recreate the text node unless the parser kept it
             XFHostNode *last = out.lastObject;
@@ -152,10 +152,10 @@ static NSXMLNode *XFCurrentRepeatItemNode = nil;
             }
             continue;
         }
-        if (kind != NSXMLElementKind) {
+        if (kind != XFXMLElementKind) {
             continue;
         }
-        XFHostNode *node = [self nodeForElement:(NSXMLElement *)child
+        XFHostNode *node = [self nodeForElement:(XFXMLElement *)child
                                           model:model
                                        controls:controls
                                        existing:existing
@@ -192,7 +192,7 @@ static NSXMLNode *XFCurrentRepeatItemNode = nil;
     return kept;
 }
 
-+ (XFHostNode *)nodeForElement:(NSXMLElement *)el
++ (XFHostNode *)nodeForElement:(XFXMLElement *)el
                          model:(id)model
                       controls:(NSMutableArray<XFControl *> *)controls
                       existing:(NSDictionary<NSValue *, XFControl *> *)existing
@@ -266,8 +266,8 @@ static NSXMLNode *XFCurrentRepeatItemNode = nil;
 
     if ([tag isEqualToString:@"fieldset"] || [tag isEqualToString:@"table"]) {
         NSString *titleTag = [tag isEqualToString:@"fieldset"] ? @"legend" : @"caption";
-        for (NSXMLNode *c in [el children]) {
-            if ([c kind] == NSXMLElementKind && [[[c localName] lowercaseString] isEqualToString:titleTag]) {
+        for (XFXMLNode *c in [el children]) {
+            if ([c kind] == XFXMLElementKind && [[[c localName] lowercaseString] isEqualToString:titleTag]) {
                 node.title = [self collapseWhitespace:[XFXML stringValueOfNode:c]];
                 node.title = [node.title stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
                 break;

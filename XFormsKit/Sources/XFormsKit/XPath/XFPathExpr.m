@@ -16,15 +16,15 @@
     if (fv == nil) {
         return nil;
     }
-    NSArray<NSXMLNode *> *nodes = fv.nodes;
-    NSMutableArray<NSXMLNode *> *out = [NSMutableArray array];
+    NSArray<XFXMLNode *> *nodes = fv.nodes;
+    NSMutableArray<XFXMLNode *> *out = [NSMutableArray array];
     for (NSUInteger i = 0; i < nodes.count; i++) {
         XFExprContext *newCtx = [ctx cloneWithNode:nodes[i] position:i + 1 nodeList:nodes];
         XFXPathValue *relv = [self.rel evaluate:newCtx error:error];
         if (relv == nil) {
             return nil;
         }
-        for (NSXMLNode *n in relv.nodes) {
+        for (XFXMLNode *n in relv.nodes) {
             if (!XFNodeInArray(n, out)) {
                 [out addObject:n];
             }
@@ -51,12 +51,12 @@
     if (ev == nil) {
         return nil;
     }
-    NSArray<NSXMLNode *> *nodes = ev.nodes;
+    NSArray<XFXMLNode *> *nodes = ev.nodes;
     for (XFExpr *pred in self.predicates) {
         NSMutableArray *next = [NSMutableArray array];
         NSUInteger len = nodes.count;
         for (NSUInteger j = 0; j < len; j++) {
-            NSXMLNode *n = nodes[j];
+            XFXMLNode *n = nodes[j];
             XFExprContext *newCtx = [ctx cloneWithNode:n position:j + 1 nodeList:nodes];
             XFXPathValue *pv = [pred evaluate:newCtx error:error];
             if (error && *error) {
@@ -94,7 +94,7 @@
         return nil;
     }
     NSMutableArray *nodes = [NSMutableArray arrayWithArray:a.nodes];
-    for (NSXMLNode *n in b.nodes) {
+    for (XFXMLNode *n in b.nodes) {
         if (!XFNodeInArray(n, nodes)) {
             [nodes addObject:n];
         }

@@ -1,6 +1,6 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 
-@class NSXMLElement;
 @class XFEvent;
 
 NS_ASSUME_NONNULL_BEGIN
@@ -17,27 +17,27 @@ typedef void (^XFEventHandlerBlock)(XFEvent *event);
 @interface XFListener : NSObject
 
 @property (nonatomic, weak, nullable) id subform;
-@property (nonatomic, weak, nullable) NSXMLElement *observer;
-@property (nonatomic, weak, nullable) NSXMLElement *evtTarget;
+@property (nonatomic, weak, nullable) XFXMLElement *observer;
+@property (nonatomic, weak, nullable) XFXMLElement *evtTarget;
 @property (nonatomic, copy) NSString *name;
 @property (nonatomic, copy) NSString *phase; // @"capture" or @"default"
 @property (nonatomic, copy, nullable) XFEventHandlerBlock handler;
 @property (nonatomic, assign) BOOL defaultAction;
 @property (nonatomic, assign) BOOL propagate;
-@property (nonatomic, strong, nullable) NSXMLElement *handlerElement;
+@property (nonatomic, strong, nullable) XFXMLElement *handlerElement;
 
 + (NSMutableArray *)destructs;
 
 - (instancetype)initWithSubform:(nullable id)subform
-                       observer:(NSXMLElement *)observer
-                      evtTarget:(nullable NSXMLElement *)evtTarget
+                       observer:(XFXMLElement *)observer
+                      evtTarget:(nullable XFXMLElement *)evtTarget
                            name:(NSString *)name
                           phase:(nullable NSString *)phase
                         handler:(nullable XFEventHandlerBlock)handler
                   defaultAction:(BOOL)defaultAction;
 
-- (instancetype)initWithObserver:(NSXMLElement *)observer
-                       evtTarget:(nullable NSXMLElement *)evtTarget
+- (instancetype)initWithObserver:(XFXMLElement *)observer
+                       evtTarget:(nullable XFXMLElement *)evtTarget
                             name:(NSString *)name
                            phase:(nullable NSString *)phase
                          handler:(nullable XFEventHandlerBlock)handler
@@ -45,7 +45,7 @@ typedef void (^XFEventHandlerBlock)(XFEvent *event);
 
 - (void)attach;
 - (void)detach;
-- (instancetype)cloneForElement:(NSXMLElement *)element;
+- (instancetype)cloneForElement:(XFXMLElement *)element;
 /// XsltForms_listener.callback
 - (void)invoke:(XFEvent *)event;
 

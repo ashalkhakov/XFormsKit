@@ -17,7 +17,7 @@
 
 @implementation XFMessageAction
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                           model:(XFModel *)model
                           error:(NSError **)error
 {
@@ -37,13 +37,13 @@
     return self;
 }
 
-- (void)appendTextOf:(NSXMLElement *)element context:(XFExprContext *)ctx into:(NSMutableString *)out
+- (void)appendTextOf:(XFXMLElement *)element context:(XFExprContext *)ctx into:(NSMutableString *)out
 {
-    for (NSXMLNode *c in [element children]) {
-        if ([c kind] == NSXMLTextKind) {
+    for (XFXMLNode *c in [element children]) {
+        if ([c kind] == XFXMLTextKind) {
             [out appendString:[c stringValue] ?: @""];
-        } else if ([c kind] == NSXMLElementKind) {
-            NSXMLElement *el = (NSXMLElement *)c;
+        } else if ([c kind] == XFXMLElementKind) {
+            XFXMLElement *el = (XFXMLElement *)c;
             if ([XFXML element:el hasLocalName:@"output" namespaceURI:XFXFormsNamespaceURI]) {
                 NSString *attr = [el attributeForName:@"value"] && ![el attributeForName:@"ref"] ? @"value" : @"ref";
                 XFBinding *b = [XFBinding bindingForElement:el attribute:attr error:NULL];
@@ -55,7 +55,7 @@
     }
 }
 
-- (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+- (void)runWithContextNode:(XFXMLNode *)contextNode event:(XFEvent *)event
 {
     (void)event;
     NSString *text = nil;
@@ -91,7 +91,7 @@
 
 @implementation XFConfirmAction
 
-- (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+- (void)runWithContextNode:(XFXMLNode *)contextNode event:(XFEvent *)event
 {
     NSString *text = nil;
     XFExprContext *ctx = [[XFExprContext alloc] initWithNode:contextNode];

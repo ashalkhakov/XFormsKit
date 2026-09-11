@@ -10,7 +10,7 @@
 
 @implementation XFSendAction
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                           model:(XFModel *)model
                           error:(NSError **)error
 {
@@ -23,7 +23,7 @@
     return self;
 }
 
-- (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+- (void)runWithContextNode:(XFXMLNode *)contextNode event:(XFEvent *)event
 {
     (void)contextNode;
     (void)event;

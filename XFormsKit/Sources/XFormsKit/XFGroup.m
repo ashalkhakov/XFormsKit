@@ -26,7 +26,7 @@
     return YES;
 }
 
-+ (instancetype)groupWithElement:(NSXMLElement *)element
++ (instancetype)groupWithElement:(XFXMLElement *)element
                            model:(id)model
                            error:(NSError **)error
 {
@@ -126,7 +126,7 @@
     XFExprContext *childCtx = context;
     if (self.binding) {
         NSError *inner = nil;
-        NSXMLNode *node = [self.binding boundNodeInContext:context error:&inner];
+        XFXMLNode *node = [self.binding boundNodeInContext:context error:&inner];
         if (inner) {
             if (error) {
                 *error = inner;
@@ -161,7 +161,7 @@
                     break;
                 }
             }
-            NSXMLElement *root = [[target defaultInstance] documentElement];
+            XFXMLElement *root = [[target defaultInstance] documentElement];
             if (root) {
                 childCtx = [context cloneWithNode:root position:1 nodeList:@[ root ]];
                 childCtx.model = target;
@@ -189,7 +189,7 @@
 
 @implementation XFComponentControl
 
-+ (instancetype)componentWithElement:(NSXMLElement *)element model:(id)model error:(NSError **)error
++ (instancetype)componentWithElement:(XFXMLElement *)element model:(id)model error:(NSError **)error
 {
     XFComponentControl *c = [self groupWithElement:element model:model error:error];
     c.resource = [[element attributeForName:@"resource"] stringValue];

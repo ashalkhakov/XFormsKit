@@ -8,6 +8,7 @@
 #define XF_APPKIT_PRIV_H
 
 #import "XFFormView.h"
+#import <XFormsKit/XFXMLTypes.h>
 #import "XFRichText.h"
 #import "XFSVG.h"
 #import "XFProcessor.h"
@@ -167,7 +168,7 @@ FOUNDATION_EXPORT NSColor *XFInvalidTextColor(void);
 @property (nonatomic, strong) NSMutableArray *svgViews;
 /// The in-scope context node for host markup being laid out (repeat item
 /// nodes, a bound group's node) — what SVG AVTs evaluate against.
-@property (nonatomic, strong) NSXMLNode *svgContextNode;
+@property (nonatomic, strong) XFXMLNode *svgContextNode;
 /// Focusable inner views in layout (document) order — the tab chain (G-63).
 @property (nonatomic, strong) NSMutableArray<NSView *> *keyViews;
 @property (nonatomic, weak) NSView *firstKeyView;

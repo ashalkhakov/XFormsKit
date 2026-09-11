@@ -123,14 +123,31 @@ declined — the reasoning, and the gap analysis that became this
 implementation's test specification, are in
 [ios-port-dom-lift.md](ios-port-dom-lift.md).
 
-**Status: started.** `Sources/XFormsKit/DOM/` holds `XFDOMNode`,
-`XFDOMElement`, `XFDOMDocument` and the `NSXMLParser`-based builder —
-about 1,100 lines covering the full inventory below. It builds in the
-framework on macOS and compiles for iOS arm64, and
-`Tests/XFormsKitTests/XFDOMTests.m` holds 15 differential tests that run
-every operation through both NSXML and XFDOM and assert they agree.
-Still to do: switch the engine over behind `XF_PORTABLE_DOM` and get the
-630 engine tests green against it.
+**Status: the engine runs on it.** `Sources/XFormsKit/DOM/` holds
+`XFDOMNode`, `XFDOMElement`, `XFDOMDocument` and the `NSXMLParser`-based
+builder. The engine, the XPath layer, the AppKit layer and the tests were
+renamed off `NSXML*` onto the neutral `XFXML*` names declared in
+[XFXMLTypes.h](../Sources/XFormsKit/XFXMLTypes.h), which are
+`@compatibility_alias` declarations bound to NSXML by default and to
+XFDOM under `XF_PORTABLE_DOM`.
+
+**Both configurations are green — 683 tests each:**
+
+    xcodebuild -scheme XFormsKit test                                          # NSXML
+    xcodebuild -scheme XFormsKit test \
+        GCC_PREPROCESSOR_DEFINITIONS='$(inherited) XF_PORTABLE_DOM=1'          # XFDOM
+    make check XF_PORTABLE_DOM=1        # the same switch under GNUstep
+    make w3ccheck XF_PORTABLE_DOM=1
+
+225 unit tests (including 16 differential DOM tests) and all 458 W3C
+conformance tests pass against XFDOM, and unchanged against NSXML.
+
+Still to do: run both configurations under GNUstep, which has not been
+exercised from here; migrate the two apps, which still name NSXML types
+directly and so only build in the default configuration; and retire the
+two workarounds XFDOM makes unnecessary (the `<!--xf:ws-->` whitespace
+markers in XFProcessor, and the CDATA token substitution in
+XFSubmission).
 
 On macOS the names alias the system classes so the shipping product keeps
 the battle-tested implementation and carries zero regression risk:

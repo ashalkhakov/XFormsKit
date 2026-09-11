@@ -41,10 +41,10 @@
 @end
 
 @interface XFRepeat ()
-@property (nonatomic, copy, readwrite) NSArray<NSXMLNode *> *nodes;
+@property (nonatomic, copy, readwrite) NSArray<XFXMLNode *> *nodes;
 @property (nonatomic, assign, readwrite) NSUInteger index;
 @property (nonatomic, copy, readwrite) NSArray<XFRepeatItem *> *items;
-@property (nonatomic, copy, readwrite) NSArray<NSXMLElement *> *templateElements;
+@property (nonatomic, copy, readwrite) NSArray<XFXMLElement *> *templateElements;
 @property (nonatomic, weak) XFModel *model;
 @property (nonatomic, assign) BOOL itemsNeedRebuild;
 @end
@@ -61,7 +61,7 @@
     return YES;
 }
 
-+ (instancetype)repeatWithElement:(NSXMLElement *)element
++ (instancetype)repeatWithElement:(XFXMLElement *)element
                             model:(id)model
                             error:(NSError **)error
 {
@@ -97,12 +97,12 @@
     repeat.startIndex = startIndex;
     repeat.index = startIndex;
 
-    NSMutableArray<NSXMLElement *> *templates = [NSMutableArray array];
-    for (NSXMLNode *child in [element children]) {
-        if ([child kind] != NSXMLElementKind) {
+    NSMutableArray<XFXMLElement *> *templates = [NSMutableArray array];
+    for (XFXMLNode *child in [element children]) {
+        if ([child kind] != XFXMLElementKind) {
             continue;
         }
-        NSXMLElement *el = (NSXMLElement *)child;
+        XFXMLElement *el = (XFXMLElement *)child;
         if ([XFControl shouldInstantiateElement:el]) {
             [templates addObject:el];
         }
@@ -115,10 +115,10 @@
 
 - (void)reloadTemplates
 {
-    NSMutableArray<NSXMLElement *> *templates = [NSMutableArray array];
-    for (NSXMLNode *child in [self.element children]) {
-        if ([child kind] != NSXMLElementKind) continue;
-        NSXMLElement *el = (NSXMLElement *)child;
+    NSMutableArray<XFXMLElement *> *templates = [NSMutableArray array];
+    for (XFXMLNode *child in [self.element children]) {
+        if ([child kind] != XFXMLElementKind) continue;
+        XFXMLElement *el = (XFXMLElement *)child;
         if ([XFControl shouldInstantiateElement:el]) {
             [templates addObject:el];
         }
@@ -134,15 +134,15 @@
     return self.items[self.index - 1];
 }
 
-- (NSXMLNode *)currentNode
+- (XFXMLNode *)currentNode
 {
     return [self currentItem].node ?: self.boundNode;
 }
 
-- (NSArray<NSXMLNode *> *)relevantNodesFrom:(NSArray<NSXMLNode *> *)nodes
+- (NSArray<XFXMLNode *> *)relevantNodesFrom:(NSArray<XFXMLNode *> *)nodes
 {
     NSMutableArray *out = [NSMutableArray array];
-    for (NSXMLNode *node in nodes) {
+    for (XFXMLNode *node in nodes) {
         XFNodeState *state = [XFNodeState existingStateOnNode:node];
         if (state && !state.relevant) {
             continue;
@@ -152,7 +152,7 @@
     return out;
 }
 
-- (XFRepeatItem *)makeItemForNode:(NSXMLNode *)node
+- (XFRepeatItem *)makeItemForNode:(XFXMLNode *)node
                          position:(NSUInteger)position
                             error:(NSError **)error
 {
@@ -166,7 +166,7 @@
     // the whole build (nested groups constructing their own subtrees
     // included) runs in this item's scope — per-item subform content
     // filters on it
-    NSXMLNode *outerScope = [XFHostNode currentRepeatItemNode];
+    XFXMLNode *outerScope = [XFHostNode currentRepeatItemNode];
     [XFHostNode setCurrentRepeatItemNode:node];
     NSArray *nodes = [XFHostNode hostNodesForChildrenOf:self.element
                                                   model:self.model ?: self.owner
@@ -193,15 +193,15 @@
 
 - (void)rebuildItemsWithContext:(XFExprContext *)context error:(NSError **)error
 {
-    NSArray<NSXMLNode *> *raw = @[];
+    NSArray<XFXMLNode *> *raw = @[];
     if (self.binding) {
         XFXPathValue *value = [self.binding evaluateInContext:context error:error];
         raw = value.nodes ?: @[];
     }
-    NSArray<NSXMLNode *> *nodes = [self relevantNodesFrom:raw];
+    NSArray<XFXMLNode *> *nodes = [self relevantNodesFrom:raw];
     // XsltForms_repeat.build_: the index follows the current node when it
     // is still in the nodeset (G-27); otherwise the number is kept, clamped
-    NSXMLNode *current = [self currentItem].node;
+    XFXMLNode *current = [self currentItem].node;
     self.nodes = nodes;
     self.boundNode = nodes.firstObject;
     if (current) {
@@ -216,7 +216,7 @@
 
     NSMutableArray<XFRepeatItem *> *items = [NSMutableArray array];
     NSUInteger i = 1;
-    for (NSXMLNode *node in nodes) {
+    for (XFXMLNode *node in nodes) {
         // XsltForms_repeat.build_ keeps the DOM of unchanged rows and
         // only inserts/removes the delta — REUSING the item keeps its
         // per-item UI state (a toggled switch inside this row, a nested
@@ -281,7 +281,7 @@
             continue;
         }
         BOOL nested = NO;
-        NSXMLNode *walk = [other.element parent];
+        XFXMLNode *walk = [other.element parent];
         while (walk) {
             if (walk == self.element) {
                 nested = YES;

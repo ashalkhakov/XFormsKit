@@ -6,6 +6,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (instancetype)elementWithName:(NSString *)name;
 + (instancetype)elementWithName:(NSString *)name URI:(NSString *)URI;
++ (instancetype)elementWithName:(NSString *)name stringValue:(NSString *)stringValue;
 - (instancetype)initWithName:(NSString *)name;
 - (instancetype)initWithName:(NSString *)name URI:(nullable NSString *)URI NS_DESIGNATED_INITIALIZER;
 
@@ -29,12 +30,15 @@ NS_ASSUME_NONNULL_BEGIN
 /// The declaration in scope for the prefix of a qualified name, searching
 /// this element and then its ancestors.
 - (nullable XFDOMNode *)resolveNamespaceForName:(NSString *)name;
+/// The prefix declared in scope for a URI, or nil when it is not declared.
+- (nullable NSString *)resolvePrefixForNamespaceURI:(NSString *)namespaceURI;
 
-/* Children. */
+/* Direct children by name — NSXML's immediate-children lookup, not a
+   descendant search. */
 
-- (void)addChild:(XFDOMNode *)child;
-- (void)insertChild:(XFDOMNode *)child atIndex:(NSUInteger)index;
-- (void)removeChildAtIndex:(NSUInteger)index;
+- (NSArray<XFDOMElement *> *)elementsForName:(NSString *)name;
+- (NSArray<XFDOMElement *> *)elementsForLocalName:(NSString *)localName
+                                              URI:(nullable NSString *)URI;
 
 @end
 

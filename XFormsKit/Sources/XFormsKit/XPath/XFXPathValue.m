@@ -2,13 +2,12 @@
 #import "XFXML.h"
 #import "XFNodeState.h"
 #import "XFType.h"
-#import <Foundation/NSXMLNode.h>
-#import <Foundation/NSXMLElement.h>
+#import <XFormsKit/XFXMLTypes.h>
 #import <math.h>
 
 @interface XFXPathValue ()
 @property (nonatomic, assign, readwrite) XFXPathValueType type;
-@property (nonatomic, copy, readwrite) NSArray<NSXMLNode *> *nodes;
+@property (nonatomic, copy, readwrite) NSArray<XFXMLNode *> *nodes;
 @property (nonatomic, copy, readwrite) NSString *string;
 @property (nonatomic, assign, readwrite) double number;
 @property (nonatomic, assign, readwrite) BOOL boolean;
@@ -111,21 +110,21 @@ static BOOL XFEvalArithmetic(NSString *text, double *out)
 }
 
 /// The node's type name: the bind's (node state), else its own xsi:type.
-static XFType *XFNodeValueType(NSXMLNode *node)
+static XFType *XFNodeValueType(XFXMLNode *node)
 {
     NSString *name = [XFNodeState existingStateOnNode:node].typeName;
-    if (name.length == 0 && [node kind] == NSXMLElementKind) {
-        NSString *qname = [[(NSXMLElement *)node attributeForLocalName:@"type"
+    if (name.length == 0 && [node kind] == XFXMLElementKind) {
+        NSString *qname = [[(XFXMLElement *)node attributeForLocalName:@"type"
                                                                    URI:@"http://www.w3.org/2001/XMLSchema-instance"] stringValue];
         if (qname.length) {
-            return [XFType typeForQName:qname inElement:(NSXMLElement *)node targetNamespace:nil];
+            return [XFType typeForQName:qname inElement:(XFXMLElement *)node targetNamespace:nil];
         }
         return nil;
     }
     return name.length ? [XFType typeNamed:name] : nil;
 }
 
-NSString *XFXPathNodeValue(NSXMLNode *node)
+NSString *XFXPathNodeValue(XFXMLNode *node)
 {
     NSString *raw = [XFXML stringValueOfNode:node] ?: @"";
     XFType *type = XFNodeValueType(node);
@@ -202,7 +201,7 @@ NSString *XFNumberToString(double n)
 
 @implementation XFXPathValue
 
-+ (instancetype)nodeSet:(NSArray<NSXMLNode *> *)nodes
++ (instancetype)nodeSet:(NSArray<XFXMLNode *> *)nodes
 {
     XFXPathValue *v = [[self alloc] init];
     v.type = XFXPathValueTypeNodeSet;
@@ -234,7 +233,7 @@ NSString *XFNumberToString(double n)
     return v;
 }
 
-- (NSArray<NSXMLNode *> *)nodes
+- (NSArray<XFXMLNode *> *)nodes
 {
     return _nodes ?: @[];
 }
@@ -244,7 +243,7 @@ NSString *XFNumberToString(double n)
     return _string ?: @"";
 }
 
-- (NSXMLNode *)firstNode
+- (XFXMLNode *)firstNode
 {
     return self.nodes.firstObject;
 }
@@ -266,7 +265,7 @@ NSString *XFNumberToString(double n)
         case XFXPathValueTypeBoolean:
             return self.boolean ? @"true" : @"false";
         case XFXPathValueTypeNodeSet: {
-            NSXMLNode *first = self.nodes.firstObject;
+            XFXMLNode *first = self.nodes.firstObject;
             return first ? XFXPathNodeValue(first) : @"";
         }
     }

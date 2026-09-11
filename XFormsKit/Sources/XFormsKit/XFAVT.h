@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFExprContext;
 
@@ -26,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// `element` resolves namespace prefixes, exactly like
 /// [XFXPath xpathWithString:element:error:].
 + (nullable instancetype)avtWithString:(NSString *)value
-                               element:(nullable NSXMLElement *)element
+                               element:(nullable XFXMLElement *)element
                                  error:(NSError **)error;
 
 /// The original template text.
@@ -42,7 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// when it is not a template, else the evaluated template (compile
 /// failures fall back to the raw value).
 + (NSString *)resolveString:(NSString *)value
-                    element:(nullable NSXMLElement *)element
+                    element:(nullable XFXMLElement *)element
                   inContext:(XFExprContext *)context;
 
 @end

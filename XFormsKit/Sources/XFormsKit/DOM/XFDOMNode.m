@@ -64,6 +64,7 @@ NSString *XFDOMEscapedAttributeValue(NSString *value)
 @implementation XFDOMNode
 
 @synthesize kind = _kind;
+@synthesize URI = _URI;
 @synthesize parent = _parent;
 
 - (instancetype)initWithKind:(XFDOMNodeKind)kind
@@ -134,6 +135,41 @@ NSString *XFDOMEscapedAttributeValue(NSString *value)
     NSRange colon = [name rangeOfString:@":"];
     // NSXML reports an empty prefix, not nil, for an unprefixed name
     return colon.location == NSNotFound ? @"" : [name substringToIndex:colon.location];
+}
+
+#pragma mark Namespace
+
+/// Resolved on demand from the declarations in scope, which is how NSXML
+/// behaves: an element built as "xf:input" has no URI until it is added
+/// to a tree that declares xf, and reports the URI from then on. The
+/// designer's editing engine (XFHostEdit) builds elements exactly that
+/// way, so without this they would never be recognised as XForms.
+///
+/// The answer is memoised, so a subtree detached or copied out of its
+/// document keeps the namespace it resolved to while it was attached.
+- (NSString *)URI
+{
+    if (_URI != nil) {
+        return _URI;
+    }
+    if (self.kind != XFDOMElementKind && self.kind != XFDOMAttributeKind) {
+        return nil;
+    }
+    NSString *prefix = self.prefix ?: @"";
+    // an unprefixed attribute is in no namespace, never the default one
+    if (self.kind == XFDOMAttributeKind && prefix.length == 0) {
+        return nil;
+    }
+    XFDOMNode *scope = self.kind == XFDOMElementKind ? self : self.parent;
+    if (![scope isKindOfClass:[XFDOMElement class]]) {
+        return nil;
+    }
+    NSString *resolved = [[(XFDOMElement *)scope resolveNamespaceForName:self.name ?: @""] stringValue];
+    if (resolved.length == 0) {
+        return nil;
+    }
+    _URI = [resolved copy];
+    return _URI;
 }
 
 #pragma mark Value
@@ -268,6 +304,38 @@ NSString *XFDOMEscapedAttributeValue(NSString *value)
 {
     [node detach];
     node.parent = self;
+}
+
+#pragma mark Children
+
+/// Implemented on the node so that both containers — element and
+/// document — inherit one implementation; NSXML declares the same set
+/// separately on NSXMLElement and NSXMLDocument.
+- (void)addChild:(XFDOMNode *)child
+{
+    if (child == nil || self.mutableChildren == nil) {
+        return;
+    }
+    [self adoptNode:child];
+    [self.mutableChildren addObject:child];
+}
+
+- (void)insertChild:(XFDOMNode *)child atIndex:(NSUInteger)index
+{
+    if (child == nil || self.mutableChildren == nil) {
+        return;
+    }
+    [self adoptNode:child];
+    [self.mutableChildren insertObject:child atIndex:MIN(index, self.mutableChildren.count)];
+}
+
+- (void)removeChildAtIndex:(NSUInteger)index
+{
+    if (index >= self.mutableChildren.count) {
+        return;
+    }
+    // through -detach, so a document's root slot is cleared with it
+    [self.mutableChildren[index] detach];
 }
 
 #pragma mark Copying

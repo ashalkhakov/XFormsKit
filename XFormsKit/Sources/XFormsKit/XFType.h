@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -42,11 +43,11 @@ typedef NS_ENUM(NSInteger, XFWhitespace) {
 /// Register the simple types of an `xs:schema` element (XsltForms_schema /
 /// jsgen/simpleType.xsl: restrictions with facets, lists, unions) under its
 /// targetNamespace (G-56). Returns the number of types defined.
-+ (NSUInteger)registerSchemaElement:(NSXMLElement *)schema;
++ (NSUInteger)registerSchemaElement:(XFXMLElement *)schema;
 /// Resolve a `prefix:local` type name in the namespace context of
 /// `element` (unprefixed names fall back to `targetNamespace`, then to the
 /// xsd:/xf: conventions of `typeNamed:`).
-+ (nullable XFType *)typeForQName:(NSString *)qname inElement:(NSXMLElement *)element targetNamespace:(nullable NSString *)targetNamespace;
++ (nullable XFType *)typeForQName:(NSString *)qname inElement:(XFXMLElement *)element targetNamespace:(nullable NSString *)targetNamespace;
 /// XsltForms_atomicType.normalize: numbers rounded to `fractionDigits`.
 - (NSString *)normalizeValue:(NSString *)value;
 

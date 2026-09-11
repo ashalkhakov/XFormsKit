@@ -54,7 +54,7 @@
                       @"<xf:bind ref=\"total\" calculate=\"../price * ../qty\"/>"
                                           extra:nil error:&error];
     XCTAssertNotNil(p, @"%@", error);
-    NSXMLNode *total = [[[p.model defaultInstance] documentElement] elementsForName:@"total"].firstObject;
+    XFXMLNode *total = [[[p.model defaultInstance] documentElement] elementsForName:@"total"].firstObject;
     XCTAssertEqualObjects([XFXML stringValueOfNode:total], @"30");
     XFNodeState *state = [XFNodeState existingStateOnNode:total];
     XCTAssertTrue(state.readonly, @"calculate implies readonly");
@@ -90,7 +90,7 @@
                       @"<xf:bind ref=\"name\" relevant=\"../flag = 'true'\" required=\"true()\" constraint=\". != ''\"/>"
                                           extra:nil error:&error];
     XCTAssertNotNil(p, @"%@", error);
-    NSXMLNode *name = [[[p.model defaultInstance] documentElement] elementsForName:@"name"].firstObject;
+    XFXMLNode *name = [[[p.model defaultInstance] documentElement] elementsForName:@"name"].firstObject;
     XFNodeState *state = [XFNodeState existingStateOnNode:name];
     XCTAssertTrue(state.relevant);
     XCTAssertTrue(state.required);
@@ -110,7 +110,7 @@
                       @"</xf:bind>"
                                           extra:nil error:&error];
     XCTAssertNotNil(p, @"%@", error);
-    NSXMLNode *sum = [[[[[p.model defaultInstance] documentElement] elementsForName:@"item"] firstObject]
+    XFXMLNode *sum = [[[[[p.model defaultInstance] documentElement] elementsForName:@"item"] firstObject]
                       elementsForName:@"sum"].firstObject;
     XCTAssertEqualObjects([XFXML stringValueOfNode:sum], @"7");
 }
@@ -132,7 +132,7 @@
     XCTAssertTrue([input commitStringValue:@"Bob" error:&error]);
     [p.model addChange:input.boundNode];
     NSMutableSet *names = [NSMutableSet set];
-    for (NSXMLNode *n in p.model.nodesChanged) {
+    for (XFXMLNode *n in p.model.nodesChanged) {
         [names addObject:[n name]];
     }
     XCTAssertTrue([names containsObject:@"n"]);
@@ -153,8 +153,8 @@
                       @"<xf:insert id=\"ins\" nodeset=\"item\" position=\"after\"/>"
                                           extra:nil error:&error];
     XCTAssertNotNil(p, @"%@", error);
-    NSXMLElement *root = [[p.model defaultInstance] documentElement];
-    NSXMLNode *first = [root elementsForName:@"item"].firstObject;
+    XFXMLElement *root = [[p.model defaultInstance] documentElement];
+    XFXMLNode *first = [root elementsForName:@"item"].firstObject;
     XCTAssertFalse([XFNodeState existingStateOnNode:first].required);
 
     XFAbstractAction *insert = [p actionWithIdentifier:@"ins"];
@@ -181,8 +181,8 @@
                                           extra:@"<xf:input id=\"i\" ref=\"on\"><xf:label>on</xf:label></xf:input>"
                                         error:&error];
     XCTAssertNotNil(p, @"%@", error);
-    NSXMLElement *root = [[p.model defaultInstance] documentElement];
-    NSXMLNode *leaf = [[root elementsForName:@"grp"].firstObject elementsForName:@"leaf"].firstObject;
+    XFXMLElement *root = [[p.model defaultInstance] documentElement];
+    XFXMLNode *leaf = [[root elementsForName:@"grp"].firstObject elementsForName:@"leaf"].firstObject;
     XFNodeState *(^st)(void) = ^{ return [XFNodeState existingStateOnNode:leaf]; };
     XCTAssertTrue(st() == nil || st().relevant);
 
@@ -217,11 +217,11 @@
     XCTAssertEqualObjects(input.stringValue, @"Bob");
     // the insert used the bind's node list: the clone of the LAST bound
     // node (c) sits after it, not after the last <item> in document order
-    NSXMLElement *root = [[p defaultInstance] documentElement];
+    XFXMLElement *root = [[p defaultInstance] documentElement];
     NSArray *items = [root elementsForName:@"item"];
     XCTAssertEqual(items.count, (NSUInteger)4);
     XCTAssertEqualObjects([XFXML stringValueOfNode:items[3]], @"c");
-    XCTAssertEqualObjects([[(NSXMLElement *)items[3] attributeForName:@"k"] stringValue], @"1");
+    XCTAssertEqualObjects([[(XFXMLElement *)items[3] attributeForName:@"k"] stringValue], @"1");
     XCTAssertTrue([p setValue:@"Cy" ofControl:input error:&error], @"%@", error);
     XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"n"].firstObject], @"Cy");
 }
@@ -296,7 +296,7 @@
     XCTAssertNotNil(p, @"%@", error);
     XCTAssertEqual(p.model.instances.count, (NSUInteger)1);
     XCTAssertEqualObjects(p.model.instances.firstObject.identifier, @"instance-default");
-    NSXMLElement *root = [[p defaultInstance] documentElement];
+    XFXMLElement *root = [[p defaultInstance] documentElement];
     XCTAssertEqualObjects([root name], @"data");
     XCTAssertEqual([root elementsForName:@"name"].count, (NSUInteger)1);
     XCTAssertEqual([root elementsForName:@"age"].count, (NSUInteger)1);
@@ -356,7 +356,7 @@
     NSError *error = nil;
     XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
     XCTAssertNotNil(p, @"%@", error);
-    NSXMLElement *root = [[p defaultInstance] documentElement];
+    XFXMLElement *root = [[p defaultInstance] documentElement];
     XFNodeState *(^state)(NSString *) = ^XFNodeState *(NSString *name) {
         return [XFNodeState existingStateOnNode:[root elementsForName:name].firstObject];
     };
@@ -402,7 +402,7 @@
         if ([m containsString:@"More than one schema"]) dup = YES;
     }
     XCTAssertTrue(dup);
-    NSXMLElement *root = [[p defaultInstance] documentElement];
+    XFXMLElement *root = [[p defaultInstance] documentElement];
     BOOL (^valid)(NSString *) = ^BOOL(NSString *name) {
         XFNodeState *st = [XFNodeState existingStateOnNode:[root elementsForName:name].firstObject];
         return st == nil || st.valid;
@@ -430,7 +430,7 @@
                       @"<xf:input id=\"raw\" ref=\"a[1]\"><xf:label>R</xf:label></xf:input>"
                         error:&error];
     XCTAssertNotNil(p, @"%@", error);
-    NSXMLElement *root = [[p defaultInstance] documentElement];
+    XFXMLElement *root = [[p defaultInstance] documentElement];
     // the XPath layer evaluates eval-typed values (XsltForms xmlValue)
     XCTAssertEqualObjects([p controlWithIdentifier:@"o1"].stringValue, @"10");
     XCTAssertEqualObjects([p controlWithIdentifier:@"o2"].stringValue, @"80");

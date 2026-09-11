@@ -22,11 +22,10 @@
 #import "XFNamespaces.h"
 #import "XFXML.h"
 #import "XFErrors.h"
-#import <Foundation/NSXMLElement.h>
-#import <Foundation/NSXMLNode.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @interface XFAbstractAction ()
-@property (nonatomic, strong, readwrite) NSXMLElement *element;
+@property (nonatomic, strong, readwrite) XFXMLElement *element;
 @property (nonatomic, copy, readwrite) NSString *identifier;
 @property (nonatomic, strong) NSMutableArray<NSString *> *mutableInvokedEvents;
 @property (nonatomic, assign, readwrite) NSInteger invocationCount;
@@ -52,7 +51,7 @@
     return names;
 }
 
-+ (BOOL)isActionElement:(NSXMLElement *)element
++ (BOOL)isActionElement:(XFXMLElement *)element
 {
     if ([XFXML element:element hasLocalName:@"confirm" namespaceURI:XFAJXNamespaceURI]) {
         return YES;   // ajx:confirm (message-confirm.xsl, G-95)
@@ -64,16 +63,16 @@
     if ([[element localName] isEqualToString:@"var"]) {
         // xf:var is an action only inside an action (XFVar.js otherwise:
         // a control published to the UI scope)
-        NSXMLNode *parent = [element parent];
-        return [parent kind] == NSXMLElementKind
-            && [[(NSXMLElement *)parent URI] isEqualToString:XFXFormsNamespaceURI]
-            && [[self actionNames] containsObject:[(NSXMLElement *)parent localName]]
-            && ![[(NSXMLElement *)parent localName] isEqualToString:@"var"];
+        XFXMLNode *parent = [element parent];
+        return [parent kind] == XFXMLElementKind
+            && [[(XFXMLElement *)parent URI] isEqualToString:XFXFormsNamespaceURI]
+            && [[self actionNames] containsObject:[(XFXMLElement *)parent localName]]
+            && ![[(XFXMLElement *)parent localName] isEqualToString:@"var"];
     }
     return YES;
 }
 
-+ (instancetype)actionWithElement:(NSXMLElement *)element
++ (instancetype)actionWithElement:(XFXMLElement *)element
                             model:(XFModel *)model
                             error:(NSError **)error
 {
@@ -122,7 +121,7 @@
     return [[cls alloc] initWithElement:element model:model error:error];
 }
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                           model:(XFModel *)model
                           error:(NSError **)error
 {
@@ -188,14 +187,14 @@
     }
 }
 
-- (XFExprContext *)contextWithNode:(NSXMLNode *)node
+- (XFExprContext *)contextWithNode:(XFXMLNode *)node
 {
     XFExprContext *ctx = [[XFExprContext alloc] initWithNode:node];
     ctx.model = self.model;
     return ctx;
 }
 
-- (BOOL)booleanExpr:(XFXPath *)expr contextNode:(NSXMLNode *)node
+- (BOOL)booleanExpr:(XFXPath *)expr contextNode:(XFXMLNode *)node
 {
     if (expr == nil || node == nil) {
         return YES;
@@ -209,10 +208,10 @@
     [self handleXMLEvent:event contextNode:nil];
 }
 
-- (void)handleXMLEvent:(XFEvent *)event contextNode:(NSXMLNode *)contextNode
+- (void)handleXMLEvent:(XFEvent *)event contextNode:(XFXMLNode *)contextNode
 {
     // XsltForms_abstractAction.execute: ctx = element.node || default root
-    NSXMLNode *ctx = contextNode;
+    XFXMLNode *ctx = contextNode;
     if (ctx == nil) {
         id xf = event.xfElement;
         if ([xf isKindOfClass:[XFControl class]]) {
@@ -231,7 +230,7 @@
 /// execution). A node no model instance owns any more falls back to the
 /// default instance root — what a fresh resolution would yield for a
 /// model-less handler.
-- (NSXMLNode *)liveContextNode:(NSXMLNode *)node
+- (XFXMLNode *)liveContextNode:(XFXMLNode *)node
 {
     if (node == nil) {
         return nil;
@@ -269,19 +268,19 @@
     return self.model;
 }
 
-- (void)executeWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+- (void)executeWithContextNode:(XFXMLNode *)contextNode event:(XFEvent *)event
 {
     if (event.stopped) {
         return;
     }
     [self recordEvent:event];
-    NSXMLNode *ctx = [self liveContextNode:contextNode];
+    XFXMLNode *ctx = [self liveContextNode:contextNode];
     if (ctx == nil) {
         ctx = [[self.model defaultInstance] documentElement];
     }
     if (self.iterateExpr) {
         XFXPathValue *nodes = [self.iterateExpr evaluateInContext:[self contextWithNode:ctx] error:NULL];
-        for (NSXMLNode *item in nodes.nodes) {
+        for (XFXMLNode *item in nodes.nodes) {
             [self execWithContextNode:item event:event];
         }
         return;
@@ -299,7 +298,7 @@
     [self execWithContextNode:ctx event:event];
 }
 
-- (BOOL)execWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+- (BOOL)execWithContextNode:(XFXMLNode *)contextNode event:(XFEvent *)event
 {
     if (self.ifExpr) {
         if (![self booleanExpr:self.ifExpr contextNode:contextNode]) {
@@ -310,7 +309,7 @@
     return YES;
 }
 
-- (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+- (void)runWithContextNode:(XFXMLNode *)contextNode event:(XFEvent *)event
 {
     (void)contextNode;
     (void)event;

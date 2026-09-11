@@ -1,4 +1,5 @@
 #import <XFormsKit/XFControl.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -13,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// state; announced by xforms-in-range / xforms-out-of-range).
 @property (nonatomic, assign, readonly) BOOL outOfRange;
 
-+ (nullable instancetype)rangeWithElement:(NSXMLElement *)element
++ (nullable instancetype)rangeWithElement:(XFXMLElement *)element
                                     model:(nullable id)model
                                     error:(NSError **)error;
 

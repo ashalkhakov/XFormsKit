@@ -88,9 +88,9 @@
     NSError *error = nil;
     XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
     XCTAssertNotNil(p, @"%@", error);
-    NSXMLElement *root = [[p.model defaultInstance] documentElement];
-    NSXMLNode *n = [root elementsForName:@"n"].firstObject;
-    NSXMLNode *bad = [root elementsForName:@"bad"].firstObject;
+    XFXMLElement *root = [[p.model defaultInstance] documentElement];
+    XFXMLNode *n = [root elementsForName:@"n"].firstObject;
+    XFXMLNode *bad = [root elementsForName:@"bad"].firstObject;
     XCTAssertTrue([XFNodeState existingStateOnNode:n].valid);
     XCTAssertFalse([XFNodeState existingStateOnNode:bad].valid);
 }
@@ -106,7 +106,7 @@
         @"  </xf:model>"
         @"</html>";
     XFProcessor *p = [XFProcessor processorWithXMLString:xml error:NULL];
-    NSXMLNode *n = [[[[p.model defaultInstance] documentElement] elementsForName:@"n"] firstObject];
+    XFXMLNode *n = [[[[p.model defaultInstance] documentElement] elementsForName:@"n"] firstObject];
     XCTAssertFalse([XFNodeState existingStateOnNode:n].valid);
     XCTAssertTrue([XFNodeState existingStateOnNode:n].required);
 }

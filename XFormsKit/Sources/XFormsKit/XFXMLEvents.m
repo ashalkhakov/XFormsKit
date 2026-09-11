@@ -11,8 +11,7 @@
 #import "XFModel.h"
 #import "XFBind.h"
 #import "XFSubmission.h"
-#import <Foundation/NSXMLElement.h>
-#import <Foundation/NSXMLDocument.h>
+#import <XFormsKit/XFXMLTypes.h>
 #import <objc/runtime.h>
 
 static const void *kXFListenersKey = &kXFListenersKey;
@@ -36,7 +35,7 @@ static __weak id<XFEventTraceSink> gXFTraceSink = nil;
 
 @end
 
-NSString *XFTraceDescribeElement(NSXMLElement *element)
+NSString *XFTraceDescribeElement(XFXMLElement *element)
 {
     // debugConsole prints "<NAME class="…" id="…"/>" in Dispatching /
     // Captured lines (XsltForms_xmlevents.dispatch, listener callback).
@@ -56,16 +55,16 @@ NSString *XFTraceDescribeElement(NSXMLElement *element)
     return s;
 }
 
-NSString *XFTraceDescribeNode(NSXMLNode *node)
+NSString *XFTraceDescribeNode(XFXMLNode *node)
 {
     // XsltForms_browser.name2string
     if (node == nil) {
         return @"#notanode (nil)";
     }
     switch ([node kind]) {
-        case NSXMLAttributeKind:
-        case NSXMLElementKind: {
-            NSString *prefix = ([node kind] == NSXMLAttributeKind) ? @"@" : @"";
+        case XFXMLAttributeKind:
+        case XFXMLElementKind: {
+            NSString *prefix = ([node kind] == XFXMLAttributeKind) ? @"@" : @"";
             NSString *uri = [node URI];
             if (uri.length) {
                 return [NSString stringWithFormat:@"%@Q{%@}%@", prefix, uri,
@@ -73,15 +72,15 @@ NSString *XFTraceDescribeNode(NSXMLNode *node)
             }
             return [prefix stringByAppendingString:[node localName] ?: [node name] ?: @"?"];
         }
-        case NSXMLTextKind:                 return @"#text";
-        case NSXMLDocumentKind:             return @"#document";
-        case NSXMLCommentKind:              return @"#comment";
-        case NSXMLProcessingInstructionKind: return @"#processing-instruction";
+        case XFXMLTextKind:                 return @"#text";
+        case XFXMLDocumentKind:             return @"#document";
+        case XFXMLCommentKind:              return @"#comment";
+        case XFXMLProcessingInstructionKind: return @"#processing-instruction";
         default:                            return @"#node";
     }
 }
 
-void XFTraceWrite(XFTraceKind kind, NSString *eventName, NSXMLElement *element,
+void XFTraceWrite(XFTraceKind kind, NSString *eventName, XFXMLElement *element,
                   NSString *format, ...)
 {
     id<XFEventTraceSink> sink = gXFTraceSink;
@@ -212,9 +211,9 @@ void XFTraceWrite(XFTraceKind kind, NSString *eventName, NSXMLElement *element,
                           context:evcontext];
 }
 
-#pragma mark - xfElement / listeners on NSXMLElement
+#pragma mark - xfElement / listeners on XFXMLElement
 
-- (void)registerElement:(NSXMLElement *)element xfElement:(id)xfElement
+- (void)registerElement:(XFXMLElement *)element xfElement:(id)xfElement
 {
     if (element == nil) {
         return;
@@ -222,12 +221,12 @@ void XFTraceWrite(XFTraceKind kind, NSString *eventName, NSXMLElement *element,
     objc_setAssociatedObject(element, kXFElementKey, xfElement, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-- (id)xfElementForElement:(NSXMLElement *)element
+- (id)xfElementForElement:(XFXMLElement *)element
 {
     return element ? objc_getAssociatedObject(element, kXFElementKey) : nil;
 }
 
-- (NSMutableArray<XFListener *> *)listenersOn:(NSXMLElement *)element
+- (NSMutableArray<XFListener *> *)listenersOn:(XFXMLElement *)element
 {
     if (element == nil) {
         return [NSMutableArray array];
@@ -240,23 +239,23 @@ void XFTraceWrite(XFTraceKind kind, NSString *eventName, NSXMLElement *element,
     return list;
 }
 
-- (NSArray<XFListener *> *)listenersForElement:(NSXMLElement *)element
+- (NSArray<XFListener *> *)listenersForElement:(XFXMLElement *)element
 {
     NSMutableArray *list = element ? objc_getAssociatedObject(element, kXFListenersKey) : nil;
     return list ? [list copy] : @[];
 }
 
-- (NSXMLElement *)elementWithID:(NSString *)identifier inDocument:(NSXMLDocument *)document
+- (XFXMLElement *)elementWithID:(NSString *)identifier inDocument:(XFXMLDocument *)document
 {
     return [XFXML elementWithID:identifier inNode:document];
 }
 
-- (NSXMLElement *)resolveElement:(id)target xfElement:(id *)outXF
+- (XFXMLElement *)resolveElement:(id)target xfElement:(id *)outXF
 {
     if (target == nil) {
         return nil;
     }
-    if ([target isKindOfClass:[NSXMLElement class]]) {
+    if ([target isKindOfClass:[XFXMLElement class]]) {
         if (outXF) {
             *outXF = [self xfElementForElement:target];
         }
@@ -264,7 +263,7 @@ void XFTraceWrite(XFTraceKind kind, NSString *eventName, NSXMLElement *element,
     }
     // XsltForms: target = target.element || target
     if ([target respondsToSelector:@selector(element)]) {
-        NSXMLElement *el = [target element];
+        XFXMLElement *el = [target element];
         [self registerElement:el xfElement:target];
         if (outXF) {
             *outXF = target;
@@ -292,7 +291,7 @@ void XFTraceWrite(XFTraceKind kind, NSString *eventName, NSXMLElement *element,
         return;
     }
     id xfElement = nil;
-    NSXMLElement *element = [self resolveElement:target xfElement:&xfElement];
+    XFXMLElement *element = [self resolveElement:target xfElement:&xfElement];
     if (element == nil) {
         return;
     }
@@ -328,10 +327,10 @@ void XFTraceWrite(XFTraceKind kind, NSString *eventName, NSXMLElement *element,
     event.context = ctx;
 
     @try {
-        NSMutableArray<NSXMLElement *> *ancestors = [NSMutableArray array];
-        for (NSXMLNode *a = [element parent]; a; a = [a parent]) {
-            if ([a kind] == NSXMLElementKind) {
-                [ancestors insertObject:(NSXMLElement *)a atIndex:0];
+        NSMutableArray<XFXMLElement *> *ancestors = [NSMutableArray array];
+        for (XFXMLNode *a = [element parent]; a; a = [a parent]) {
+            if ([a kind] == XFXMLElementKind) {
+                [ancestors insertObject:(XFXMLElement *)a atIndex:0];
             }
         }
 
@@ -339,7 +338,7 @@ void XFTraceWrite(XFTraceKind kind, NSString *eventName, NSXMLElement *element,
         event.eventPhase = XFEventPhaseCapture;
         event.phase = @"capture";
         if (!event.stopped) {
-            for (NSXMLElement *ancestor in ancestors) {
+            for (XFXMLElement *ancestor in ancestors) {
                 [self fire:event on:ancestor];
                 if (event.stopped) {
                     break;
@@ -381,7 +380,7 @@ void XFTraceWrite(XFTraceKind kind, NSString *eventName, NSXMLElement *element,
     }
 }
 
-- (void)fire:(XFEvent *)event on:(NSXMLElement *)observer
+- (void)fire:(XFEvent *)event on:(XFXMLElement *)observer
 {
     event.currentTarget = observer;
     NSArray<XFListener *> *list = [[self listenersForElement:observer] copy];
@@ -398,17 +397,17 @@ void XFTraceWrite(XFTraceKind kind, NSString *eventName, NSXMLElement *element,
 
 #pragma mark - listener removal (the designer's detach path)
 
-static BOOL XFNodeIsUnderElement(NSXMLNode *node, NSXMLElement *root)
+static BOOL XFNodeIsUnderElement(XFXMLNode *node, XFXMLElement *root)
 {
-    for (NSXMLNode *walk = node; walk != nil; walk = [walk parent]) {
-        if (walk == (NSXMLNode *)root) {
+    for (XFXMLNode *walk = node; walk != nil; walk = [walk parent]) {
+        if (walk == (XFXMLNode *)root) {
             return YES;
         }
     }
     return NO;
 }
 
-- (void)pruneListenersOn:(NSXMLElement *)element handlersUnder:(NSXMLElement *)root
+- (void)pruneListenersOn:(XFXMLElement *)element handlersUnder:(XFXMLElement *)root
 {
     if ([self listenersForElement:element].count) {
         NSMutableArray *list = [self listenersOn:element];
@@ -419,15 +418,15 @@ static BOOL XFNodeIsUnderElement(NSXMLNode *node, NSXMLElement *root)
             }
         }
     }
-    for (NSXMLNode *child in [element children]) {
-        if ([child kind] == NSXMLElementKind) {
-            [self pruneListenersOn:(NSXMLElement *)child handlersUnder:root];
+    for (XFXMLNode *child in [element children]) {
+        if ([child kind] == XFXMLElementKind) {
+            [self pruneListenersOn:(XFXMLElement *)child handlersUnder:root];
         }
     }
 }
 
-- (void)removeListenersWithHandlersUnder:(NSXMLElement *)root
-                              inDocument:(NSXMLDocument *)document
+- (void)removeListenersWithHandlersUnder:(XFXMLElement *)root
+                              inDocument:(XFXMLDocument *)document
 {
     if (root == nil || [document rootElement] == nil) {
         return;
@@ -440,30 +439,30 @@ static BOOL XFNodeIsUnderElement(NSXMLNode *node, NSXMLElement *root)
 
 #pragma mark - document install (XSLT stand-in)
 
-- (NSString *)ev:(NSString *)local on:(NSXMLElement *)element
+- (NSString *)ev:(NSString *)local on:(XFXMLElement *)element
 {
     return [XFXML attributeValue:local namespaceURI:XFXMLEventsNamespaceURI onElement:element];
 }
 
-- (void)installListenersInDocument:(NSXMLDocument *)document
+- (void)installListenersInDocument:(XFXMLDocument *)document
 {
-    NSArray<NSXMLElement *> *listenerElements =
+    NSArray<XFXMLElement *> *listenerElements =
         [XFXML elementsWithLocalName:@"listener"
                        namespaceURI:XFXMLEventsNamespaceURI
                              inNode:document];
-    for (NSXMLElement *el in listenerElements) {
+    for (XFXMLElement *el in listenerElements) {
         [self installListenerElement:el inDocument:document];
     }
     [self installAttributeListenersUnder:document inDocument:document];
 }
 
-- (void)installListenersUnder:(NSXMLNode *)node inDocument:(NSXMLDocument *)document
+- (void)installListenersUnder:(XFXMLNode *)node inDocument:(XFXMLDocument *)document
 {
     if (node == nil) {
         return;
     }
-    if ([node kind] == NSXMLElementKind) {
-        NSXMLElement *el = (NSXMLElement *)node;
+    if ([node kind] == XFXMLElementKind) {
+        XFXMLElement *el = (XFXMLElement *)node;
         if ([XFXML element:el hasLocalName:@"listener" namespaceURI:XFXMLEventsNamespaceURI]) {
             [self installListenerElement:el inDocument:document];
         }
@@ -471,19 +470,19 @@ static BOOL XFNodeIsUnderElement(NSXMLNode *node, NSXMLElement *root)
     [self installAttributeListenersUnder:node inDocument:document];
 }
 
-- (void)installAttributeListenersUnder:(NSXMLNode *)node inDocument:(NSXMLDocument *)document
+- (void)installAttributeListenersUnder:(XFXMLNode *)node inDocument:(XFXMLDocument *)document
 {
-    if ([node kind] == NSXMLElementKind) {
-        NSXMLElement *element = (NSXMLElement *)node;
+    if ([node kind] == XFXMLElementKind) {
+        XFXMLElement *element = (XFXMLElement *)node;
         NSString *eventName = [self ev:@"event" on:element];
         if (eventName.length &&
             !([XFXML element:element hasLocalName:@"listener" namespaceURI:XFXMLEventsNamespaceURI])) {
             // XML Events attribute module: observer defaults to the parent
             // of the element bearing ev:event (XForms actions under model,
             // setvalue under trigger, etc.).
-            NSXMLElement *parent = nil;
-            if ([element parent].kind == NSXMLElementKind) {
-                parent = (NSXMLElement *)[element parent];
+            XFXMLElement *parent = nil;
+            if ([element parent].kind == XFXMLElementKind) {
+                parent = (XFXMLElement *)[element parent];
             }
             [self installListenerOnElement:element
                                  eventName:eventName
@@ -491,20 +490,20 @@ static BOOL XFNodeIsUnderElement(NSXMLNode *node, NSXMLElement *root)
                            observerDefault:parent ?: element];
         }
     }
-    for (NSXMLNode *child in [node children]) {
+    for (XFXMLNode *child in [node children]) {
         [self installAttributeListenersUnder:child inDocument:document];
     }
 }
 
-- (void)installListenerElement:(NSXMLElement *)el inDocument:(NSXMLDocument *)document
+- (void)installListenerElement:(XFXMLElement *)el inDocument:(XFXMLDocument *)document
 {
     NSString *eventName = [self ev:@"event" on:el] ?: [[el attributeForName:@"event"] stringValue];
     if (eventName.length == 0) {
         return;
     }
-    NSXMLElement *defaultObserver = nil;
-    if ([el parent].kind == NSXMLElementKind) {
-        defaultObserver = (NSXMLElement *)[el parent];
+    XFXMLElement *defaultObserver = nil;
+    if ([el parent].kind == XFXMLElementKind) {
+        defaultObserver = (XFXMLElement *)[el parent];
     }
     [self installListenerOnElement:el
                          eventName:eventName
@@ -512,10 +511,10 @@ static BOOL XFNodeIsUnderElement(NSXMLNode *node, NSXMLElement *root)
                    observerDefault:defaultObserver];
 }
 
-- (void)installListenerOnElement:(NSXMLElement *)el
+- (void)installListenerOnElement:(XFXMLElement *)el
                        eventName:(NSString *)eventName
-                      inDocument:(NSXMLDocument *)document
-                 observerDefault:(NSXMLElement *)observerDefault
+                      inDocument:(XFXMLDocument *)document
+                 observerDefault:(XFXMLElement *)observerDefault
 {
     // unprefixed XML Events attributes only on non-XForms elements
     // (ev:listener): on xf:load / xf:dispatch a plain `target` is the
@@ -531,23 +530,23 @@ static BOOL XFNodeIsUnderElement(NSXMLNode *node, NSXMLElement *root)
     NSString *propagate = [self ev:@"propagate" on:el] ?: plain(@"propagate");
     NSString *defaultAction = [self ev:@"defaultAction" on:el] ?: plain(@"defaultAction");
 
-    NSXMLElement *observer = observerDefault;
+    XFXMLElement *observer = observerDefault;
     if (observerID.length) {
         if ([observerID hasPrefix:@"#"]) {
             observerID = [observerID substringFromIndex:1];
         }
         observer = [self elementWithID:observerID inDocument:document] ?: observer;
     }
-    NSXMLElement *evtTarget = nil;
+    XFXMLElement *evtTarget = nil;
     if (targetID.length) {
         evtTarget = [self elementWithID:targetID inDocument:document];
     }
-    NSXMLElement *handlerElement = el;
+    XFXMLElement *handlerElement = el;
     if (handlerRef.length) {
         if ([handlerRef hasPrefix:@"#"]) {
             handlerRef = [handlerRef substringFromIndex:1];
         }
-        NSXMLElement *resolved = [self elementWithID:handlerRef inDocument:document];
+        XFXMLElement *resolved = [self elementWithID:handlerRef inDocument:document];
         if (resolved) {
             handlerElement = resolved;
         }
@@ -563,7 +562,7 @@ static BOOL XFNodeIsUnderElement(NSXMLNode *node, NSXMLElement *root)
             // XsltForms_browser.run: one openAction/closeAction around the
             // whole handler (G-09), evaluated in the observer's in-scope
             // context (`element.node`, G-10)
-            NSXMLNode *ctx = [[XFXMLEvents sharedEvents] inScopeNodeForElement:observer];
+            XFXMLNode *ctx = [[XFXMLEvents sharedEvents] inScopeNodeForElement:observer];
             XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
             [du openAction:@"run"];
             [xf handleXMLEvent:event contextNode:ctx];
@@ -753,10 +752,10 @@ static BOOL XFNodeIsUnderElement(NSXMLNode *node, NSXMLElement *root)
     [events.exceptionMessages addObject:[NSString stringWithFormat:@"%@: %@", eventName, message ?: @""]];
     // XsltForms_globals.error → debugConsole.write("Error: " + message)
     XFTraceWrite(XFTraceKindError, eventName,
-                 [target isKindOfClass:[NSXMLElement class]] ? target : nil,
+                 [target isKindOfClass:[XFXMLElement class]] ? target : nil,
                  @"Error: %@", message ?: eventName);
     id xf = target;
-    if ([target isKindOfClass:[NSXMLElement class]]) {
+    if ([target isKindOfClass:[XFXMLElement class]]) {
         xf = [events xfElementForElement:target] ?: target;
     }
     if (xf) {
@@ -764,7 +763,7 @@ static BOOL XFNodeIsUnderElement(NSXMLNode *node, NSXMLElement *root)
     }
 }
 
-- (NSXMLNode *)inScopeNodeForElement:(NSXMLElement *)element
+- (XFXMLNode *)inScopeNodeForElement:(XFXMLElement *)element
 {
     // XSLTForms: element.node — the bound node of a bound element, the
     // in-scope context of an unbound one; nil for model-level observers

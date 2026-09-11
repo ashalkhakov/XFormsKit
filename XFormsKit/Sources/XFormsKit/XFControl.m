@@ -45,7 +45,7 @@
     BOOL _raisedDatatypeRestriction;
 }
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                         binding:(XFBinding *)binding
                           label:(NSString *)label
 {
@@ -72,7 +72,7 @@
 
 - (XFBinding *)bindingFromChild:(NSString *)name
 {
-    NSXMLElement *el = [XFXML childElementWithLocalName:name
+    XFXMLElement *el = [XFXML childElementWithLocalName:name
                                           namespaceURI:XFXFormsNamespaceURI
                                              ofElement:self.element];
     if (el == nil) {
@@ -88,7 +88,7 @@
 
 - (NSString *)literalFromChild:(NSString *)name
 {
-    NSXMLElement *el = [XFXML childElementWithLocalName:name
+    XFXMLElement *el = [XFXML childElementWithLocalName:name
                                           namespaceURI:XFXFormsNamespaceURI
                                              ofElement:self.element];
     if (el == nil) {
@@ -108,7 +108,7 @@
 {
     self.labelParts = nil;
     self.labelIsDynamic = NO;
-    NSXMLElement *el = [XFXML childElementWithLocalName:@"label"
+    XFXMLElement *el = [XFXML childElementWithLocalName:@"label"
                                           namespaceURI:XFXFormsNamespaceURI
                                              ofElement:self.element];
     if (el == nil) {
@@ -128,14 +128,14 @@
     self.labelParts = parts;
 }
 
-- (void)collectLabelPartsOf:(NSXMLElement *)el into:(NSMutableArray *)parts
+- (void)collectLabelPartsOf:(XFXMLElement *)el into:(NSMutableArray *)parts
 {
-    for (NSXMLNode *child in [el children]) {
-        NSXMLNodeKind kind = [child kind];
-        if (kind == NSXMLTextKind) {
+    for (XFXMLNode *child in [el children]) {
+        XFXMLNodeKind kind = [child kind];
+        if (kind == XFXMLTextKind) {
             [parts addObject:[child stringValue] ?: @""];
-        } else if (kind == NSXMLElementKind) {
-            NSXMLElement *c = (NSXMLElement *)child;
+        } else if (kind == XFXMLElementKind) {
+            XFXMLElement *c = (XFXMLElement *)child;
             if ([XFXML element:c hasLocalName:@"output" namespaceURI:XFXFormsNamespaceURI]) {
                 NSString *attr = [c attributeForName:@"value"] && ![c attributeForName:@"ref"] ? @"value" : @"ref";
                 XFBinding *b = [XFBinding bindingForElement:c attribute:attr error:NULL];
@@ -180,7 +180,7 @@
 
 - (void)loadHostAttributes
 {
-    NSXMLElement *element = self.element;
+    XFXMLElement *element = self.element;
     self.navindex = [[[element attributeForName:@"navindex"] stringValue] integerValue];
     self.mediatype = [[element attributeForName:@"mediatype"] stringValue];
     self.accesskey = [[element attributeForName:@"accesskey"] stringValue];
@@ -188,7 +188,7 @@
     self.rows = [[[element attributeForName:@"rows"] stringValue] integerValue];
     self.cols = [[[element attributeForName:@"cols"] stringValue] integerValue];
     self.inputmode = [[element attributeForName:@"inputmode"] stringValue];
-    NSXMLElement *help = [XFXML childElementWithLocalName:@"help" namespaceURI:XFXFormsNamespaceURI ofElement:element];
+    XFXMLElement *help = [XFXML childElementWithLocalName:@"help" namespaceURI:XFXFormsNamespaceURI ofElement:element];
     self.helpHref = [[help attributeForName:@"href"] stringValue];
 }
 
@@ -223,7 +223,7 @@
     if (self.hint == nil) {
         self.hint = [self literalFromChild:@"hint"];
     }
-    NSXMLElement *hintEl = [XFXML childElementWithLocalName:@"hint"
+    XFXMLElement *hintEl = [XFXML childElementWithLocalName:@"hint"
                                                namespaceURI:XFXFormsNamespaceURI
                                                   ofElement:self.element];
     self.hintMinimal = [[[hintEl attributeForName:@"appearance"] stringValue]
@@ -277,7 +277,7 @@
 
 - (BOOL)reconfigureFromElement:(NSError **)error
 {
-    NSXMLElement *element = self.element;
+    XFXMLElement *element = self.element;
     if (element == nil) {
         return NO;
     }
@@ -313,7 +313,7 @@
     [XFXMLEvents dispatch:self name:@"xforms-hint"];
 }
 
-+ (BOOL)isControlElement:(NSXMLElement *)element
++ (BOOL)isControlElement:(XFXMLElement *)element
 {
     static NSSet *names;
     @synchronized(self) {
@@ -329,7 +329,7 @@
         && [names containsObject:[element localName]];
 }
 
-+ (BOOL)isStandaloneLabelElement:(NSXMLElement *)element
++ (BOOL)isStandaloneLabelElement:(XFXMLElement *)element
 {
     if (![XFXML element:element hasLocalName:@"label" namespaceURI:XFXFormsNamespaceURI]) {
         return NO;
@@ -339,8 +339,8 @@
     if (ref.length || value.length) {
         return YES;
     }
-    NSXMLNode *parent = [element parent];
-    NSString *pname = [parent kind] == NSXMLElementKind ? [(NSXMLElement *)parent localName] : @"";
+    XFXMLNode *parent = [element parent];
+    NSString *pname = [parent kind] == XFXMLElementKind ? [(XFXMLElement *)parent localName] : @"";
     static NSSet *captionParents;
     @synchronized(self) {
         if (captionParents == nil) {
@@ -355,23 +355,23 @@
     return ![captionParents containsObject:pname];
 }
 
-+ (BOOL)shouldInstantiateElement:(NSXMLElement *)element
++ (BOOL)shouldInstantiateElement:(XFXMLElement *)element
 {
     return [self isControlElement:element] || [self isStandaloneLabelElement:element];
 }
 
-+ (NSString *)labelForElement:(NSXMLElement *)element
++ (NSString *)labelForElement:(XFXMLElement *)element
 {
     // only a direct child: a repeat/group must not borrow the label of the
     // first control nested in its markup (G-20)
-    NSXMLElement *label =
+    XFXMLElement *label =
         [XFXML childElementWithLocalName:@"label"
                            namespaceURI:XFXFormsNamespaceURI
                               ofElement:element];
     return label ? [XFXML stringValueOfNode:label] : nil;
 }
 
-+ (XFBinding *)bindingOnElement:(NSXMLElement *)element
++ (XFBinding *)bindingOnElement:(XFXMLElement *)element
               preferredAttribute:(NSString *)preferred
                           error:(NSError **)error
 {
@@ -379,7 +379,7 @@
     return [XFBinding bindingForElement:element attribute:preferred error:error];
 }
 
-+ (instancetype)controlWithElement:(NSXMLElement *)element
++ (instancetype)controlWithElement:(XFXMLElement *)element
                              model:(id)model
                              error:(NSError **)error
 {
@@ -449,7 +449,7 @@
 
 - (BOOL)usesValueBinding
 {
-    NSXMLElement *element = self.element;
+    XFXMLElement *element = self.element;
     return [element attributeForName:@"value"] != nil
         && [element attributeForName:@"ref"] == nil
         && [element attributeForName:@"bind"] == nil;
@@ -460,7 +460,7 @@
     [self applyMIPsFromNode:self.boundNode];
 }
 
-- (void)applyMIPsFromNode:(NSXMLNode *)node
+- (void)applyMIPsFromNode:(XFXMLNode *)node
 {
     XFNodeState *state = [XFNodeState existingStateOnNode:node];
     BOOL relevant = YES;
@@ -528,10 +528,10 @@
     // the bind's type, else the node's literal xsi:type (the
     // XsltForms_browser.getType convention)
     NSString *typeName = [XFNodeState existingStateOnNode:self.boundNode].typeName;
-    if (typeName.length == 0 && [self.boundNode kind] == NSXMLElementKind) {
-        typeName = [[(NSXMLElement *)self.boundNode attributeForLocalName:@"type"
+    if (typeName.length == 0 && [self.boundNode kind] == XFXMLElementKind) {
+        typeName = [[(XFXMLElement *)self.boundNode attributeForLocalName:@"type"
                         URI:@"http://www.w3.org/2001/XMLSchema-instance"] stringValue]
-            ?: [[(NSXMLElement *)self.boundNode attributeForName:@"xsi:type"] stringValue];
+            ?: [[(XFXMLElement *)self.boundNode attributeForName:@"xsi:type"] stringValue];
     }
     if (typeName.length == 0) {
         return;   // an untyped node is not a declared violation
@@ -598,7 +598,7 @@
         return;
     }
     NSError *inner = nil;
-    NSXMLNode *node = [self.binding boundNodeInContext:context error:&inner];
+    XFXMLNode *node = [self.binding boundNodeInContext:context error:&inner];
     if (inner != nil) {
         // a failing UI binding expression is an xforms-binding-exception
         // (7.5.b — the same failure inside a model item property raises

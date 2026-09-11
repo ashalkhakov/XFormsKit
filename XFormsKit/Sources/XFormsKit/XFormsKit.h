@@ -8,6 +8,7 @@
 #import <Foundation/Foundation.h>
 
 #import <XFormsKit/XFDOM.h>
+#import <XFormsKit/XFXMLTypes.h>
 #import <XFormsKit/XFNamespaces.h>
 #import <XFormsKit/XFErrors.h>
 #import <XFormsKit/XFXML.h>

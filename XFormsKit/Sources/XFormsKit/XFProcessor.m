@@ -26,12 +26,11 @@
 #import "XFErrors.h"
 #import "XFXMLEvents.h"
 #import "XFSubform.h"
-#import <Foundation/NSXMLDocument.h>
-#import <Foundation/NSXMLElement.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @interface XFProcessor ()
 @property (nonatomic, strong, readwrite) XFHTTPSubmissionTransport *defaultTransport;
-@property (nonatomic, strong, readwrite) NSXMLDocument *hostDocument;
+@property (nonatomic, strong, readwrite) XFXMLDocument *hostDocument;
 @property (nonatomic, strong, readwrite) XFModel *model;
 @property (nonatomic, copy, readwrite) NSArray<XFModel *> *models;
 @property (nonatomic, copy, readwrite) NSArray<XFControl *> *controls;
@@ -54,7 +53,7 @@
 NSString * const XFWhitespaceMarkerComment = @"<!--xf:ws-->";
 NSString * const XFWhitespaceMarkerText = @"xf:ws";
 
-NSString *XFHostXMLString(NSXMLDocument *document, NSUInteger options)
+NSString *XFHostXMLString(XFXMLDocument *document, NSUInteger options)
 {
     NSString *xml = [document XMLStringWithOptions:options] ?: [document XMLString] ?: @"";
     return [xml stringByReplacingOccurrencesOfString:XFWhitespaceMarkerComment withString:@""];
@@ -138,12 +137,12 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
     return [out dataUsingEncoding:NSUTF8StringEncoding] ?: data;
 }
 
-+ (NSXMLDocument *)documentFromData:(NSData *)data error:(NSError **)error
++ (XFXMLDocument *)documentFromData:(NSData *)data error:(NSError **)error
 {
     NSError *inner = nil;
-    NSXMLDocument *doc =
-        [[NSXMLDocument alloc] initWithData:XFPreserveBodyWhitespace(data)
-                                    options:NSXMLNodePreserveWhitespace
+    XFXMLDocument *doc =
+        [[XFXMLDocument alloc] initWithData:XFPreserveBodyWhitespace(data)
+                                    options:XFXMLNodePreserveWhitespace
                                       error:&inner];
     if (doc == nil) {
         if (error) {
@@ -167,7 +166,7 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
         }
         return nil;
     }
-    NSXMLDocument *doc = [self documentFromData:data error:error];
+    XFXMLDocument *doc = [self documentFromData:data error:error];
     if (doc == nil) {
         return nil;
     }
@@ -184,14 +183,14 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
                                  error:(NSError **)error
 {
     NSData *data = [xml dataUsingEncoding:NSUTF8StringEncoding];
-    NSXMLDocument *doc = [self documentFromData:data error:error];
+    XFXMLDocument *doc = [self documentFromData:data error:error];
     if (doc == nil) {
         return nil;
     }
     return [[self alloc] initWithHostDocument:doc baseURL:baseURL error:error];
 }
 
-- (instancetype)initWithHostDocument:(NSXMLDocument *)document error:(NSError **)error
+- (instancetype)initWithHostDocument:(XFXMLDocument *)document error:(NSError **)error
 {
     return [self initWithHostDocument:document baseURL:nil error:error];
 }
@@ -200,31 +199,31 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
 /// referenced document (which may itself hold controls or further
 /// includes) — G-92. A document that cannot be loaded leaves the element
 /// out and raises xforms-link-exception once the events are installed.
-- (void)expandIncludesIn:(NSXMLDocument *)document
+- (void)expandIncludesIn:(XFXMLDocument *)document
 {
     [self expandIncludesIn:document baseURL:self.baseURL];
 }
 
-- (void)expandIncludesIn:(NSXMLDocument *)document baseURL:(NSURL *)baseURL
+- (void)expandIncludesIn:(XFXMLDocument *)document baseURL:(NSURL *)baseURL
 {
     NSMutableArray<NSString *> *failed = [NSMutableArray array];
     for (int depth = 0; depth < 8; depth++) {
-        NSArray<NSXMLElement *> *includes = [XFXML elementsWithLocalName:@"include"
+        NSArray<XFXMLElement *> *includes = [XFXML elementsWithLocalName:@"include"
                                                             namespaceURI:XFXFormsNamespaceURI
                                                                   inNode:document];
         if (includes.count == 0) {
             break;
         }
-        for (NSXMLElement *inc in includes) {
-            NSXMLElement *parent = (NSXMLElement *)[inc parent];
-            if ([parent kind] != NSXMLElementKind) {
+        for (XFXMLElement *inc in includes) {
+            XFXMLElement *parent = (XFXMLElement *)[inc parent];
+            if ([parent kind] != XFXMLElementKind) {
                 continue;
             }
             NSString *src = [[inc attributeForName:@"src"] stringValue];
             NSURL *url = src.length ? ([NSURL URLWithString:src relativeToURL:baseURL] ?: [NSURL fileURLWithPath:src]) : nil;
             NSData *data = url ? [NSData dataWithContentsOfURL:url] : nil;
-            NSXMLDocument *doc = data ? [[NSXMLDocument alloc] initWithData:data options:NSXMLNodePreserveWhitespace error:NULL] : nil;
-            NSXMLElement *root = [doc rootElement];
+            XFXMLDocument *doc = data ? [[XFXMLDocument alloc] initWithData:data options:XFXMLNodePreserveWhitespace error:NULL] : nil;
+            XFXMLElement *root = [doc rootElement];
             NSUInteger at = [inc index];
             [inc detach];
             if (root) {
@@ -238,7 +237,7 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
     _failedIncludes = failed;
 }
 
-- (instancetype)initWithHostDocument:(NSXMLDocument *)document
+- (instancetype)initWithHostDocument:(XFXMLDocument *)document
                              baseURL:(NSURL *)baseURL
                                error:(NSError **)error
 {
@@ -254,7 +253,7 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
     // resource replaces the inline default content (3.2.2.a, non-normative).
     // Resolved once here, before controls read their labels.
     for (NSString *name in @[ @"label", @"help", @"hint", @"alert" ]) {
-        for (NSXMLElement *el in [XFXML elementsWithLocalName:name
+        for (XFXMLElement *el in [XFXML elementsWithLocalName:name
                                                  namespaceURI:XFXFormsNamespaceURI
                                                        inNode:document]) {
             NSString *src = [[el attributeForName:@"src"] stringValue];
@@ -272,14 +271,14 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
         }
     }
 
-    NSArray<NSXMLElement *> *modelElements =
+    NSArray<XFXMLElement *> *modelElements =
         [XFXML elementsWithLocalName:@"model"
                        namespaceURI:XFXFormsNamespaceURI
                              inNode:document];
     if (modelElements.count == 0) {
         // XForms 1.1 3.3.1 (lazy authoring): a host document with no
         // xf:model gets an implicit empty default model (3.3.1.a2)
-        NSXMLElement *implicit = [NSXMLElement elementWithName:@"model"
+        XFXMLElement *implicit = [XFXMLElement elementWithName:@"model"
                                                            URI:XFXFormsNamespaceURI];
         [document.rootElement addChild:implicit];
         modelElements = @[ implicit ];
@@ -287,7 +286,7 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
 
     NSError *inner = nil;
     NSMutableArray<XFModel *> *models = [NSMutableArray array];
-    for (NSXMLElement *modelElement in modelElements) {
+    for (XFXMLElement *modelElement in modelElements) {
         XFModel *model = [XFModel modelWithElement:modelElement error:&inner];
         if (model == nil) {
             if (error) {
@@ -354,8 +353,8 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
     // namespace is an xforms-link-exception (G-82)
     NSMutableSet<NSString *> *schemaNamespaces = [NSMutableSet set];
     NSMutableSet<NSNumber *> *schemaElements = [NSMutableSet set];
-    BOOL (^registerSchema)(NSXMLElement *, XFModel *, BOOL) =
-        ^BOOL(NSXMLElement *schemaEl, XFModel *m, BOOL external) {
+    BOOL (^registerSchema)(XFXMLElement *, XFModel *, BOOL) =
+        ^BOOL(XFXMLElement *schemaEl, XFModel *m, BOOL external) {
         // XFModel.js: @schema names an already loaded schema, so an inline
         // schema referenced by its id is not loaded twice
         NSNumber *key = @((unsigned long long)(uintptr_t)schemaEl);
@@ -384,10 +383,10 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
         // schemas: inline xs:schema children, and @schema tokens naming an
         // element id (#id / id) or a URL; a missing one is a link-exception
         // (XFModel.js: "Schema … not found", G-56)
-        for (NSXMLNode *c in [m.element children]) {
-            if ([c kind] == NSXMLElementKind && [[c localName] isEqualToString:@"schema"]
+        for (XFXMLNode *c in [m.element children]) {
+            if ([c kind] == XFXMLElementKind && [[c localName] isEqualToString:@"schema"]
                 && [[c URI] isEqualToString:@"http://www.w3.org/2001/XMLSchema"]) {
-                registerSchema((NSXMLElement *)c, m, NO);
+                registerSchema((XFXMLElement *)c, m, NO);
             }
         }
         NSString *schemas = [[m.element attributeForName:@"schema"] stringValue];
@@ -395,16 +394,16 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
             if (ref.length == 0) {
                 continue;
             }
-            NSXMLElement *schemaEl = nil;
+            XFXMLElement *schemaEl = nil;
             BOOL external = NO;
             NSString *sid = [ref hasPrefix:@"#"] ? [ref substringFromIndex:1] : ref;
-            NSXMLElement *byID = [[XFXMLEvents sharedEvents] elementWithID:sid inDocument:document];
+            XFXMLElement *byID = [[XFXMLEvents sharedEvents] elementWithID:sid inDocument:document];
             if (byID && [[byID localName] isEqualToString:@"schema"]) {
                 schemaEl = byID;
             } else if (![ref hasPrefix:@"#"]) {
                 NSURL *url = [NSURL URLWithString:ref relativeToURL:self.baseURL] ?: [NSURL fileURLWithPath:ref];
                 NSData *data = url ? [NSData dataWithContentsOfURL:url] : nil;
-                NSXMLDocument *sdoc = data ? [[NSXMLDocument alloc] initWithData:data options:0 error:NULL] : nil;
+                XFXMLDocument *sdoc = data ? [[XFXMLDocument alloc] initWithData:data options:0 error:NULL] : nil;
                 schemaEl = [sdoc rootElement];
                 external = YES;
             }
@@ -486,15 +485,15 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
     return self;
 }
 
-- (BOOL)collectActionsUnder:(NSXMLNode *)node
+- (BOOL)collectActionsUnder:(XFXMLNode *)node
                      parent:(XFAction *)parent
                     actions:(NSMutableArray<XFAbstractAction *> *)actions
                       error:(NSError **)error
 {
-    if ([node kind] != NSXMLElementKind) {
+    if ([node kind] != XFXMLElementKind) {
         return YES;
     }
-    NSXMLElement *element = (NSXMLElement *)node;
+    XFXMLElement *element = (XFXMLElement *)node;
     XFAction *nextParent = parent;
     if ([XFAbstractAction isActionElement:element]) {
         NSError *inner = nil;
@@ -516,7 +515,7 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
             nextParent = (XFAction *)action;
         }
     }
-    for (NSXMLNode *child in [element children]) {
+    for (XFXMLNode *child in [element children]) {
         if (![self collectActionsUnder:child parent:nextParent actions:actions error:error]) {
             return NO;
         }
@@ -550,12 +549,12 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
 
 /// The element whose content is the form's UI: the XHTML body when there
 /// is one, else the document element (XSLTForms' body template).
-- (NSXMLElement *)findHostRoot
+- (XFXMLElement *)findHostRoot
 {
-    NSXMLElement *root = self.hostDocument.rootElement;
-    for (NSXMLNode *c in [root children]) {
-        if ([c kind] == NSXMLElementKind && [[[c localName] lowercaseString] isEqualToString:@"body"]) {
-            return (NSXMLElement *)c;
+    XFXMLElement *root = self.hostDocument.rootElement;
+    for (XFXMLNode *c in [root children]) {
+        if ([c kind] == XFXMLElementKind && [[[c localName] lowercaseString] isEqualToString:@"body"]) {
+            return (XFXMLElement *)c;
         }
     }
     return root;
@@ -565,7 +564,7 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
                            into:(NSMutableArray<XFControl *> *)controls
                           error:(NSError **)error
 {
-    NSXMLElement *hostRoot = [self findHostRoot];
+    XFXMLElement *hostRoot = [self findHostRoot];
     NSArray *nodes = [XFHostNode hostNodesForChildrenOf:hostRoot
                                                   model:self.model
                                                controls:controls
@@ -594,14 +593,14 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
     return YES;
 }
 
-- (BOOL)collectControlsUnder:(NSXMLNode *)node
+- (BOOL)collectControlsUnder:(XFXMLNode *)node
                         into:(NSMutableArray<XFControl *> *)controls
                        error:(NSError **)error
 {
-    if ([node kind] != NSXMLElementKind) {
+    if ([node kind] != XFXMLElementKind) {
         return YES;
     }
-    NSXMLElement *element = (NSXMLElement *)node;
+    XFXMLElement *element = (XFXMLElement *)node;
     if ([XFXML element:element hasLocalName:@"model" namespaceURI:XFXFormsNamespaceURI]) {
         return YES;
     }
@@ -618,7 +617,7 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
         [controls addObject:control];
         return YES;
     }
-    for (NSXMLNode *child in [element children]) {
+    for (XFXMLNode *child in [element children]) {
         if (![self collectControlsUnder:child into:controls error:error]) {
             return NO;
         }
@@ -626,23 +625,23 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
     return YES;
 }
 
-- (NSString *)labelForElement:(NSXMLElement *)element
+- (NSString *)labelForElement:(XFXMLElement *)element
 {
     // only a direct child: a repeat/group must not borrow the label of the
     // first control nested in its markup (G-20)
-    NSXMLElement *label =
+    XFXMLElement *label =
         [XFXML childElementWithLocalName:@"label"
                            namespaceURI:XFXFormsNamespaceURI
                               ofElement:element];
     return label ? [XFXML stringValueOfNode:label] : nil;
 }
 
-- (XFControl *)controlFromElement:(NSXMLElement *)element
+- (XFControl *)controlFromElement:(XFXMLElement *)element
                             class:(Class)cls
                  bindingAttribute:(NSString *)attribute
                             error:(NSError **)error
 {
-    NSXMLNode *attr = [element attributeForName:attribute];
+    XFXMLNode *attr = [element attributeForName:attribute];
     XFBinding *binding = nil;
     if (attr && [attr stringValue].length > 0) {
         binding = [XFBinding bindingWithExpression:[attr stringValue] element:element error:error];
@@ -753,7 +752,7 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
     if (identifier.length == 0) {
         return nil;
     }
-    NSXMLElement *element = [[XFXMLEvents sharedEvents] elementWithID:identifier inDocument:self.hostDocument];
+    XFXMLElement *element = [[XFXMLEvents sharedEvents] elementWithID:identifier inDocument:self.hostDocument];
     return element ? [self controlForElement:element] : nil;
 }
 
@@ -813,7 +812,7 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
     [self refreshControls];
 }
 
-- (XFControl *)matchControl:(XFControl *)control element:(NSXMLElement *)element
+- (XFControl *)matchControl:(XFControl *)control element:(XFXMLElement *)element
 {
     if (control.element == element) {
         return control;
@@ -853,7 +852,7 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
     return nil;
 }
 
-- (XFControl *)controlForElement:(NSXMLElement *)element
+- (XFControl *)controlForElement:(XFXMLElement *)element
 {
     if (element == nil) {
         return nil;
@@ -922,7 +921,7 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
     XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
     [du openAction:@"close"];
     for (XFListener *listener in [[XFListener destructs] copy]) {
-        NSXMLElement *observer = listener.observer;
+        XFXMLElement *observer = listener.observer;
         if (observer == nil || [observer rootDocument] != self.hostDocument) {
             continue;
         }
@@ -945,7 +944,7 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
 
 #pragma mark - subforms (G-90)
 
-- (XFSubform *)subformContainingElement:(NSXMLNode *)element
+- (XFSubform *)subformContainingElement:(XFXMLNode *)element
 {
     // innermost first: a nested subform's target lies below its parent's
     for (XFSubform *sf in [self.subforms reverseObjectEnumerator]) {
@@ -956,7 +955,7 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
     return nil;
 }
 
-- (XFSubform *)subformAtTarget:(NSXMLElement *)target
+- (XFSubform *)subformAtTarget:(XFXMLElement *)target
 {
     for (XFSubform *sf in self.subforms) {
         if (sf.targetElement == target) {
@@ -969,11 +968,11 @@ static NSData *XFPreserveBodyWhitespace(NSData *data)
 /// YES when the element sits inside an xf:repeat template — where one
 /// host element serves every repeat item and subform targets need
 /// per-item owners.
-static BOOL XFElementInsideRepeat(NSXMLElement *element)
+static BOOL XFElementInsideRepeat(XFXMLElement *element)
 {
-    for (NSXMLNode *walk = [element parent]; walk != nil; walk = [walk parent]) {
-        if ([walk kind] == NSXMLElementKind
-            && [XFXML element:(NSXMLElement *)walk hasLocalName:@"repeat"
+    for (XFXMLNode *walk = [element parent]; walk != nil; walk = [walk parent]) {
+        if ([walk kind] == XFXMLElementKind
+            && [XFXML element:(XFXMLElement *)walk hasLocalName:@"repeat"
                  namespaceURI:XFXFormsNamespaceURI]) {
             return YES;
         }
@@ -983,7 +982,7 @@ static BOOL XFElementInsideRepeat(NSXMLElement *element)
 
 /// The subform loaded into `target` for this owner (nil owner = the
 /// unscoped one).
-- (XFSubform *)subformAtTarget:(NSXMLElement *)target ownerNode:(NSXMLNode *)owner
+- (XFSubform *)subformAtTarget:(XFXMLElement *)target ownerNode:(XFXMLNode *)owner
 {
     for (XFSubform *sf in self.subforms) {
         if (sf.targetElement == target && sf.ownerNode == owner) {
@@ -1002,13 +1001,13 @@ static NSError *XFSubformError(NSString *message)
 /// The element whose content a subform replaces: the target itself, or for
 /// a control target its element minus label/help/hint/alert (XFLoad.js
 /// replaces the innerHTML of the control's last child div).
-- (void)clearSubformTarget:(NSXMLElement *)target ownerNode:(NSXMLNode *)owner
+- (void)clearSubformTarget:(XFXMLElement *)target ownerNode:(XFXMLNode *)owner
 {
-    for (NSXMLNode *c in [[target children] copy]) {
+    for (XFXMLNode *c in [[target children] copy]) {
         if (owner != nil && [XFSubform ownerNodeOfImportedNode:c] != owner) {
             continue;   // another repeat item's subform (or authored content)
         }
-        if ([c kind] == NSXMLElementKind && [[c URI] isEqualToString:XFXFormsNamespaceURI]) {
+        if ([c kind] == XFXMLElementKind && [[c URI] isEqualToString:XFXFormsNamespaceURI]) {
             NSString *n = [c localName];
             if ([n isEqualToString:@"label"] || [n isEqualToString:@"help"]
                 || [n isEqualToString:@"hint"] || [n isEqualToString:@"alert"]) {
@@ -1019,16 +1018,16 @@ static NSError *XFSubformError(NSString *message)
     }
 }
 
-- (void)rebuildAroundTarget:(NSXMLElement *)target
+- (void)rebuildAroundTarget:(XFXMLElement *)target
 {
     // a target inside a repeat template must rebuild THROUGH the repeat:
     // items re-instantiate under their own item scope, so per-item
     // subform content lands only in its owner's tree
-    for (NSXMLNode *walk = [target parent]; walk != nil; walk = [walk parent]) {
-        if ([walk kind] == NSXMLElementKind
-            && [XFXML element:(NSXMLElement *)walk hasLocalName:@"repeat"
+    for (XFXMLNode *walk = [target parent]; walk != nil; walk = [walk parent]) {
+        if ([walk kind] == XFXMLElementKind
+            && [XFXML element:(XFXMLElement *)walk hasLocalName:@"repeat"
                  namespaceURI:XFXFormsNamespaceURI]) {
-            XFControl *repeat = [self controlForElement:(NSXMLElement *)walk];
+            XFControl *repeat = [self controlForElement:(XFXMLElement *)walk];
             if ([repeat isKindOfClass:[XFRepeat class]]) {
                 [(XFRepeat *)repeat reloadTemplates];
                 [(XFRepeat *)repeat rebuildItemsWithContext:[self evaluationContext] error:NULL];
@@ -1066,10 +1065,10 @@ static NSError *XFSubformError(NSString *message)
 
 - (XFSubform *)loadSubformAtURL:(NSURL *)url
                    intoTargetID:(NSString *)targetID
-                    contextNode:(NSXMLNode *)contextNode
+                    contextNode:(XFXMLNode *)contextNode
                           error:(NSError **)error
 {
-    NSXMLElement *target = [[XFXMLEvents sharedEvents] elementWithID:targetID inDocument:self.hostDocument];
+    XFXMLElement *target = [[XFXMLEvents sharedEvents] elementWithID:targetID inDocument:self.hostDocument];
     if (target == nil) {
         if (error) *error = XFSubformError([NSString stringWithFormat:@"Unknown subform target %@", targetID ?: @""]);
         return nil;
@@ -1077,20 +1076,20 @@ static NSError *XFSubformError(NSString *message)
     return [self loadSubformAtURL:url intoTargetElement:target ownerNode:contextNode error:error];
 }
 
-- (XFSubform *)loadSubformAtURL:(NSURL *)url intoTargetElement:(NSXMLElement *)target error:(NSError **)error
+- (XFSubform *)loadSubformAtURL:(NSURL *)url intoTargetElement:(XFXMLElement *)target error:(NSError **)error
 {
     return [self loadSubformAtURL:url intoTargetElement:target ownerNode:nil error:error];
 }
 
 - (XFSubform *)loadSubformAtURL:(NSURL *)url
-              intoTargetElement:(NSXMLElement *)target
-                      ownerNode:(NSXMLNode *)ownerNode
+              intoTargetElement:(XFXMLElement *)target
+                      ownerNode:(XFXMLNode *)ownerNode
                           error:(NSError **)error
 {
     // per-item scoping only where one template element serves many items
-    NSXMLNode *owner = XFElementInsideRepeat(target) ? ownerNode : nil;
+    XFXMLNode *owner = XFElementInsideRepeat(target) ? ownerNode : nil;
     NSData *data = url ? [NSData dataWithContentsOfURL:url] : nil;
-    NSXMLDocument *doc = data ? [[self class] documentFromData:data error:error] : nil;
+    XFXMLDocument *doc = data ? [[self class] documentFromData:data error:error] : nil;
     if (doc == nil) {
         if (error && *error == nil) *error = XFSubformError([NSString stringWithFormat:@"Cannot load %@", url.absoluteString ?: @""]);
         return nil;
@@ -1114,26 +1113,26 @@ static NSError *XFSubformError(NSString *message)
     sf.subforms = @[];
 
     // import: the models first (skipped by the host tree), then the body
-    NSMutableArray<NSXMLNode *> *imported = [NSMutableArray array];
-    for (NSXMLElement *modelEl in [XFXML elementsWithLocalName:@"model" namespaceURI:XFXFormsNamespaceURI inNode:doc]) {
-        NSXMLElement *copy = [modelEl copy];
+    NSMutableArray<XFXMLNode *> *imported = [NSMutableArray array];
+    for (XFXMLElement *modelEl in [XFXML elementsWithLocalName:@"model" namespaceURI:XFXFormsNamespaceURI inNode:doc]) {
+        XFXMLElement *copy = [modelEl copy];
         [imported addObject:copy];
     }
-    NSXMLElement *body = nil;
-    for (NSXMLNode *c in [[doc rootElement] children]) {
-        if ([c kind] == NSXMLElementKind && [[[c localName] lowercaseString] isEqualToString:@"body"]) {
-            body = (NSXMLElement *)c;
+    XFXMLElement *body = nil;
+    for (XFXMLNode *c in [[doc rootElement] children]) {
+        if ([c kind] == XFXMLElementKind && [[[c localName] lowercaseString] isEqualToString:@"body"]) {
+            body = (XFXMLElement *)c;
         }
     }
     NSArray *bodyNodes = body ? [body children] : @[ [doc rootElement] ];
-    for (NSXMLNode *n in bodyNodes) {
-        if ([n kind] == NSXMLElementKind && [XFXML element:(NSXMLElement *)n hasLocalName:@"model" namespaceURI:XFXFormsNamespaceURI]) {
+    for (XFXMLNode *n in bodyNodes) {
+        if ([n kind] == XFXMLElementKind && [XFXML element:(XFXMLElement *)n hasLocalName:@"model" namespaceURI:XFXFormsNamespaceURI]) {
             continue;   // already imported
         }
         [imported addObject:[n copy]];
     }
     [self clearSubformTarget:target ownerNode:owner];
-    for (NSXMLNode *n in imported) {
+    for (XFXMLNode *n in imported) {
         [target addChild:n];
         if (owner != nil) {
             [XFSubform tagImportedNode:n ownerNode:owner];
@@ -1142,14 +1141,14 @@ static NSError *XFSubformError(NSString *message)
     sf.importedNodes = imported;
 
     NSMutableArray<XFModel *> *models = [NSMutableArray array];
-    for (NSXMLNode *n in imported) {
-        if (!([n kind] == NSXMLElementKind && [XFXML element:(NSXMLElement *)n hasLocalName:@"model" namespaceURI:XFXFormsNamespaceURI])) {
+    for (XFXMLNode *n in imported) {
+        if (!([n kind] == XFXMLElementKind && [XFXML element:(XFXMLElement *)n hasLocalName:@"model" namespaceURI:XFXFormsNamespaceURI])) {
             continue;
         }
         NSError *inner = nil;
-        XFModel *model = [XFModel modelWithElement:(NSXMLElement *)n error:&inner];
+        XFModel *model = [XFModel modelWithElement:(XFXMLElement *)n error:&inner];
         if (model == nil) {
-            for (NSXMLNode *m in imported) { [m detach]; }
+            for (XFXMLNode *m in imported) { [m detach]; }
             if (error) *error = inner;
             return nil;
         }
@@ -1222,10 +1221,10 @@ static NSError *XFSubformError(NSString *message)
     return [self unloadSubformAtTargetID:targetID contextNode:nil];
 }
 
-- (BOOL)unloadSubformAtTargetID:(NSString *)targetID contextNode:(NSXMLNode *)contextNode
+- (BOOL)unloadSubformAtTargetID:(NSString *)targetID contextNode:(XFXMLNode *)contextNode
 {
-    NSXMLElement *target = [[XFXMLEvents sharedEvents] elementWithID:targetID inDocument:self.hostDocument];
-    NSXMLNode *owner = (target != nil && XFElementInsideRepeat(target)) ? contextNode : nil;
+    XFXMLElement *target = [[XFXMLEvents sharedEvents] elementWithID:targetID inDocument:self.hostDocument];
+    XFXMLNode *owner = (target != nil && XFElementInsideRepeat(target)) ? contextNode : nil;
     XFSubform *sf = target ? [self subformAtTarget:target ownerNode:owner] : nil;
     if (sf == nil) {
         return NO;
@@ -1264,7 +1263,7 @@ static NSError *XFSubformError(NSString *message)
         }
     }
     self.controls = list;
-    for (NSXMLNode *n in sf.importedNodes) {
+    for (XFXMLNode *n in sf.importedNodes) {
         [n detach];
     }
     NSMutableArray *subforms = [self.subforms mutableCopy];
@@ -1336,7 +1335,7 @@ static NSError *XFSubformError(NSString *message)
     [du closeAction:@"blur"];
 }
 
-- (XFModel *)modelContainingNode:(NSXMLNode *)node
+- (XFModel *)modelContainingNode:(XFXMLNode *)node
 {
     if (node == nil) {
         return nil;
@@ -1368,12 +1367,12 @@ static NSError *XFSubformError(NSString *message)
     [du closeAction:@"setValue"];
 }
 
-- (XFControl *)parentControlForElement:(NSXMLElement *)element
+- (XFControl *)parentControlForElement:(XFXMLElement *)element
 {
-    NSXMLNode *walk = [element parent];
+    XFXMLNode *walk = [element parent];
     while (walk) {
-        if ([walk kind] == NSXMLElementKind) {
-            XFControl *found = [self controlForElement:(NSXMLElement *)walk];
+        if ([walk kind] == XFXMLElementKind) {
+            XFControl *found = [self controlForElement:(XFXMLElement *)walk];
             if (found) {
                 return found;
             }
@@ -1391,7 +1390,7 @@ static NSError *XFSubformError(NSString *message)
     [control refreshInContext:[self evaluationContext] error:NULL];
 }
 
-- (XFControl *)attachElement:(NSXMLElement *)element error:(NSError **)error
+- (XFControl *)attachElement:(XFXMLElement *)element error:(NSError **)error
 {
     if (element == nil) {
         return nil;
@@ -1400,10 +1399,10 @@ static NSError *XFSubformError(NSString *message)
     if ([local isEqualToString:@"bind"] || [local isEqualToString:@"instance"]
         || [local isEqualToString:@"submission"]) {
         XFModel *model = self.model;
-        NSXMLNode *walk = element;
+        XFXMLNode *walk = element;
         while (walk) {
-            if ([walk kind] == NSXMLElementKind
-                && [XFXML element:(NSXMLElement *)walk hasLocalName:@"model" namespaceURI:XFXFormsNamespaceURI]) {
+            if ([walk kind] == XFXMLElementKind
+                && [XFXML element:(XFXMLElement *)walk hasLocalName:@"model" namespaceURI:XFXFormsNamespaceURI]) {
                 for (XFModel *m in self.models) {
                     if (m.element == walk) {
                         model = m;
@@ -1424,7 +1423,7 @@ static NSError *XFSubformError(NSString *message)
     if ([XFAbstractAction isActionElement:element]) {
         // a nested action (setvalue inside xf:action) is compiled as part
         // of its outermost handler — recompile that whole handler
-        NSXMLElement *top = XFOutermostActionElement(element);
+        XFXMLElement *top = XFOutermostActionElement(element);
         [self dropCompiledActionForElement:top];
         NSError *inner = nil;
         XFAbstractAction *action = [XFAbstractAction actionWithElement:top
@@ -1495,20 +1494,20 @@ static NSError *XFSubformError(NSString *message)
 
 /// The highest action element on `element`'s ancestor chain (element
 /// itself when none is above it) — nested actions compile as part of it.
-static NSXMLElement *XFOutermostActionElement(NSXMLElement *element)
+static XFXMLElement *XFOutermostActionElement(XFXMLElement *element)
 {
-    NSXMLElement *top = element;
-    for (NSXMLNode *walk = [element parent]; walk != nil; walk = [walk parent]) {
-        if ([walk kind] == NSXMLElementKind
-            && [XFAbstractAction isActionElement:(NSXMLElement *)walk]) {
-            top = (NSXMLElement *)walk;
+    XFXMLElement *top = element;
+    for (XFXMLNode *walk = [element parent]; walk != nil; walk = [walk parent]) {
+        if ([walk kind] == XFXMLElementKind
+            && [XFAbstractAction isActionElement:(XFXMLElement *)walk]) {
+            top = (XFXMLElement *)walk;
         }
     }
     return top;
 }
 
 /// Removes the compiled action for `element` (if any) with its listeners.
-- (void)dropCompiledActionForElement:(NSXMLElement *)element
+- (void)dropCompiledActionForElement:(XFXMLElement *)element
 {
     NSMutableArray *actions = [self.actions mutableCopy] ?: [NSMutableArray array];
     for (XFAbstractAction *action in [actions copy]) {
@@ -1522,7 +1521,7 @@ static NSXMLElement *XFOutermostActionElement(NSXMLElement *element)
     [[XFXMLEvents sharedEvents] registerElement:element xfElement:nil];
 }
 
-- (void)detachElement:(NSXMLElement *)element
+- (void)detachElement:(XFXMLElement *)element
 {
     if (element == nil) {
         return;
@@ -1571,7 +1570,7 @@ static NSXMLElement *XFOutermostActionElement(NSXMLElement *element)
     }
 }
 
-- (void)noteElementChanged:(NSXMLElement *)element
+- (void)noteElementChanged:(XFXMLElement *)element
 {
     if (element == nil) {
         return;
@@ -1579,17 +1578,17 @@ static NSXMLElement *XFOutermostActionElement(NSXMLElement *element)
     if ([XFAbstractAction isActionElement:element]) {
         // actions compile their attributes and content up front —
         // recompile the outermost handler the element belongs to
-        NSXMLElement *top = XFOutermostActionElement(element);
+        XFXMLElement *top = XFOutermostActionElement(element);
         [self dropCompiledActionForElement:top];
         [self attachElement:top error:NULL];
         return;
     }
     XFControl *control = [self controlForElement:element];
     if (control == nil) {
-        NSXMLNode *walk = [element parent];
+        XFXMLNode *walk = [element parent];
         while (walk && control == nil) {
-            if ([walk kind] == NSXMLElementKind) {
-                control = [self controlForElement:(NSXMLElement *)walk];
+            if ([walk kind] == XFXMLElementKind) {
+                control = [self controlForElement:(XFXMLElement *)walk];
             }
             walk = [walk parent];
         }

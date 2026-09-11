@@ -15,7 +15,7 @@
 
 @implementation XFUploadControl
 
-+ (instancetype)uploadWithElement:(NSXMLElement *)element
++ (instancetype)uploadWithElement:(XFXMLElement *)element
                             model:(id)model
                             error:(NSError **)error
 {
@@ -29,10 +29,10 @@
                                                     binding:binding
                                                       label:[XFControl labelForElement:element]];
     upload.owner = model;
-    NSXMLElement *fn = [XFXML firstElementWithLocalName:@"filename"
+    XFXMLElement *fn = [XFXML firstElementWithLocalName:@"filename"
                                           namespaceURI:XFXFormsNamespaceURI
                                                 inNode:element];
-    NSXMLElement *mt = [XFXML firstElementWithLocalName:@"mediatype"
+    XFXMLElement *mt = [XFXML firstElementWithLocalName:@"mediatype"
                                           namespaceURI:XFXFormsNamespaceURI
                                                 inNode:element];
     if (fn) {
@@ -120,7 +120,7 @@
     if (binding == nil) {
         return;
     }
-    NSXMLNode *node = [binding boundNodeInContext:ctx error:NULL];
+    XFXMLNode *node = [binding boundNodeInContext:ctx error:NULL];
     if (node) {
         [XFXML setStringValue:value ?: @"" ofNode:node];
         if ([self.owner isKindOfClass:[XFModel class]]) {

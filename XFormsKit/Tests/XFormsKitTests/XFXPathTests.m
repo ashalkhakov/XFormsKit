@@ -1,6 +1,6 @@
 #import <XCTest/XCTest.h>
 #import <XFormsKit/XFormsKit.h>
-#import <Foundation/NSXMLDocument.h>
+#import <XFormsKit/XFXMLTypes.h>
 #import <XFormsKit/XFNodeState.h>
 #import <XFormsKit/XFXMLEvents.h>
 
@@ -9,16 +9,16 @@
     // Keep the document alive: NSXMLNode does not retain its parent, so on
     // GNUstep a root element whose document has been released loses the
     // document (and ancestor axis / absolute paths).
-    NSXMLDocument *_doc;
+    XFXMLDocument *_doc;
 }
 @end
 
 @implementation XFXPathTests
 
-- (NSXMLDocument *)dataDocument
+- (XFXMLDocument *)dataDocument
 {
     NSString *xml = @"<data xmlns=\"\"><name>World</name><count>3</count></data>";
-    _doc = [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
+    _doc = [[XFXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
     return _doc;
 }
 
@@ -41,7 +41,7 @@
 {
     NSString *xml = @"<data xmlns=\"\"><a:name xmlns:a=\"urn:a\">A</a:name>"
                     @"<b:name xmlns:b=\"urn:b\">B</b:name><name>N</name><other>O</other></data>";
-    _doc = [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
+    _doc = [[XFXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
     XFExprContext *ctx = [[XFExprContext alloc] initWithNode:[_doc rootElement]];
     NSError *error = nil;
     XFXPath *xp = [XFXPath xpathWithString:@"count(*:name)" error:&error];
@@ -119,7 +119,7 @@
 - (void)testAttributeAxis
 {
     NSString *xml = @"<data xmlns=\"\"><item id=\"a\">x</item></data>";
-    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
+    XFXMLDocument *doc = [[XFXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
     XFExprContext *ctx = [[XFExprContext alloc] initWithNode:[doc rootElement]];
     NSError *error = nil;
     XFXPath *xp = [XFXPath xpathWithString:@"item/@id" error:&error];
@@ -144,7 +144,7 @@
 - (void)testCurrentAndId
 {
     NSString *xml = @"<data xmlns=\"\"><item xml:id=\"a\">x</item><item xml:id=\"b\">y</item></data>";
-    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
+    XFXMLDocument *doc = [[XFXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
     XFExprContext *ctx = [[XFExprContext alloc] initWithNode:[doc rootElement]];
     NSError *error = nil;
     XFXPath *xp = [XFXPath xpathWithString:@"id('a')" error:&error];
@@ -160,7 +160,7 @@
 - (NSString *)evalXML:(NSString *)xml expr:(NSString *)expr
 {
     NSError *error = nil;
-    _doc = [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
+    _doc = [[XFXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
     XFExprContext *ctx = [[XFExprContext alloc] initWithNode:[_doc rootElement]];
     XFXPath *xp = [XFXPath xpathWithString:expr element:[_doc rootElement] error:&error];
     XCTAssertNotNil(xp, @"parse %@ : %@", expr, error);
@@ -252,7 +252,7 @@
     XCTAssertEqualObjects([self evalXML:xml expr:@"count(*)"], @"2");
     // prefix registered from a different element than the data node
     NSError *error = nil;
-    NSXMLDocument *host = [[NSXMLDocument alloc] initWithXMLString:@"<h xmlns:p=\"urn:my\"/>" options:0 error:NULL];
+    XFXMLDocument *host = [[XFXMLDocument alloc] initWithXMLString:@"<h xmlns:p=\"urn:my\"/>" options:0 error:NULL];
     XFXPath *xp = [XFXPath xpathWithString:@"p:item" element:host.rootElement error:&error];
     XFExprContext *ctx = [[XFExprContext alloc] initWithNode:[_doc rootElement]];
     XCTAssertEqualObjects([xp stringValueInContext:ctx error:&error], @"A");
@@ -347,7 +347,7 @@
 
 - (void)testEventContextValues // G-06
 {
-    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithXMLString:@"<d><i>1</i><i>2</i></d>" options:0 error:NULL];
+    XFXMLDocument *doc = [[XFXMLDocument alloc] initWithXMLString:@"<d><i>1</i><i>2</i></d>" options:0 error:NULL];
     NSArray *items = [[doc rootElement] elementsForName:@"i"];
     NSMutableDictionary *outer = [XFXMLEvents makeEventContext:@{ @"inserted-nodes": items, @"who": @"outer" }
                                                           type:@"xforms-insert" targetid:nil bubbles:YES cancelable:NO];

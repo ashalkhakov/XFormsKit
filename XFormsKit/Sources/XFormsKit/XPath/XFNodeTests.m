@@ -1,9 +1,8 @@
 #import "XFXPathPriv.h"
-#import <Foundation/NSXMLNode.h>
-#import <Foundation/NSXMLElement.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @implementation XFNodeTest
-- (BOOL)matches:(NSXMLNode *)node resolver:(XFNSResolver *)resolver axis:(NSString *)axis
+- (BOOL)matches:(XFXMLNode *)node resolver:(XFNSResolver *)resolver axis:(NSString *)axis
 {
     (void)node; (void)resolver; (void)axis;
     return NO;
@@ -11,7 +10,7 @@
 @end
 
 @implementation XFNodeTestAny
-- (BOOL)matches:(NSXMLNode *)node resolver:(XFNSResolver *)resolver axis:(NSString *)axis
+- (BOOL)matches:(XFXMLNode *)node resolver:(XFNSResolver *)resolver axis:(NSString *)axis
 {
     (void)resolver;
     if (node == nil) {
@@ -19,12 +18,12 @@
     }
     // Principal node type of the axis (XPath 1.0).
     if ([axis isEqualToString:XFAxisAttribute]) {
-        return [node kind] == NSXMLAttributeKind;
+        return [node kind] == XFXMLAttributeKind;
     }
     if ([axis isEqualToString:XFAxisNamespace]) {
         return NO;
     }
-    return [node kind] == NSXMLElementKind;
+    return [node kind] == XFXMLElementKind;
 }
 @end
 
@@ -38,19 +37,19 @@
     return t;
 }
 
-- (BOOL)matches:(NSXMLNode *)node resolver:(XFNSResolver *)resolver axis:(NSString *)axis
+- (BOOL)matches:(XFXMLNode *)node resolver:(XFNSResolver *)resolver axis:(NSString *)axis
 {
     if (node == nil) {
         return NO;
     }
     BOOL wildcard = [self.name isEqualToString:@"*"];
-    NSXMLNodeKind expected = [axis isEqualToString:XFAxisAttribute] ? NSXMLAttributeKind : NSXMLElementKind;
+    XFXMLNodeKind expected = [axis isEqualToString:XFAxisAttribute] ? XFXMLAttributeKind : XFXMLElementKind;
     if ([axis isEqualToString:XFAxisNamespace]) {
         return NO;
     }
     if ([node kind] != expected && !wildcard) {
         // Name tests only apply to the principal node type, except * handled above.
-        if ([node kind] != NSXMLElementKind && [node kind] != NSXMLAttributeKind) {
+        if ([node kind] != XFXMLElementKind && [node kind] != XFXMLAttributeKind) {
             return NO;
         }
         if ([node kind] != expected) {
@@ -68,9 +67,9 @@
             // prefix:* — any local name in that namespace
             NSString *uri = [resolver lookupNamespaceURI:self.prefix];
             if (uri == nil) {
-                NSXMLNode *el = [node kind] == NSXMLElementKind ? node : [node parent];
-                if ([el kind] == NSXMLElementKind) {
-                    uri = [[(NSXMLElement *)el resolveNamespaceForName:[self.prefix stringByAppendingString:@":x"]] stringValue];
+                XFXMLNode *el = [node kind] == XFXMLElementKind ? node : [node parent];
+                if ([el kind] == XFXMLElementKind) {
+                    uri = [[(XFXMLElement *)el resolveNamespaceForName:[self.prefix stringByAppendingString:@":x"]] stringValue];
                 }
             }
             return uri.length > 0 && [[node URI] ?: @"" isEqualToString:uri];
@@ -92,9 +91,9 @@
         if (uri == nil) {
             // Not registered from the host element: fall back to the
             // declaration in scope at the candidate node itself.
-            NSXMLNode *el = [node kind] == NSXMLElementKind ? node : [node parent];
-            if ([el kind] == NSXMLElementKind) {
-                uri = [[(NSXMLElement *)el resolveNamespaceForName:[self.prefix stringByAppendingString:@":x"]] stringValue];
+            XFXMLNode *el = [node kind] == XFXMLElementKind ? node : [node parent];
+            if ([el kind] == XFXMLElementKind) {
+                uri = [[(XFXMLElement *)el resolveNamespaceForName:[self.prefix stringByAppendingString:@":x"]] stringValue];
             }
         }
         return uri.length > 0 && [ns ?: @"" isEqualToString:uri];
@@ -117,7 +116,7 @@
     return t;
 }
 
-+ (instancetype)kind:(NSXMLNodeKind)kind
++ (instancetype)kind:(XFXMLNodeKind)kind
 {
     XFNodeTestType *t = [[self alloc] init];
     t.kind = kind;
@@ -127,12 +126,12 @@
 + (instancetype)processingInstruction:(NSString *)target
 {
     XFNodeTestType *t = [[self alloc] init];
-    t.kind = NSXMLProcessingInstructionKind;
+    t.kind = XFXMLProcessingInstructionKind;
     t.piTarget = target;
     return t;
 }
 
-- (BOOL)matches:(NSXMLNode *)node resolver:(XFNSResolver *)resolver axis:(NSString *)axis
+- (BOOL)matches:(XFXMLNode *)node resolver:(XFNSResolver *)resolver axis:(NSString *)axis
 {
     (void)resolver; (void)axis;
     if (node == nil) {
@@ -144,7 +143,7 @@
     if ([node kind] != self.kind) {
         return NO;
     }
-    if (self.kind == NSXMLProcessingInstructionKind && self.piTarget.length) {
+    if (self.kind == XFXMLProcessingInstructionKind && self.piTarget.length) {
         return [[node name] isEqualToString:self.piTarget];
     }
     return YES;

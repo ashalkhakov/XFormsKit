@@ -141,6 +141,25 @@
     XCTAssertNotNil([root namespaceForPrefix:@"xf"]);
 }
 
+/// XML Namespaces binds "xml" and "xmlns" without a declaration, so
+/// xml:id and xml:lang resolve in any document — and, as in NSXML, the
+/// implicit binding does not show up in `namespaces`.
+- (void)testReservedPrefixesResolveWithoutDeclaration
+{
+    NSString *xml = @"<data xmlns=\"\"><item xml:id=\"a\" xml:lang=\"en\">x</item></data>";
+    XFDOMElement *mine = (XFDOMElement *)[[[self parse:xml] rootElement] childAtIndex:0];
+    NSXMLElement *theirs = (NSXMLElement *)[[[self parseNS:xml] rootElement] childAtIndex:0];
+
+    XCTAssertEqualObjects([mine attributeForName:@"xml:id"].URI,
+                          @"http://www.w3.org/XML/1998/namespace");
+    XCTAssertEqualObjects([mine attributeForName:@"xml:id"].URI,
+                          [[theirs attributeForName:@"xml:id"] URI]);
+    XCTAssertEqualObjects([[mine resolveNamespaceForName:@"xml:id"] stringValue],
+                          [[theirs resolveNamespaceForName:@"xml:id"] stringValue]);
+    XCTAssertEqual(mine.namespaces.count, [[theirs namespaces] count],
+                   @"the implicit binding is not a declaration");
+}
+
 #pragma mark - Values
 
 - (void)testStringValueMatchesNSXMLOnOrdinaryContent

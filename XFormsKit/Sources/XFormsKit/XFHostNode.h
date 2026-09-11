@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFControl;
 
@@ -26,7 +27,7 @@ typedef NS_ENUM(NSInteger, XFHostNodeKind) {
 
 @property (nonatomic, assign) XFHostNodeKind kind;
 /// Source element (nil for text nodes).
-@property (nonatomic, strong, nullable) NSXMLElement *element;
+@property (nonatomic, strong, nullable) XFXMLElement *element;
 /// Lower-cased local name of the source element (`"#text"` for text).
 @property (nonatomic, copy) NSString *tag;
 /// Character data for text nodes (whitespace collapsed unless `preformatted`).
@@ -51,7 +52,7 @@ typedef NS_ENUM(NSInteger, XFHostNodeKind) {
 /// that copy host markup and emit controls in place). Controls are appended
 /// to `controls` in document order; a control whose element is a key of
 /// `existing` is reused instead of being created again.
-+ (nullable NSArray<XFHostNode *> *)hostNodesForChildrenOf:(NSXMLElement *)element
++ (nullable NSArray<XFHostNode *> *)hostNodesForChildrenOf:(XFXMLElement *)element
                                                     model:(nullable id)model
                                                  controls:(NSMutableArray<XFControl *> *)controls
                                                  existing:(nullable NSDictionary<NSValue *, XFControl *> *)existing
@@ -65,8 +66,8 @@ typedef NS_ENUM(NSInteger, XFHostNodeKind) {
 /// a group constructing its own subtree included, inherit it). The
 /// builder uses it to keep per-item subform content (imported nodes
 /// tagged by XFSubform) out of the OTHER items' trees.
-+ (nullable NSXMLNode *)currentRepeatItemNode;
-+ (void)setCurrentRepeatItemNode:(nullable NSXMLNode *)node;
++ (nullable XFXMLNode *)currentRepeatItemNode;
++ (void)setCurrentRepeatItemNode:(nullable XFXMLNode *)node;
 
 /// YES when the element is an HTML block-level container.
 + (BOOL)isBlockTag:(NSString *)tag;

@@ -55,13 +55,13 @@ static BOOL XFCompareAtomic(NSString *op, XFXPathValue *a, XFXPathValue *b)
 /// Compare a node-set with a single non-node-set value: true if some node
 /// satisfies the comparison after converting the node's string value to the
 /// other operand's type (§3.4). `reversed` means the node-set is the right operand.
-static BOOL XFCompareNodeSet(NSString *op, NSArray<NSXMLNode *> *nodes, XFXPathValue *other, BOOL reversed)
+static BOOL XFCompareNodeSet(NSString *op, NSArray<XFXMLNode *> *nodes, XFXPathValue *other, BOOL reversed)
 {
     if (other.type == XFXPathValueTypeBoolean) {
         XFXPathValue *b = [XFXPathValue boolean:nodes.count > 0];
         return reversed ? XFCompareAtomic(op, other, b) : XFCompareAtomic(op, b, other);
     }
-    for (NSXMLNode *n in nodes) {
+    for (XFXMLNode *n in nodes) {
         NSString *s = XFXPathNodeValue(n);
         XFXPathValue *v = (other.type == XFXPathValueTypeNumber || XFIsRelational(op))
             ? [XFXPathValue number:[XFXPathValue string:s].numberValue]
@@ -123,9 +123,9 @@ static BOOL XFCompareNodeSet(NSString *op, NSArray<NSXMLNode *> *nodes, XFXPathV
     BOOL ns1 = v1.type == XFXPathValueTypeNodeSet;
     BOOL ns2 = v2.type == XFXPathValueTypeNodeSet;
     if (ns1 && ns2) {
-        for (NSXMLNode *a in v1.nodes) {
+        for (XFXMLNode *a in v1.nodes) {
             NSString *sa = XFXPathNodeValue(a);
-            for (NSXMLNode *b in v2.nodes) {
+            for (XFXMLNode *b in v2.nodes) {
                 NSString *sb = XFXPathNodeValue(b);
                 BOOL hit = XFIsRelational(self.op)
                     ? XFCompareNumbers(self.op, [XFXPathValue string:sa].numberValue,

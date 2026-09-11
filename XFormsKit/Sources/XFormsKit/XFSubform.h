@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFModel;
 @class XFProcessor;
@@ -21,26 +22,26 @@ NS_ASSUME_NONNULL_BEGIN
 /// The enclosing subform (nil when embedded in the main form).
 @property (nonatomic, weak, nullable) XFSubform *parent;
 /// The host element (`@targetid`) whose content the subform replaced.
-@property (nonatomic, strong) NSXMLElement *targetElement;
+@property (nonatomic, strong) XFXMLElement *targetElement;
 /// When the target lies inside an xf:repeat template, the repeat-item
 /// node the loading action ran against. XSLTForms clones the item's DOM
 /// and IdManager resolves targetid to the CURRENT clone; XFormsKit
 /// shares one template element across items, so the owner node is what
 /// keeps each item's subform its own — content renders (and unloads)
 /// only in the owning item. nil outside repeats.
-@property (nonatomic, strong, nullable) NSXMLNode *ownerNode;
+@property (nonatomic, strong, nullable) XFXMLNode *ownerNode;
 
 /// Tags an imported node with the owning repeat-item node — the host
 /// tree builder skips imported nodes whose owner is not the item being
 /// built. Owner nil removes the tag.
-+ (void)tagImportedNode:(NSXMLNode *)node ownerNode:(nullable NSXMLNode *)owner;
-+ (nullable NSXMLNode *)ownerNodeOfImportedNode:(NSXMLNode *)node;
++ (void)tagImportedNode:(XFXMLNode *)node ownerNode:(nullable XFXMLNode *)owner;
++ (nullable XFXMLNode *)ownerNodeOfImportedNode:(XFXMLNode *)node;
 /// The URL the subform was loaded from.
 @property (nonatomic, strong, nullable) NSURL *URL;
 /// The subform's models (in the processor's `models` too).
 @property (nonatomic, copy) NSArray<XFModel *> *models;
 /// The nodes imported into `targetElement` (models and body markup).
-@property (nonatomic, copy) NSArray<NSXMLNode *> *importedNodes;
+@property (nonatomic, copy) NSArray<XFXMLNode *> *importedNodes;
 /// Subforms embedded inside this one.
 @property (nonatomic, copy) NSArray<XFSubform *> *subforms;
 /// After xforms-subform-ready.
@@ -50,7 +51,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable XFModel *)defaultModel;
 /// YES when `element` lies inside the subform's imported content (and
 /// not inside a nested subform's content).
-- (BOOL)containsElement:(NSXMLNode *)element;
+- (BOOL)containsElement:(XFXMLNode *)element;
 
 @end
 

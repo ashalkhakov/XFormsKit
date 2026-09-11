@@ -26,7 +26,7 @@
 
 @implementation XFLoadAction
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                           model:(XFModel *)model
                           error:(NSError **)error
 {
@@ -40,7 +40,7 @@
     self.instanceID = [[element attributeForName:@"instance"] stringValue];
 
     NSString *resource = [[element attributeForName:@"resource"] stringValue];
-    NSXMLElement *resourceEl =
+    XFXMLElement *resourceEl =
         [XFXML firstElementWithLocalName:@"resource"
                            namespaceURI:XFXFormsNamespaceURI
                                  inNode:element];
@@ -68,7 +68,7 @@
     return self;
 }
 
-- (NSString *)resolvedResourceWithContextNode:(NSXMLNode *)contextNode
+- (NSString *)resolvedResourceWithContextNode:(XFXMLNode *)contextNode
 {
     XFExprContext *ctx = [[XFExprContext alloc] initWithNode:contextNode];
     ctx.model = self.model;
@@ -87,7 +87,7 @@
 {
     if (self.targetID.length) {
         NSString *tid = [self.targetID hasPrefix:@"#"] ? [self.targetID substringFromIndex:1] : self.targetID;
-        NSXMLElement *el = [XFXML elementWithID:tid inNode:self.element.rootDocument];
+        XFXMLElement *el = [XFXML elementWithID:tid inNode:self.element.rootDocument];
         if (el) {
             return [[XFXMLEvents sharedEvents] xfElementForElement:el] ?: (id)el;
         }
@@ -95,7 +95,7 @@
     return self;
 }
 
-- (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+- (void)runWithContextNode:(XFXMLNode *)contextNode event:(XFEvent *)event
 {
     (void)event;
     NSString *href = [self resolvedResourceWithContextNode:contextNode];
@@ -211,7 +211,7 @@
 
 @implementation XFUnloadAction
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                           model:(XFModel *)model
                           error:(NSError **)error
 {
@@ -222,7 +222,7 @@
     return self;
 }
 
-- (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+- (void)runWithContextNode:(XFXMLNode *)contextNode event:(XFEvent *)event
 {
     (void)event;
     XFProcessor *processor = [self.model.owner isKindOfClass:[XFProcessor class]] ? (XFProcessor *)self.model.owner : nil;

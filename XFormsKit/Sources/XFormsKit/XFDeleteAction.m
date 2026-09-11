@@ -13,19 +13,18 @@
 #import "XFEvent.h"
 #import "XFXML.h"
 #import <math.h>
-#import <Foundation/NSXMLElement.h>
-#import <Foundation/NSXMLNode.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @interface XFDeleteAction ()
 @property (nonatomic, strong) XFBinding *nodesetBinding;
 @property (nonatomic, strong) XFXPath *atExpr;
 @property (nonatomic, strong) XFXPath *contextExpr;
-@property (nonatomic, copy, readwrite) NSArray<NSXMLNode *> *lastDeletedNodes;
+@property (nonatomic, copy, readwrite) NSArray<XFXMLNode *> *lastDeletedNodes;
 @end
 
 @implementation XFDeleteAction
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                           model:(XFModel *)model
                           error:(NSError **)error
 {
@@ -60,7 +59,7 @@
     return self;
 }
 
-- (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+- (void)runWithContextNode:(XFXMLNode *)contextNode event:(XFEvent *)event
 {
     (void)event;
     // @model switches the in-scope evaluation context BEFORE @context and
@@ -68,7 +67,7 @@
     // special attributes" case): the context node moves to that model's
     // default instance root unless it already belongs to it.
     XFModel *model = [self actionTargetModel];
-    NSXMLNode *ctxNode = contextNode;
+    XFXMLNode *ctxNode = contextNode;
     if (model != self.model && ![model instanceOwningNode:ctxNode]) {
         ctxNode = [[model defaultInstance] documentElement];
     }
@@ -82,7 +81,7 @@
     }
     XFExprContext *listCtx = [[XFExprContext alloc] initWithNode:ctxNode];
     listCtx.model = model;
-    NSArray<NSXMLNode *> *nodes = [self.nodesetBinding evaluateInContext:listCtx error:NULL].nodes ?: @[];
+    NSArray<XFXMLNode *> *nodes = [self.nodesetBinding evaluateInContext:listCtx error:NULL].nodes ?: @[];
     if (nodes.count == 0) {
         return;
     }
@@ -114,9 +113,9 @@
 
     // The instance ROOT cannot be deleted (nodeset="instance('x')"):
     // such nodes terminate with no effect.
-    NSMutableArray<NSXMLNode *> *deletable = [NSMutableArray array];
-    for (NSXMLNode *node in nodes) {
-        if ([[node parent] kind] == NSXMLDocumentKind) {
+    NSMutableArray<XFXMLNode *> *deletable = [NSMutableArray array];
+    for (XFXMLNode *node in nodes) {
+        if ([[node parent] kind] == XFXMLDocumentKind) {
             continue;
         }
         [deletable addObject:node];
@@ -127,33 +126,33 @@
     }
 
     XFInstance *instance = [model instanceContainingNode:nodes.firstObject];
-    NSMutableArray<NSXMLNode *> *deleted = [NSMutableArray array];
+    NSMutableArray<XFXMLNode *> *deleted = [NSMutableArray array];
     NSMutableSet<NSString *> *repeatIDs = [NSMutableSet set];
 
     XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
     [du openAction:@"delete"];
 
-    for (NSXMLNode *node in nodes) {
+    for (XFXMLNode *node in nodes) {
         [XFBind disposeNode:node model:model]; // XsltForms_mipbinding.nodedispose
         NSString *rid = [XFNodeState existingStateOnNode:node].repeatIdentifier;
         if (rid.length) {
             [repeatIDs addObject:rid];
         }
-        NSXMLNode *parent = [node parent];
-        if ([node kind] == NSXMLAttributeKind) {
-            NSXMLElement *owner = (NSXMLElement *)parent;
-            if ([owner isKindOfClass:[NSXMLElement class]]) {
+        XFXMLNode *parent = [node parent];
+        if ([node kind] == XFXMLAttributeKind) {
+            XFXMLElement *owner = (XFXMLElement *)parent;
+            if ([owner isKindOfClass:[XFXMLElement class]]) {
                 [owner removeAttributeForName:[node name]];
                 [deleted addObject:node];
             }
         } else if (parent) {
-            NSXMLElement *el = (NSXMLElement *)parent;
-            if ([el isKindOfClass:[NSXMLElement class]] || [parent kind] == NSXMLDocumentKind) {
+            XFXMLElement *el = (XFXMLElement *)parent;
+            if ([el isKindOfClass:[XFXMLElement class]] || [parent kind] == XFXMLDocumentKind) {
                 NSUInteger idx = [node index];
-                if ([parent kind] == NSXMLDocumentKind) {
-                    [(NSXMLDocument *)parent removeChildAtIndex:idx];
-                } else if ([parent kind] == NSXMLElementKind) {
-                    [(NSXMLElement *)parent removeChildAtIndex:idx];
+                if ([parent kind] == XFXMLDocumentKind) {
+                    [(XFXMLDocument *)parent removeChildAtIndex:idx];
+                } else if ([parent kind] == XFXMLElementKind) {
+                    [(XFXMLElement *)parent removeChildAtIndex:idx];
                 } else {
                     NSLog(@"Unhandled parent kind: %lu", (unsigned long)[parent kind]);
                 }
