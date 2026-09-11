@@ -194,18 +194,25 @@ jobs:
           path: source
 
       # Seconds, and before the half-hour dependency build. Importing a
-      # macOS-only framework compiles on a Mac and breaks the GNUstep build,
-      # which is a slow way to find out. <AppKit/AppKit.h> is fine -- GNUstep
-      # provides it; Cocoa.h, the Core* frameworks and UIKit are not.
+      # framework GNUstep does not have compiles on a Mac and breaks this
+      # job, which is a slow way to find out.
+      #
+      # What GNUstep DOES have: <AppKit/AppKit.h>, and -- since the project
+      # adopted Opal -- <CoreGraphics/CoreGraphics.h> and
+      # <CoreText/CoreText.h>, which the SVG renderer draws through. What it
+      # does not: Cocoa.h, QuartzCore, UIKit.
+      #
+      # Matches import lines only. An earlier version grepped for the bare
+      # framework name and failed on prose in a comment.
       #
       # Scoped to what this job actually builds: the framework, the tests and
       # the viewer. The designer is macOS-only and vendors third-party views
       # that do import Cocoa.h.
-      - name: No macOS-only imports
+      - name: No imports GNUstep cannot satisfy
         run: |
-          if grep -rn "<Cocoa/Cocoa.h>\|CoreGraphics\|QuartzCore\|<UIKit/" \
+          if grep -rnE '^[[:space:]]*#[[:space:]]*(import|include)[[:space:]]*[<"](Cocoa/|QuartzCore/|UIKit/)' \
                --include="*.h" --include="*.m" Sources Tests Apps/XFormsViewer; then
-            echo "::error::a macOS-only framework is imported; GNUstep has no such header"
+            echo "::error::an import GNUstep cannot satisfy; see the step's comment"
             exit 1
           fi
           echo "none found"
