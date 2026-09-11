@@ -1,7 +1,6 @@
 #import "XFXPathPriv.h"
 #import "XFModel.h"
-#import <Foundation/NSXMLNode.h>
-#import <Foundation/NSXMLDocument.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @implementation XFLocationExpr
 
@@ -13,10 +12,10 @@
     return e;
 }
 
-- (void)xPathStep:(NSMutableArray<NSXMLNode *> *)nodes
+- (void)xPathStep:(NSMutableArray<XFXMLNode *> *)nodes
             steps:(NSArray<XFStepExpr *> *)steps
              step:(NSUInteger)step
-            input:(NSXMLNode *)input
+            input:(XFXMLNode *)input
               ctx:(XFExprContext *)ctx
             error:(NSError **)error
 {
@@ -26,8 +25,8 @@
     if (listVal == nil) {
         return;
     }
-    NSArray<NSXMLNode *> *nodelist = listVal.nodes;
-    for (NSXMLNode *node in nodelist) {
+    NSArray<XFXMLNode *> *nodelist = listVal.nodes;
+    for (XFXMLNode *node in nodelist) {
         if (step == steps.count - 1) {
             if (!XFNodeInArray(node, nodes)) {
                 [nodes addObject:node];
@@ -44,7 +43,7 @@
 
 - (XFXPathValue *)evaluate:(XFExprContext *)ctx error:(NSError **)error
 {
-    NSXMLNode *start = nil;
+    XFXMLNode *start = nil;
     if (self.absolute) {
         start = ctx.contextNode ? XFRootNode(ctx.contextNode) : nil;
     } else {
@@ -56,7 +55,7 @@
     if (ctx.model) {
         [ctx addDepElement:ctx.model];
     }
-    NSMutableArray<NSXMLNode *> *nodes = [NSMutableArray array];
+    NSMutableArray<XFXMLNode *> *nodes = [NSMutableArray array];
     if (self.steps.count > 0) {
         [self xPathStep:nodes steps:self.steps step:0 input:start ctx:ctx error:error];
         if (error && *error) {

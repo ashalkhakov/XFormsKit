@@ -3,8 +3,7 @@
 #import "XFModel.h"
 #import "XFEvent.h"
 #import "XFNamespaces.h"
-#import <Foundation/NSXMLElement.h>
-#import <Foundation/NSXMLDocument.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @interface XFModelAction ()
 @property (nonatomic, copy, readwrite) NSString *eventName;
@@ -13,7 +12,7 @@
 
 @implementation XFModelAction
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                           model:(XFModel *)model
                           error:(NSError **)error
 {
@@ -33,18 +32,18 @@
 {
     XFXMLEvents *events = [XFXMLEvents sharedEvents];
     if (self.modelID.length) {
-        NSXMLElement *el = [events elementWithID:self.modelID
-                                      inDocument:(NSXMLDocument *)[self.element rootDocument]];
+        XFXMLElement *el = [events elementWithID:self.modelID
+                                      inDocument:(XFXMLDocument *)[self.element rootDocument]];
         id xf = el ? [events xfElementForElement:el] : nil;
         if ([xf isKindOfClass:[XFModel class]]) {
             return xf;
         }
     }
-    for (NSXMLNode *walk = [self.element parent]; walk; walk = [walk parent]) {
-        if ([walk kind] == NSXMLElementKind &&
+    for (XFXMLNode *walk = [self.element parent]; walk; walk = [walk parent]) {
+        if ([walk kind] == XFXMLElementKind &&
             [[walk localName] isEqualToString:@"model"] &&
             [[walk URI] isEqualToString:XFXFormsNamespaceURI]) {
-            id xf = [events xfElementForElement:(NSXMLElement *)walk];
+            id xf = [events xfElementForElement:(XFXMLElement *)walk];
             if ([xf isKindOfClass:[XFModel class]]) {
                 return xf;
             }
@@ -53,7 +52,7 @@
     return self.model;
 }
 
-- (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+- (void)runWithContextNode:(XFXMLNode *)contextNode event:(XFEvent *)event
 {
     (void)contextNode;
     (void)event;

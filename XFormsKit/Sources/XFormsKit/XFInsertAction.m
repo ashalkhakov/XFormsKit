@@ -13,9 +13,7 @@
 #import "XFEvent.h"
 #import "XFXML.h"
 #import <math.h>
-#import <Foundation/NSXMLElement.h>
-#import <Foundation/NSXMLNode.h>
-#import <Foundation/NSXMLDocument.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @interface XFInsertAction ()
 @property (nonatomic, strong) XFBinding *nodesetBinding;
@@ -23,7 +21,7 @@
 @property (nonatomic, strong) XFXPath *atExpr;
 @property (nonatomic, strong) XFXPath *contextExpr;
 @property (nonatomic, copy, readwrite) NSString *position;
-@property (nonatomic, copy, readwrite) NSArray<NSXMLNode *> *lastInsertedNodes;
+@property (nonatomic, copy, readwrite) NSArray<XFXMLNode *> *lastInsertedNodes;
 @end
 
 @implementation XFInsertAction
@@ -36,7 +34,7 @@
     return [XFXPath xpathWithString:expr element:self.element error:error];
 }
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                           model:(XFModel *)model
                           error:(NSError **)error
 {
@@ -54,7 +52,7 @@
         return nil;
     }
     NSString *origin = [[element attributeForName:@"origin"] stringValue];
-    NSXMLElement *originEl = [XFXML firstElementWithLocalName:@"origin"
+    XFXMLElement *originEl = [XFXML firstElementWithLocalName:@"origin"
                                                 namespaceURI:@"http://www.w3.org/2002/xforms"
                                                       inNode:element];
     if (originEl) {
@@ -69,7 +67,7 @@
     }
     self.atExpr = [self compile:[[element attributeForName:@"at"] stringValue] error:error];
     NSString *ctx = [[element attributeForName:@"context"] stringValue];
-    NSXMLElement *ctxEl = [XFXML firstElementWithLocalName:@"context"
+    XFXMLElement *ctxEl = [XFXML firstElementWithLocalName:@"context"
                                              namespaceURI:@"http://www.w3.org/2002/xforms"
                                                    inNode:element];
     if (ctxEl) {
@@ -88,9 +86,9 @@
     return self;
 }
 
-- (XFExprContext *)ctxWithNode:(NSXMLNode *)node
+- (XFExprContext *)ctxWithNode:(XFXMLNode *)node
                       position:(NSUInteger)position
-                      nodeList:(NSArray<NSXMLNode *> *)nodeList
+                      nodeList:(NSArray<XFXMLNode *> *)nodeList
 {
     XFExprContext *ctx = [[XFExprContext alloc] initWithNode:node];
     ctx.model = self.model;
@@ -100,20 +98,20 @@
     return ctx;
 }
 
-- (NSXMLNode *)insertClone:(NSXMLNode *)origin
-                  intoParent:(NSXMLNode *)parent
-                   beforeNode:(NSXMLNode *)before
+- (XFXMLNode *)insertClone:(XFXMLNode *)origin
+                  intoParent:(XFXMLNode *)parent
+                   beforeNode:(XFXMLNode *)before
 {
     if (origin == nil || parent == nil) {
         return nil;
     }
-    NSXMLNode *clone = [origin copy];
-    if ([origin kind] == NSXMLAttributeKind) {
-        if ([parent kind] != NSXMLElementKind) {
+    XFXMLNode *clone = [origin copy];
+    if ([origin kind] == XFXMLAttributeKind) {
+        if ([parent kind] != XFXMLElementKind) {
             return nil;
         }
-        NSXMLElement *el = (NSXMLElement *)parent;
-        NSXMLNode *existing = [el attributeForName:[origin name]];
+        XFXMLElement *el = (XFXMLElement *)parent;
+        XFXMLNode *existing = [el attributeForName:[origin name]];
         if (existing) {
             [existing setStringValue:[origin stringValue]];
             return existing;
@@ -121,18 +119,18 @@
         [el addAttribute:clone];
         return clone;
     }
-    if ([parent kind] == NSXMLDocumentKind) {
-        NSXMLDocument *doc = (NSXMLDocument *)parent;
-        if ([clone kind] == NSXMLElementKind) {
-            [doc setRootElement:(NSXMLElement *)clone];
+    if ([parent kind] == XFXMLDocumentKind) {
+        XFXMLDocument *doc = (XFXMLDocument *)parent;
+        if ([clone kind] == XFXMLElementKind) {
+            [doc setRootElement:(XFXMLElement *)clone];
             return clone;
         }
         return nil;
     }
-    if ([parent kind] != NSXMLElementKind) {
+    if ([parent kind] != XFXMLElementKind) {
         return nil;
     }
-    NSXMLElement *el = (NSXMLElement *)parent;
+    XFXMLElement *el = (XFXMLElement *)parent;
     if (before && [before parent] == el) {
         [el insertChild:clone atIndex:[before index]];
     } else {
@@ -141,7 +139,7 @@
     return clone;
 }
 
-- (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+- (void)runWithContextNode:(XFXMLNode *)contextNode event:(XFEvent *)event
 {
     (void)event;
     // @model switches the in-scope evaluation context BEFORE @context and
@@ -149,7 +147,7 @@
     // special attributes" case): the context node moves to that model's
     // default instance root unless it already belongs to it.
     XFModel *model = [self actionTargetModel];
-    NSXMLNode *ctxNode = contextNode;
+    XFXMLNode *ctxNode = contextNode;
     if (model != self.model && ![model instanceOwningNode:ctxNode]) {
         ctxNode = [[model defaultInstance] documentElement];
     }
@@ -162,14 +160,14 @@
         return;
     }
 
-    NSArray<NSXMLNode *> *nodes = @[];
+    NSArray<XFXMLNode *> *nodes = @[];
     if (self.nodesetBinding) {
         XFExprContext *c = [self ctxWithNode:ctxNode position:1 nodeList:@[ ctxNode ]];
         c.model = model;
         nodes = [self.nodesetBinding evaluateInContext:c error:NULL].nodes ?: @[];
     }
 
-    NSArray<NSXMLNode *> *originNodes = @[];
+    NSArray<XFXMLNode *> *originNodes = @[];
     if (self.originExpr) {
         XFExprContext *c = [self ctxWithNode:ctxNode position:1 nodeList:nodes.count ? nodes : @[ ctxNode ]];
         c.model = model;
@@ -188,28 +186,28 @@
     }
 
     NSInteger pos = [self.position isEqualToString:@"after"] ? 1 : 0;
-    NSMutableArray<NSXMLNode *> *inserted = [NSMutableArray array];
-    NSXMLNode *parent = nil;
+    NSMutableArray<XFXMLNode *> *inserted = [NSMutableArray array];
+    XFXMLNode *parent = nil;
     NSUInteger location = 0;
 
     XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
     [du openAction:@"insert"];
 
     NSUInteger originIndex = 0;
-    for (NSXMLNode *origin in originNodes) {
-        NSXMLNode *before = nil;
+    for (XFXMLNode *origin in originNodes) {
+        XFXMLNode *before = nil;
         if (nodes.count == 0) {
             parent = ctxNode;
         } else {
-            NSXMLNode *first = nodes.firstObject;
-            if ([first kind] == NSXMLDocumentKind) {
+            XFXMLNode *first = nodes.firstObject;
+            if ([first kind] == XFXMLDocumentKind) {
                 parent = first;
-            } else if ([first kind] == NSXMLAttributeKind) {
+            } else if ([first kind] == XFXMLAttributeKind) {
                 parent = [first parent];
             } else {
                 parent = [first parent];
             }
-            if ([parent kind] != NSXMLDocumentKind && [origin kind] != NSXMLAttributeKind) {
+            if ([parent kind] != XFXMLDocumentKind && [origin kind] != XFXMLAttributeKind) {
                 XFExprContext *atCtx = [self ctxWithNode:ctxNode position:1 nodeList:nodes];
                 atCtx.model = model;
                 double at = nodes.count;
@@ -242,7 +240,7 @@
                 // clone must land beside the node @at names, not inside
                 // the first node's parent (b.15.a)
                 if ((NSUInteger)index >= nodes.count) {
-                    NSXMLNode *last = nodes.lastObject;
+                    XFXMLNode *last = nodes.lastObject;
                     before = [last nextSibling];
                     parent = [last parent];
                 } else {
@@ -252,10 +250,10 @@
             }
         }
         // empty nodeset + context: XSLTForms inserts before parent.firstChild
-        if (nodes.count == 0 && [parent kind] == NSXMLElementKind) {
-            before = [(NSXMLElement *)parent childCount] ? [parent childAtIndex:0] : nil;
+        if (nodes.count == 0 && [parent kind] == XFXMLElementKind) {
+            before = [(XFXMLElement *)parent childCount] ? [parent childAtIndex:0] : nil;
         }
-        NSXMLNode *clone = [self insertClone:origin intoParent:parent beforeNode:before];
+        XFXMLNode *clone = [self insertClone:origin intoParent:parent beforeNode:before];
         if (clone) {
             // debugConsole: "insert node in parent at index - ctx"
             XFTraceWrite(XFTraceKindAction, nil, self.element,
@@ -284,7 +282,7 @@
         XFInstance *inst = [model instanceContainingNode:parent];
         [XFXMLEvents dispatch:inst ?: model name:@"xforms-insert" context:evctx];
 
-        NSXMLNode *last = inserted.lastObject;
+        XFXMLNode *last = inserted.lastObject;
         NSString *rid = [XFNodeState existingStateOnNode:nodes.firstObject].repeatIdentifier
             ?: [XFNodeState existingStateOnNode:last].repeatIdentifier;
         if (rid.length) {
@@ -295,7 +293,7 @@
             rctx.model = model;
             [repeat rebuildItemsWithContext:rctx error:NULL];
             NSUInteger idx = 1;
-            for (NSXMLNode *n in repeat.nodes) {
+            for (XFXMLNode *n in repeat.nodes) {
                 if (n == last) {
                     [repeat setIndex:idx];
                     break;

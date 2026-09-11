@@ -9,22 +9,20 @@
 #import "XFExprContext.h"
 #import "XFXPathValue.h"
 #import "XFType.h"
-#import <Foundation/NSXMLDocument.h>
-#import <Foundation/NSXMLElement.h>
-#import <Foundation/NSXMLNode.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @interface XFInstance ()
-@property (nonatomic, strong, readwrite) NSXMLDocument *document;
-@property (nonatomic, strong, readwrite) NSXMLDocument *originalDocument;
+@property (nonatomic, strong, readwrite) XFXMLDocument *document;
+@property (nonatomic, strong, readwrite) XFXMLDocument *originalDocument;
 @end
 
 @implementation XFInstance
 
-+ (instancetype)instanceWithElement:(NSXMLElement *)instanceElement
++ (instancetype)instanceWithElement:(XFXMLElement *)instanceElement
                               error:(NSError **)error
 {
     XFInstance *instance = [[self alloc] init];
-    NSXMLNode *idAttr = [instanceElement attributeForName:@"id"];
+    XFXMLNode *idAttr = [instanceElement attributeForName:@"id"];
     instance.identifier = idAttr ? [idAttr stringValue] : nil;
     instance.element = instanceElement;
     // @resource is the XForms 1.1 alias of @src (G-55)
@@ -48,13 +46,13 @@
         }
     }
 
-    NSXMLElement *dataRoot = nil;
+    XFXMLElement *dataRoot = nil;
     NSUInteger elementChildren = 0;
-    for (NSXMLNode *child in [instanceElement children]) {
-        if ([child kind] == NSXMLElementKind) {
+    for (XFXMLNode *child in [instanceElement children]) {
+        if ([child kind] == XFXMLElementKind) {
             elementChildren++;
             if (dataRoot == nil) {
-                dataRoot = (NSXMLElement *)child;
+                dataRoot = (XFXMLElement *)child;
             }
         }
     }
@@ -75,8 +73,8 @@
     }
 
     // Detach a deep copy so the live instance is a standalone document.
-    NSXMLElement *copy = [dataRoot copy];
-    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithRootElement:copy];
+    XFXMLElement *copy = [dataRoot copy];
+    XFXMLDocument *doc = [[XFXMLDocument alloc] initWithRootElement:copy];
     [doc setVersion:@"1.0"];
     [doc setCharacterEncoding:@"UTF-8"];
     instance.document = doc;
@@ -84,17 +82,17 @@
     return instance;
 }
 
-- (NSXMLElement *)documentElement
+- (XFXMLElement *)documentElement
 {
     return [self.document rootElement];
 }
 
 - (void)reloadInlineDocument
 {
-    NSXMLElement *dataRoot = nil;
-    for (NSXMLNode *child in [self.element children]) {
-        if ([child kind] == NSXMLElementKind) {
-            dataRoot = (NSXMLElement *)child;
+    XFXMLElement *dataRoot = nil;
+    for (XFXMLNode *child in [self.element children]) {
+        if ([child kind] == XFXMLElementKind) {
+            dataRoot = (XFXMLElement *)child;
             break;
         }
     }
@@ -103,7 +101,7 @@
         self.originalDocument = nil;
         return;
     }
-    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithRootElement:[dataRoot copy]];
+    XFXMLDocument *doc = [[XFXMLDocument alloc] initWithRootElement:[dataRoot copy]];
     [doc setVersion:@"1.0"];
     [doc setCharacterEncoding:@"UTF-8"];
     self.document = doc;
@@ -136,18 +134,18 @@
         }
         return NO;
     }
-    NSXMLDocument *doc = nil;
+    XFXMLDocument *doc = nil;
     NSString *mt = self.mediatype ?: @"";
     if ([mt isEqualToString:@"application/json"] || [mt isEqualToString:@"text/json"]) {
         NSString *xml = [[self class] xmlStringFromJSONData:data error:&inner];
-        doc = xml ? [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:&inner] : nil;
+        doc = xml ? [[XFXMLDocument alloc] initWithXMLString:xml options:0 error:&inner] : nil;
     } else if ([mt isEqualToString:@"text/csv"]) {
         NSString *csv = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]
             ?: [[NSString alloc] initWithData:data encoding:NSISOLatin1StringEncoding];
         NSString *xml = [[self class] xmlStringFromCSV:csv ?: @"" separator:self.csvSeparator ?: @"," header:self.csvHeader];
-        doc = [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:&inner];
+        doc = [[XFXMLDocument alloc] initWithXMLString:xml options:0 error:&inner];
     } else {
-        doc = [[NSXMLDocument alloc] initWithData:data options:0 error:&inner];
+        doc = [[XFXMLDocument alloc] initWithData:data options:0 error:&inner];
     }
     if (doc == nil || [doc rootElement] == nil) {
         if (error) {
@@ -203,7 +201,7 @@
         return NO;
     }
     NSError *inner = nil;
-    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:&inner];
+    XFXMLDocument *doc = [[XFXMLDocument alloc] initWithXMLString:xml options:0 error:&inner];
     if (doc == nil || [doc rootElement] == nil) {
         if (error) {
             *error = inner ?: [NSError errorWithDomain:XFErrorDomain
@@ -217,15 +215,15 @@
     return YES;
 }
 
-- (BOOL)replaceNode:(NSXMLNode *)node withXMLString:(NSString *)xml error:(NSError **)error
+- (BOOL)replaceNode:(XFXMLNode *)node withXMLString:(NSString *)xml error:(NSError **)error
 {
     if (node == nil || node == [self documentElement] || [node parent] == nil
         || [node parent] == self.document) {
         return [self replaceWithXMLString:xml error:error];
     }
     NSError *inner = nil;
-    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:&inner];
-    NSXMLElement *fresh = [doc rootElement];
+    XFXMLDocument *doc = [[XFXMLDocument alloc] initWithXMLString:xml options:0 error:&inner];
+    XFXMLElement *fresh = [doc rootElement];
     if (fresh == nil) {
         if (error) {
             *error = inner ?: [NSError errorWithDomain:XFErrorDomain
@@ -235,14 +233,14 @@
         }
         return NO;
     }
-    NSXMLElement *clone = [fresh copy];
-    NSXMLNode *parent = [node parent];
-    if ([parent kind] != NSXMLElementKind) {
+    XFXMLElement *clone = [fresh copy];
+    XFXMLNode *parent = [node parent];
+    if ([parent kind] != XFXMLElementKind) {
         return [self replaceWithXMLString:xml error:error];
     }
     NSUInteger idx = [node index];
-    [(NSXMLElement *)parent removeChildAtIndex:idx];
-    [(NSXMLElement *)parent insertChild:clone atIndex:idx];
+    [(XFXMLElement *)parent removeChildAtIndex:idx];
+    [(XFXMLElement *)parent insertChild:clone atIndex:idx];
     return YES;
 }
 
@@ -366,7 +364,7 @@ static NSString *XFJSONQuote(NSString *s)
     return [arr substringWithRange:NSMakeRange(1, arr.length - 2)];
 }
 
-static NSString *XFJSONName(NSXMLElement *el)
+static NSString *XFJSONName(XFXMLElement *el)
 {
     NSString *lname = [el localName] ?: [el name];
     if ([lname isEqualToString:@"________"]) {
@@ -375,33 +373,33 @@ static NSString *XFJSONName(NSXMLElement *el)
     return lname;
 }
 
-static BOOL XFJSONIsAnonymous(NSXMLElement *el)
+static BOOL XFJSONIsAnonymous(XFXMLElement *el)
 {
     return [[el localName] isEqualToString:@"anonymous"] && [[el URI] isEqualToString:XFEXMLNS];
 }
 
-static NSArray<NSXMLElement *> *XFChildElements(NSXMLNode *node)
+static NSArray<XFXMLElement *> *XFChildElements(XFXMLNode *node)
 {
     NSMutableArray *out = [NSMutableArray array];
-    for (NSXMLNode *c in [node children]) {
-        if ([c kind] == NSXMLElementKind) {
+    for (XFXMLNode *c in [node children]) {
+        if ([c kind] == XFXMLElementKind) {
             [out addObject:c];
         }
     }
     return out;
 }
 
-static void XFNode2JSONValue(NSXMLElement *el, NSMutableString *out);
+static void XFNode2JSONValue(XFXMLElement *el, NSMutableString *out);
 
 /// The members of an object / items of the root: consecutive siblings
 /// sharing a name and exsi:maxOccurs="unbounded" form one array.
-static void XFNode2JSONMembers(NSXMLNode *node, NSMutableString *out, BOOL named)
+static void XFNode2JSONMembers(XFXMLNode *node, NSMutableString *out, BOOL named)
 {
-    NSArray<NSXMLElement *> *children = XFChildElements(node);
+    NSArray<XFXMLElement *> *children = XFChildElements(node);
     NSUInteger i = 0;
     BOOL first = YES;
     while (i < children.count) {
-        NSXMLElement *c = children[i];
+        XFXMLElement *c = children[i];
         BOOL unbounded = [[[c attributeForLocalName:@"maxOccurs" URI:XFEXINS] stringValue] isEqualToString:@"unbounded"];
         NSString *name = XFJSONName(c);
         // plain instance data (no exsi markers): repeated siblings are an array
@@ -438,7 +436,7 @@ static void XFNode2JSONMembers(NSXMLNode *node, NSMutableString *out, BOOL named
     }
 }
 
-static void XFNode2JSONValue(NSXMLElement *el, NSMutableString *out)
+static void XFNode2JSONValue(XFXMLElement *el, NSMutableString *out)
 {
     NSString *xsdtype = [[el attributeForLocalName:@"type" URI:@"http://www.w3.org/2001/XMLSchema-instance"] stringValue] ?: @"";
     NSString *local = [xsdtype componentsSeparatedByString:@":"].lastObject ?: @"";
@@ -461,17 +459,17 @@ static void XFNode2JSONValue(NSXMLElement *el, NSMutableString *out)
     }
 }
 
-+ (NSString *)jsonStringFromNode:(NSXMLNode *)node
++ (NSString *)jsonStringFromNode:(XFXMLNode *)node
 {
-    NSXMLElement *root = [node kind] == NSXMLDocumentKind ? [(NSXMLDocument *)node rootElement] : (NSXMLElement *)node;
-    if ([root kind] != NSXMLElementKind) {
+    XFXMLElement *root = [node kind] == XFXMLDocumentKind ? [(XFXMLDocument *)node rootElement] : (XFXMLElement *)node;
+    if ([root kind] != XFXMLElementKind) {
         return @"null";
     }
     NSMutableString *out = [NSMutableString string];
     if (XFJSONIsAnonymous(root)) {
         // the json2xml wrapper: a typed root is a scalar, else an object
         // (or an array of anonymous items)
-        NSArray<NSXMLElement *> *children = XFChildElements(root);
+        NSArray<XFXMLElement *> *children = XFChildElements(root);
         NSString *xsdtype = [[root attributeForLocalName:@"type" URI:@"http://www.w3.org/2001/XMLSchema-instance"] stringValue];
         if (children.count == 0 && xsdtype.length) {
             XFNode2JSONValue(root, out);
@@ -488,7 +486,7 @@ static void XFNode2JSONValue(NSXMLElement *el, NSMutableString *out)
         [out appendString:@"{"];
         XFNode2JSONMembers([root parent] ?: root, out, YES);
         [out appendString:@"}"];
-        if ([root parent] == nil || [[root parent] kind] == NSXMLDocumentKind) {
+        if ([root parent] == nil || [[root parent] kind] == XFXMLDocumentKind) {
             // a plain instance root: {"root": {...}}
             out = [NSMutableString stringWithFormat:@"{%@:", XFJSONQuote(XFJSONName(root))];
             XFNode2JSONValue(root, out);
@@ -498,14 +496,14 @@ static void XFNode2JSONValue(NSXMLElement *el, NSMutableString *out)
     return out;
 }
 
-+ (NSString *)csvStringFromNode:(NSXMLNode *)node separator:(NSString *)separator
++ (NSString *)csvStringFromNode:(XFXMLNode *)node separator:(NSString *)separator
 {
-    NSXMLElement *root = [node kind] == NSXMLDocumentKind ? [(NSXMLDocument *)node rootElement] : (NSXMLElement *)node;
+    XFXMLElement *root = [node kind] == XFXMLDocumentKind ? [(XFXMLDocument *)node rootElement] : (XFXMLElement *)node;
     NSArray<NSString *> *seps = [(separator.length ? separator : @",") componentsSeparatedByString:@" "];
     NSString *fsep = seps.firstObject.length ? seps.firstObject : @",";
     NSString *decsep = seps.count > 1 ? seps[1] : nil;
     NSMutableString *r = [NSMutableString string];
-    NSArray<NSXMLElement *> *rows = XFChildElements(root);
+    NSArray<XFXMLElement *> *rows = XFChildElements(root);
     NSRegularExpression *number = [NSRegularExpression regularExpressionWithPattern:@"^[\\-+]?([0-9]+(\\.[0-9]*)?|\\.[0-9]+)$" options:0 error:NULL];
     void (^line)(NSArray<NSString *> *) = ^(NSArray<NSString *> *values) {
         NSMutableArray *cells = [NSMutableArray array];
@@ -523,14 +521,14 @@ static void XFNode2JSONValue(NSXMLElement *el, NSMutableString *out)
     };
     if (rows.count) {
         NSMutableArray *head = [NSMutableArray array];
-        for (NSXMLElement *f in XFChildElements(rows.firstObject)) {
+        for (XFXMLElement *f in XFChildElements(rows.firstObject)) {
             [head addObject:XFJSONName(f)];
         }
         line(head);
     }
-    for (NSXMLElement *row in rows) {
+    for (XFXMLElement *row in rows) {
         NSMutableArray *values = [NSMutableArray array];
-        for (NSXMLElement *f in XFChildElements(row)) {
+        for (XFXMLElement *f in XFChildElements(row)) {
             [values addObject:[XFXML stringValueOfNode:f] ?: @""];
         }
         line(values);
@@ -609,16 +607,16 @@ static void XFNode2JSONValue(NSXMLElement *el, NSMutableString *out)
     if (self.readonly) {
         return;   // XsltForms_instance.revalidate: readonly instances are not validated
     }
-    NSXMLElement *root = [self documentElement];
+    XFXMLElement *root = [self documentElement];
     if (root) {
         [self validateNode:root readonly:NO notRelevant:NO];
     }
 }
 
 - (BOOL)booleanMIP:(XFMIPBinding *)mip
-              node:(NSXMLNode *)node
+              node:(XFXMLNode *)node
           position:(NSUInteger)position
-          nodeList:(NSArray<NSXMLNode *> *)nodeList
+          nodeList:(NSArray<XFXMLNode *> *)nodeList
            default:(BOOL)fallback
 {
     if (mip == nil) {
@@ -645,30 +643,30 @@ static NSString * const XFXSINS = @"http://www.w3.org/2001/XMLSchema-instance";
 
 /// XsltForms_browser.getType: the bind's type, else the node's own
 /// `xsi:type` (resolved in the node's namespace context) — G-83.
-- (NSString *)typeNameForNode:(NSXMLNode *)node state:(XFNodeState *)state
+- (NSString *)typeNameForNode:(XFXMLNode *)node state:(XFNodeState *)state
 {
     if (state.typeName.length) {
         return state.typeName;
     }
-    if ([node kind] != NSXMLElementKind) {
+    if ([node kind] != XFXMLElementKind) {
         return nil;
     }
-    NSString *qname = [[(NSXMLElement *)node attributeForLocalName:@"type" URI:XFXSINS] stringValue];
+    NSString *qname = [[(XFXMLElement *)node attributeForLocalName:@"type" URI:XFXSINS] stringValue];
     if (qname.length == 0) {
         return nil;
     }
-    XFType *type = [XFType typeForQName:qname inElement:(NSXMLElement *)node targetNamespace:nil];
+    XFType *type = [XFType typeForQName:qname inElement:(XFXMLElement *)node targetNamespace:nil];
     return type ? [NSString stringWithFormat:@"{%@}%@", type.namespaceURI, type.localName] : qname;
 }
 
 /// XsltForms_browser.getNil
-static BOOL XFNodeIsNil(NSXMLNode *node)
+static BOOL XFNodeIsNil(XFXMLNode *node)
 {
-    return [node kind] == NSXMLElementKind
-        && [[[(NSXMLElement *)node attributeForLocalName:@"nil" URI:XFXSINS] stringValue] isEqualToString:@"true"];
+    return [node kind] == XFXMLElementKind
+        && [[[(XFXMLElement *)node attributeForLocalName:@"nil" URI:XFXSINS] stringValue] isEqualToString:@"true"];
 }
 
-- (void)validateNode:(NSXMLNode *)node readonly:(BOOL)readonly notRelevant:(BOOL)notRelevant
+- (void)validateNode:(XFXMLNode *)node readonly:(BOOL)readonly notRelevant:(BOOL)notRelevant
 {
     XFNodeState *state = [XFNodeState existingStateOnNode:node];
     NSString *typeName = [self typeNameForNode:node state:state];
@@ -688,7 +686,7 @@ static BOOL XFNodeIsNil(NSXMLNode *node)
             }
             NSUInteger position = 1;
             NSUInteger i = 0;
-            for (NSXMLNode *n in bind.nodes) {
+            for (XFXMLNode *n in bind.nodes) {
                 if (n == node) {
                     position = i + 1;
                     break;
@@ -780,17 +778,17 @@ static BOOL XFNodeIsNil(NSXMLNode *node)
         }
     }
 
-    if ([node kind] == NSXMLElementKind) {
-        NSXMLElement *element = (NSXMLElement *)node;
-        for (NSXMLNode *attr in [element attributes]) {
+    if ([node kind] == XFXMLElementKind) {
+        XFXMLElement *element = (XFXMLElement *)node;
+        for (XFXMLNode *attr in [element attributes]) {
             NSString *name = [attr name];
             if ([name hasPrefix:@"xmlns"]) {
                 continue;
             }
             [self validateNode:attr readonly:readonly notRelevant:notRelevant];
         }
-        for (NSXMLNode *child in [element children]) {
-            if ([child kind] == NSXMLElementKind) {
+        for (XFXMLNode *child in [element children]) {
+            if ([child kind] == XFXMLElementKind) {
                 [self validateNode:child readonly:readonly notRelevant:notRelevant];
             }
         }

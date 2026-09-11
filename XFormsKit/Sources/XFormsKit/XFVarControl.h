@@ -1,4 +1,5 @@
 #import <XFormsKit/XFControl.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -13,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSString *name;
 @property (nonatomic, strong, readonly, nullable) XFXPathValue *value;
 
-+ (nullable instancetype)varWithElement:(NSXMLElement *)element
++ (nullable instancetype)varWithElement:(XFXMLElement *)element
                                   model:(nullable id)model
                                   error:(NSError **)error;
 

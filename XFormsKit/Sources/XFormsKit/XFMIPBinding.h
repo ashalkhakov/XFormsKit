@@ -1,12 +1,11 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFBinding;
 @class XFExprContext;
 @class XFXPathValue;
-@class NSXMLNode;
 @class XFModel;
 
-@class NSXMLElement;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -21,17 +20,17 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable instancetype)mipBindingWithExpression:(NSString *)expression
                                             error:(NSError **)error;
 + (nullable instancetype)mipBindingWithExpression:(NSString *)expression
-                                          element:(nullable NSXMLElement *)element
+                                          element:(nullable XFXMLElement *)element
                                             error:(NSError **)error;
 
 /// Evaluate against `node` (XPath context item). Rebuilds when the model
 /// is rebuilded or any recorded dependency is in `model.nodesChanged`.
 - (nullable XFXPathValue *)evaluateInContext:(XFExprContext *)context
-                                        node:(NSXMLNode *)node
+                                        node:(XFXMLNode *)node
                                        model:(nullable XFModel *)model
                                        error:(NSError **)error;
 
-- (void)disposeNode:(NSXMLNode *)node;
+- (void)disposeNode:(XFXMLNode *)node;
 
 @end
 

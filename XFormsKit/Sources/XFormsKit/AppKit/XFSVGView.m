@@ -563,7 +563,7 @@ static XFSVGNode *XFSVGBuildElement(XFHostNode *hn, XFExprContext *ctx,
     node.tag = tag;
     node.element = hn.element;
     NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
-    for (NSXMLNode *attr in [hn.element attributes]) {
+    for (XFXMLNode *attr in [hn.element attributes]) {
         NSString *name = [attr localName] ?: [attr name];
         if (name.length == 0 || [[attr name] hasPrefix:@"xmlns"]) {
             continue;
@@ -642,7 +642,7 @@ static void XFSVGBuildChildren(NSArray<XFHostNode *> *hostChildren,
 
 + (instancetype)documentWithHostNode:(XFHostNode *)hostNode
                            processor:(XFProcessor *)processor
-                         contextNode:(NSXMLNode *)contextNode
+                         contextNode:(XFXMLNode *)contextNode
 {
     XFSVGDocument *doc = [[XFSVGDocument alloc] init];
     XFExprContext *ctx = [[XFExprContext alloc] initWithNode:
@@ -1258,7 +1258,7 @@ static void XFSVGHitNode(XFSVGNode *node, NSDictionary *parentStyle,
 /// Union of the painted rectangles of nodes whose host element is
 /// `target` — subtrees rooted at a matching node contribute whole.
 static void XFSVGFrameWalk(XFSVGNode *node, NSDictionary *parentStyle,
-                           NSAffineTransformStruct outer, NSXMLElement *target,
+                           NSAffineTransformStruct outer, XFXMLElement *target,
                            BOOL inside, XFSVGDocument *doc, NSInteger depth,
                            NSRect *unionRect)
 {
@@ -1318,7 +1318,7 @@ static void XFSVGFrameWalk(XFSVGNode *node, NSDictionary *parentStyle,
     }
 }
 
-- (NSRect)frameOfElement:(NSXMLElement *)element
+- (NSRect)frameOfElement:(XFXMLElement *)element
 {
     if (_root == nil || element == nil) {
         return NSZeroRect;
@@ -1342,13 +1342,13 @@ static void XFSVGFrameWalk(XFSVGNode *node, NSDictionary *parentStyle,
 @implementation XFSVGView {
     XFHostNode *_hostNode;
     __weak XFProcessor *_processor;
-    NSXMLNode *_contextNode;
+    XFXMLNode *_contextNode;
     XFSVGDocument *_svgDocument;
 }
 
 - (instancetype)initWithHostNode:(XFHostNode *)hostNode
                        processor:(XFProcessor *)processor
-                     contextNode:(NSXMLNode *)contextNode
+                     contextNode:(XFXMLNode *)contextNode
 {
     self = [super initWithFrame:NSZeroRect];
     if (self) {
@@ -1389,14 +1389,14 @@ static void XFSVGFrameWalk(XFSVGNode *node, NSDictionary *parentStyle,
     [_svgDocument drawInRect:[self bounds]];
 }
 
-- (NSXMLElement *)hostElementAtPoint:(NSPoint)point
+- (XFXMLElement *)hostElementAtPoint:(NSPoint)point
 {
     // the view draws the document across its whole (flipped) bounds, so
     // view coordinates ARE document coordinates
     return [[_svgDocument nodeAtPoint:point] element];
 }
 
-- (NSRect)frameOfHostElement:(NSXMLElement *)element
+- (NSRect)frameOfHostElement:(XFXMLElement *)element
 {
     return [_svgDocument frameOfElement:element];
 }

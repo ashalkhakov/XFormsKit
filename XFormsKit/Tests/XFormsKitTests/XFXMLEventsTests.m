@@ -6,8 +6,7 @@
 #import <XFormsKit/XFAbstractAction.h>
 #import <XFormsKit/XFTriggerControl.h>
 #import <XFormsKit/XFXML.h>
-#import <Foundation/NSXMLDocument.h>
-#import <Foundation/NSXMLElement.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 /// Test sink for the debugConsole trace stream: records every line as
 /// {kind, message, event?, element-desc?}.
@@ -26,7 +25,7 @@
 - (void)traceEventOfKind:(XFTraceKind)kind
                  message:(NSString *)message
                eventName:(NSString *)eventName
-                 element:(NSXMLElement *)element
+                 element:(XFXMLElement *)element
 {
     NSMutableDictionary *e = [NSMutableDictionary dictionary];
     e[@"kind"] = @(kind);
@@ -46,14 +45,14 @@
 
 @implementation XFXMLEventsTests
 
-- (NSXMLDocument *)tree
+- (XFXMLDocument *)tree
 {
     NSString *xml =
         @"<root id=\"root\"><mid id=\"mid\"><leaf id=\"leaf\"/></mid></root>";
-    return [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
+    return [[XFXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
 }
 
-- (NSXMLElement *)el:(NSString *)identifier inDocument:(NSXMLDocument *)doc
+- (XFXMLElement *)el:(NSString *)identifier inDocument:(XFXMLDocument *)doc
 {
     return [[XFXMLEvents sharedEvents] elementWithID:identifier inDocument:doc];
 }
@@ -71,10 +70,10 @@
 
 - (void)testCaptureThenTargetThenBubble
 {
-    NSXMLDocument *doc = [self tree];
-    NSXMLElement *root = [self el:@"root" inDocument:doc];
-    NSXMLElement *mid  = [self el:@"mid" inDocument:doc];
-    NSXMLElement *leaf = [self el:@"leaf" inDocument:doc];
+    XFXMLDocument *doc = [self tree];
+    XFXMLElement *root = [self el:@"root" inDocument:doc];
+    XFXMLElement *mid  = [self el:@"mid" inDocument:doc];
+    XFXMLElement *leaf = [self el:@"leaf" inDocument:doc];
     NSMutableArray *order = [NSMutableArray array];
 
     XFEventHandlerBlock rec = ^(XFEvent *event) {
@@ -100,9 +99,9 @@
 
 - (void)testStopPropagationHaltsBubble
 {
-    NSXMLDocument *doc = [self tree];
-    NSXMLElement *root = [self el:@"root" inDocument:doc];
-    NSXMLElement *leaf = [self el:@"leaf" inDocument:doc];
+    XFXMLDocument *doc = [self tree];
+    XFXMLElement *root = [self el:@"root" inDocument:doc];
+    XFXMLElement *leaf = [self el:@"leaf" inDocument:doc];
     NSMutableArray *order = [NSMutableArray array];
 
     (void)[[XFListener alloc] initWithObserver:leaf evtTarget:nil name:@"ping" phase:@"default" handler:^(XFEvent *e) {
@@ -126,8 +125,8 @@
         ran = YES;
     }];
 
-    NSXMLDocument *doc = [self tree];
-    NSXMLElement *leaf = [self el:@"leaf" inDocument:doc];
+    XFXMLDocument *doc = [self tree];
+    XFXMLElement *leaf = [self el:@"leaf" inDocument:doc];
     (void)[[XFListener alloc] initWithObserver:leaf evtTarget:nil name:@"xf-test-cancelable" phase:@"default" handler:^(XFEvent *e) {
         [e preventDefault];
     } defaultAction:YES];
@@ -144,8 +143,8 @@
         ran = YES;
     }];
 
-    NSXMLDocument *doc = [self tree];
-    NSXMLElement *leaf = [self el:@"leaf" inDocument:doc];
+    XFXMLDocument *doc = [self tree];
+    XFXMLElement *leaf = [self el:@"leaf" inDocument:doc];
     (void)[[XFListener alloc] initWithObserver:leaf evtTarget:nil name:@"xf-test-forced" phase:@"default" handler:^(XFEvent *e) {
         [e preventDefault];
     } defaultAction:YES];
@@ -161,8 +160,8 @@
         (void)xf; (void)ev;
         ran = YES;
     }];
-    NSXMLDocument *doc = [self tree];
-    NSXMLElement *leaf = [self el:@"leaf" inDocument:doc];
+    XFXMLDocument *doc = [self tree];
+    XFXMLElement *leaf = [self el:@"leaf" inDocument:doc];
     (void)[[XFListener alloc] initWithObserver:leaf evtTarget:nil name:@"xf-test-da" phase:@"default" handler:nil defaultAction:NO];
     [XFXMLEvents dispatch:leaf name:@"xf-test-da"];
     XCTAssertFalse(ran);
@@ -170,9 +169,9 @@
 
 - (void)testEvtTargetFilter
 {
-    NSXMLDocument *doc = [self tree];
-    NSXMLElement *mid  = [self el:@"mid" inDocument:doc];
-    NSXMLElement *leaf = [self el:@"leaf" inDocument:doc];
+    XFXMLDocument *doc = [self tree];
+    XFXMLElement *mid  = [self el:@"mid" inDocument:doc];
+    XFXMLElement *leaf = [self el:@"leaf" inDocument:doc];
     __block NSInteger hits = 0;
     (void)[[XFListener alloc] initWithObserver:mid evtTarget:leaf name:@"ping" phase:@"default" handler:^(XFEvent *e) {
         (void)e;
@@ -186,8 +185,8 @@
 
 - (void)testEventContextStack
 {
-    NSXMLDocument *doc = [self tree];
-    NSXMLElement *leaf = [self el:@"leaf" inDocument:doc];
+    XFXMLDocument *doc = [self tree];
+    XFXMLElement *leaf = [self el:@"leaf" inDocument:doc];
     __block NSString *seenType = nil;
     (void)[[XFListener alloc] initWithObserver:leaf evtTarget:nil name:@"ping" phase:@"default" handler:^(XFEvent *e) {
         (void)e;
@@ -214,7 +213,7 @@
     XFProcessor *processor = [XFProcessor processorWithXMLString:xml error:&error];
     XCTAssertNotNil(processor, @"%@", error);
 
-    NSXMLElement *modelEl = processor.model.element;
+    XFXMLElement *modelEl = processor.model.element;
     NSArray<XFListener *> *onModel = [[XFXMLEvents sharedEvents] listenersForElement:modelEl];
     BOOL sawReady = NO;
     BOOL sawActivate = NO;
@@ -456,9 +455,9 @@
     }
     XCTAssertNotNil(trigger);
     [p activateControl:trigger];
-    NSXMLElement *root = [[p.model defaultInstance] documentElement];
-    XCTAssertEqualObjects([XFXML stringValueOfNode:[root nodesForXPath:@"g/x" error:NULL].firstObject], @"hit");
-    XCTAssertEqualObjects([XFXML stringValueOfNode:[root nodesForXPath:@"x" error:NULL].firstObject], @"outer");
+    XFXMLElement *root = [[p.model defaultInstance] documentElement];
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[[[root elementsForName:@"g"].firstObject elementsForName:@"x"] firstObject]], @"hit");
+    XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"x"].firstObject], @"outer");
 }
 
 - (void)testUnchangedValueDoesNotFireValueChanged
@@ -651,9 +650,9 @@
         }
         XCTAssertTrue(sawError);
         // name2string
-        NSXMLElement *el = [[NSXMLElement alloc] initWithName:@"a"];
-        NSXMLNode *attr = [NSXMLNode attributeWithName:@"b" stringValue:@"x"];
-        [el addAttribute:(NSXMLNode *)attr];
+        XFXMLElement *el = [[XFXMLElement alloc] initWithName:@"a"];
+        XFXMLNode *attr = [XFXMLNode attributeWithName:@"b" stringValue:@"x"];
+        [el addAttribute:(XFXMLNode *)attr];
         XCTAssertEqualObjects(XFTraceDescribeNode(el), @"a");
         XCTAssertEqualObjects(XFTraceDescribeNode([el attributeForName:@"b"]), @"@b");
     } @finally {

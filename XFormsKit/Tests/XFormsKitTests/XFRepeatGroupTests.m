@@ -427,7 +427,7 @@
     XFRepeat *r = p.repeats.firstObject;
     [XFXMLEvents dispatch:p.model name:@"pick"];
     XCTAssertEqual(r.index, (NSUInteger)2);
-    NSXMLNode *b = [r currentNode];
+    XFXMLNode *b = [r currentNode];
     XCTAssertEqualObjects([XFXML stringValueOfNode:b], @"b");
     [XFXMLEvents dispatch:p.model name:@"hide"];
     XCTAssertEqual(r.items.count, (NSUInteger)2);

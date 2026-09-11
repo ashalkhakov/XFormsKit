@@ -6,7 +6,7 @@
 
 @implementation XFLabelControl
 
-+ (instancetype)labelWithElement:(NSXMLElement *)element
++ (instancetype)labelWithElement:(XFXMLElement *)element
                            model:(id)model
                            error:(NSError **)error
 {

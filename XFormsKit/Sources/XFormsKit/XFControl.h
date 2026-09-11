@@ -1,20 +1,19 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFBinding;
 @class XFProcessor;
 @class XFExprContext;
-@class NSXMLElement;
-@class NSXMLNode;
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface XFControl : NSObject
 
-@property (nonatomic, strong, readonly) NSXMLElement *element;
+@property (nonatomic, strong, readonly) XFXMLElement *element;
 @property (nonatomic, copy, readonly, nullable) NSString *identifier;
 @property (nonatomic, copy, readonly, nullable) NSString *label;
 @property (nonatomic, strong, readonly, nullable) XFBinding *binding;
-@property (nonatomic, strong, nullable) NSXMLNode *boundNode;
+@property (nonatomic, strong, nullable) XFXMLNode *boundNode;
 @property (nonatomic, copy) NSString *stringValue;
 @property (nonatomic, assign) BOOL relevant;
 @property (nonatomic, assign) BOOL readonly;
@@ -53,13 +52,13 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak, nullable) id owner; // XFProcessor
 /// The in-scope evaluation context node of the last refresh (XSLTForms
 /// `element.node` for unbound elements): the context handlers run in.
-@property (nonatomic, strong, nullable) NSXMLNode *inScopeContextNode;
+@property (nonatomic, strong, nullable) XFXMLNode *inScopeContextNode;
 /// Value displayed by the last refresh (XsltForms_control.currentValue).
 @property (nonatomic, copy, nullable) NSString *currentValue;
-@property (nonatomic, strong, nullable) NSXMLNode *currentNode;
+@property (nonatomic, strong, nullable) XFXMLNode *currentNode;
 @property (nonatomic, weak, nullable) XFControl *parentControl;
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                         binding:(nullable XFBinding *)binding
                           label:(nullable NSString *)label;
 
@@ -94,7 +93,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// evaluate in: the bound node when there is one, else `ctx`.
 - (XFExprContext *)childContextFrom:(XFExprContext *)ctx;
 /// Apply MIPs from an arbitrary node (nil with a binding = non-relevant).
-- (void)applyMIPsFromNode:(nullable NSXMLNode *)node;
+- (void)applyMIPsFromNode:(nullable XFXMLNode *)node;
 /// YES for `value="..."` (xf:output) with no `ref` / `bind`.
 @property (nonatomic, assign, readonly) BOOL usesValueBinding;
 /// XsltForms_control.eventDispatch for help/hint default UI.
@@ -103,14 +102,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// Re-read id / binding / label / hint / appearance from the live element.
 - (BOOL)reconfigureFromElement:(NSError **)error;
 
-+ (BOOL)isControlElement:(NSXMLElement *)element;
-+ (BOOL)isStandaloneLabelElement:(NSXMLElement *)element;
-+ (BOOL)shouldInstantiateElement:(NSXMLElement *)element;
-+ (nullable NSString *)labelForElement:(NSXMLElement *)element;
-+ (nullable XFBinding *)bindingOnElement:(NSXMLElement *)element
++ (BOOL)isControlElement:(XFXMLElement *)element;
++ (BOOL)isStandaloneLabelElement:(XFXMLElement *)element;
++ (BOOL)shouldInstantiateElement:(XFXMLElement *)element;
++ (nullable NSString *)labelForElement:(XFXMLElement *)element;
++ (nullable XFBinding *)bindingOnElement:(XFXMLElement *)element
                     preferredAttribute:(nullable NSString *)preferred
                                  error:(NSError **)error;
-+ (nullable instancetype)controlWithElement:(NSXMLElement *)element
++ (nullable instancetype)controlWithElement:(XFXMLElement *)element
                                       model:(nullable id)model
                                       error:(NSError **)error;
 

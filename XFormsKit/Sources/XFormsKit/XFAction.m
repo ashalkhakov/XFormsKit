@@ -4,7 +4,7 @@
 
 @implementation XFAction
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                           model:(XFModel *)model
                           error:(NSError **)error
 {
@@ -16,7 +16,7 @@
     return self;
 }
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
 {
     return [self initWithElement:element model:nil error:NULL];
 }
@@ -30,7 +30,7 @@
     [self.children addObject:action];
 }
 
-- (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+- (void)runWithContextNode:(XFXMLNode *)contextNode event:(XFEvent *)event
 {
     XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
     [du pushVariableScope];   // setvar / var children publish here (G-77)

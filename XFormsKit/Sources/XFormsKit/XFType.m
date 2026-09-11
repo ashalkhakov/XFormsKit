@@ -67,7 +67,7 @@ static NSString *XFTypeKey(NSString *ns, NSString *name)
 
 static NSString * const XFXSDNS = @"http://www.w3.org/2001/XMLSchema";
 
-+ (XFType *)typeForQName:(NSString *)qname inElement:(NSXMLElement *)element targetNamespace:(NSString *)tns
++ (XFType *)typeForQName:(NSString *)qname inElement:(XFXMLElement *)element targetNamespace:(NSString *)tns
 {
     if (qname.length == 0) {
         return nil;
@@ -88,18 +88,18 @@ static NSString * const XFXSDNS = @"http://www.w3.org/2001/XMLSchema";
     return [self typeNamed:qname];
 }
 
-+ (NSUInteger)registerSchemaElement:(NSXMLElement *)schema
++ (NSUInteger)registerSchemaElement:(XFXMLElement *)schema
 {
     [self installBuiltins];
     NSString *tns = [[schema attributeForName:@"targetNamespace"] stringValue] ?: @"";
     NSUInteger count = 0;
     // two passes so a restriction can name a type defined later
     for (int pass = 0; pass < 2; pass++) {
-        for (NSXMLNode *child in [schema children]) {
-            if ([child kind] != NSXMLElementKind) {
+        for (XFXMLNode *child in [schema children]) {
+            if ([child kind] != XFXMLElementKind) {
                 continue;
             }
-            NSXMLElement *st = (NSXMLElement *)child;
+            XFXMLElement *st = (XFXMLElement *)child;
             if (![[st localName] isEqualToString:@"simpleType"]) {
                 continue;
             }
@@ -115,12 +115,12 @@ static NSString * const XFXSDNS = @"http://www.w3.org/2001/XMLSchema";
     return count;
 }
 
-+ (BOOL)defineSimpleType:(NSXMLElement *)st name:(NSString *)name targetNamespace:(NSString *)tns
++ (BOOL)defineSimpleType:(XFXMLElement *)st name:(NSString *)name targetNamespace:(NSString *)tns
 {
-    NSXMLElement *def = nil;
-    for (NSXMLNode *c in [st children]) {
-        if ([c kind] == NSXMLElementKind) {
-            def = (NSXMLElement *)c;
+    XFXMLElement *def = nil;
+    for (XFXMLNode *c in [st children]) {
+        if ([c kind] == XFXMLElementKind) {
+            def = (XFXMLElement *)c;
             break;
         }
     }
@@ -137,12 +137,12 @@ static NSString * const XFXSDNS = @"http://www.w3.org/2001/XMLSchema";
         NSMutableArray *patterns = [NSMutableArray array];
         NSMutableArray *enumeration = [NSMutableArray array];
         XFType *t = [self define:name ns:tns base:base patterns:nil whitespace:base.whitespace];
-        for (NSXMLNode *fc in [def children]) {
-            if ([fc kind] != NSXMLElementKind) {
+        for (XFXMLNode *fc in [def children]) {
+            if ([fc kind] != XFXMLElementKind) {
                 continue;
             }
             NSString *facet = [fc localName];
-            NSString *v = [[(NSXMLElement *)fc attributeForName:@"value"] stringValue] ?: @"";
+            NSString *v = [[(XFXMLElement *)fc attributeForName:@"value"] stringValue] ?: @"";
             if ([facet isEqualToString:@"pattern"]) {
                 [patterns addObject:[NSString stringWithFormat:@"^(?:%@)$", v]];
             } else if ([facet isEqualToString:@"enumeration"]) {

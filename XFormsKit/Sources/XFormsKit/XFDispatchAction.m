@@ -43,7 +43,7 @@
 
 @implementation XFDispatchAction
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                           model:(XFModel *)model
                           error:(NSError **)error
 {
@@ -62,11 +62,11 @@
     self.targetID = target;
     NSString *delay = [[element attributeForName:@"delay"] stringValue];
     NSMutableArray *props = [NSMutableArray array];
-    for (NSXMLNode *child in [element children]) {
-        if ([child kind] != NSXMLElementKind) {
+    for (XFXMLNode *child in [element children]) {
+        if ([child kind] != XFXMLElementKind) {
             continue;
         }
-        NSXMLElement *c = (NSXMLElement *)child;
+        XFXMLElement *c = (XFXMLElement *)child;
         if (![[c URI] isEqualToString:XFXFormsNamespaceURI]) {
             continue;
         }
@@ -101,7 +101,7 @@
     return self;
 }
 
-- (NSString *)string:(XFXPath *)expr orLiteral:(NSString *)literal context:(NSXMLNode *)contextNode
+- (NSString *)string:(XFXPath *)expr orLiteral:(NSString *)literal context:(XFXMLNode *)contextNode
 {
     if (expr == nil) {
         return literal;
@@ -111,7 +111,7 @@
     return [expr stringValueInContext:ctx error:NULL];
 }
 
-- (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+- (void)runWithContextNode:(XFXMLNode *)contextNode event:(XFEvent *)event
 {
     (void)event;
     NSString *name = [self string:self.nameExpr orLiteral:self.name context:contextNode];
@@ -125,7 +125,7 @@
         if ([tid hasPrefix:@"#"]) {
             tid = [tid substringFromIndex:1];
         }
-        NSXMLElement *el = [XFXML elementWithID:tid inNode:self.element.rootDocument];
+        XFXMLElement *el = [XFXML elementWithID:tid inNode:self.element.rootDocument];
         if (el) {
             target = [[XFXMLEvents sharedEvents] xfElementForElement:el] ?: el;
         }
@@ -188,7 +188,7 @@
 
 @implementation XFShowHideAction
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                           model:(XFModel *)model
                           error:(NSError **)error
 {

@@ -807,14 +807,14 @@ static NSRect XFWidgetRect(XFWidget *w)
     return box;
 }
 
-- (NSXMLElement *)svgElementAtPoint:(NSPoint)point
+- (XFXMLElement *)svgElementAtPoint:(NSPoint)point
 {
     for (XFSVGView *svg in self.svgViews) {
         if ([svg superview] == nil || ![svg isKindOfClass:[XFSVGView class]]
             || !NSPointInRect(point, [svg frame])) {
             continue;
         }
-        NSXMLElement *element = [svg hostElementAtPoint:
+        XFXMLElement *element = [svg hostElementAtPoint:
             [svg convertPoint:point fromView:self]];
         if (element != nil) {
             return element;
@@ -823,7 +823,7 @@ static NSRect XFWidgetRect(XFWidget *w)
     return nil;
 }
 
-- (NSRect)layoutFrameOfSVGElement:(NSXMLElement *)element
+- (NSRect)layoutFrameOfSVGElement:(XFXMLElement *)element
 {
     // a template element inside a repeat renders once per item (flags):
     // the FIRST instance's frame is the useful answer — a union across

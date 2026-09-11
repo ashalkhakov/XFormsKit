@@ -1,4 +1,5 @@
 #import <AppKit/AppKit.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFProcessor;
 @class XFGroup;
@@ -54,12 +55,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// coordinates) — an editing overlay checks this before controlAtPoint:,
 /// since SVG shapes are painted geometry, not widgets. nil off SVG or
 /// over an SVG's empty space.
-- (nullable NSXMLElement *)svgElementAtPoint:(NSPoint)point;
+- (nullable XFXMLElement *)svgElementAtPoint:(NSPoint)point;
 
 /// The union of the rectangles the layout's SVG views paint for
 /// `element` (a repeat template element paints once per item), in
 /// form-view coordinates. NSZeroRect when nothing paints it.
-- (NSRect)layoutFrameOfSVGElement:(NSXMLElement *)element;
+- (NSRect)layoutFrameOfSVGElement:(XFXMLElement *)element;
 
 @end
 

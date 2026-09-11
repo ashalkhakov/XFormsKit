@@ -16,19 +16,17 @@
 #import "XFDeferredUpdates.h"
 #import "XFNamespaces.h"
 #import "XFErrors.h"
-#import <Foundation/NSXMLDocument.h>
-#import <Foundation/NSXMLElement.h>
-#import <Foundation/NSXMLNode.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @interface XFSubmission ()
-@property (nonatomic, strong, readwrite) NSXMLElement *element;
+@property (nonatomic, strong, readwrite) XFXMLElement *element;
 @property (nonatomic, copy) NSArray<NSDictionary *> *headers;
 @property (nonatomic, strong) NSMutableArray<NSString *> *cdataTexts;
 @end
 
 @implementation XFSubmission
 
-static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
+static BOOL XFBoolAttr(XFXMLElement *el, NSString *name, BOOL fallback)
 {
     NSString *v = [[el attributeForName:name] stringValue];
     if (v.length == 0) {
@@ -40,7 +38,7 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     return YES;
 }
 
-+ (instancetype)submissionWithElement:(NSXMLElement *)element
++ (instancetype)submissionWithElement:(XFXMLElement *)element
                                 model:(XFModel *)model
                                 error:(NSError **)error
 {
@@ -89,7 +87,7 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     if (resource.length == 0) {
         resource = [[element attributeForName:@"action"] stringValue];
     }
-    NSXMLElement *resourceEl =
+    XFXMLElement *resourceEl =
         [XFXML firstElementWithLocalName:@"resource"
                            namespaceURI:XFXFormsNamespaceURI
                                  inNode:element];
@@ -106,7 +104,7 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     }
     sub.resource = resource;
 
-    NSXMLElement *methodEl =
+    XFXMLElement *methodEl =
         [XFXML firstElementWithLocalName:@"method"
                            namespaceURI:XFXFormsNamespaceURI
                                  inNode:element];
@@ -150,7 +148,7 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
         [XFXML childElementsWithLocalName:@"header"
                             namespaceURI:XFXFormsNamespaceURI
                                ofElement:element];
-    for (NSXMLElement *h in headerEls) {
+    for (XFXMLElement *h in headerEls) {
         NSMutableDictionary *entry = [NSMutableDictionary dictionary];
         NSString *nodeset = [[h attributeForName:@"nodeset"] stringValue] ?: [[h attributeForName:@"ref"] stringValue];
         if (nodeset.length) {
@@ -158,7 +156,7 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
             if (b) entry[@"nodeset"] = b;
         }
         entry[@"combine"] = [[h attributeForName:@"combine"] stringValue] ?: @"append";
-        NSXMLElement *nameEl = [XFXML firstElementWithLocalName:@"name" namespaceURI:XFXFormsNamespaceURI inNode:h];
+        XFXMLElement *nameEl = [XFXML firstElementWithLocalName:@"name" namespaceURI:XFXFormsNamespaceURI inNode:h];
         NSString *nameValue = nameEl ? [[nameEl attributeForName:@"value"] stringValue] : nil;
         if (nameValue.length) {
             XFXPath *xp = [XFXPath xpathWithString:nameValue element:h error:NULL];
@@ -171,7 +169,7 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
         }
         NSMutableArray *values = [NSMutableArray array];
         NSArray *valueEls = [XFXML childElementsWithLocalName:@"value" namespaceURI:XFXFormsNamespaceURI ofElement:h];
-        for (NSXMLElement *v in valueEls) {
+        for (XFXMLElement *v in valueEls) {
             NSString *vv = [[v attributeForName:@"value"] stringValue];
             if (vv.length) {
                 XFXPath *xp = [XFXPath xpathWithString:vv element:h error:NULL];
@@ -203,7 +201,7 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     if (self.instanceID.length) {
         return [self.model instanceWithIdentifier:self.instanceID];
     }
-    NSXMLNode *node = [self submissionNode];
+    XFXMLNode *node = [self submissionNode];
     XFInstance *owning = node ? [self.model instanceContainingNode:node] : nil;
     return owning ?: [self.model defaultInstance];
 }
@@ -252,7 +250,7 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     return raw;
 }
 
-- (NSXMLNode *)submissionNode
+- (XFXMLNode *)submissionNode
 {
     if (self.refBinding) {
         return [self.refBinding boundNodeInContext:[self rootContext] error:NULL];
@@ -262,19 +260,19 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     return [[self.model defaultInstance] documentElement];
 }
 
-+ (NSString *)urlencodedFromNode:(NSXMLNode *)node separator:(NSString *)sep
++ (NSString *)urlencodedFromNode:(XFXMLNode *)node separator:(NSString *)sep
 {
-    if ([node kind] != NSXMLElementKind) {
+    if ([node kind] != XFXMLElementKind) {
         return @"";
     }
     NSMutableString *url = [NSMutableString string];
     BOOL hasChildEl = NO;
     NSMutableString *text = [NSMutableString string];
-    for (NSXMLNode *child in [node children]) {
-        if ([child kind] == NSXMLElementKind) {
+    for (XFXMLNode *child in [node children]) {
+        if ([child kind] == XFXMLElementKind) {
             hasChildEl = YES;
             [url appendString:[self urlencodedFromNode:child separator:sep]];
-        } else if ([child kind] == NSXMLTextKind) {
+        } else if ([child kind] == XFXMLTextKind) {
             [text appendString:[child stringValue] ?: @""];
         }
     }
@@ -306,19 +304,19 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
         || [m isEqualToString:@"form-data"];
 }
 
-- (void)collectLeaves:(NSXMLNode *)node into:(NSMutableArray<NSXMLElement *> *)leaves
+- (void)collectLeaves:(XFXMLNode *)node into:(NSMutableArray<XFXMLElement *> *)leaves
 {
-    if ([node kind] != NSXMLElementKind) {
+    if ([node kind] != XFXMLElementKind) {
         return;
     }
-    NSXMLElement *el = (NSXMLElement *)node;
+    XFXMLElement *el = (XFXMLElement *)node;
     XFNodeState *st = [XFNodeState existingStateOnNode:el];
     if (self.relevant && st && !st.relevant) {
         return;
     }
     BOOL hasEl = NO;
-    for (NSXMLNode *c in [el children]) {
-        if ([c kind] == NSXMLElementKind) {
+    for (XFXMLNode *c in [el children]) {
+        if ([c kind] == XFXMLElementKind) {
             hasEl = YES;
             [self collectLeaves:c into:leaves];
         }
@@ -328,7 +326,7 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     }
 }
 
-- (NSData *)multipartBodyFromNode:(NSXMLNode *)node
+- (NSData *)multipartBodyFromNode:(XFXMLNode *)node
                         mediaType:(NSString **)outMediaType
 {
     NSString *boundary = [NSString stringWithFormat:@"XFormsKit-%08x%08x",
@@ -340,7 +338,7 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
         || [[[self resolvedMethod] lowercaseString] isEqualToString:@"multipart-post"];
     BOOL octet = [[self.serialization lowercaseString] isEqualToString:@"application/octet-stream"];
     if (octet) {
-        for (NSXMLElement *el in leaves) {
+        for (XFXMLElement *el in leaves) {
             XFNodeState *st = [XFNodeState existingStateOnNode:el];
             if (st.fileData.length) {
                 if (outMediaType) {
@@ -358,7 +356,7 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     void (^append)(NSString *) = ^(NSString *s) {
         [data appendData:[s dataUsingEncoding:NSUTF8StringEncoding]];
     };
-    for (NSXMLElement *el in leaves) {
+    for (XFXMLElement *el in leaves) {
         XFNodeState *st = [XFNodeState existingStateOnNode:el];
         append([NSString stringWithFormat:@"--%@\r\n", boundary]);
         NSString *name = [el localName] ?: [el name] ?: @"part";
@@ -400,7 +398,7 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     return data;
 }
 
-- (NSString *)serializeNode:(NSXMLNode *)node method:(NSString *)method
+- (NSString *)serializeNode:(XFXMLNode *)node method:(NSString *)method
 {
     NSString *xml = [self serializeNodeAsXML:node method:method];
     // XsltForms_submission.xml2data: a JSON / CSV @mediatype converts the
@@ -411,7 +409,7 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
         || [method isEqualToString:@"urlencoded-post"] || [method isEqualToString:@"get"] || [method isEqualToString:@"delete"];
     if (!urlencoded && xml.length && node
         && ([mt isEqualToString:@"application/json"] || [mt isEqualToString:@"text/json"] || [mt isEqualToString:@"text/csv"])) {
-        NSXMLDocument *doc = [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
+        XFXMLDocument *doc = [[XFXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
         if ([doc rootElement]) {
             if ([mt isEqualToString:@"text/csv"]) {
                 return [XFInstance csvStringFromNode:[doc rootElement] separator:self.separator];
@@ -422,7 +420,7 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
     return xml;
 }
 
-- (NSString *)serializeNodeAsXML:(NSXMLNode *)node method:(NSString *)method
+- (NSString *)serializeNodeAsXML:(XFXMLNode *)node method:(NSString *)method
 {
     if ([self.serialization isEqualToString:@"none"]) {
         return @"";
@@ -438,13 +436,13 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
         }
         return pair;
     }
-    if ([node kind] == NSXMLElementKind
+    if ([node kind] == XFXMLElementKind
         && (self.relevant || self.cdataSectionElements.count
-            || [self hasUndeclaredUsedPrefix:(NSXMLElement *)node])) {
+            || [self hasUndeclaredUsedPrefix:(XFXMLElement *)node])) {
         self.cdataTexts = [NSMutableArray array];
-        NSXMLElement *copy = [self relevantCopy:(NSXMLElement *)node];
+        XFXMLElement *copy = [self relevantCopy:(XFXMLElement *)node];
         if (copy) {
-            [self declareUsedNamespacesOn:copy fromSource:(NSXMLElement *)node];
+            [self declareUsedNamespacesOn:copy fromSource:(XFXMLElement *)node];
         }
         NSString *xml = copy ? [copy XMLString] : @"";
         NSUInteger i = 0;
@@ -458,8 +456,8 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
         self.cdataTexts = nil;
         return [self prependXMLDeclaration:xml];
     }
-    if ([node isKindOfClass:[NSXMLElement class]]) {
-        return [self prependXMLDeclaration:[(NSXMLElement *)node XMLString]];
+    if ([node isKindOfClass:[XFXMLElement class]]) {
+        return [self prependXMLDeclaration:[(XFXMLElement *)node XMLString]];
     }
     return [node XMLString] ?: [XFXML stringValueOfNode:node];
 }
@@ -494,14 +492,14 @@ static BOOL XFBoolAttr(NSXMLElement *el, NSString *name, BOOL fallback)
 /// the HOST document root, so the instance copy serializes my:car with no
 /// declaration). The map drives re-declaring what the output would
 /// otherwise use undeclared.
-static void XFCollectUsedPrefixes(NSXMLElement *element,
+static void XFCollectUsedPrefixes(XFXMLElement *element,
                                   NSMutableDictionary<NSString *, NSString *> *map)
 {
     NSString *prefix = [element prefix];
     if (prefix.length && map[prefix] == nil && [element URI].length) {
         map[prefix] = [element URI];
     }
-    for (NSXMLNode *attr in [element attributes]) {
+    for (XFXMLNode *attr in [element attributes]) {
         NSString *aprefix = [attr prefix];
         NSString *uri = [attr URI];
         if (aprefix.length == 0) {
@@ -523,16 +521,16 @@ static void XFCollectUsedPrefixes(NSXMLElement *element,
             }
         }
     }
-    for (NSXMLNode *child in [element children]) {
-        if ([child kind] == NSXMLElementKind) {
-            XFCollectUsedPrefixes((NSXMLElement *)child, map);
+    for (XFXMLNode *child in [element children]) {
+        if ([child kind] == XFXMLElementKind) {
+            XFCollectUsedPrefixes((XFXMLElement *)child, map);
         }
     }
 }
 
 /// YES when serializing `element` directly would use a prefix that no
 /// in-scope declaration covers (the Apple detached-subtree case above).
-- (BOOL)hasUndeclaredUsedPrefix:(NSXMLElement *)element
+- (BOOL)hasUndeclaredUsedPrefix:(XFXMLElement *)element
 {
     NSMutableDictionary<NSString *, NSString *> *map = [NSMutableDictionary dictionary];
     XFCollectUsedPrefixes(element, map);
@@ -547,7 +545,7 @@ static void XFCollectUsedPrefixes(NSXMLElement *element,
 /// Declares on `copy` every prefix the SOURCE subtree visibly uses that
 /// the copy does not already have in scope, so the serialized body stays
 /// well-formed on both Foundations.
-- (void)declareUsedNamespacesOn:(NSXMLElement *)copy fromSource:(NSXMLElement *)source
+- (void)declareUsedNamespacesOn:(XFXMLElement *)copy fromSource:(XFXMLElement *)source
 {
     NSMutableDictionary<NSString *, NSString *> *map = [NSMutableDictionary dictionary];
     XFCollectUsedPrefixes(source, map);
@@ -555,21 +553,21 @@ static void XFCollectUsedPrefixes(NSXMLElement *element,
         if ([copy resolveNamespaceForName:[prefix stringByAppendingString:@":x"]] != nil) {
             continue;
         }
-        [copy addNamespace:[NSXMLNode namespaceWithName:prefix stringValue:map[prefix]]];
+        [copy addNamespace:[XFXMLNode namespaceWithName:prefix stringValue:map[prefix]]];
     }
 }
 
-- (NSXMLElement *)relevantCopy:(NSXMLElement *)element
+- (XFXMLElement *)relevantCopy:(XFXMLElement *)element
 {
     XFNodeState *state = [XFNodeState existingStateOnNode:element];
     if (self.relevant && state && !state.relevant) {
         return nil;
     }
-    NSXMLElement *copy = [[NSXMLElement alloc] initWithName:[element name] URI:[element URI]];
-    for (NSXMLNode *ns in [element namespaces]) {
+    XFXMLElement *copy = [[XFXMLElement alloc] initWithName:[element name] URI:[element URI]];
+    for (XFXMLNode *ns in [element namespaces]) {
         [copy addNamespace:[ns copy]];
     }
-    for (NSXMLNode *attr in [element attributes]) {
+    for (XFXMLNode *attr in [element attributes]) {
         // non-relevant attributes are pruned too (XSLTForms, G-58)
         XFNodeState *as = [XFNodeState existingStateOnNode:attr];
         if (self.relevant && as && !as.relevant) {
@@ -588,29 +586,29 @@ static void XFCollectUsedPrefixes(NSXMLElement *element,
             if (prefix.length) {
                 aname = [NSString stringWithFormat:@"%@:%@", prefix, [attr localName]];
                 if ([copy namespaceForPrefix:prefix] == nil) {
-                    [copy addNamespace:[NSXMLNode namespaceWithName:prefix
+                    [copy addNamespace:[XFXMLNode namespaceWithName:prefix
                                                         stringValue:[attr URI]]];
                 }
             }
         }
-        [copy addAttribute:[NSXMLNode attributeWithName:aname
+        [copy addAttribute:[XFXMLNode attributeWithName:aname
                                             stringValue:[attr stringValue] ?: @""]];
     }
     BOOL cdata = [self.cdataSectionElements containsObject:[element localName] ?: @""];
-    for (NSXMLNode *child in [element children]) {
-        if ([child kind] == NSXMLElementKind) {
-            NSXMLElement *cc = self.relevant ? [self relevantCopy:(NSXMLElement *)child] : [self relevantCopy:(NSXMLElement *)child];
+    for (XFXMLNode *child in [element children]) {
+        if ([child kind] == XFXMLElementKind) {
+            XFXMLElement *cc = self.relevant ? [self relevantCopy:(XFXMLElement *)child] : [self relevantCopy:(XFXMLElement *)child];
             if (cc) {
                 [copy addChild:cc];
             }
-        } else if ([child kind] == NSXMLTextKind) {
+        } else if ([child kind] == XFXMLTextKind) {
             if (cdata) {
                 // @cdata-section-elements (G-58): GNUstep ignores
                 // NSXMLNodeIsCDATA, so the text is swapped for a token that
                 // serializeNode: replaces with a CDATA section
                 NSString *token = [NSString stringWithFormat:@"XFCDATASECTION%lu", (unsigned long)self.cdataTexts.count];
                 [self.cdataTexts addObject:[child stringValue] ?: @""];
-                [copy addChild:[NSXMLNode textWithStringValue:token]];
+                [copy addChild:[XFXMLNode textWithStringValue:token]];
             } else {
                 [copy addChild:[child copy]];
             }
@@ -619,22 +617,22 @@ static void XFCollectUsedPrefixes(NSXMLElement *element,
     return copy;
 }
 
-- (BOOL)nodeIsValid:(NSXMLNode *)node
+- (BOOL)nodeIsValid:(XFXMLNode *)node
 {
     XFNodeState *state = [XFNodeState existingStateOnNode:node];
     if (state && !state.valid && state.relevant) {
         return NO;
     }
-    if ([node kind] == NSXMLElementKind) {
+    if ([node kind] == XFXMLElementKind) {
         // attributes carry MIPs too (XsltForms_instance.validation_), G-58
-        for (NSXMLNode *attr in [(NSXMLElement *)node attributes]) {
+        for (XFXMLNode *attr in [(XFXMLElement *)node attributes]) {
             XFNodeState *as = [XFNodeState existingStateOnNode:attr];
             if (as && !as.valid && as.relevant) {
                 return NO;
             }
         }
-        for (NSXMLNode *child in [node children]) {
-            if ([child kind] == NSXMLElementKind && ![self nodeIsValid:child]) {
+        for (XFXMLNode *child in [node children]) {
+            if ([child kind] == XFXMLElementKind && ![self nodeIsValid:child]) {
                 return NO;
             }
         }
@@ -721,14 +719,14 @@ static void XFCollectUsedPrefixes(NSXMLElement *element,
     }
     XFExprContext *hctx = [self rootContext];
     for (NSDictionary *h in self.headers) {
-        NSArray<NSXMLNode *> *hnodes = @[];
+        NSArray<XFXMLNode *> *hnodes = @[];
         XFBinding *nodeset = h[@"nodeset"];
         if (nodeset) {
             hnodes = [nodeset evaluateInContext:hctx error:NULL].nodes ?: @[];
         } else if (hctx.contextNode) {
             hnodes = @[ hctx.contextNode ];
         }
-        for (NSXMLNode *hn in hnodes) {
+        for (XFXMLNode *hn in hnodes) {
             XFExprContext *nctx = [hctx cloneWithNode:hn position:1 nodeList:hnodes];
             NSString *name = h[@"name"];
             XFXPath *nameExpr = h[@"nameExpr"];
@@ -786,7 +784,7 @@ static void XFCollectUsedPrefixes(NSXMLElement *element,
     req.headers = hdrs;
     // preemptive Basic only when the author says so (Orbeon's
     // xxf:preemptive-authentication spelling, any prefix)
-    for (NSXMLNode *attr in [self.element attributes]) {
+    for (XFXMLNode *attr in [self.element attributes]) {
         if ([[attr localName] isEqualToString:@"preemptive-authentication"]) {
             req.preemptiveAuth = [[attr stringValue] isEqualToString:@"true"];
         }
@@ -802,7 +800,7 @@ static void XFCollectUsedPrefixes(NSXMLElement *element,
 {
     NSString *method = [self resolvedMethod];
     NSString *action = [self resolvedResource];
-    NSXMLNode *node = [self submissionNode];
+    XFXMLNode *node = [self submissionNode];
     if (([method isEqualToString:@"get"] || [method isEqualToString:@"delete"]) &&
         ![self.serialization isEqualToString:@"none"] && node) {
         NSString *qs = [self serializeNode:node method:method];
@@ -864,7 +862,7 @@ static void XFCollectUsedPrefixes(NSXMLElement *element,
         return;
     }
 
-    NSXMLNode *node = [self submissionNode];
+    XFXMLNode *node = [self submissionNode];
     if (self.validate && node && ![self nodeIsValid:node]) {
         evcontext[@"error-type"] = @"validation-error";
         self.lastEventContext = evcontext;
@@ -895,7 +893,7 @@ static void XFCollectUsedPrefixes(NSXMLElement *element,
         // XForms 1.1 11.3: xforms-submit-serialize carries an (empty)
         // submission-body node; content a handler WRITES into it becomes
         // the serialization in place of the default one.
-        NSXMLElement *bodyNode = [[NSXMLElement alloc] initWithName:@"submission-body"];
+        XFXMLElement *bodyNode = [[XFXMLElement alloc] initWithName:@"submission-body"];
         evcontext[@"submission-body"] = bodyNode;
         [XFXMLEvents dispatch:self name:@"xforms-submit-serialize" context:evcontext];
         NSString *authored = [XFXML stringValueOfNode:bodyNode];
@@ -1003,7 +1001,7 @@ static void XFCollectUsedPrefixes(NSXMLElement *element,
     }
 }
 
-- (NSXMLNode *)evaluateTargetref
+- (XFXMLNode *)evaluateTargetref
 {
     if (self.targetrefBinding == nil) {
         return nil;
@@ -1029,7 +1027,7 @@ static void XFCollectUsedPrefixes(NSXMLElement *element,
         return YES;
     }
     XFInstance *inst = [self targetInstance];
-    NSXMLNode *target = [self evaluateTargetref];
+    XFXMLNode *target = [self evaluateTargetref];
     NSError *parse = nil;
     // replace="instance" with a targetref that names nothing (or names a
     // non-element): the replacement target cannot be located —
@@ -1037,7 +1035,7 @@ static void XFCollectUsedPrefixes(NSXMLElement *element,
     // instance stays untouched. (replace="text" keeps the XSLTForms
     // no-target no-op below, G-59.)
     if (![replace isEqualToString:@"text"] && self.targetrefBinding != nil
-        && (target == nil || [target kind] != NSXMLElementKind)) {
+        && (target == nil || [target kind] != XFXMLElementKind)) {
         [self fail:evcontext type:@"target-error"];
         return NO;
     }

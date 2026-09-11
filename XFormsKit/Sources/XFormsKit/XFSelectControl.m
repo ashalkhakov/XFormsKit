@@ -8,9 +8,7 @@
 #import "XFModel.h"
 #import "XFNodeState.h"
 #import "XFProcessor.h"
-#import <Foundation/NSXMLElement.h>
-#import <Foundation/NSXMLNode.h>
-#import <Foundation/NSXMLDocument.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 typedef NS_ENUM(NSInteger, XFSelectTemplateKind) {
     XFSelectTemplateItem = 0,
@@ -28,7 +26,7 @@ typedef NS_ENUM(NSInteger, XFSelectTemplateKind) {
 @property (nonatomic, copy, nullable) NSString *labelLiteral;
 @property (nonatomic, copy, nullable) NSString *valueLiteral;
 @property (nonatomic, copy) NSArray<XFSelectTemplate *> *children;
-@property (nonatomic, strong, nullable) NSXMLElement *element;
+@property (nonatomic, strong, nullable) XFXMLElement *element;
 @end
 
 @implementation XFSelectTemplate
@@ -54,9 +52,9 @@ typedef NS_ENUM(NSInteger, XFSelectTemplateKind) {
     return self.multiple || [self.appearance isEqualToString:@"full"];
 }
 
-static XFBinding *XFChildBinding(NSXMLElement *parent, NSString *local, NSError **error)
+static XFBinding *XFChildBinding(XFXMLElement *parent, NSString *local, NSError **error)
 {
-    NSXMLElement *el = [XFXML firstElementWithLocalName:local
+    XFXMLElement *el = [XFXML firstElementWithLocalName:local
                                           namespaceURI:XFXFormsNamespaceURI
                                                 inNode:parent];
     if (el == nil) {
@@ -70,9 +68,9 @@ static XFBinding *XFChildBinding(NSXMLElement *parent, NSString *local, NSError 
     return [XFBinding bindingWithExpression:expr element:el error:error];
 }
 
-static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
+static NSString *XFChildLiteral(XFXMLElement *parent, NSString *local)
 {
-    NSXMLElement *el = [XFXML firstElementWithLocalName:local
+    XFXMLElement *el = [XFXML firstElementWithLocalName:local
                                           namespaceURI:XFXFormsNamespaceURI
                                                 inNode:parent];
     if (el == nil) {
@@ -85,7 +83,7 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
     return s.length ? s : nil;
 }
 
-+ (XFSelectTemplate *)templateFromElement:(NSXMLElement *)element
++ (XFSelectTemplate *)templateFromElement:(XFXMLElement *)element
                                groupLabel:(NSString *)groupLabel
                                     error:(NSError **)error
 {
@@ -120,9 +118,9 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
         t.labelLiteral = [XFControl labelForElement:element] ?: XFChildLiteral(element, @"label");
         t.labelBinding = XFChildBinding(element, @"label", &inner);   // choices/label/@ref (G-23)
         NSMutableArray *kids = [NSMutableArray array];
-        for (NSXMLNode *child in [element children]) {
-            if ([child kind] != NSXMLElementKind) continue;
-            NSXMLElement *el = (NSXMLElement *)child;
+        for (XFXMLNode *child in [element children]) {
+            if ([child kind] != XFXMLElementKind) continue;
+            XFXMLElement *el = (XFXMLElement *)child;
             if ([XFXML element:el hasLocalName:@"label" namespaceURI:XFXFormsNamespaceURI]) {
                 continue;
             }
@@ -148,7 +146,7 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
     return t;
 }
 
-+ (instancetype)selectWithElement:(NSXMLElement *)element
++ (instancetype)selectWithElement:(XFXMLElement *)element
                             model:(id)model
                             error:(NSError **)error
 {
@@ -180,9 +178,9 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
 {
     NSError *inner = nil;
     NSMutableArray *templates = [NSMutableArray array];
-    for (NSXMLNode *child in [self.element children]) {
-        if ([child kind] != NSXMLElementKind) continue;
-        NSXMLElement *el = (NSXMLElement *)child;
+    for (XFXMLNode *child in [self.element children]) {
+        if ([child kind] != XFXMLElementKind) continue;
+        XFXMLElement *el = (XFXMLElement *)child;
         if ([XFXML element:el hasLocalName:@"label" namespaceURI:XFXFormsNamespaceURI]
             || [XFXML element:el hasLocalName:@"hint" namespaceURI:XFXFormsNamespaceURI]
             || [XFXML element:el hasLocalName:@"help" namespaceURI:XFXFormsNamespaceURI]
@@ -204,7 +202,7 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
 
 - (void)emitItemFromTemplate:(XFSelectTemplate *)t
                      context:(XFExprContext *)context
-                      source:(NSXMLNode *)source
+                      source:(XFXMLNode *)source
                        into:(NSMutableArray<XFItem *> *)out
 {
     XFItem *item = [[XFItem alloc] init];
@@ -265,9 +263,9 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
     if (t.nodeset == nil) {
         return;
     }
-    NSArray<NSXMLNode *> *nodes = [t.nodeset evaluateInContext:context error:error].nodes ?: @[];
+    NSArray<XFXMLNode *> *nodes = [t.nodeset evaluateInContext:context error:error].nodes ?: @[];
     NSUInteger i = 1;
-    for (NSXMLNode *node in nodes) {
+    for (XFXMLNode *node in nodes) {
         // XsltForms_itemset.build_: non-relevant nodes give no item
         XFNodeState *state = [XFNodeState existingStateOnNode:node];
         if (state && !state.relevant) {
@@ -291,22 +289,22 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
     [self markSelected];
 }
 
-- (NSString *)xmlOfNode:(NSXMLNode *)node
+- (NSString *)xmlOfNode:(XFXMLNode *)node
 {
-    if ([node kind] == NSXMLElementKind) {
-        return [(NSXMLElement *)node XMLString];
+    if ([node kind] == XFXMLElementKind) {
+        return [(XFXMLElement *)node XMLString];
     }
     return [node XMLString] ?: [XFXML stringValueOfNode:node];
 }
 
-- (BOOL)copyMatches:(NSXMLNode *)a other:(NSXMLNode *)b
+- (BOOL)copyMatches:(XFXMLNode *)a other:(XFXMLNode *)b
 {
     if (a == nil || b == nil) {
         return NO;
     }
-    if ([a kind] == NSXMLElementKind && [b kind] == NSXMLElementKind) {
-        NSXMLElement *ea = (NSXMLElement *)a;
-        NSXMLElement *eb = (NSXMLElement *)b;
+    if ([a kind] == XFXMLElementKind && [b kind] == XFXMLElementKind) {
+        XFXMLElement *ea = (XFXMLElement *)a;
+        XFXMLElement *eb = (XFXMLElement *)b;
         if (![[ea localName] isEqualToString:[eb localName]]) {
             return NO;
         }
@@ -330,10 +328,10 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
     }
     NSMutableArray *sel = [NSMutableArray array];
     NSArray *boundChildren = nil;
-    if (self.usesCopy && [self.boundNode kind] == NSXMLElementKind) {
+    if (self.usesCopy && [self.boundNode kind] == XFXMLElementKind) {
         NSMutableArray *kids = [NSMutableArray array];
-        for (NSXMLNode *c in [(NSXMLElement *)self.boundNode children]) {
-            if ([c kind] == NSXMLElementKind) {
+        for (XFXMLNode *c in [(XFXMLElement *)self.boundNode children]) {
+            if ([c kind] == XFXMLElementKind) {
                 [kids addObject:c];
             }
         }
@@ -342,7 +340,7 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
     for (XFItem *item in self.items) {
         if (item.usesCopy) {
             BOOL hit = NO;
-            for (NSXMLNode *c in boundChildren) {
+            for (XFXMLNode *c in boundChildren) {
                 if ([self copyMatches:item.copiedNode other:c]) {
                     hit = YES;
                     break;
@@ -442,7 +440,7 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
     }
     self.selectedValues = vals;
     if (anyCopy) {
-        if (self.boundNode == nil || [self.boundNode kind] != NSXMLElementKind) {
+        if (self.boundNode == nil || [self.boundNode kind] != XFXMLElementKind) {
             // copy into a non-element (an attribute) cannot carry a
             // subtree: xforms-binding-exception (9.3.7.b)
             [XFXMLEvents raise:@"xforms-binding-exception" on:self.element
@@ -455,13 +453,13 @@ static NSString *XFChildLiteral(NSXMLElement *parent, NSString *local)
             }
             return NO;
         }
-        NSXMLElement *el = (NSXMLElement *)self.boundNode;
+        XFXMLElement *el = (XFXMLElement *)self.boundNode;
         NSArray *children = [[el children] copy];
-        for (NSXMLNode *c in children) {
+        for (XFXMLNode *c in children) {
             [el removeChildAtIndex:[c index]];
         }
-        for (NSXMLNode *src in copies) {
-            NSXMLNode *clone = [src copy];
+        for (XFXMLNode *src in copies) {
+            XFXMLNode *clone = [src copy];
             [el addChild:clone];
         }
         self.stringValue = [self joinedSelection];

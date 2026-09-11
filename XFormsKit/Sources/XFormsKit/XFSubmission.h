@@ -1,8 +1,8 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFModel;
 @class XFInstance;
-@class NSXMLElement;
 @class XFBinding;
 @class XFXPath;
 @protocol XFSubmissionTransport;
@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface XFSubmission : NSObject
 
 @property (nonatomic, copy, nullable) NSString *identifier;
-@property (nonatomic, strong, readonly) NSXMLElement *element;
+@property (nonatomic, strong, readonly) XFXMLElement *element;
 @property (nonatomic, weak, nullable) XFModel *model;
 @property (nonatomic, copy, nullable) NSString *resource;
 /// The form document's URL. A relative @resource/@action resolves
@@ -51,7 +51,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, nullable) NSString *lastSerialization;
 @property (nonatomic, copy, nullable) NSData *lastBodyData;
 
-+ (nullable instancetype)submissionWithElement:(NSXMLElement *)element
++ (nullable instancetype)submissionWithElement:(XFXMLElement *)element
                                          model:(XFModel *)model
                                          error:(NSError **)error;
 

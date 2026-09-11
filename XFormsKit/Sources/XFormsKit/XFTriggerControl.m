@@ -11,7 +11,7 @@
     return NO;
 }
 
-+ (instancetype)triggerWithElement:(NSXMLElement *)element
++ (instancetype)triggerWithElement:(XFXMLElement *)element
                              model:(id)model
                              error:(NSError **)error
 {

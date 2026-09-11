@@ -104,7 +104,7 @@ void XFAppKitHasLayoutFile(void) {}
     CGFloat start = inner;
     CGFloat outerRight = self.maxRight;
     self.maxRight = 0;
-    NSXMLNode *outerContext = self.svgContextNode;
+    XFXMLNode *outerContext = self.svgContextNode;
     if (group.boundNode != nil) {
         self.svgContextNode = group.boundNode;
     }
@@ -147,7 +147,7 @@ void XFAppKitHasLayoutFile(void) {}
         // its node (G-20): host blocks keep their structure, controls in
         // <td>/<p>/<span> flow where the markup puts them. The item's node
         // is the in-scope context for any SVG (AVTs) inside it.
-        NSXMLNode *outerContext = self.svgContextNode;
+        XFXMLNode *outerContext = self.svgContextNode;
         self.svgContextNode = item.node;
         cursor = [self layoutNodes:item.hostNodes atY:cursor indent:indent + kIndent font:nil];
         self.svgContextNode = outerContext;

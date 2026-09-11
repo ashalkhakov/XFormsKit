@@ -1,4 +1,5 @@
 #import <XFormsKit/XFControl.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFModel;
 @class XFHostNode;
@@ -14,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// controls found in it, document order.
 @property (nonatomic, copy, readonly) NSArray<XFHostNode *> *hostNodes;
 
-+ (nullable instancetype)groupWithElement:(NSXMLElement *)element
++ (nullable instancetype)groupWithElement:(XFXMLElement *)element
                                     model:(nullable id)model
                                     error:(NSError **)error;
 
@@ -32,7 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// component's bound node.
 @interface XFComponentControl : XFGroup
 @property (nonatomic, copy, readonly, nullable) NSString *resource;
-+ (nullable instancetype)componentWithElement:(NSXMLElement *)element
++ (nullable instancetype)componentWithElement:(XFXMLElement *)element
                                         model:(nullable id)model
                                         error:(NSError **)error;
 @end

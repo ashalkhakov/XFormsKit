@@ -8,8 +8,7 @@
 #import "XFXMLEvents.h"
 #import "XFNamespaces.h"
 #import "XFEvent.h"
-#import <Foundation/NSXMLElement.h>
-#import <Foundation/NSXMLDocument.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @interface XFToggleAction ()
 @property (nonatomic, copy, readwrite) NSString *caseID;
@@ -19,7 +18,7 @@
 
 @implementation XFToggleAction
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                           model:(XFModel *)model
                           error:(NSError **)error
 {
@@ -28,7 +27,7 @@
         return nil;
     }
     self.caseID = [[element attributeForName:@"case"] stringValue];
-    NSXMLElement *caseEl = [XFXML firstElementWithLocalName:@"case"
+    XFXMLElement *caseEl = [XFXML firstElementWithLocalName:@"case"
                                               namespaceURI:XFXFormsNamespaceURI
                                                     inNode:element];
     if (caseEl) {
@@ -50,8 +49,8 @@
 
 - (XFSwitch *)switchContainingCaseID:(NSString *)caseID event:(XFEvent *)event
 {
-    NSXMLDocument *doc = self.element.rootDocument;
-    NSXMLElement *caseEl = [XFXML elementWithID:caseID inNode:doc];
+    XFXMLDocument *doc = self.element.rootDocument;
+    XFXMLElement *caseEl = [XFXML elementWithID:caseID inNode:doc];
     if (caseEl == nil) {
         return nil;
     }
@@ -60,12 +59,12 @@
     // elements (no clones), so resolve the live per-item switch through the
     // event target's control chain instead: the activated trigger's
     // parentControl chain reaches ITS OWN item's switch (9.3.1.f, 9.3.4.a).
-    NSXMLElement *swEl = nil;
-    for (NSXMLNode *n = [caseEl parent]; n; n = [n parent]) {
-        if ([n kind] == NSXMLElementKind
-            && [XFXML element:(NSXMLElement *)n hasLocalName:@"switch"
+    XFXMLElement *swEl = nil;
+    for (XFXMLNode *n = [caseEl parent]; n; n = [n parent]) {
+        if ([n kind] == XFXMLElementKind
+            && [XFXML element:(XFXMLElement *)n hasLocalName:@"switch"
                  namespaceURI:XFXFormsNamespaceURI]) {
-            swEl = (NSXMLElement *)n;
+            swEl = (XFXMLElement *)n;
             break;
         }
     }
@@ -85,10 +84,10 @@
         }
     }
     // Walk up to xf:switch and use its xfElement.
-    NSXMLNode *n = [caseEl parent];
+    XFXMLNode *n = [caseEl parent];
     while (n) {
-        if ([n kind] == NSXMLElementKind) {
-            NSXMLElement *el = (NSXMLElement *)n;
+        if ([n kind] == XFXMLElementKind) {
+            XFXMLElement *el = (XFXMLElement *)n;
             if ([XFXML element:el hasLocalName:@"switch" namespaceURI:XFXFormsNamespaceURI]) {
                 id sw = [[XFXMLEvents sharedEvents] xfElementForElement:el];
                 if ([sw isKindOfClass:[XFSwitch class]]) {
@@ -101,7 +100,7 @@
     return nil;
 }
 
-- (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+- (void)runWithContextNode:(XFXMLNode *)contextNode event:(XFEvent *)event
 {
     NSString *cid = self.caseID;
     if (self.caseExpr) {

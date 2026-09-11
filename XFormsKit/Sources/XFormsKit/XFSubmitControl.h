@@ -1,4 +1,5 @@
 #import <XFormsKit/XFTriggerControl.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFXPath;
 
@@ -13,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly, nullable) XFXPath *whileExpr;
 @property (nonatomic, copy, nullable) NSString *submissionID;
 
-+ (nullable instancetype)submitWithElement:(NSXMLElement *)element
++ (nullable instancetype)submitWithElement:(XFXMLElement *)element
                                      model:(nullable id)model
                                      error:(NSError **)error;
 

@@ -1,4 +1,5 @@
 #import <XFormsKit/XFControl.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFBinding;
 
@@ -14,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, nullable) NSString *mediaType;
 @property (nonatomic, copy, nullable) NSData *fileData;
 
-+ (nullable instancetype)uploadWithElement:(NSXMLElement *)element
++ (nullable instancetype)uploadWithElement:(XFXMLElement *)element
                                      model:(nullable id)model
                                      error:(NSError **)error;
 

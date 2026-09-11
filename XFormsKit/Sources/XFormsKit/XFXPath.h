@@ -1,9 +1,8 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFExprContext;
 @class XFXPathValue;
-@class NSXMLNode;
-@class NSXMLElement;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -33,7 +32,7 @@ typedef XFXPathValue *_Nullable (^XFXPathHostFunction)(
 /// used by the expression from the in-scope declarations of `element`
 /// (the host element carrying the expression). Prefer this form.
 + (nullable instancetype)xpathWithString:(NSString *)expression
-                                 element:(nullable NSXMLElement *)element
+                                 element:(nullable XFXMLElement *)element
                                    error:(NSError **)error;
 
 - (nullable XFXPathValue *)evaluateInContext:(XFExprContext *)context
@@ -42,7 +41,7 @@ typedef XFXPathValue *_Nullable (^XFXPathHostFunction)(
 - (nullable NSString *)stringValueInContext:(XFExprContext *)context
                                       error:(NSError **)error;
 
-- (nullable NSArray<NSXMLNode *> *)nodesInContext:(XFExprContext *)context
+- (nullable NSArray<XFXMLNode *> *)nodesInContext:(XFExprContext *)context
                                             error:(NSError **)error;
 
 /// YES when an XPath / XForms function with this name is available

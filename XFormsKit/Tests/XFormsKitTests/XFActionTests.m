@@ -49,7 +49,7 @@
     XCTAssertNotNil(p, @"%@", error);
     XFAction *grp = (XFAction *)[p actionWithIdentifier:@"grp"];
     XCTAssertEqual(grp.children.count, (NSUInteger)2);
-    NSXMLElement *root = [[p.model defaultInstance] documentElement];
+    XFXMLElement *root = [[p.model defaultInstance] documentElement];
     XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"a"].firstObject], @"1");
     XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"b"].firstObject], @"2");
 }
@@ -62,7 +62,7 @@
                       @"<xf:setvalue ev:event=\"xforms-ready\" ref=\"n\" value=\"'X'\" if=\"false()\"/>"
                           extra:nil error:&error];
     XCTAssertNotNil(p, @"%@", error);
-    NSXMLNode *n = [[[p.model defaultInstance] documentElement] elementsForName:@"n"].firstObject;
+    XFXMLNode *n = [[[p.model defaultInstance] documentElement] elementsForName:@"n"].firstObject;
     XCTAssertEqualObjects([XFXML stringValueOfNode:n], @"Ada");
 }
 
@@ -74,7 +74,7 @@
                       @"<xf:setvalue ev:event=\"xforms-ready\" ref=\"n\" while=\"number(n) &lt; 3\" value=\". + 1\"/>"
                           extra:nil error:&error];
     XCTAssertNotNil(p, @"%@", error);
-    NSXMLNode *n = [[[p.model defaultInstance] documentElement] elementsForName:@"n"].firstObject;
+    XFXMLNode *n = [[[p.model defaultInstance] documentElement] elementsForName:@"n"].firstObject;
     XCTAssertEqualObjects([XFXML stringValueOfNode:n], @"3");
 }
 
@@ -86,7 +86,7 @@
                       @"<xf:setvalue ev:event=\"xforms-ready\" ref=\"n\">hello</xf:setvalue>"
                           extra:nil error:&error];
     XCTAssertNotNil(p, @"%@", error);
-    NSXMLNode *n = [[[p.model defaultInstance] documentElement] elementsForName:@"n"].firstObject;
+    XFXMLNode *n = [[[p.model defaultInstance] documentElement] elementsForName:@"n"].firstObject;
     XCTAssertEqualObjects([XFXML stringValueOfNode:n], @"hello");
 }
 
@@ -158,7 +158,7 @@
                       extra:nil error:&error];
     XCTAssertNotNil(p, @"%@", error);
     [XFXMLEvents dispatch:p.model name:@"go"];
-    NSXMLElement *root = [[p defaultInstance] documentElement];
+    XFXMLElement *root = [[p defaultInstance] documentElement];
     XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"who"].firstObject], @"hi Ada/L");
     // xforms-submit without a target goes to the model's default submission
     [XFXMLEvents dispatch:p.model name:@"sub"];
@@ -179,7 +179,7 @@
                       @"<xf:setvalue ev:event=\"xforms-ready\" ref=\"lit\">  two   words\n </xf:setvalue>"
                       extra:nil error:&error];
     XCTAssertNotNil(p, @"%@", error);
-    NSXMLElement *root = [[p defaultInstance] documentElement];
+    XFXMLElement *root = [[p defaultInstance] documentElement];
     XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"a"].firstObject], @"7");
     XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"lit"].firstObject], @"two words");
 }
@@ -235,7 +235,7 @@
                       @"</xf:group>"
                         error:&error];
     XCTAssertNotNil(p, @"%@", error);
-    NSXMLElement *root = [[p.model defaultInstance] documentElement];
+    XFXMLElement *root = [[p.model defaultInstance] documentElement];
     XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"b"].firstObject], @"7");
     XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"c"].firstObject], @"6in");
     XCTAssertEqualObjects(p.outputControls.firstObject.stringValue, @"30");
@@ -287,9 +287,9 @@
                           extra:@"<xf:output id=\"o\" value=\"count(a/*)\"><xf:label>N</xf:label></xf:output>"
                         error:&error];
     XCTAssertNotNil(p, @"%@", error);
-    NSXMLElement *root = [[p.model defaultInstance] documentElement];
+    XFXMLElement *root = [[p.model defaultInstance] documentElement];
     [XFXMLEvents dispatch:p.model name:@"inner"];
-    NSXMLElement *a = [root elementsForName:@"a"].firstObject;
+    XFXMLElement *a = [root elementsForName:@"a"].firstObject;
     XCTAssertEqual([a childCount], (NSUInteger)2);
     XCTAssertEqualObjects([[a childAtIndex:0] name], @"n");
     XCTAssertEqualObjects([XFXML stringValueOfNode:[a childAtIndex:0]], @"1");

@@ -1,4 +1,5 @@
 #import <XFormsKit/XFControl.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFHostNode;
 
@@ -27,7 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// once at start-up (not with caseref).
 - (void)dispatchInitialSelect;
 
-+ (nullable instancetype)switchWithElement:(NSXMLElement *)element
++ (nullable instancetype)switchWithElement:(XFXMLElement *)element
                                      model:(nullable id)model
                                      error:(NSError **)error;
 

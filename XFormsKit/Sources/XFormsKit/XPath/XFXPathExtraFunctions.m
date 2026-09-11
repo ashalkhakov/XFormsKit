@@ -12,8 +12,7 @@
 #import "XFProcessor.h"
 #import "XFSubform.h"
 #import "XFInstance.h"
-#import <Foundation/NSXMLElement.h>
-#import <Foundation/NSXMLDocument.h>
+#import <XFormsKit/XFXMLTypes.h>
 #import <math.h>
 #import <objc/runtime.h>
 
@@ -43,7 +42,7 @@ static NSString *XFStr(NSArray<XFXPathValue *> *args, NSUInteger i)
     return [XFArg(args, i) stringValue] ?: @"";
 }
 
-static double XFNodeNumber(NSXMLNode *n)
+static double XFNodeNumber(XFXMLNode *n)
 {
     return [XFXPathValue string:XFXPathNodeValue(n)].numberValue;
 }
@@ -52,11 +51,11 @@ static double XFNodeNumber(NSXMLNode *n)
 /// alive by their owning document.
 static XFXPathValue *XFSyntheticNodeSet(NSString *elementName, NSArray<NSString *> *values)
 {
-    NSXMLElement *root = [NSXMLElement elementWithName:@"items"];
-    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithRootElement:root];
+    XFXMLElement *root = [XFXMLElement elementWithName:@"items"];
+    XFXMLDocument *doc = [[XFXMLDocument alloc] initWithRootElement:root];
     NSMutableArray *nodes = [NSMutableArray array];
     for (NSString *v in values) {
-        NSXMLElement *e = [NSXMLElement elementWithName:elementName stringValue:v];
+        XFXMLElement *e = [XFXMLElement elementWithName:elementName stringValue:v];
         [root addChild:e];
         [nodes addObject:e];
     }
@@ -367,7 +366,7 @@ NSDictionary<NSString *, XFXPathFunction *> *XFXPathExtraFunctionTable(void)
                 NSMutableArray *parts = [NSMutableArray array];
                 XFXPathValue *v = XFArg(args, 0);
                 if (v.type == XFXPathValueTypeNodeSet) {
-                    for (NSXMLNode *n in v.nodes) {
+                    for (XFXMLNode *n in v.nodes) {
                         [parts addObject:XFXPathNodeValue(n)];
                     }
                 } else if (v) {
@@ -405,7 +404,7 @@ NSDictionary<NSString *, XFXPathFunction *> *XFXPathExtraFunctionTable(void)
                 (void)ctx; (void)err;
                 NSMutableArray *out = [NSMutableArray array];
                 NSMutableSet *seen = [NSMutableSet set];
-                for (NSXMLNode *n in XFArg(args, 0).nodes) {
+                for (XFXMLNode *n in XFArg(args, 0).nodes) {
                     NSString *v = XFXPathNodeValue(n);
                     if (![seen containsObject:v]) {
                         [seen addObject:v];
@@ -420,7 +419,7 @@ NSDictionary<NSString *, XFXPathFunction *> *XFXPathExtraFunctionTable(void)
                 (void)ctx; (void)err;
                 NSArray *nodes = XFArg(args, 0).nodes;
                 double sum = 0;
-                for (NSXMLNode *n in nodes) sum += XFNodeNumber(n);
+                for (XFXMLNode *n in nodes) sum += XFNodeNumber(n);
                 return [XFXPathValue number:sum / (double)nodes.count];
             }),
             @"min": XF_FN(NO, XFXPathFnDefaultNone, ^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
@@ -470,7 +469,7 @@ NSDictionary<NSString *, XFXPathFunction *> *XFXPathExtraFunctionTable(void)
                 if (model == nil && [ctx.model.owner isKindOfClass:[XFProcessor class]]) {
                     model = [(XFProcessor *)ctx.model.owner model];
                 }
-                NSXMLElement *root = [[model defaultInstance] documentElement];
+                XFXMLElement *root = [[model defaultInstance] documentElement];
                 if (root) [ctx addDependency:root];
                 return [XFXPathValue nodeSet:root ? @[ root ] : @[]];
             }),
@@ -481,7 +480,7 @@ NSDictionary<NSString *, XFXPathFunction *> *XFXPathExtraFunctionTable(void)
                 id owner = ctx.model.owner;
                 XFControl *control = (sf && [owner isKindOfClass:[XFProcessor class]])
                     ? [(XFProcessor *)owner controlForElement:sf.targetElement] : nil;
-                NSXMLNode *node = control.boundNode;
+                XFXMLNode *node = control.boundNode;
                 if (control) [ctx addDepElement:control];
                 if (node) [ctx addDependency:node];
                 return [XFXPathValue nodeSet:node ? @[ node ] : @[]];
@@ -511,10 +510,10 @@ NSDictionary<NSString *, XFXPathFunction *> *XFXPathExtraFunctionTable(void)
                     return [XFXPathValue nodeSet:@[]];
                 }
                 XFProcessor *processor = owner;
-                NSXMLElement *el = [XFXML elementWithID:XFStr(args, 0) inNode:processor.hostDocument.rootElement];
+                XFXMLElement *el = [XFXML elementWithID:XFStr(args, 0) inNode:processor.hostDocument.rootElement];
                 XFControl *control = el ? [processor controlForElement:el] : nil;
                 if (control) [ctx addDepElement:control];
-                NSXMLNode *node = control.boundNode;
+                XFXMLNode *node = control.boundNode;
                 if (node) {
                     [ctx addDependency:node];
                     if (ctx.model) [ctx addDepElement:ctx.model];

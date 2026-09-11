@@ -1,0 +1,266 @@
+name: CI
+
+# pull_request fires for a PR against any branch, and uses the workflow file
+# from the PR's own head -- so a branch can run CI through a PR before this
+# file has ever existed on master.
+#
+# workflow_dispatch is the opposite: GitHub only offers the "Run workflow"
+# button for workflows present on the repository's DEFAULT branch. Until this
+# lands on master there is no button, however the file is written.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# A run that lands while an earlier one is still going supersedes it; there is
+# no value in finishing CI for a commit nobody will look at again.
+#
+# The key is the branch NAME rather than the ref, so that a push and the pull
+# request for the same branch share one group: pushing to a branch with an
+# open PR would otherwise start two nearly identical runs, and on a private
+# repository the macOS half of each bills at 10x. github.head_ref is set only
+# for pull_request events, where it is the source branch; github.ref_name is
+# the branch for a push.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  ########################### macOS / Cocoa ###########################
+  # Every suite runs twice, once against each XML back end. XFXMLTypes.h binds
+  # the engine's XFXML* names to NSXML by default and to the portable XFDOM
+  # under XF_PORTABLE_DOM, and only running both keeps the two honest: a
+  # divergence in XFDOM shows up here as an engine test failure, not months
+  # later on iOS.
+  #
+  # macOS minutes bill at 10x on a private repository. Adding
+  #   if: github.event_name != 'push' || github.ref == 'refs/heads/master'
+  # confines this job to pull requests and the default branch.
+  macos:
+    name: macOS (${{ matrix.name }})
+    runs-on: macos-15
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: NSXML
+            defs: ""
+            portable: false
+          - name: XFDOM
+            defs: "XF_PORTABLE_DOM=1"
+            portable: true
+    env:
+      XF_DEFS: ${{ matrix.defs }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: xcodebuild -version
+
+      # Built first and on its own, so a compile error in the framework is
+      # reported as that rather than as a test failure.
+      - name: Build XFormsKit
+        run: |
+          xcodebuild -project XFormsKit.xcodeproj -scheme XFormsKit \
+            -destination 'platform=macOS' -configuration Debug build \
+            GCC_PREPROCESSOR_DEFINITIONS='$(inherited) '"$XF_DEFS"
+
+      # The apps still name NSXML types directly, so they only build in the
+      # default configuration. When they are migrated to XFXML*, drop the
+      # condition and let them build in both.
+      - name: Build the viewer and the designer
+        if: ${{ !matrix.portable }}
+        run: |
+          for scheme in XFormsViewer XFormsDesigner; do
+            xcodebuild -project XFormsKit.xcodeproj -scheme "$scheme" \
+              -destination 'platform=macOS' -configuration Debug build
+          done
+
+      # The always-green gate.
+      - name: Unit tests
+        run: |
+          xcodebuild -project XFormsKit.xcodeproj -scheme XFormsKit \
+            -destination 'platform=macOS' -configuration Debug \
+            -resultBundlePath "$RUNNER_TEMP/XFormsKitTests-${{ matrix.name }}.xcresult" test \
+            GCC_PREPROCESSOR_DEFINITIONS='$(inherited) '"$XF_DEFS"
+
+      # The W3C XForms 1.1 suite. docs/w3c-xctests.md calls it a conformance
+      # report rather than a regression gate, but it has been fully green
+      # since the port, so it is run as a gate here: a red case is either a
+      # real regression or a deliberate change that should move the doc.
+      - name: W3C conformance suite
+        run: |
+          xcodebuild -project XFormsKit.xcodeproj -scheme XFW3CTests \
+            -destination 'platform=macOS' -configuration Debug \
+            -resultBundlePath "$RUNNER_TEMP/XFW3CTests-${{ matrix.name }}.xcresult" test \
+            GCC_PREPROCESSOR_DEFINITIONS='$(inherited) '"$XF_DEFS"
+
+      # The reason the portable DOM exists. iOS Foundation has NSXMLParser and
+      # no DOM at all, so anything that reaches for NSXMLDocument here fails to
+      # compile -- which is the check. There is no iOS target to build yet, so
+      # the DOM sources are compiled directly against the iOS SDK.
+      - name: XFDOM compiles for iOS
+        if: ${{ matrix.portable }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/include"
+          ln -sfn "$PWD/Sources/XFormsKit" "$RUNNER_TEMP/include/XFormsKit"
+          sdk=$(xcrun --sdk iphoneos --show-sdk-path)
+          for f in Sources/XFormsKit/DOM/*.m; do
+            echo "  $f"
+            clang -fsyntax-only -fobjc-arc -Wall \
+              -target arm64-apple-ios15.0 -isysroot "$sdk" \
+              -I"$RUNNER_TEMP/include" -ISources/XFormsKit/DOM "$f"
+          done
+
+      # XFDOMTests is a differential suite: it asserts XFDOM and NSXML agree.
+      # A rename that quietly points both sides at the same implementation
+      # would leave it green while testing nothing, so check it still names
+      # the one it is comparing against.
+      - name: The DOM tests still compare against NSXML
+        run: |
+          grep -q "NSXMLDocument" Tests/XFormsKitTests/XFDOMTests.m \
+            || { echo "::error::XFDOMTests no longer references NSXML; it is no longer differential"; exit 1; }
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: macos-${{ matrix.name }}-test-results
+          path: ${{ runner.temp }}/*.xcresult
+          retention-days: 7
+
+  ########################### GNUstep / Linux ###########################
+  # The platform that is otherwise only verified by hand. Both XML back ends
+  # are exercised in one job rather than as a matrix, because the GNUstep
+  # stack is built from source and two jobs would race to fill the same cache
+  # on a cold start.
+  gnustep:
+    name: Ubuntu (GNUstep, clang, gnustep-2.0)
+    runs-on: ubuntu-latest
+    # The dependency build is the long pole; everything after it is minutes.
+    timeout-minutes: 90
+    env:
+      SRC_PATH: ${{ github.workspace }}/source
+      DEPS_PATH: ${{ github.workspace }}/dependencies
+      INSTALL_PATH: ${{ github.workspace }}/build
+      CC: clang
+      CXX: clang++
+      LIBRARY_COMBO: ng-gnu-gnu
+      RUNTIME_VERSION: gnustep-2.0
+      # libobjc2 and libdispatch land in the prefix's plain lib/, which the
+      # gnustep layout does not treat as a library root. GNUstep.sh prepends
+      # the roots it does know about to this.
+      LD_LIBRARY_PATH: ${{ github.workspace }}/build/lib
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/source
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source
+
+      # Seconds, and before the half-hour dependency build. Importing a
+      # macOS-only framework compiles on a Mac and breaks the GNUstep build,
+      # which is a slow way to find out. <AppKit/AppKit.h> is fine -- GNUstep
+      # provides it; Cocoa.h, the Core* frameworks and UIKit are not.
+      #
+      # Scoped to what this job actually builds: the framework, the tests and
+      # the viewer. The designer is macOS-only and vendors third-party views
+      # that do import Cocoa.h.
+      - name: No macOS-only imports
+        run: |
+          if grep -rn "<Cocoa/Cocoa.h>\|CoreGraphics\|QuartzCore\|<UIKit/" \
+               --include="*.h" --include="*.m" Sources Tests Apps/XFormsViewer; then
+            echo "::error::a macOS-only framework is imported; GNUstep has no such header"
+            exit 1
+          fi
+          echo "none found"
+
+      - name: Install packages
+        run: |
+          ./.github/scripts/apt-update.sh
+          sudo apt-get -q -y install \
+            pkg-config libgnutls28-dev libffi-dev libicu-dev libxml2-dev libxslt1-dev \
+            libssl-dev libavahi-client-dev zlib1g-dev gnutls-bin libcurl4-gnutls-dev \
+            libgmp-dev libcairo2-dev libjpeg-dev libtiff-dev libpng-dev libicns-dev \
+            libpthread-workqueue-dev \
+            libxt-dev libxmu-dev libxft-dev libxrandr-dev libxfixes-dev libxcursor-dev \
+            xvfb
+          # The gnustep-2.0 runtime needs ld.gold or lld. ld.gold is gone from
+          # binutils on newer Ubuntu, so fall back to lld rather than failing
+          # on a missing alternative.
+          if [ -x /usr/bin/ld.gold ]; then
+            sudo update-alternatives --install /usr/bin/ld ld /usr/bin/ld.gold 10
+          else
+            sudo apt-get -q -y install lld
+            sudo update-alternatives --install /usr/bin/ld ld /usr/bin/ld.lld 10
+          fi
+          ld --version | head -1
+
+      # The whole GNUstep stack is built from source, which takes far longer
+      # than XFormsKit does. It only changes when the pinned dependency script
+      # changes, so it is cached against that. Restored and saved as two
+      # separate steps rather than with the combined action, so the save
+      # captures the stack before anything of ours is built against it.
+      - name: Restore GNUstep
+        id: gnustep-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.INSTALL_PATH }}
+          key: gnustep-v1-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh', 'source/patches/gnustep/*.patch') }}
+
+      - name: Build GNUstep
+        if: steps.gnustep-cache.outputs.cache-hit != 'true'
+        run: ./.github/scripts/dependencies.sh
+
+      - name: Save GNUstep
+        if: steps.gnustep-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.INSTALL_PATH }}
+          key: gnustep-v1-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh', 'source/patches/gnustep/*.patch') }}
+
+      # ---- default configuration: the engine on gnustep-base's NSXML ----
+
+      - name: Build XFormsKit (NSXML)
+        run: |
+          . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
+          make
+
+      - name: Unit tests (NSXML)
+        run: |
+          . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
+          xvfb-run -a make check
+
+      - name: W3C conformance suite (NSXML)
+        run: |
+          . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
+          xvfb-run -a make w3ccheck
+
+      - name: Build the viewer
+        run: |
+          . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
+          make viewer
+
+      # ---- portable configuration: the same engine on XFDOM ----
+      #
+      # The flag changes how every source compiles, so the tree is cleaned
+      # between the two passes rather than relinked.
+
+      - name: Build XFormsKit (XFDOM)
+        run: |
+          . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
+          make clean
+          make XF_PORTABLE_DOM=1
+
+      - name: Unit tests (XFDOM)
+        run: |
+          . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
+          xvfb-run -a make check XF_PORTABLE_DOM=1
+
+      - name: W3C conformance suite (XFDOM)
+        run: |
+          . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
+          xvfb-run -a make w3ccheck XF_PORTABLE_DOM=1

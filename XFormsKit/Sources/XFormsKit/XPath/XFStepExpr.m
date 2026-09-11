@@ -1,9 +1,7 @@
 #import "XFXPathPriv.h"
-#import <Foundation/NSXMLNode.h>
-#import <Foundation/NSXMLElement.h>
-#import <Foundation/NSXMLDocument.h>
+#import <XFormsKit/XFXMLTypes.h>
 
-static void XFPush(XFExprContext *ctx, NSMutableArray *list, NSXMLNode *node, XFNodeTest *test, NSString *axis)
+static void XFPush(XFExprContext *ctx, NSMutableArray *list, XFXMLNode *node, XFNodeTest *test, NSString *axis)
 {
     (void)ctx;
     if (node && [test matches:node resolver:ctx.nsResolver axis:axis] && !XFNodeInArray(node, list)) {
@@ -13,32 +11,32 @@ static void XFPush(XFExprContext *ctx, NSMutableArray *list, NSXMLNode *node, XF
 
 static void XFPushList(XFExprContext *ctx, NSMutableArray *list, NSArray *nodes, XFNodeTest *test, NSString *axis)
 {
-    for (NSXMLNode *n in nodes) {
+    for (XFXMLNode *n in nodes) {
         XFPush(ctx, list, n, test, axis);
     }
 }
 
-static void XFPushDescendants(XFExprContext *ctx, NSMutableArray *list, NSXMLNode *node, XFNodeTest *test, NSString *axis)
+static void XFPushDescendants(XFExprContext *ctx, NSMutableArray *list, XFXMLNode *node, XFNodeTest *test, NSString *axis)
 {
-    for (NSXMLNode *n in [node children]) {
+    for (XFXMLNode *n in [node children]) {
         XFPush(ctx, list, n, test, axis);
         XFPushDescendants(ctx, list, n, test, axis);
     }
 }
 
-static void XFPushDescendantsRev(XFExprContext *ctx, NSMutableArray *list, NSXMLNode *node, XFNodeTest *test, NSString *axis)
+static void XFPushDescendantsRev(XFExprContext *ctx, NSMutableArray *list, XFXMLNode *node, XFNodeTest *test, NSString *axis)
 {
     NSArray *children = [node children];
     for (NSInteger i = (NSInteger)children.count - 1; i >= 0; i--) {
-        NSXMLNode *n = children[i];
+        XFXMLNode *n = children[i];
         XFPushDescendantsRev(ctx, list, n, test, axis);
         XFPush(ctx, list, n, test, axis);
     }
 }
 
-static NSXMLNode *XFElementParent(NSXMLNode *input)
+static XFXMLNode *XFElementParent(XFXMLNode *input)
 {
-    if ([input kind] == NSXMLAttributeKind) {
+    if ([input kind] == XFXMLAttributeKind) {
         return [input parent];
     }
     return [input parent];
@@ -57,7 +55,7 @@ static NSXMLNode *XFElementParent(NSXMLNode *input)
 
 - (XFXPathValue *)evaluate:(XFExprContext *)ctx error:(NSError **)error
 {
-    NSXMLNode *input = ctx.contextNode;
+    XFXMLNode *input = ctx.contextNode;
     NSMutableArray *list = [NSMutableArray array];
     if (input == nil) {
         return [XFXPathValue nodeSet:@[]];
@@ -67,20 +65,20 @@ static NSXMLNode *XFElementParent(NSXMLNode *input)
 
     if ([axis isEqualToString:XFAxisAncestorOrSelf]) {
         XFPush(ctx, list, input, test, axis);
-        NSXMLNode *n = XFElementParent(input);
+        XFXMLNode *n = XFElementParent(input);
         while (n) {
             XFPush(ctx, list, n, test, axis);
             n = [n parent];
         }
     } else if ([axis isEqualToString:XFAxisAncestor]) {
-        NSXMLNode *n = XFElementParent(input);
+        XFXMLNode *n = XFElementParent(input);
         while (n) {
             XFPush(ctx, list, n, test, axis);
             n = [n parent];
         }
     } else if ([axis isEqualToString:XFAxisAttribute]) {
-        if ([input kind] == NSXMLElementKind) {
-            XFPushList(ctx, list, [(NSXMLElement *)input attributes], test, axis);
+        if ([input kind] == XFXMLElementKind) {
+            XFPushList(ctx, list, [(XFXMLElement *)input attributes], test, axis);
         }
     } else if ([axis isEqualToString:XFAxisChild]) {
         XFPushList(ctx, list, [input children], test, axis);
@@ -90,36 +88,36 @@ static NSXMLNode *XFElementParent(NSXMLNode *input)
     } else if ([axis isEqualToString:XFAxisDescendant]) {
         XFPushDescendants(ctx, list, input, test, axis);
     } else if ([axis isEqualToString:XFAxisFollowing]) {
-        NSXMLNode *n = ([input kind] == NSXMLAttributeKind) ? [input parent] : input;
-        while (n && [n kind] != NSXMLDocumentKind) {
-            for (NSXMLNode *nn = [n nextSibling]; nn; nn = [nn nextSibling]) {
+        XFXMLNode *n = ([input kind] == XFXMLAttributeKind) ? [input parent] : input;
+        while (n && [n kind] != XFXMLDocumentKind) {
+            for (XFXMLNode *nn = [n nextSibling]; nn; nn = [nn nextSibling]) {
                 XFPush(ctx, list, nn, test, axis);
                 XFPushDescendants(ctx, list, nn, test, axis);
             }
             n = [n parent];
         }
     } else if ([axis isEqualToString:XFAxisFollowingSibling]) {
-        for (NSXMLNode *ns = [input nextSibling]; ns; ns = [ns nextSibling]) {
+        for (XFXMLNode *ns = [input nextSibling]; ns; ns = [ns nextSibling]) {
             XFPush(ctx, list, ns, test, axis);
         }
     } else if ([axis isEqualToString:XFAxisNamespace]) {
         // Not implemented (same as XSLTForms).
     } else if ([axis isEqualToString:XFAxisParent]) {
-        NSXMLNode *p = XFElementParent(input);
+        XFXMLNode *p = XFElementParent(input);
         if (p) {
             XFPush(ctx, list, p, test, axis);
         }
     } else if ([axis isEqualToString:XFAxisPreceding]) {
-        NSXMLNode *p = ([input kind] == NSXMLAttributeKind) ? [input parent] : input;
-        while (p && [p kind] != NSXMLDocumentKind) {
-            for (NSXMLNode *ps = [p previousSibling]; ps; ps = [ps previousSibling]) {
+        XFXMLNode *p = ([input kind] == XFXMLAttributeKind) ? [input parent] : input;
+        while (p && [p kind] != XFXMLDocumentKind) {
+            for (XFXMLNode *ps = [p previousSibling]; ps; ps = [ps previousSibling]) {
                 XFPushDescendantsRev(ctx, list, ps, test, axis);
                 XFPush(ctx, list, ps, test, axis);
             }
             p = [p parent];
         }
     } else if ([axis isEqualToString:XFAxisPrecedingSibling]) {
-        for (NSXMLNode *ps = [input previousSibling]; ps; ps = [ps previousSibling]) {
+        for (XFXMLNode *ps = [input previousSibling]; ps; ps = [ps previousSibling]) {
             XFPush(ctx, list, ps, test, axis);
         }
     } else if ([axis isEqualToString:XFAxisSelf]) {
@@ -138,7 +136,7 @@ static NSXMLNode *XFElementParent(NSXMLNode *input)
         NSMutableArray *newList = [NSMutableArray array];
         NSUInteger len = list.count;
         for (NSUInteger j = 0; j < len; j++) {
-            NSXMLNode *x = list[j];
+            XFXMLNode *x = list[j];
             XFExprContext *newCtx = [ctx cloneWithNode:x position:j + 1 nodeList:list];
             XFXPathValue *pv = [pred evaluate:newCtx error:error];
             if (error && *error) {

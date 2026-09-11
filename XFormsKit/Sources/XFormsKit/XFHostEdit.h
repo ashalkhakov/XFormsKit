@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFProcessor;
 
@@ -18,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, nullable) NSUndoManager *undoManager;
 /// Called after every mutation, undo and redo included — the editor
 /// refreshes its outline / preview here.
-@property (nonatomic, copy, nullable) void (^changedHandler)(NSXMLElement *element);
+@property (nonatomic, copy, nullable) void (^changedHandler)(XFXMLElement *element);
 
 + (instancetype)editWithProcessor:(XFProcessor *)processor
                       undoManager:(nullable NSUndoManager *)undoManager;
@@ -31,24 +32,24 @@ NS_ASSUME_NONNULL_BEGIN
 /// inside the body or under group / case / repeat / dialog; case only
 /// under switch; item only under select / select1. Everything else is
 /// refused — palette items never drop into instance data.
-+ (BOOL)canInsertElementNamed:(NSString *)localName underParent:(NSXMLElement *)parent;
++ (BOOL)canInsertElementNamed:(NSString *)localName underParent:(XFXMLElement *)parent;
 /// The local names insertable under `parent`, in palette order — the
 /// designer's + menu. Empty when nothing may go there.
-+ (NSArray<NSString *> *)insertableNamesUnderParent:(NSXMLElement *)parent;
++ (NSArray<NSString *> *)insertableNamesUnderParent:(XFXMLElement *)parent;
 
 /// Creates an xf: element (resolving the document's prefix for the
 /// XForms namespace), gives it a unique id, a starter xf:label where the
 /// control kind carries one (and label/value children for item), inserts
 /// it and attaches it to the processor. index -1 appends.
-- (nullable NSXMLElement *)insertElementNamed:(NSString *)localName
-                                  underParent:(NSXMLElement *)parent
+- (nullable XFXMLElement *)insertElementNamed:(NSString *)localName
+                                  underParent:(XFXMLElement *)parent
                                       atIndex:(NSInteger)index
                                         error:(NSError **)error;
 
 /// Detaches from the processor and removes the subtree. Undo reinserts
 /// the same NSXMLElement object, so element identity survives a round
 /// trip through undo.
-- (void)deleteElement:(NSXMLElement *)element;
+- (void)deleteElement:(XFXMLElement *)element;
 
 /// Moves an existing element to a new position — the designer's
 /// drag-reorder. One undoable command (the inverse is the move back),
@@ -59,22 +60,22 @@ NS_ASSUME_NONNULL_BEGIN
 /// nothing changed) when the element has no parent, the target is the
 /// element itself or inside its own subtree, the zone rules reject the
 /// element's kind under `parent`, or the move is a no-op.
-- (BOOL)moveElement:(NSXMLElement *)element
-        underParent:(NSXMLElement *)parent
+- (BOOL)moveElement:(XFXMLElement *)element
+        underParent:(XFXMLElement *)parent
             atIndex:(NSInteger)index;
 
 /// nil or empty removes the attribute.
 - (void)setAttribute:(NSString *)name
                value:(nullable NSString *)value
-           onElement:(NSXMLElement *)element;
+           onElement:(XFXMLElement *)element;
 
 /// Text of the xf:label / hint / help / alert child; nil or empty
 /// removes the child, setting creates it when missing (label first).
 - (void)setSupportChild:(NSString *)localName
                    text:(nullable NSString *)text
-              onElement:(NSXMLElement *)element;
+              onElement:(XFXMLElement *)element;
 - (nullable NSString *)supportChildText:(NSString *)localName
-                              onElement:(NSXMLElement *)element;
+                              onElement:(XFXMLElement *)element;
 
 /// The support child as markup: XForms 1.1 allows label / hint / help /
 /// alert to hold inline host-language markup plus dynamic content
@@ -89,10 +90,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// parse; the document is untouched then.
 - (BOOL)setSupportChild:(NSString *)localName
              contentXML:(nullable NSString *)xml
-              onElement:(NSXMLElement *)element
+              onElement:(XFXMLElement *)element
                   error:(NSError **)error;
 - (nullable NSString *)supportChildXML:(NSString *)localName
-                             onElement:(NSXMLElement *)element;
+                             onElement:(XFXMLElement *)element;
 
 /// An attribute of the xf:`localName` support child — the itemset shape,
 /// where label / value carry per-node @ref. Setting creates the child
@@ -101,10 +102,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setSupportChildAttribute:(NSString *)attribute
                            child:(NSString *)localName
                            value:(nullable NSString *)value
-                       onElement:(NSXMLElement *)element;
+                       onElement:(XFXMLElement *)element;
 - (nullable NSString *)supportChildAttribute:(NSString *)attribute
                                        child:(NSString *)localName
-                                   onElement:(NSXMLElement *)element;
+                                   onElement:(XFXMLElement *)element;
 
 /// The element's OWN children as inline mixed content (seam-free, unlike
 /// contentXMLOfElement:'s block-shaped "\n" join): what xf:message /
@@ -114,9 +115,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// xf:output. Undoable; returns NO with `error` on a parse failure, the
 /// document untouched then.
 - (BOOL)setInlineContentXML:(nullable NSString *)xml
-                  onElement:(NSXMLElement *)element
+                  onElement:(XFXMLElement *)element
                       error:(NSError **)error;
-- (NSString *)inlineContentXMLOfElement:(NSXMLElement *)element;
+- (NSString *)inlineContentXMLOfElement:(XFXMLElement *)element;
 
 /// Replaces the element's children with the parsed `xml` fragment (the
 /// instance-data editor's commit). For an instance / bind / submission
@@ -126,10 +127,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// its serialization. Returns NO (with `error`) when `xml` does not
 /// parse; the document is untouched then.
 - (BOOL)setContentXML:(NSString *)xml
-            onElement:(NSXMLElement *)element
+            onElement:(XFXMLElement *)element
                 error:(NSError **)error;
 /// The element's current children, serialized (what setContentXML: edits).
-- (NSString *)contentXMLOfElement:(NSXMLElement *)element;
+- (NSString *)contentXMLOfElement:(XFXMLElement *)element;
 
 #pragma mark - XPath step building (the designer's node picker)
 
@@ -138,13 +139,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// ancestor, then child steps by name — with a positional predicate only
 /// where same-named siblings make one necessary — and "@name" for an
 /// attribute target. nil when the nodes share no document.
-+ (nullable NSString *)pathFromNode:(NSXMLNode *)context toNode:(NSXMLNode *)target;
++ (nullable NSString *)pathFromNode:(XFXMLNode *)context toNode:(XFXMLNode *)target;
 
 /// The steps from the document element (exclusive) down to `target`,
 /// nil-joined for the document element itself — the tail of an
 /// "instance('id')/…" or "/data/…" expression. nil when `target` has no
 /// document element above it.
-+ (nullable NSString *)stepsBelowRootToNode:(NSXMLNode *)target;
++ (nullable NSString *)stepsBelowRootToNode:(XFXMLNode *)target;
 
 @end
 

@@ -469,10 +469,10 @@
             return [XFNodeTestType anyNode];
         }
         if ([name isEqualToString:@"text"]) {
-            return [XFNodeTestType kind:NSXMLTextKind];
+            return [XFNodeTestType kind:XFXMLTextKind];
         }
         if ([name isEqualToString:@"comment"]) {
-            return [XFNodeTestType kind:NSXMLCommentKind];
+            return [XFNodeTestType kind:XFXMLCommentKind];
         }
         return [XFNodeTestType processingInstruction:pi];
     }

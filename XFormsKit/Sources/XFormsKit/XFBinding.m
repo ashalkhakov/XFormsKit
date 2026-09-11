@@ -8,7 +8,7 @@
 #import "XFProcessor.h"
 #import "XFErrors.h"
 #import "XFXMLEvents.h"
-#import <Foundation/NSXMLElement.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @interface XFBinding ()
 @property (nonatomic, strong, readwrite) XFXPath *xpath;
@@ -16,7 +16,7 @@
 @property (nonatomic, copy, readwrite) NSString *expression;
 @property (nonatomic, copy, readwrite) NSString *bindID;
 @property (nonatomic, copy, readwrite) NSString *modelID;
-@property (nonatomic, weak) NSXMLElement *element;
+@property (nonatomic, weak) XFXMLElement *element;
 @end
 
 @implementation XFBinding
@@ -27,7 +27,7 @@
 }
 
 + (instancetype)bindingWithExpression:(NSString *)expression
-                              element:(NSXMLElement *)element
+                              element:(XFXMLElement *)element
                                 error:(NSError **)error
 {
     XFXPath *xp = [XFXPath xpathWithString:expression element:element error:error];
@@ -43,7 +43,7 @@
     return binding;
 }
 
-+ (instancetype)bindingForElement:(NSXMLElement *)element
++ (instancetype)bindingForElement:(XFXMLElement *)element
                         attribute:(NSString *)attribute
                             error:(NSError **)error
 {
@@ -122,7 +122,7 @@ static NSArray<XFModel *> *XFModelsOf(XFModel *model)
         c.model = target;
         return c;
     }
-    NSXMLElement *root = [[target defaultInstance] documentElement];
+    XFXMLElement *root = [[target defaultInstance] documentElement];
     XFExprContext *c = [context cloneWithNode:root position:1 nodeList:root ? @[ root ] : @[]];
     c.model = target;
     return c;
@@ -162,8 +162,8 @@ static NSArray<XFModel *> *XFModelsOf(XFModel *model)
             return nil;
         }
         // XsltForms_binding: result = bind.nodes (+ its dependencies)
-        NSArray<NSXMLNode *> *nodes = [bind.nodes copy];
-        for (NSXMLNode *n in nodes) {
+        NSArray<XFXMLNode *> *nodes = [bind.nodes copy];
+        for (XFXMLNode *n in nodes) {
             [context addDependency:n];
         }
         [context addDepElement:bind];
@@ -172,21 +172,21 @@ static NSArray<XFModel *> *XFModelsOf(XFModel *model)
     // XsltForms_exprContext carries the evaluating subform: stamp the host
     // element so subform-instance()/subform-context() resolve THIS form's
     // subform even when the inherited context belongs to the parent form
-    NSXMLElement *prevSource = ctx.sourceElement;
+    XFXMLElement *prevSource = ctx.sourceElement;
     if (self.element) {
         ctx.sourceElement = self.element;
     }
     XFXPathValue *value = [self.xpath evaluateInContext:ctx error:error];
     ctx.sourceElement = prevSource;
     if (ctx != context) {
-        for (NSXMLNode *n in [ctx dependencyNodes]) {
+        for (XFXMLNode *n in [ctx dependencyNodes]) {
             [context addDependency:n];
         }
     }
     return value;
 }
 
-- (NSXMLNode *)boundNodeInContext:(XFExprContext *)context error:(NSError **)error
+- (XFXMLNode *)boundNodeInContext:(XFExprContext *)context error:(NSError **)error
 {
     XFXPathValue *value = [self evaluateInContext:context error:error];
     return value.firstNode;

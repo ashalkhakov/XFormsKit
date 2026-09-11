@@ -5,7 +5,7 @@
 #import "XFXPathValue.h"
 #import "XFExprContext.h"
 #import "XFErrors.h"
-#import <Foundation/NSXMLElement.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @interface XFXPath ()
 @property (nonatomic, copy, readwrite) NSString *expression;
@@ -88,7 +88,7 @@ NSMutableDictionary *XFXPathHostFunctionTable(void)
 /// the host element here does the same; prefixes already registered (by an
 /// earlier element using the same expression) are kept.
 + (instancetype)xpathWithString:(NSString *)expression
-                        element:(NSXMLElement *)element
+                        element:(XFXMLElement *)element
                           error:(NSError **)error
 {
     if (expression == nil) {
@@ -117,7 +117,7 @@ NSMutableDictionary *XFXPathHostFunctionTable(void)
     return xp;
 }
 
-- (void)registerPrefixesFromElement:(NSXMLElement *)element
+- (void)registerPrefixesFromElement:(XFXMLElement *)element
 {
     if (element == nil) {
         return;
@@ -126,7 +126,7 @@ NSMutableDictionary *XFXPathHostFunctionTable(void)
         if ([self.nsresolver lookupNamespaceURI:prefix] != nil) {
             continue;
         }
-        NSXMLNode *ns = [element resolveNamespaceForName:[prefix stringByAppendingString:@":x"]];
+        XFXMLNode *ns = [element resolveNamespaceForName:[prefix stringByAppendingString:@":x"]];
         NSString *uri = [ns stringValue];
         if (uri.length) {
             [self.nsresolver registerPrefix:prefix uri:uri];
@@ -152,7 +152,7 @@ NSMutableDictionary *XFXPathHostFunctionTable(void)
     // repeat item, 7.10.2.b). Kept SEPARATE from currentNode, which the
     // XForms context() function reads as the outer in-scope context
     // (setvalue value="context()", 7.10.4.a).
-    NSXMLNode *prevStart = context.expressionStartNode;
+    XFXMLNode *prevStart = context.expressionStartNode;
     context.expressionStartNode = context.contextNode;
     NSError *inner = nil;
     XFXPathValue *value = [self.compiled evaluate:context error:&inner];
@@ -176,7 +176,7 @@ NSMutableDictionary *XFXPathHostFunctionTable(void)
     return value ? [value stringValue] : nil;
 }
 
-- (NSArray<NSXMLNode *> *)nodesInContext:(XFExprContext *)context error:(NSError **)error
+- (NSArray<XFXMLNode *> *)nodesInContext:(XFExprContext *)context error:(NSError **)error
 {
     XFXPathValue *value = [self evaluateInContext:context error:error];
     return value ? value.nodes : nil;

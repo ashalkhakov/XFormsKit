@@ -94,7 +94,7 @@ static NSArray *XFAVTSegments(NSString *value)
 }
 
 + (instancetype)avtWithString:(NSString *)value
-                      element:(NSXMLElement *)element
+                      element:(XFXMLElement *)element
                         error:(NSError **)error
 {
     NSArray *segments = XFAVTSegments(value ?: @"");
@@ -145,7 +145,7 @@ static NSArray *XFAVTSegments(NSString *value)
 }
 
 + (NSString *)resolveString:(NSString *)value
-                    element:(NSXMLElement *)element
+                    element:(XFXMLElement *)element
                   inContext:(XFExprContext *)context
 {
     if ([value rangeOfString:@"{"].location == NSNotFound) {

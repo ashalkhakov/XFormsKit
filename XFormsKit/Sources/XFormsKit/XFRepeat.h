@@ -1,4 +1,5 @@
 #import <XFormsKit/XFControl.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFModel;
 @class XFHostNode;
@@ -6,7 +7,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface XFRepeatItem : NSObject
-@property (nonatomic, strong, nullable) NSXMLNode *node;
+@property (nonatomic, strong, nullable) XFXMLNode *node;
 @property (nonatomic, assign) NSUInteger position; // 1-based
 @property (nonatomic, assign) BOOL selected;
 @property (nonatomic, copy, readonly) NSArray<XFControl *> *controls;
@@ -20,18 +21,18 @@ NS_ASSUME_NONNULL_BEGIN
 /// per-item cloned controls (no HTML clone — engine instances).
 @interface XFRepeat : XFControl
 
-@property (nonatomic, copy, readonly) NSArray<NSXMLNode *> *nodes;
+@property (nonatomic, copy, readonly) NSArray<XFXMLNode *> *nodes;
 @property (nonatomic, assign, readonly) NSUInteger index;      // 1-based; 0 if empty
 @property (nonatomic, assign) NSUInteger startIndex; // default 1
 @property (nonatomic, copy, readonly) NSArray<XFRepeatItem *> *items;
-@property (nonatomic, copy, readonly) NSArray<NSXMLElement *> *templateElements;
+@property (nonatomic, copy, readonly) NSArray<XFXMLElement *> *templateElements;
 
-+ (nullable instancetype)repeatWithElement:(NSXMLElement *)element
++ (nullable instancetype)repeatWithElement:(XFXMLElement *)element
                                      model:(nullable id)model
                                      error:(NSError **)error;
 
 - (nullable XFRepeatItem *)currentItem;
-- (nullable NSXMLNode *)currentNode;
+- (nullable XFXMLNode *)currentNode;
 - (void)setIndex:(NSUInteger)index;
 /// The next rebuild constructs every item fresh instead of reusing
 /// unchanged rows — required after subform content was imported into or

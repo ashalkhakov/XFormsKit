@@ -1,6 +1,6 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 
-@class NSXMLElement;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -18,8 +18,8 @@ typedef NS_ENUM(NSInteger, XFEventPhase) {
 @interface XFEvent : NSObject
 
 @property (nonatomic, copy) NSString *type;
-@property (nonatomic, strong, nullable) NSXMLElement *target;
-@property (nonatomic, strong, nullable) NSXMLElement *currentTarget;
+@property (nonatomic, strong, nullable) XFXMLElement *target;
+@property (nonatomic, strong, nullable) XFXMLElement *currentTarget;
 @property (nonatomic, weak, nullable) id xfElement;
 @property (nonatomic, assign) XFEventPhase eventPhase;
 /// XML Events / XSLTForms IE-path phase name: @"capture" or @"default".

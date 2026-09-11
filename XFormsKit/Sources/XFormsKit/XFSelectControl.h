@@ -1,4 +1,5 @@
 #import <XFormsKit/XFControl.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -6,11 +7,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, nullable) NSString *label;
 @property (nonatomic, copy, nullable) NSString *value;
 @property (nonatomic, copy, nullable) NSString *groupLabel;
-@property (nonatomic, strong, nullable) NSXMLNode *copiedNode;
-@property (nonatomic, strong, nullable) NSXMLNode *sourceNode;
+@property (nonatomic, strong, nullable) XFXMLNode *copiedNode;
+@property (nonatomic, strong, nullable) XFXMLNode *sourceNode;
 /// The xf:item (or xf:itemset) element the item comes from: the target of
 /// xforms-select / xforms-deselect (G-25).
-@property (nonatomic, strong, nullable) NSXMLElement *element;
+@property (nonatomic, strong, nullable) XFXMLElement *element;
 @property (nonatomic, assign) BOOL selected;
 @property (nonatomic, assign, readonly) BOOL usesCopy;
 @end
@@ -29,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// changes dispatch xforms-out-of-range / xforms-in-range (G-25).
 @property (nonatomic, assign, readonly) BOOL outOfRange;
 
-+ (nullable instancetype)selectWithElement:(NSXMLElement *)element
++ (nullable instancetype)selectWithElement:(XFXMLElement *)element
                                      model:(nullable id)model
                                      error:(NSError **)error;
 

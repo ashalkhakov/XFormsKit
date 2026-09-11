@@ -151,7 +151,7 @@
     XCTAssertTrue([map.lastRequest.body containsString:@"Ada"]);
     XCTAssertEqualObjects(map.lastRequest.mediaType, @"application/xml");
 
-    NSXMLNode *n = [[[p.model defaultInstance] documentElement] elementsForName:@"n"].firstObject;
+    XFXMLNode *n = [[[p.model defaultInstance] documentElement] elementsForName:@"n"].firstObject;
     XCTAssertEqualObjects([XFXML stringValueOfNode:n], @"Bob");
     XCTAssertEqualObjects(p.model.defaultSubmission.lastEventContext[@"error-type"], nil);
     XCTAssertEqualObjects(p.model.defaultSubmission.lastEventContext[@"resource-uri"], @"http://example.test/echo");
@@ -172,7 +172,7 @@
     [map setStatus:204 body:@"" forURL:@"http://example.test/ok"];
     p.model.transport = map;
     [self send:p identifier:@"go"];
-    NSXMLNode *ok = [[[p.model defaultInstance] documentElement] elementsForName:@"ok"].firstObject;
+    XFXMLNode *ok = [[[p.model defaultInstance] documentElement] elementsForName:@"ok"].firstObject;
     XCTAssertEqualObjects([XFXML stringValueOfNode:ok], @"yes");
 }
 
@@ -191,7 +191,7 @@
     p.model.transport = map;
     [self send:p identifier:@"go"];
     XCTAssertEqualObjects(p.model.defaultSubmission.lastEventContext[@"error-type"], @"resource-error");
-    NSXMLNode *err = [[[p.model defaultInstance] documentElement] elementsForName:@"err"].firstObject;
+    XFXMLNode *err = [[[p.model defaultInstance] documentElement] elementsForName:@"err"].firstObject;
     XCTAssertEqualObjects([XFXML stringValueOfNode:err], @"no");
 }
 
@@ -261,7 +261,7 @@
     [map setStatus:200 body:@"Zoe" forURL:@"http://example.test/txt"];
     p.model.transport = map;
     [self send:p identifier:@"go"];
-    NSXMLNode *n = [[[p.model defaultInstance] documentElement] elementsForName:@"n"].firstObject;
+    XFXMLNode *n = [[[p.model defaultInstance] documentElement] elementsForName:@"n"].firstObject;
     XCTAssertEqualObjects([XFXML stringValueOfNode:n], @"Zoe");
 }
 
@@ -368,7 +368,7 @@
     [map setXML:@"<data xmlns=\"\"><n>Loaded</n></data>" forURL:@"http://example.test/doc.xml"];
     p.model.transport = map;
     [self send:p identifier:@"go"];
-    NSXMLNode *n = [[[p.model defaultInstance] documentElement] elementsForName:@"n"].firstObject;
+    XFXMLNode *n = [[[p.model defaultInstance] documentElement] elementsForName:@"n"].firstObject;
     XCTAssertEqualObjects([XFXML stringValueOfNode:n], @"Loaded");
     XFLoadAction *load = (XFLoadAction *)[p actionWithIdentifier:@"go"];
     XCTAssertEqualObjects(load.lastEventContext[@"resource-uri"], @"http://example.test/doc.xml");
@@ -442,7 +442,7 @@
     [map setXML:@"<slot xmlns=\"\"><n>Bob</n></slot>" forURL:@"http://example.test/part"];
     p.model.transport = map;
     [self send:p identifier:@"go"];
-    NSXMLElement *root = [[p.model defaultInstance] documentElement];
+    XFXMLElement *root = [[p.model defaultInstance] documentElement];
     XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"keep"].firstObject], @"yes");
     XCTAssertEqualObjects([XFXML stringValueOfNode:
                           [[[root elementsForName:@"slot"] firstObject] elementsForName:@"n"].firstObject],
@@ -463,7 +463,7 @@
     [map setStatus:200 body:@"hello-text" forURL:@"http://example.test/txt"];
     p.model.transport = map;
     [self send:p identifier:@"go"];
-    NSXMLNode *msg = [[[p.model defaultInstance] documentElement] elementsForName:@"msg"].firstObject;
+    XFXMLNode *msg = [[[p.model defaultInstance] documentElement] elementsForName:@"msg"].firstObject;
     XCTAssertEqualObjects([XFXML stringValueOfNode:msg], @"hello-text");
     XCTAssertEqualObjects(p.model.defaultSubmission.lastEventContext[@"response-status-code"], @200);
 }
@@ -501,7 +501,7 @@
     XCTAssertTrue(sub.asynchronous);
     [self send:p identifier:@"go"];
     XCTAssertTrue([sub waitUntilFinished:2.0], @"async submission did not finish");
-    NSXMLNode *n = [[[p.model defaultInstance] documentElement] elementsForName:@"n"].firstObject;
+    XFXMLNode *n = [[[p.model defaultInstance] documentElement] elementsForName:@"n"].firstObject;
     XCTAssertEqualObjects([XFXML stringValueOfNode:n], @"Async");
 }
 
@@ -571,9 +571,9 @@
     // ref points into instance 'other': that instance is replaced, not the default one
     [self send:p identifier:@"go"];
     XCTAssertTrue([map.lastRequest.body containsString:@"<v>1</v>"]);
-    NSXMLElement *other = [[p.model instanceWithIdentifier:@"other"] documentElement];
+    XFXMLElement *other = [[p.model instanceWithIdentifier:@"other"] documentElement];
     XCTAssertEqualObjects([XFXML stringValueOfNode:[other elementsForName:@"v"].firstObject], @"2");
-    NSXMLElement *main = [[p.model defaultInstance] documentElement];
+    XFXMLElement *main = [[p.model defaultInstance] documentElement];
     XCTAssertEqualObjects([main name], @"data");
     XCTAssertEqualObjects([XFXML stringValueOfNode:[main elementsForName:@"n"].firstObject], @"Ada");
 
@@ -735,7 +735,7 @@
     [map setResponse:resp forURL:@"http://example.test/j"];
     p.model.transport = map;
     [self send:p identifier:@"go"];
-    NSXMLElement *root = [[p.model instanceWithIdentifier:@"r"] documentElement];
+    XFXMLElement *root = [[p.model instanceWithIdentifier:@"r"] documentElement];
     XCTAssertEqualObjects([root localName], @"anonymous");
     XCTAssertEqualObjects([XFXML stringValueOfNode:[root elementsForName:@"name"].firstObject], @"Ada");
     XCTAssertEqual([root elementsForName:@"tags"].count, (NSUInteger)2);
@@ -749,7 +749,7 @@
     // round trip through json2xml (G-55) and back
     NSString *src = @"{\"name\":\"Ada\",\"age\":36,\"ok\":true,\"tags\":[\"a\",\"b\"],\"addr\":{\"city\":\"Paris\"},\"none\":null,\"empty\":[]}";
     NSString *xml = [XFInstance xmlStringFromJSONData:[src dataUsingEncoding:NSUTF8StringEncoding] error:NULL];
-    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
+    XFXMLDocument *doc = [[XFXMLDocument alloc] initWithXMLString:xml options:0 error:NULL];
     NSString *json = [XFInstance jsonStringFromNode:[doc rootElement]];
     id parsed = [NSJSONSerialization JSONObjectWithData:[json dataUsingEncoding:NSUTF8StringEncoding] options:0 error:NULL];
     XCTAssertEqualObjects(parsed[@"name"], @"Ada");
@@ -1084,7 +1084,7 @@
     XCTAssertEqual(t.hops.count, (NSUInteger)1, @"the submission went out");
     // the pipeline must still be alive: an edit recalculates b
     XFControl *input = [p controlForElement:
-        (NSXMLElement *)[XFXML elementWithID:@"in" inNode:p.hostDocument]];
+        (XFXMLElement *)[XFXML elementWithID:@"in" inNode:p.hostDocument]];
     XCTAssertNotNil(input);
     XCTAssertTrue([p setValue:@"5" ofControl:input error:NULL]);
     XCTAssertEqualObjects([XFXML stringValueOfNode:

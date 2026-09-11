@@ -48,7 +48,7 @@ static NSArray *XFActionNames(void)
     return e;
 }
 
-- (void)noteChanged:(NSXMLElement *)element
+- (void)noteChanged:(XFXMLElement *)element
 {
     if (self.changedHandler) {
         self.changedHandler(element);
@@ -60,18 +60,18 @@ static NSArray *XFActionNames(void)
 - (NSString *)uniqueIdentifierWithPrefix:(NSString *)prefix
 {
     NSMutableSet *taken = [NSMutableSet set];
-    NSXMLElement *root = [self.processor.hostDocument rootElement];
+    XFXMLElement *root = [self.processor.hostDocument rootElement];
     NSMutableArray *queue = root ? [NSMutableArray arrayWithObject:root] : [NSMutableArray array];
     while (queue.count) {
-        NSXMLElement *e = [queue lastObject];
+        XFXMLElement *e = [queue lastObject];
         [queue removeLastObject];
         NSString *identifier = [[e attributeForName:@"id"] stringValue];
         if (identifier.length) {
             [taken addObject:identifier];
         }
-        for (NSXMLNode *c in [e children]) {
-            if ([c kind] == NSXMLElementKind) {
-                [queue addObject:(NSXMLElement *)c];
+        for (XFXMLNode *c in [e children]) {
+            if ([c kind] == XFXMLElementKind) {
+                [queue addObject:(XFXMLElement *)c];
             }
         }
     }
@@ -85,7 +85,7 @@ static NSArray *XFActionNames(void)
 
 #pragma mark - Insertion zones
 
-+ (NSArray<NSString *> *)insertableNamesUnderParent:(NSXMLElement *)parent
++ (NSArray<NSString *> *)insertableNamesUnderParent:(XFXMLElement *)parent
 {
     if (parent == nil) {
         return @[];
@@ -134,10 +134,10 @@ static NSArray *XFActionNames(void)
     }
     if ([containers containsObject:local]) {
         // refuse anywhere outside the body's subtree (e.g. head/title)
-        NSXMLNode *walk = parent;
+        XFXMLNode *walk = parent;
         while (walk) {
-            if ([walk kind] == NSXMLElementKind
-                && [[(NSXMLElement *)walk localName] isEqualToString:@"body"]) {
+            if ([walk kind] == XFXMLElementKind
+                && [[(XFXMLElement *)walk localName] isEqualToString:@"body"]) {
                 return XFUIControlNames();
             }
             walk = [walk parent];
@@ -147,7 +147,7 @@ static NSArray *XFActionNames(void)
     return @[];
 }
 
-+ (BOOL)canInsertElementNamed:(NSString *)localName underParent:(NSXMLElement *)parent
++ (BOOL)canInsertElementNamed:(NSString *)localName underParent:(XFXMLElement *)parent
 {
     return [[self insertableNamesUnderParent:parent] containsObject:localName];
 }
@@ -158,21 +158,21 @@ static NSArray *XFActionNames(void)
 /// root when the document has none).
 - (NSString *)xformsPrefix
 {
-    NSXMLElement *root = [self.processor.hostDocument rootElement];
-    for (NSXMLNode *ns in [root namespaces]) {
+    XFXMLElement *root = [self.processor.hostDocument rootElement];
+    for (XFXMLNode *ns in [root namespaces]) {
         if ([[ns stringValue] isEqualToString:XFXFormsNamespaceURI] && [ns name].length) {
             return [ns name];
         }
     }
     // no prefixed declaration: declare xf: on the root
-    NSXMLNode *decl = [NSXMLNode namespaceWithName:@"xf" stringValue:XFXFormsNamespaceURI];
-    [root addNamespace:(NSXMLNode *)decl];
+    XFXMLNode *decl = [XFXMLNode namespaceWithName:@"xf" stringValue:XFXFormsNamespaceURI];
+    [root addNamespace:(XFXMLNode *)decl];
     return @"xf";
 }
 
-- (NSXMLElement *)makeXFormsElement:(NSString *)localName
+- (XFXMLElement *)makeXFormsElement:(NSString *)localName
 {
-    return [NSXMLElement elementWithName:
+    return [XFXMLElement elementWithName:
         [NSString stringWithFormat:@"%@:%@", [self xformsPrefix], localName]];
 }
 
@@ -180,19 +180,19 @@ static NSArray *XFActionNames(void)
 /// the root when the document has none) — ev:event and friends.
 - (NSString *)eventsPrefix
 {
-    NSXMLElement *root = [self.processor.hostDocument rootElement];
-    for (NSXMLNode *ns in [root namespaces]) {
+    XFXMLElement *root = [self.processor.hostDocument rootElement];
+    for (XFXMLNode *ns in [root namespaces]) {
         if ([[ns stringValue] isEqualToString:XFXMLEventsNamespaceURI] && [ns name].length) {
             return [ns name];
         }
     }
-    NSXMLNode *decl = [NSXMLNode namespaceWithName:@"ev" stringValue:XFXMLEventsNamespaceURI];
-    [root addNamespace:(NSXMLNode *)decl];
+    XFXMLNode *decl = [XFXMLNode namespaceWithName:@"ev" stringValue:XFXMLEventsNamespaceURI];
+    [root addNamespace:(XFXMLNode *)decl];
     return @"ev";
 }
 
-- (NSXMLElement *)insertElementNamed:(NSString *)localName
-                         underParent:(NSXMLElement *)parent
+- (XFXMLElement *)insertElementNamed:(NSString *)localName
+                         underParent:(XFXMLElement *)parent
                              atIndex:(NSInteger)index
                                error:(NSError **)error
 {
@@ -204,36 +204,36 @@ static NSArray *XFActionNames(void)
         }
         return nil;
     }
-    NSXMLElement *element = [self makeXFormsElement:localName];
-    [element addAttribute:[NSXMLNode attributeWithName:@"id"
+    XFXMLElement *element = [self makeXFormsElement:localName];
+    [element addAttribute:[XFXMLNode attributeWithName:@"id"
         stringValue:[self uniqueIdentifierWithPrefix:localName]]];
     if ([XFLabeledControls() containsObject:localName]) {
-        NSXMLElement *label = [self makeXFormsElement:@"label"];
+        XFXMLElement *label = [self makeXFormsElement:@"label"];
         [label setStringValue:[[[localName substringToIndex:1] uppercaseString]
             stringByAppendingString:[localName substringFromIndex:1]]];
         [element addChild:label];
     }
     if ([localName isEqualToString:@"item"]) {
-        NSXMLElement *label = [self makeXFormsElement:@"label"];
+        XFXMLElement *label = [self makeXFormsElement:@"label"];
         [label setStringValue:@"Item"];
-        NSXMLElement *value = [self makeXFormsElement:@"value"];
+        XFXMLElement *value = [self makeXFormsElement:@"value"];
         [value setStringValue:@"item"];
         [element addChild:label];
         [element addChild:value];
     }
     if ([localName isEqualToString:@"instance"]) {
         // a starter data document, so binds and refs have something to hit
-        NSXMLElement *data = [NSXMLElement elementWithName:@"data"];
-        [data addNamespace:[NSXMLNode namespaceWithName:@"" stringValue:@""]];
+        XFXMLElement *data = [XFXMLElement elementWithName:@"data"];
+        [data addNamespace:[XFXMLNode namespaceWithName:@"" stringValue:@""]];
         [element addChild:data];
     }
     if ([localName isEqualToString:@"itemset"]) {
         // a compilable starter: nodeset plus per-node label / value refs
-        [element addAttribute:[NSXMLNode attributeWithName:@"nodeset" stringValue:@"."]];
-        NSXMLElement *label = [self makeXFormsElement:@"label"];
-        [label addAttribute:[NSXMLNode attributeWithName:@"ref" stringValue:@"."]];
-        NSXMLElement *value = [self makeXFormsElement:@"value"];
-        [value addAttribute:[NSXMLNode attributeWithName:@"ref" stringValue:@"."]];
+        [element addAttribute:[XFXMLNode attributeWithName:@"nodeset" stringValue:@"."]];
+        XFXMLElement *label = [self makeXFormsElement:@"label"];
+        [label addAttribute:[XFXMLNode attributeWithName:@"ref" stringValue:@"."]];
+        XFXMLElement *value = [self makeXFormsElement:@"value"];
+        [value addAttribute:[XFXMLNode attributeWithName:@"ref" stringValue:@"."]];
         [element addChild:label];
         [element addChild:value];
     }
@@ -248,7 +248,7 @@ static NSArray *XFActionNames(void)
         } else if ([parentLocal isEqualToString:@"submission"]) {
             event = @"xforms-submit-done";
         }
-        [element addAttribute:[NSXMLNode attributeWithName:
+        [element addAttribute:[XFXMLNode attributeWithName:
             [NSString stringWithFormat:@"%@:event", [self eventsPrefix]]
                                                 stringValue:event]];
     }
@@ -258,8 +258,8 @@ static NSArray *XFActionNames(void)
 
 /// Physical insert + processor attach + inverse registration. Also the
 /// undo of deleteElement:, so the SAME element object returns.
-- (void)reinsertElement:(NSXMLElement *)element
-            underParent:(NSXMLElement *)parent
+- (void)reinsertElement:(XFXMLElement *)element
+            underParent:(XFXMLElement *)parent
                 atIndex:(NSInteger)index
 {
     NSUInteger count = [parent childCount];
@@ -271,16 +271,16 @@ static NSArray *XFActionNames(void)
     [self noteChanged:element];
 }
 
-- (BOOL)moveElement:(NSXMLElement *)element
-        underParent:(NSXMLElement *)parent
+- (BOOL)moveElement:(XFXMLElement *)element
+        underParent:(XFXMLElement *)parent
             atIndex:(NSInteger)index
 {
-    NSXMLElement *oldParent = (NSXMLElement *)[element parent];
-    if (element == nil || parent == nil || [oldParent kind] != NSXMLElementKind) {
+    XFXMLElement *oldParent = (XFXMLElement *)[element parent];
+    if (element == nil || parent == nil || [oldParent kind] != XFXMLElementKind) {
         return NO;
     }
     // never into itself or its own subtree
-    for (NSXMLNode *walk = parent; walk != nil; walk = [walk parent]) {
+    for (XFXMLNode *walk = parent; walk != nil; walk = [walk parent]) {
         if (walk == element) {
             return NO;
         }
@@ -335,10 +335,10 @@ static NSArray *XFActionNames(void)
     return YES;
 }
 
-- (void)deleteElement:(NSXMLElement *)element
+- (void)deleteElement:(XFXMLElement *)element
 {
-    NSXMLElement *parent = (NSXMLElement *)[element parent];
-    if ([parent kind] != NSXMLElementKind) {
+    XFXMLElement *parent = (XFXMLElement *)[element parent];
+    if ([parent kind] != XFXMLElementKind) {
         return;   // never delete the root
     }
     NSInteger index = (NSInteger)[element index];
@@ -358,7 +358,7 @@ static NSArray *XFActionNames(void)
 
 #pragma mark - Attributes
 
-- (void)setAttribute:(NSString *)name value:(NSString *)value onElement:(NSXMLElement *)element
+- (void)setAttribute:(NSString *)name value:(NSString *)value onElement:(XFXMLElement *)element
 {
     if ([name hasPrefix:@"ev:"]) {
         // callers say "ev:" conventionally; land on the prefix the
@@ -375,7 +375,7 @@ static NSArray *XFActionNames(void)
     }
     if (value.length) {
         [element removeAttributeForName:name];
-        [element addAttribute:[NSXMLNode attributeWithName:name stringValue:value]];
+        [element addAttribute:[XFXMLNode attributeWithName:name stringValue:value]];
     } else {
         [element removeAttributeForName:name];
     }
@@ -388,28 +388,28 @@ static NSArray *XFActionNames(void)
 
 #pragma mark - Support children (label / hint / help / alert)
 
-- (NSString *)supportChildText:(NSString *)localName onElement:(NSXMLElement *)element
+- (NSString *)supportChildText:(NSString *)localName onElement:(XFXMLElement *)element
 {
-    NSXMLElement *child = [XFXML childElementWithLocalName:localName
+    XFXMLElement *child = [XFXML childElementWithLocalName:localName
                                               namespaceURI:XFXFormsNamespaceURI
                                                  ofElement:element];
     return child ? [XFXML stringValueOfNode:child] : nil;
 }
 
-- (void)setSupportChild:(NSString *)localName text:(NSString *)text onElement:(NSXMLElement *)element
+- (void)setSupportChild:(NSString *)localName text:(NSString *)text onElement:(XFXMLElement *)element
 {
     NSString *old = [self supportChildText:localName onElement:element];
     if ([old ?: @"" isEqualToString:text ?: @""]) {
         return;
     }
-    NSXMLElement *child = [XFXML childElementWithLocalName:localName
+    XFXMLElement *child = [XFXML childElementWithLocalName:localName
                                               namespaceURI:XFXFormsNamespaceURI
                                                  ofElement:element];
     if (text.length == 0) {
         [child detach];
     } else if (child) {
         // keep the child element, replace its content with plain text
-        for (NSXMLNode *c in [[child children] copy]) {
+        for (XFXMLNode *c in [[child children] copy]) {
             [c detach];
         }
         [child setStringValue:text];
@@ -434,13 +434,13 @@ static NSArray *XFActionNames(void)
 /// exclusive is the caller's business — pass the parent to ignore a local
 /// declaration). Hand-rolled: resolveNamespaceForName: differs across
 /// platforms for the default namespace.
-static NSString *XFResolveNSURI(NSXMLNode *start, NSString *prefix)
+static NSString *XFResolveNSURI(XFXMLNode *start, NSString *prefix)
 {
-    for (NSXMLNode *n = start; n != nil; n = [n parent]) {
-        if ([n kind] != NSXMLElementKind) {
+    for (XFXMLNode *n = start; n != nil; n = [n parent]) {
+        if ([n kind] != XFXMLElementKind) {
             continue;
         }
-        for (NSXMLNode *ns in [(NSXMLElement *)n namespaces]) {
+        for (XFXMLNode *ns in [(XFXMLElement *)n namespaces]) {
             if ([([ns name] ?: @"") isEqualToString:prefix]) {
                 return [ns stringValue] ?: @"";
             }
@@ -458,36 +458,36 @@ static NSString *XFResolveNSURI(NSXMLNode *start, NSString *prefix)
 /// no-namespace inline markup stays unprefixed and inherits the host
 /// default, and a foreign-namespace element keeps its name with its
 /// declaration attached locally.
-static NSXMLNode *XFCleanCloneNode(NSXMLNode *node, NSString *xfPrefix)
+static XFXMLNode *XFCleanCloneNode(XFXMLNode *node, NSString *xfPrefix)
 {
-    if ([node kind] != NSXMLElementKind) {
+    if ([node kind] != XFXMLElementKind) {
         return [node copy];
     }
-    NSXMLElement *src = (NSXMLElement *)node;
+    XFXMLElement *src = (XFXMLElement *)node;
     NSString *uri = [src URI] ?: XFResolveNSURI(src, [src prefix] ?: @"") ?: @"";
-    NSXMLElement *dst;
+    XFXMLElement *dst;
     if ([uri isEqualToString:XFXFormsNamespaceURI]) {
-        dst = [NSXMLElement elementWithName:
+        dst = [XFXMLElement elementWithName:
             [NSString stringWithFormat:@"%@:%@", xfPrefix, [src localName]]];
     } else if (uri.length == 0 || [uri isEqualToString:XFXHTMLNamespaceURI]) {
-        dst = [NSXMLElement elementWithName:[src localName]];
+        dst = [XFXMLElement elementWithName:[src localName]];
     } else {
-        dst = [NSXMLElement elementWithName:[src name]];
-        [dst addNamespace:[NSXMLNode namespaceWithName:[src prefix] ?: @"" stringValue:uri]];
+        dst = [XFXMLElement elementWithName:[src name]];
+        [dst addNamespace:[XFXMLNode namespaceWithName:[src prefix] ?: @"" stringValue:uri]];
     }
-    for (NSXMLNode *attr in [src attributes]) {
-        [dst addAttribute:[NSXMLNode attributeWithName:[attr name]
+    for (XFXMLNode *attr in [src attributes]) {
+        [dst addAttribute:[XFXMLNode attributeWithName:[attr name]
                                            stringValue:[attr stringValue] ?: @""]];
     }
-    for (NSXMLNode *c in [src children]) {
+    for (XFXMLNode *c in [src children]) {
         [dst addChild:XFCleanCloneNode(c, xfPrefix)];
     }
     return dst;
 }
 
-- (NSString *)supportChildXML:(NSString *)localName onElement:(NSXMLElement *)element
+- (NSString *)supportChildXML:(NSString *)localName onElement:(XFXMLElement *)element
 {
-    NSXMLElement *child = [XFXML childElementWithLocalName:localName
+    XFXMLElement *child = [XFXML childElementWithLocalName:localName
                                               namespaceURI:XFXFormsNamespaceURI
                                                  ofElement:element];
     if (child == nil) {
@@ -497,7 +497,7 @@ static NSXMLNode *XFCleanCloneNode(NSXMLNode *node, NSString *xfPrefix)
     // newline would become label text (contentXMLOfElement's "\n" join is
     // for the block-shaped instance editor)
     NSMutableString *out = [NSMutableString string];
-    for (NSXMLNode *c in [child children]) {
+    for (XFXMLNode *c in [child children]) {
         [out appendString:[c XMLString] ?: @""];
     }
     return out;
@@ -505,7 +505,7 @@ static NSXMLNode *XFCleanCloneNode(NSXMLNode *node, NSString *xfPrefix)
 
 - (BOOL)setSupportChild:(NSString *)localName
              contentXML:(NSString *)xml
-              onElement:(NSXMLElement *)element
+              onElement:(XFXMLElement *)element
                   error:(NSError **)error
 {
     NSString *old = [self supportChildXML:localName onElement:element];
@@ -519,7 +519,7 @@ static NSXMLNode *XFCleanCloneNode(NSXMLNode *node, NSString *xfPrefix)
             return NO;
         }
     }
-    NSXMLElement *child = [XFXML childElementWithLocalName:localName
+    XFXMLElement *child = [XFXML childElementWithLocalName:localName
                                               namespaceURI:XFXFormsNamespaceURI
                                                  ofElement:element];
     if (xml.length == 0) {
@@ -534,11 +534,11 @@ static NSXMLNode *XFCleanCloneNode(NSXMLNode *node, NSString *xfPrefix)
                 [element addChild:child];
             }
         } else {
-            for (NSXMLNode *c in [[child children] copy]) {
+            for (XFXMLNode *c in [[child children] copy]) {
                 [c detach];
             }
         }
-        for (NSXMLNode *c in nodes) {
+        for (XFXMLNode *c in nodes) {
             [child addChild:c];
         }
     }
@@ -552,9 +552,9 @@ static NSXMLNode *XFCleanCloneNode(NSXMLNode *node, NSString *xfPrefix)
 
 - (NSString *)supportChildAttribute:(NSString *)attribute
                               child:(NSString *)localName
-                          onElement:(NSXMLElement *)element
+                          onElement:(XFXMLElement *)element
 {
-    NSXMLElement *child = [XFXML childElementWithLocalName:localName
+    XFXMLElement *child = [XFXML childElementWithLocalName:localName
                                               namespaceURI:XFXFormsNamespaceURI
                                                  ofElement:element];
     return child ? [[child attributeForName:attribute] stringValue] : nil;
@@ -563,13 +563,13 @@ static NSXMLNode *XFCleanCloneNode(NSXMLNode *node, NSString *xfPrefix)
 - (void)setSupportChildAttribute:(NSString *)attribute
                            child:(NSString *)localName
                            value:(NSString *)value
-                       onElement:(NSXMLElement *)element
+                       onElement:(XFXMLElement *)element
 {
     NSString *old = [self supportChildAttribute:attribute child:localName onElement:element];
     if ([old ?: @"" isEqualToString:value ?: @""]) {
         return;
     }
-    NSXMLElement *child = [XFXML childElementWithLocalName:localName
+    XFXMLElement *child = [XFXML childElementWithLocalName:localName
                                               namespaceURI:XFXFormsNamespaceURI
                                                  ofElement:element];
     if (child == nil) {
@@ -585,7 +585,7 @@ static NSXMLNode *XFCleanCloneNode(NSXMLNode *node, NSString *xfPrefix)
     }
     [child removeAttributeForName:attribute];
     if (value.length) {
-        [child addAttribute:[NSXMLNode attributeWithName:attribute stringValue:value]];
+        [child addAttribute:[XFXMLNode attributeWithName:attribute stringValue:value]];
     }
     [self.processor noteElementChanged:element];
     [[self.undoManager prepareWithInvocationTarget:self]
@@ -599,7 +599,7 @@ static NSXMLNode *XFCleanCloneNode(NSXMLNode *node, NSString *xfPrefix)
 /// document's XForms prefix and the conventional xf: bound — and returns
 /// clean clones ready to insert. nil (with `error`) when it does not
 /// parse.
-- (NSArray<NSXMLNode *> *)cleanNodesFromFragment:(NSString *)xml error:(NSError **)error
+- (NSArray<XFXMLNode *> *)cleanNodesFromFragment:(NSString *)xml error:(NSError **)error
 {
     NSString *prefix = [self xformsPrefix];
     NSMutableString *decls = [NSMutableString stringWithFormat:
@@ -609,7 +609,7 @@ static NSXMLNode *XFCleanCloneNode(NSXMLNode *node, NSString *xfPrefix)
     }
     NSString *wrapped = [NSString stringWithFormat:@"<xfd-wrap%@>%@</xfd-wrap>", decls, xml ?: @""];
     NSError *inner = nil;
-    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithXMLString:wrapped options:0 error:&inner];
+    XFXMLDocument *doc = [[XFXMLDocument alloc] initWithXMLString:wrapped options:0 error:&inner];
     if (doc == nil) {
         if (error) {
             *error = inner ?: [NSError errorWithDomain:@"XFormsKit" code:3 userInfo:@{
@@ -618,24 +618,24 @@ static NSXMLNode *XFCleanCloneNode(NSXMLNode *node, NSString *xfPrefix)
         return nil;
     }
     NSMutableArray *nodes = [NSMutableArray array];
-    for (NSXMLNode *c in [[doc rootElement] children]) {
+    for (XFXMLNode *c in [[doc rootElement] children]) {
         [nodes addObject:XFCleanCloneNode(c, prefix)];
     }
     return nodes;
 }
 
-- (NSString *)inlineContentXMLOfElement:(NSXMLElement *)element
+- (NSString *)inlineContentXMLOfElement:(XFXMLElement *)element
 {
     // seam-free join — mixed inline content, same as supportChildXML:
     NSMutableString *out = [NSMutableString string];
-    for (NSXMLNode *c in [element children]) {
+    for (XFXMLNode *c in [element children]) {
         [out appendString:[c XMLString] ?: @""];
     }
     return out;
 }
 
 - (BOOL)setInlineContentXML:(NSString *)xml
-                  onElement:(NSXMLElement *)element
+                  onElement:(XFXMLElement *)element
                       error:(NSError **)error
 {
     NSString *old = [self inlineContentXMLOfElement:element];
@@ -649,10 +649,10 @@ static NSXMLNode *XFCleanCloneNode(NSXMLNode *node, NSString *xfPrefix)
             return NO;
         }
     }
-    for (NSXMLNode *c in [[element children] copy]) {
+    for (XFXMLNode *c in [[element children] copy]) {
         [c detach];
     }
-    for (NSXMLNode *c in nodes) {
+    for (XFXMLNode *c in nodes) {
         [element addChild:c];
     }
     [self.processor noteElementChanged:element];
@@ -665,20 +665,20 @@ static NSXMLNode *XFCleanCloneNode(NSXMLNode *node, NSString *xfPrefix)
 
 #pragma mark - Content replacement (the instance-data editor)
 
-- (NSString *)contentXMLOfElement:(NSXMLElement *)element
+- (NSString *)contentXMLOfElement:(XFXMLElement *)element
 {
     NSMutableArray *parts = [NSMutableArray array];
-    for (NSXMLNode *child in [element children]) {
+    for (XFXMLNode *child in [element children]) {
         [parts addObject:[child XMLString] ?: @""];
     }
     return [parts componentsJoinedByString:@"\n"];
 }
 
-- (BOOL)setContentXML:(NSString *)xml onElement:(NSXMLElement *)element error:(NSError **)error
+- (BOOL)setContentXML:(NSString *)xml onElement:(XFXMLElement *)element error:(NSError **)error
 {
     NSString *wrapped = [NSString stringWithFormat:@"<xfd-wrap>%@</xfd-wrap>", xml ?: @""];
     NSError *inner = nil;
-    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithXMLString:wrapped options:0 error:&inner];
+    XFXMLDocument *doc = [[XFXMLDocument alloc] initWithXMLString:wrapped options:0 error:&inner];
     if (doc == nil) {
         if (error) {
             *error = inner ?: [NSError errorWithDomain:@"XFormsKit" code:3 userInfo:@{
@@ -693,10 +693,10 @@ static NSXMLNode *XFCleanCloneNode(NSXMLNode *node, NSString *xfPrefix)
     if (adopted) {
         [self.processor detachElement:element];
     }
-    for (NSXMLNode *child in [[element children] copy]) {
+    for (XFXMLNode *child in [[element children] copy]) {
         [child detach];
     }
-    for (NSXMLNode *child in [[doc rootElement] children]) {
+    for (XFXMLNode *child in [[doc rootElement] children]) {
         // standalone copies — Apple's insertChild:atIndex: loses the content
         // of nodes detached from another document
         [element addChild:[child copy]];
@@ -739,19 +739,19 @@ static NSXMLNode *XFCleanCloneNode(NSXMLNode *node, NSString *xfPrefix)
 /// One child step for `node` under its parent: the node's name, plus a
 /// positional predicate when same-named siblings would make the bare name
 /// ambiguous.
-static NSString *XFStepForNode(NSXMLNode *node)
+static NSString *XFStepForNode(XFXMLNode *node)
 {
-    if ([node kind] == NSXMLAttributeKind) {
+    if ([node kind] == XFXMLAttributeKind) {
         return [@"@" stringByAppendingString:[node name] ?: @""];
     }
     NSString *name = [node name] ?: [node localName] ?: @"*";
-    NSXMLNode *parent = [node parent];
+    XFXMLNode *parent = [node parent];
     if (parent == nil) {
         return name;
     }
     NSUInteger same = 0, position = 0;
-    for (NSXMLNode *sibling in [parent children]) {
-        if ([sibling kind] != NSXMLElementKind) {
+    for (XFXMLNode *sibling in [parent children]) {
+        if ([sibling kind] != XFXMLElementKind) {
             continue;
         }
         NSString *siblingName = [sibling name] ?: [sibling localName];
@@ -766,20 +766,20 @@ static NSString *XFStepForNode(NSXMLNode *node)
                     : name;
 }
 
-static NSArray *XFAncestryOf(NSXMLNode *node)
+static NSArray *XFAncestryOf(XFXMLNode *node)
 {
     NSMutableArray *chain = [NSMutableArray array];
-    for (NSXMLNode *walk = node; walk != nil; walk = [walk parent]) {
-        if ([walk kind] == NSXMLElementKind || [walk kind] == NSXMLAttributeKind) {
+    for (XFXMLNode *walk = node; walk != nil; walk = [walk parent]) {
+        if ([walk kind] == XFXMLElementKind || [walk kind] == XFXMLAttributeKind) {
             [chain insertObject:walk atIndex:0];
-        } else if ([walk kind] == NSXMLDocumentKind) {
+        } else if ([walk kind] == XFXMLDocumentKind) {
             [chain insertObject:walk atIndex:0];
         }
     }
     return chain;
 }
 
-+ (NSString *)pathFromNode:(NSXMLNode *)context toNode:(NSXMLNode *)target
++ (NSString *)pathFromNode:(XFXMLNode *)context toNode:(XFXMLNode *)target
 {
     if (context == nil || target == nil) {
         return nil;
@@ -806,7 +806,7 @@ static NSArray *XFAncestryOf(NSXMLNode *node)
     return steps.count ? [steps componentsJoinedByString:@"/"] : @".";
 }
 
-+ (NSString *)stepsBelowRootToNode:(NSXMLNode *)target
++ (NSString *)stepsBelowRootToNode:(XFXMLNode *)target
 {
     if (target == nil) {
         return nil;
@@ -814,7 +814,7 @@ static NSArray *XFAncestryOf(NSXMLNode *node)
     NSArray *chain = XFAncestryOf(target);
     // chain: [document?, documentElement, ...steps...]
     NSUInteger start = 0;
-    while (start < chain.count && [(NSXMLNode *)chain[start] kind] == NSXMLDocumentKind) {
+    while (start < chain.count && [(XFXMLNode *)chain[start] kind] == XFXMLDocumentKind) {
         start++;
     }
     if (start >= chain.count) {

@@ -23,7 +23,7 @@
 {
     XFModel *model = self.processor.models.firstObject;
     XFXPath *xp = [XFXPath xpathWithString:expr element:model.element error:NULL];
-    NSXMLNode *root = [[model defaultInstance].document rootElement];
+    XFXMLNode *root = [[model defaultInstance].document rootElement];
     if (xp == nil || root == nil) {
         return @"<eval failed>";
     }
@@ -31,7 +31,7 @@
     ctx.model = model;
     XFXPathValue *v = [xp evaluateInContext:ctx error:NULL];
     NSMutableArray *out = [NSMutableArray array];
-    for (NSXMLNode *n in v.nodes) {
+    for (XFXMLNode *n in v.nodes) {
         [out addObject:[XFXML stringValueOfNode:n] ?: @""];
     }
     return [out componentsJoinedByString:@" "];
@@ -174,14 +174,14 @@
     XFExprContext *c = [[XFExprContext alloc] initWithNode:[[mod2 defaultInstance].document rootElement]];
     c.model = mod2;
     NSMutableArray *vals = [NSMutableArray array];
-    for (NSXMLNode *n in [xp1 evaluateInContext:c error:NULL].nodes) {
+    for (XFXMLNode *n in [xp1 evaluateInContext:c error:NULL].nodes) {
         [vals addObject:[XFXML stringValueOfNode:n]];
     }
     XCTAssertEqualObjects([vals componentsJoinedByString:@" "], @"7 8 9 10 10",
                           @"model attr picks mod2's DEFAULT instance");
     XFXPath *xp2 = [XFXPath xpathWithString:@"number_list[2]/number" element:mod2.element error:NULL];
     [vals removeAllObjects];
-    for (NSXMLNode *n in [xp2 evaluateInContext:c error:NULL].nodes) {
+    for (XFXMLNode *n in [xp2 evaluateInContext:c error:NULL].nodes) {
         [vals addObject:[XFXML stringValueOfNode:n]];
     }
     XCTAssertEqualObjects([vals componentsJoinedByString:@" "], @"11 12 13 14 14");

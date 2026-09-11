@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 #import <AppKit/AppKit.h>
 
 @class XFHostNode;
@@ -42,7 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// evaluated, `text` elements carry their gathered content.
 @interface XFSVGNode : NSObject
 @property (nonatomic, copy) NSString *tag;
-@property (nonatomic, strong, nullable) NSXMLElement *element;
+@property (nonatomic, strong, nullable) XFXMLElement *element;
 @property (nonatomic, copy) NSDictionary<NSString *, NSString *> *attributes;
 @property (nonatomic, copy, nullable) NSString *text;
 @property (nonatomic, copy) NSArray<XFSVGNode *> *children;
@@ -57,7 +58,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// text content (output values included) for <text>.
 + (instancetype)documentWithHostNode:(XFHostNode *)hostNode
                            processor:(XFProcessor *)processor
-                         contextNode:(nullable NSXMLNode *)contextNode;
+                         contextNode:(nullable XFXMLNode *)contextNode;
 
 @property (nonatomic, strong, readonly) XFSVGNode *root;
 /// The viewport in points: width/height attributes (units converted),
@@ -80,7 +81,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// The union of the painted rectangles of every render node whose host
 /// element is `element` (a repeat template element matches once per
 /// item), in document coordinates. NSZeroRect when it paints nothing.
-- (NSRect)frameOfElement:(NSXMLElement *)element;
+- (NSRect)frameOfElement:(XFXMLElement *)element;
 
 /* Parsing utilities (exposed for tests). */
 + (nullable NSBezierPath *)bezierPathWithSVGPathData:(NSString *)d;
@@ -98,7 +99,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)initWithHostNode:(XFHostNode *)hostNode
                        processor:(XFProcessor *)processor
-                     contextNode:(nullable NSXMLNode *)contextNode;
+                     contextNode:(nullable XFXMLNode *)contextNode;
 
 @property (nonatomic, strong, readonly) XFSVGDocument *svgDocument;
 
@@ -106,8 +107,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /* Design-support hit testing (the designer's overlay): both take and
    return the view's own coordinates. */
-- (nullable NSXMLElement *)hostElementAtPoint:(NSPoint)point;
-- (NSRect)frameOfHostElement:(NSXMLElement *)element;
+- (nullable XFXMLElement *)hostElementAtPoint:(NSPoint)point;
+- (NSRect)frameOfHostElement:(XFXMLElement *)element;
 
 @end
 

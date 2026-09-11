@@ -213,9 +213,9 @@ static NSInteger XFPrecedenceOfOp(NSString *op)
             : @"processing-instruction()";
     }
     switch (self.kind) {
-        case NSXMLTextKind: return @"text()";
-        case NSXMLCommentKind: return @"comment()";
-        case NSXMLProcessingInstructionKind: return @"processing-instruction()";
+        case XFXMLTextKind: return @"text()";
+        case XFXMLCommentKind: return @"comment()";
+        case XFXMLProcessingInstructionKind: return @"processing-instruction()";
         default: return @"node()";
     }
 }

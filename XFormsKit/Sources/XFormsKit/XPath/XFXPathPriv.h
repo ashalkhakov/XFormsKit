@@ -1,10 +1,10 @@
 #import "XFXPath.h"
+#import <XFormsKit/XFXMLTypes.h>
 #import "XFXPathValue.h"
 #import "XFExprContext.h"
 #import "XFErrors.h"
 #import <Foundation/Foundation.h>
 
-@class NSXMLNode;
 
 #pragma mark - Tokens
 
@@ -108,7 +108,7 @@ extern NSString * const XFAxisSelf;
 @end
 
 @interface XFNodeTest : NSObject
-- (BOOL)matches:(NSXMLNode *)node resolver:(XFNSResolver *)resolver axis:(NSString *)axis;
+- (BOOL)matches:(XFXMLNode *)node resolver:(XFNSResolver *)resolver axis:(NSString *)axis;
 @end
 
 @interface XFNodeTestAny : XFNodeTest
@@ -121,11 +121,11 @@ extern NSString * const XFAxisSelf;
 @end
 
 @interface XFNodeTestType : XFNodeTest
-@property (nonatomic, assign) NSXMLNodeKind kind; // NSXMLInvalidKind means node()
+@property (nonatomic, assign) XFXMLNodeKind kind; // NSXMLInvalidKind means node()
 @property (nonatomic, assign) BOOL anyNode;
 @property (nonatomic, copy) NSString *piTarget; // processing-instruction('target')
 + (instancetype)anyNode;
-+ (instancetype)kind:(NSXMLNodeKind)kind;
++ (instancetype)kind:(XFXMLNodeKind)kind;
 + (instancetype)processingInstruction:(NSString *)target;
 @end
 
@@ -243,8 +243,8 @@ FOUNDATION_EXPORT NSDictionary<NSString *, XFXPathFunction *> *XFXPathExtraFunct
 /// 0 and the expression is evaluated (5+5 → 10); anything unparsable stays
 /// text. Everything in the XPath layer must read nodes through this, not
 /// [XFXML stringValueOfNode:], so sum()/comparisons/outputs agree.
-FOUNDATION_EXPORT NSString *XFXPathNodeValue(NSXMLNode *node);
-FOUNDATION_EXPORT NSXMLNode *XFRootNode(NSXMLNode *node);
-FOUNDATION_EXPORT BOOL XFNodeInArray(NSXMLNode *node, NSArray<NSXMLNode *> *array);
-FOUNDATION_EXPORT NSComparisonResult XFCompareDocumentOrder(NSXMLNode *a, NSXMLNode *b);
-FOUNDATION_EXPORT NSArray<NSXMLNode *> *XFSortDocumentOrder(NSArray<NSXMLNode *> *nodes);
+FOUNDATION_EXPORT NSString *XFXPathNodeValue(XFXMLNode *node);
+FOUNDATION_EXPORT XFXMLNode *XFRootNode(XFXMLNode *node);
+FOUNDATION_EXPORT BOOL XFNodeInArray(XFXMLNode *node, NSArray<XFXMLNode *> *array);
+FOUNDATION_EXPORT NSComparisonResult XFCompareDocumentOrder(XFXMLNode *a, XFXMLNode *b);
+FOUNDATION_EXPORT NSArray<XFXMLNode *> *XFSortDocumentOrder(NSArray<XFXMLNode *> *nodes);

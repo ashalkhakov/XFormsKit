@@ -1,7 +1,7 @@
 #import "XFListener.h"
 #import "XFXMLEvents.h"
 #import "XFEvent.h"
-#import <Foundation/NSXMLElement.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 // TODO: implement subforms
 @protocol XFSubform <NSObject>
@@ -23,8 +23,8 @@
     return destructs;
 }
 
-- (instancetype)initWithObserver:(NSXMLElement *)observer
-                       evtTarget:(NSXMLElement *)evtTarget
+- (instancetype)initWithObserver:(XFXMLElement *)observer
+                       evtTarget:(XFXMLElement *)evtTarget
                             name:(NSString *)name
                            phase:(NSString *)phase
                          handler:(XFEventHandlerBlock)handler
@@ -40,8 +40,8 @@
 }
 
 - (instancetype)initWithSubform:(id)subform
-                       observer:(NSXMLElement *)observer
-                      evtTarget:(NSXMLElement *)evtTarget
+                       observer:(XFXMLElement *)observer
+                      evtTarget:(XFXMLElement *)evtTarget
                            name:(NSString *)name
                           phase:(NSString *)phase
                         handler:(XFEventHandlerBlock)handler
@@ -101,7 +101,7 @@
 
 - (void)detach
 {
-    NSXMLElement *observer = self.observer;
+    XFXMLElement *observer = self.observer;
     if (observer) {
         NSMutableArray *list = [[XFXMLEvents sharedEvents] listenersOn:observer];
         [list removeObject:self];
@@ -109,7 +109,7 @@
     [[XFListener destructs] removeObject:self];
 }
 
-- (instancetype)cloneForElement:(NSXMLElement *)element
+- (instancetype)cloneForElement:(XFXMLElement *)element
 {
     XFListener *copy = [[XFListener alloc] initWithSubform:self.subform
                                                   observer:element

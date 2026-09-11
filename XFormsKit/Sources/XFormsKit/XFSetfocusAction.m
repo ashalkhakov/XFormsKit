@@ -7,8 +7,7 @@
 #import "XFEvent.h"
 #import "XFNamespaces.h"
 #import "XFModel.h"
-#import <Foundation/NSXMLElement.h>
-#import <Foundation/NSXMLDocument.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @interface XFSetfocusAction ()
 @property (nonatomic, copy, readwrite) NSString *controlID;
@@ -18,7 +17,7 @@
 
 @implementation XFSetfocusAction
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                           model:(XFModel *)model
                           error:(NSError **)error
 {
@@ -27,7 +26,7 @@
         return nil;
     }
     self.controlID = [[element attributeForName:@"control"] stringValue];
-    NSXMLElement *ctrlEl = [XFXML firstElementWithLocalName:@"control"
+    XFXMLElement *ctrlEl = [XFXML firstElementWithLocalName:@"control"
                                               namespaceURI:XFXFormsNamespaceURI
                                                     inNode:element];
     if (ctrlEl) {
@@ -47,7 +46,7 @@
     return self;
 }
 
-- (void)runWithContextNode:(NSXMLNode *)contextNode event:(XFEvent *)event
+- (void)runWithContextNode:(XFXMLNode *)contextNode event:(XFEvent *)event
 {
     (void)event;
     NSString *cid = self.controlID;
@@ -62,7 +61,7 @@
     if ([cid hasPrefix:@"#"]) {
         cid = [cid substringFromIndex:1];
     }
-    NSXMLElement *el = [XFXML elementWithID:cid inNode:self.element.rootDocument];
+    XFXMLElement *el = [XFXML elementWithID:cid inNode:self.element.rootDocument];
     if (el == nil) {
         return;
     }

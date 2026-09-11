@@ -1,8 +1,7 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 #import <XFormsKit/XFXMLEvents.h>
 
-@class NSXMLElement;
-@class NSXMLNode;
 @class XFEvent;
 @class XFModel;
 @class XFXPath;
@@ -13,7 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// Translation of XsltForms_abstractAction: if / while / iterate then run.
 @interface XFAbstractAction : NSObject <XFXMLEventHandler>
 
-@property (nonatomic, strong, readonly) NSXMLElement *element;
+@property (nonatomic, strong, readonly) XFXMLElement *element;
 @property (nonatomic, copy, readonly, nullable) NSString *identifier;
 @property (nonatomic, weak, nullable) XFModel *model;
 @property (nonatomic, weak, nullable) XFAbstractAction *parentAction;
@@ -24,19 +23,19 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) NSInteger invocationCount;
 @property (nonatomic, strong, readonly, nullable) XFEvent *lastEvent;
 
-+ (BOOL)isActionElement:(NSXMLElement *)element;
-+ (nullable instancetype)actionWithElement:(NSXMLElement *)element
++ (BOOL)isActionElement:(XFXMLElement *)element;
++ (nullable instancetype)actionWithElement:(XFXMLElement *)element
                                      model:(nullable XFModel *)model
                                      error:(NSError **)error;
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                           model:(nullable XFModel *)model
                           error:(NSError **)error;
 
-- (void)executeWithContextNode:(nullable NSXMLNode *)contextNode event:(nullable XFEvent *)event;
-- (BOOL)execWithContextNode:(nullable NSXMLNode *)contextNode event:(nullable XFEvent *)event;
+- (void)executeWithContextNode:(nullable XFXMLNode *)contextNode event:(nullable XFEvent *)event;
+- (BOOL)execWithContextNode:(nullable XFXMLNode *)contextNode event:(nullable XFEvent *)event;
 /// Override point (XsltForms_abstractAction.run).
-- (void)runWithContextNode:(nullable NSXMLNode *)contextNode event:(nullable XFEvent *)event;
+- (void)runWithContextNode:(nullable XFXMLNode *)contextNode event:(nullable XFEvent *)event;
 
 - (BOOL)wasInvokedForEvent:(NSString *)name;
 

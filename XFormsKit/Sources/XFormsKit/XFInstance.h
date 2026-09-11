@@ -1,8 +1,6 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 
-@class NSXMLDocument;
-@class NSXMLElement;
-@class NSXMLNode;
 @class XFModel;
 
 NS_ASSUME_NONNULL_BEGIN
@@ -10,7 +8,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface XFInstance : NSObject
 
 @property (nonatomic, copy, nullable) NSString *identifier;
-@property (nonatomic, strong, nullable) NSXMLElement *element;
+@property (nonatomic, strong, nullable) XFXMLElement *element;
 @property (nonatomic, weak, nullable) XFModel *model;
 @property (nonatomic, copy, nullable) NSString *src;
 /// `readonly="true"`: the instance is never validated (XsltForms_instance
@@ -33,19 +31,19 @@ NS_ASSUME_NONNULL_BEGIN
 /// literal with unquoted keys and `new Date(...)`); `csvStringFromNode:`
 /// writes one line per child element of `node`, the first one's child names
 /// as the header ("field decimal" separators as in @separator).
-+ (NSString *)jsonStringFromNode:(NSXMLNode *)node;
-+ (NSString *)csvStringFromNode:(NSXMLNode *)node separator:(nullable NSString *)separator;
++ (NSString *)jsonStringFromNode:(XFXMLNode *)node;
++ (NSString *)csvStringFromNode:(XFXMLNode *)node separator:(nullable NSString *)separator;
 @property (nonatomic, copy, nullable) NSURL *baseURL;
 /// Inline content held MORE than one top-level element (only the first
 /// became the root): an xforms-link-exception at construct (3.3.2.g/h).
 @property (nonatomic, assign) BOOL inlineContentMalformed;
-@property (nonatomic, strong, readonly) NSXMLDocument *document;
-@property (nonatomic, strong, readonly) NSXMLDocument *originalDocument;
+@property (nonatomic, strong, readonly) XFXMLDocument *document;
+@property (nonatomic, strong, readonly) XFXMLDocument *originalDocument;
 
-+ (nullable instancetype)instanceWithElement:(NSXMLElement *)instanceElement
++ (nullable instancetype)instanceWithElement:(XFXMLElement *)instanceElement
                                        error:(NSError **)error;
 
-- (NSXMLElement *)documentElement;
+- (XFXMLElement *)documentElement;
 - (void)construct;
 /// Re-reads the inline data document from the host element (the designer
 /// edited the instance content in place): both the live document and the
@@ -56,7 +54,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// XsltForms_instance.setDoc: replace the live document from a submission/load response.
 - (BOOL)replaceWithXMLString:(NSString *)xml error:(NSError **)error;
 /// Replace one element (or the whole instance if it is the document element).
-- (BOOL)replaceNode:(NSXMLNode *)node withXMLString:(NSString *)xml error:(NSError **)error;
+- (BOOL)replaceNode:(XFXMLNode *)node withXMLString:(NSString *)xml error:(NSError **)error;
 
 @end
 

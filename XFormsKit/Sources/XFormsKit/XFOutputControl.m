@@ -12,7 +12,7 @@
     BOOL _raisedOutputError;
 }
 
-- (instancetype)initWithElement:(NSXMLElement *)element
+- (instancetype)initWithElement:(XFXMLElement *)element
                         binding:(XFBinding *)binding
                           label:(NSString *)label
 {
@@ -21,7 +21,7 @@
         _mediaType = [[element attributeForName:@"mediatype"] stringValue];
         // the xf:mediatype CHILD element (static text, or computed via
         // ref/value) OVERRIDES the mediatype attribute (8.1.5.1.a)
-        NSXMLElement *mtEl = [XFXML firstElementWithLocalName:@"mediatype"
+        XFXMLElement *mtEl = [XFXML firstElementWithLocalName:@"mediatype"
                                                  namespaceURI:XFXFormsNamespaceURI
                                                        inNode:element];
         if (mtEl != nil) {

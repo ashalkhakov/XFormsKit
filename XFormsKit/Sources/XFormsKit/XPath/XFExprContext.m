@@ -3,8 +3,7 @@
 #import "XFModel.h"
 #import "XFRepeat.h"
 #import "XFNodeState.h"
-#import <Foundation/NSXMLNode.h>
-#import <Foundation/NSXMLDocument.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @implementation XFNSResolver {
     NSMutableDictionary<NSString *, NSString *> *_map;
@@ -61,7 +60,7 @@
     return [self initWithNode:nil];
 }
 
-- (instancetype)initWithNode:(NSXMLNode *)node
+- (instancetype)initWithNode:(XFXMLNode *)node
 {
     self = [super init];
     if (self) {
@@ -78,9 +77,9 @@
     return self;
 }
 
-- (instancetype)cloneWithNode:(NSXMLNode *)node
+- (instancetype)cloneWithNode:(XFXMLNode *)node
                      position:(NSUInteger)position
-                     nodeList:(NSArray<NSXMLNode *> *)nodeList
+                     nodeList:(NSArray<XFXMLNode *> *)nodeList
 {
     XFExprContext *copy = [[[self class] alloc] init];
     copy.contextNode = node ?: self.contextNode;
@@ -99,9 +98,9 @@
     return copy;
 }
 
-- (void)addDependency:(NSXMLNode *)node
+- (void)addDependency:(XFXMLNode *)node
 {
-    if (node && [node kind] != NSXMLDocumentKind) {
+    if (node && [node kind] != XFXMLDocumentKind) {
         [self.dependencies addObject:node];
     }
 }
@@ -113,7 +112,7 @@
     }
 }
 
-- (NSArray<NSXMLNode *> *)dependencyNodes
+- (NSArray<XFXMLNode *> *)dependencyNodes
 {
     return [self.dependencies allObjects];
 }
@@ -163,24 +162,24 @@ NSString * const XFAxisPrecedingSibling = @"preceding-sibling";
 NSString * const XFAxisPreceding = @"preceding";
 NSString * const XFAxisSelf = @"self";
 
-NSXMLNode *XFRootNode(NSXMLNode *node)
+XFXMLNode *XFRootNode(XFXMLNode *node)
 {
     if (node == nil) {
         return nil;
     }
-    if ([node kind] == NSXMLDocumentKind) {
+    if ([node kind] == XFXMLDocumentKind) {
         return node;
     }
-    NSXMLNode *n = node;
+    XFXMLNode *n = node;
     while (n.parent) {
         n = n.parent;
     }
     return n;
 }
 
-BOOL XFNodeInArray(NSXMLNode *node, NSArray<NSXMLNode *> *array)
+BOOL XFNodeInArray(XFXMLNode *node, NSArray<XFXMLNode *> *array)
 {
-    for (NSXMLNode *n in array) {
+    for (XFXMLNode *n in array) {
         if (n == node) {
             return YES;
         }
@@ -190,25 +189,25 @@ BOOL XFNodeInArray(NSXMLNode *node, NSArray<NSXMLNode *> *array)
 
 /// Path from the root to `node` as (ancestor..., node); attributes are
 /// ordered before the children of their element (XPath 1.0 §5).
-static NSArray<NSXMLNode *> *XFAncestryOf(NSXMLNode *node)
+static NSArray<XFXMLNode *> *XFAncestryOf(XFXMLNode *node)
 {
     NSMutableArray *path = [NSMutableArray array];
-    for (NSXMLNode *n = node; n; n = [n parent]) {
+    for (XFXMLNode *n = node; n; n = [n parent]) {
         [path insertObject:n atIndex:0];
     }
     return path;
 }
 
-static NSInteger XFPositionOf(NSXMLNode *child, NSXMLNode *parent)
+static NSInteger XFPositionOf(XFXMLNode *child, XFXMLNode *parent)
 {
-    if ([child kind] == NSXMLAttributeKind) {
-        NSArray *attrs = [(NSXMLElement *)parent attributes];
+    if ([child kind] == XFXMLAttributeKind) {
+        NSArray *attrs = [(XFXMLElement *)parent attributes];
         return -(NSInteger)attrs.count + (NSInteger)[attrs indexOfObjectIdenticalTo:child];
     }
     return (NSInteger)[child index];
 }
 
-NSComparisonResult XFCompareDocumentOrder(NSXMLNode *a, NSXMLNode *b)
+NSComparisonResult XFCompareDocumentOrder(XFXMLNode *a, XFXMLNode *b)
 {
     if (a == b) {
         return NSOrderedSame;
@@ -231,12 +230,12 @@ NSComparisonResult XFCompareDocumentOrder(NSXMLNode *a, NSXMLNode *b)
     return pa.count < pb.count ? NSOrderedAscending : NSOrderedDescending;
 }
 
-NSArray<NSXMLNode *> *XFSortDocumentOrder(NSArray<NSXMLNode *> *nodes)
+NSArray<XFXMLNode *> *XFSortDocumentOrder(NSArray<XFXMLNode *> *nodes)
 {
     if (nodes.count < 2) {
         return nodes;
     }
-    return [nodes sortedArrayUsingComparator:^NSComparisonResult(NSXMLNode *a, NSXMLNode *b) {
+    return [nodes sortedArrayUsingComparator:^NSComparisonResult(XFXMLNode *a, XFXMLNode *b) {
         return XFCompareDocumentOrder(a, b);
     }];
 }

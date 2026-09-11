@@ -1,11 +1,10 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFModel;
 @class XFBinding;
 @class XFMIPBinding;
 @class XFXPath;
-@class NSXMLElement;
-@class NSXMLNode;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -18,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface XFBind : NSObject
 
 @property (nonatomic, copy, nullable) NSString *identifier;
-@property (nonatomic, strong, readonly) NSXMLElement *element;
+@property (nonatomic, strong, readonly) XFXMLElement *element;
 @property (nonatomic, weak, nullable) XFModel *model;
 @property (nonatomic, weak, nullable) XFBind *parent;
 @property (nonatomic, strong, readonly, nullable) XFBinding *nodesetBinding;
@@ -28,17 +27,17 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, nullable) XFMIPBinding *required;
 @property (nonatomic, strong, nullable) XFMIPBinding *readonly;
 @property (nonatomic, strong, nullable) XFMIPBinding *constraint;
-@property (nonatomic, strong, readonly) NSMutableArray<NSXMLNode *> *nodes;
-@property (nonatomic, strong, readonly) NSMutableArray<NSXMLNode *> *depsNodes;
+@property (nonatomic, strong, readonly) NSMutableArray<XFXMLNode *> *nodes;
+@property (nonatomic, strong, readonly) NSMutableArray<XFXMLNode *> *depsNodes;
 @property (nonatomic, strong, readonly) NSMutableArray *depsElements;
 @property (nonatomic, strong, readonly) NSMutableArray<XFBind *> *binds;
 @property (nonatomic, assign) NSInteger depsId;
 
 /// XsltForms_mipbinding.nodedispose: drop the MIP caches of every bind that
 /// selected `node` (and its subtree) before the node is deleted.
-+ (void)disposeNode:(NSXMLNode *)node model:(XFModel *)model;
++ (void)disposeNode:(XFXMLNode *)node model:(XFModel *)model;
 
-+ (nullable instancetype)bindWithElement:(NSXMLElement *)element
++ (nullable instancetype)bindWithElement:(XFXMLElement *)element
                                    model:(XFModel *)model
                                   parent:(nullable XFBind *)parent
                                    error:(NSError **)error;
@@ -46,7 +45,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)addBind:(XFBind *)bind;
 - (void)clear;
 - (void)refresh;
-- (void)refreshWithContextNode:(nullable NSXMLNode *)ctx index:(NSUInteger)index;
+- (void)refreshWithContextNode:(nullable XFXMLNode *)ctx index:(NSUInteger)index;
 - (void)recalculate;
 
 @end

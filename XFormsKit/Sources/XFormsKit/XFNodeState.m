@@ -1,5 +1,5 @@
 #import "XFNodeState.h"
-#import <Foundation/NSXMLNode.h>
+#import <XFormsKit/XFXMLTypes.h>
 #import <objc/runtime.h>
 
 static const void *kXFNodeStateKey = &kXFNodeStateKey;
@@ -20,7 +20,7 @@ static const void *kXFNodeStateKey = &kXFNodeStateKey;
     return self;
 }
 
-+ (instancetype)stateOnNode:(NSXMLNode *)node
++ (instancetype)stateOnNode:(XFXMLNode *)node
 {
     XFNodeState *state = [self existingStateOnNode:node];
     if (state == nil) {
@@ -30,12 +30,12 @@ static const void *kXFNodeStateKey = &kXFNodeStateKey;
     return state;
 }
 
-+ (instancetype)existingStateOnNode:(NSXMLNode *)node
++ (instancetype)existingStateOnNode:(XFXMLNode *)node
 {
     return node ? objc_getAssociatedObject(node, kXFNodeStateKey) : nil;
 }
 
-+ (void)attachBind:(NSString *)bindIdentifier toNode:(NSXMLNode *)node
++ (void)attachBind:(NSString *)bindIdentifier toNode:(XFXMLNode *)node
 {
     if (bindIdentifier.length == 0 || node == nil) {
         return;

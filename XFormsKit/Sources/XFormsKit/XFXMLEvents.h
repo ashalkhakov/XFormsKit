@@ -1,9 +1,8 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 #import <XFormsKit/XFEvent.h>
 #import <XFormsKit/XFListener.h>
 
-@class NSXMLElement;
-@class NSXMLDocument;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -57,27 +56,27 @@ typedef void (^XFEventDefaultAction)(id _Nullable xfElement, XFEvent *event);
    defaultAction:(nullable XFEventDefaultAction)defaultAction
          context:(nullable NSDictionary *)evcontext;
 
-- (void)registerElement:(NSXMLElement *)element xfElement:(nullable id)xfElement;
-- (nullable id)xfElementForElement:(NSXMLElement *)element;
+- (void)registerElement:(XFXMLElement *)element xfElement:(nullable id)xfElement;
+- (nullable id)xfElementForElement:(XFXMLElement *)element;
 
-- (NSMutableArray<XFListener *> *)listenersOn:(NSXMLElement *)element;
-- (NSArray<XFListener *> *)listenersForElement:(NSXMLElement *)element;
+- (NSMutableArray<XFListener *> *)listenersOn:(XFXMLElement *)element;
+- (NSArray<XFListener *> *)listenersForElement:(XFXMLElement *)element;
 
-- (nullable NSXMLElement *)elementWithID:(NSString *)identifier
-                              inDocument:(NSXMLDocument *)document;
+- (nullable XFXMLElement *)elementWithID:(NSString *)identifier
+                              inDocument:(XFXMLDocument *)document;
 
 /// Runtime stand-in for the XSLT that emits `new XsltForms_listener(...)`.
-- (void)installListenersInDocument:(NSXMLDocument *)document;
-- (void)installListenersUnder:(NSXMLNode *)node inDocument:(NSXMLDocument *)document;
+- (void)installListenersInDocument:(XFXMLDocument *)document;
+- (void)installListenersUnder:(XFXMLNode *)node inDocument:(XFXMLDocument *)document;
 /// The inverse the designer needs when a handler subtree is detached or
 /// recompiled: drops every listener (on any observer in `document`) whose
 /// handler element is `root` or lives under it.
-- (void)removeListenersWithHandlersUnder:(NSXMLElement *)root
-                              inDocument:(NSXMLDocument *)document;
+- (void)removeListenersWithHandlersUnder:(XFXMLElement *)root
+                              inDocument:(XFXMLDocument *)document;
 
 /// XSLTForms `element.node` for a host element (bound node, else in-scope
 /// context of the control registered for it); nil when unknown.
-- (nullable NSXMLNode *)inScopeNodeForElement:(NSXMLElement *)element;
+- (nullable XFXMLNode *)inScopeNodeForElement:(XFXMLElement *)element;
 
 /// XsltForms_globals.error: dispatch an exception event (xforms-binding-,
 /// -compute-, -link-, -version-exception) on `target` (an xf object or a
@@ -121,7 +120,7 @@ typedef NS_ENUM(NSInteger, XFTraceKind) {
 - (void)traceEventOfKind:(XFTraceKind)kind
                  message:(NSString *)message
                eventName:(nullable NSString *)eventName
-                 element:(nullable NSXMLElement *)element;
+                 element:(nullable XFXMLElement *)element;
 @end
 
 @interface XFXMLEvents (XFEventTracing)
@@ -135,23 +134,23 @@ typedef NS_ENUM(NSInteger, XFTraceKind) {
 /// no-op (and no format evaluation beyond the varargs call) without one.
 FOUNDATION_EXPORT void XFTraceWrite(XFTraceKind kind,
                                     NSString *_Nullable eventName,
-                                    NSXMLElement *_Nullable element,
+                                    XFXMLElement *_Nullable element,
                                     NSString *format, ...) NS_FORMAT_FUNCTION(4, 5);
 
 /// "<input class="…" id="…"/>" — the target description the XSLTForms
 /// console prints in its Dispatching/Captured lines.
-FOUNDATION_EXPORT NSString *XFTraceDescribeElement(NSXMLElement *_Nullable element);
+FOUNDATION_EXPORT NSString *XFTraceDescribeElement(XFXMLElement *_Nullable element);
 
 /// XsltForms_browser.name2string: "@Q{ns}name" for attributes,
 /// "Q{ns}name" for elements, "#text"/"#document"… otherwise — the node
 /// description in Setvalue/insert/Calculate lines.
-FOUNDATION_EXPORT NSString *XFTraceDescribeNode(NSXMLNode *_Nullable node);
+FOUNDATION_EXPORT NSString *XFTraceDescribeNode(XFXMLNode *_Nullable node);
 
 @protocol XFXMLEventHandler <NSObject>
 - (void)handleXMLEvent:(XFEvent *)event;
 @optional
 /// Preferred: run with the observer's in-scope node as evaluation context.
-- (void)handleXMLEvent:(XFEvent *)event contextNode:(nullable NSXMLNode *)contextNode;
+- (void)handleXMLEvent:(XFEvent *)event contextNode:(nullable XFXMLNode *)contextNode;
 @end
 
 NS_ASSUME_NONNULL_END

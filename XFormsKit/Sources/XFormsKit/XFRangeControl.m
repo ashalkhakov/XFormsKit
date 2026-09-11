@@ -13,7 +13,7 @@
     return _outOfRange;
 }
 
-+ (double)doubleAttr:(NSXMLElement *)element name:(NSString *)name fallback:(double)fallback
++ (double)doubleAttr:(XFXMLElement *)element name:(NSString *)name fallback:(double)fallback
 {
     NSString *v = [[element attributeForName:name] stringValue];
     if (v.length == 0) {
@@ -22,7 +22,7 @@
     return [v doubleValue];
 }
 
-+ (instancetype)rangeWithElement:(NSXMLElement *)element
++ (instancetype)rangeWithElement:(XFXMLElement *)element
                            model:(id)model
                            error:(NSError **)error
 {

@@ -1,4 +1,5 @@
 #import <XFormsKit/XFAbstractAction.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -6,7 +7,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface XFInsertAction : XFAbstractAction
 
 @property (nonatomic, copy, readonly, nullable) NSString *position; // before | after
-@property (nonatomic, copy, readonly) NSArray<NSXMLNode *> *lastInsertedNodes;
+@property (nonatomic, copy, readonly) NSArray<XFXMLNode *> *lastInsertedNodes;
 
 @end
 

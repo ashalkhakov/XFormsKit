@@ -1,22 +1,20 @@
 #import "XFXML.h"
-#import <Foundation/NSXMLNode.h>
-#import <Foundation/NSXMLElement.h>
-#import <Foundation/NSXMLDocument.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @implementation XFXML
 
 + (void)collectElementsWithLocalName:(NSString *)localName
                        namespaceURI:(NSString *)namespaceURI
-                             inNode:(NSXMLNode *)node
-                             into:(NSMutableArray<NSXMLElement *> *)out
+                             inNode:(XFXMLNode *)node
+                             into:(NSMutableArray<XFXMLElement *> *)out
 {
-    if ([node kind] == NSXMLElementKind) {
-        NSXMLElement *element = (NSXMLElement *)node;
+    if ([node kind] == XFXMLElementKind) {
+        XFXMLElement *element = (XFXMLElement *)node;
         if ([self element:element hasLocalName:localName namespaceURI:namespaceURI]) {
             [out addObject:element];
         }
     }
-    for (NSXMLNode *child in [node children]) {
+    for (XFXMLNode *child in [node children]) {
         [self collectElementsWithLocalName:localName
                              namespaceURI:namespaceURI
                                    inNode:child
@@ -24,11 +22,11 @@
     }
 }
 
-+ (NSArray<NSXMLElement *> *)elementsWithLocalName:(NSString *)localName
++ (NSArray<XFXMLElement *> *)elementsWithLocalName:(NSString *)localName
                                      namespaceURI:(NSString *)namespaceURI
-                                           inNode:(NSXMLNode *)node
+                                           inNode:(XFXMLNode *)node
 {
-    NSMutableArray<NSXMLElement *> *out = [NSMutableArray array];
+    NSMutableArray<XFXMLElement *> *out = [NSMutableArray array];
     [self collectElementsWithLocalName:localName
                          namespaceURI:namespaceURI
                                inNode:node
@@ -36,28 +34,28 @@
     return out;
 }
 
-+ (NSXMLElement *)childElementWithLocalName:(NSString *)localName
++ (XFXMLElement *)childElementWithLocalName:(NSString *)localName
                                namespaceURI:(NSString *)namespaceURI
-                                  ofElement:(NSXMLElement *)element
+                                  ofElement:(XFXMLElement *)element
 {
-    for (NSXMLNode *c in [element children]) {
-        if ([c kind] == NSXMLElementKind
-            && [self element:(NSXMLElement *)c hasLocalName:localName namespaceURI:namespaceURI]) {
-            return (NSXMLElement *)c;
+    for (XFXMLNode *c in [element children]) {
+        if ([c kind] == XFXMLElementKind
+            && [self element:(XFXMLElement *)c hasLocalName:localName namespaceURI:namespaceURI]) {
+            return (XFXMLElement *)c;
         }
     }
     return nil;
 }
 
-+ (NSXMLElement *)firstElementWithLocalName:(NSString *)localName
++ (XFXMLElement *)firstElementWithLocalName:(NSString *)localName
                               namespaceURI:(NSString *)namespaceURI
-                                    inNode:(NSXMLNode *)node
+                                    inNode:(XFXMLNode *)node
 {
     NSArray *found = [self elementsWithLocalName:localName namespaceURI:namespaceURI inNode:node];
     return found.count > 0 ? found[0] : nil;
 }
 
-+ (BOOL)element:(NSXMLElement *)element
++ (BOOL)element:(XFXMLElement *)element
    hasLocalName:(NSString *)localName
   namespaceURI:(NSString *)namespaceURI
 {
@@ -71,23 +69,23 @@
     return [uri isEqualToString:namespaceURI];
 }
 
-+ (NSString *)stringValueOfNode:(NSXMLNode *)node
++ (NSString *)stringValueOfNode:(XFXMLNode *)node
 {
     if (node == nil) {
         return @"";
     }
     switch ([node kind]) {
-        case NSXMLAttributeKind:
-        case NSXMLTextKind:
-        case NSXMLCommentKind:
-        case NSXMLProcessingInstructionKind:
+        case XFXMLAttributeKind:
+        case XFXMLTextKind:
+        case XFXMLCommentKind:
+        case XFXMLProcessingInstructionKind:
             return [node stringValue] ?: @"";
-        case NSXMLElementKind:
-        case NSXMLDocumentKind: {
+        case XFXMLElementKind:
+        case XFXMLDocumentKind: {
             NSMutableString *text = [NSMutableString string];
-            for (NSXMLNode *child in [node children]) {
-                NSXMLNodeKind kind = [child kind];
-                if (kind == NSXMLTextKind || kind == NSXMLElementKind) {
+            for (XFXMLNode *child in [node children]) {
+                XFXMLNodeKind kind = [child kind];
+                if (kind == XFXMLTextKind || kind == XFXMLElementKind) {
                     [text appendString:[self stringValueOfNode:child]];
                 }
             }
@@ -100,12 +98,12 @@
 
 + (NSString *)attributeValue:(NSString *)localName
                namespaceURI:(NSString *)namespaceURI
-                  onElement:(NSXMLElement *)element
+                  onElement:(XFXMLElement *)element
 {
     if (element == nil || localName.length == 0) {
         return nil;
     }
-    for (NSXMLNode *attr in [element attributes]) {
+    for (XFXMLNode *attr in [element attributes]) {
         NSString *aLocal = [attr localName] ?: [attr name];
         if (![aLocal isEqualToString:localName]) {
             NSString *name = [attr name];
@@ -136,13 +134,13 @@
     return nil;
 }
 
-+ (NSXMLElement *)elementWithID:(NSString *)identifier inNode:(NSXMLNode *)node
++ (XFXMLElement *)elementWithID:(NSString *)identifier inNode:(XFXMLNode *)node
 {
     if (identifier.length == 0 || node == nil) {
         return nil;
     }
-    if ([node kind] == NSXMLElementKind) {
-        NSXMLElement *element = (NSXMLElement *)node;
+    if ([node kind] == XFXMLElementKind) {
+        XFXMLElement *element = (XFXMLElement *)node;
         NSString *xmlid = [self attributeValue:@"id"
                                  namespaceURI:@"http://www.w3.org/XML/1998/namespace"
                                     onElement:element];
@@ -167,8 +165,8 @@
             return element;
         }
     }
-    for (NSXMLNode *child in [node children]) {
-        NSXMLElement *found = [self elementWithID:identifier inNode:child];
+    for (XFXMLNode *child in [node children]) {
+        XFXMLElement *found = [self elementWithID:identifier inNode:child];
         if (found) {
             return found;
         }
@@ -176,16 +174,16 @@
     return nil;
 }
 
-+ (NSArray<NSXMLElement *> *)childElementsWithLocalName:(NSString *)localName
++ (NSArray<XFXMLElement *> *)childElementsWithLocalName:(NSString *)localName
                                           namespaceURI:(NSString *)namespaceURI
-                                             ofElement:(NSXMLElement *)element
+                                             ofElement:(XFXMLElement *)element
 {
-    NSMutableArray<NSXMLElement *> *out = [NSMutableArray array];
-    for (NSXMLNode *child in [element children]) {
-        if ([child kind] != NSXMLElementKind) {
+    NSMutableArray<XFXMLElement *> *out = [NSMutableArray array];
+    for (XFXMLNode *child in [element children]) {
+        if ([child kind] != XFXMLElementKind) {
             continue;
         }
-        NSXMLElement *el = (NSXMLElement *)child;
+        XFXMLElement *el = (XFXMLElement *)child;
         if ([self element:el hasLocalName:localName namespaceURI:namespaceURI]) {
             [out addObject:el];
         }
@@ -193,25 +191,25 @@
     return out;
 }
 
-+ (void)setStringValue:(NSString *)value ofNode:(NSXMLNode *)node
++ (void)setStringValue:(NSString *)value ofNode:(XFXMLNode *)node
 {
-    if ([node kind] == NSXMLAttributeKind) {
+    if ([node kind] == XFXMLAttributeKind) {
         [node setStringValue:value ?: @""];
         return;
     }
-    if ([node kind] != NSXMLElementKind) {
+    if ([node kind] != XFXMLElementKind) {
         [node setStringValue:value ?: @""];
         return;
     }
-    NSXMLElement *element = (NSXMLElement *)node;
+    XFXMLElement *element = (XFXMLElement *)node;
     NSArray *children = [[element children] copy];
-    for (NSXMLNode *child in children) {
-        if ([child kind] == NSXMLTextKind) {
+    for (XFXMLNode *child in children) {
+        if ([child kind] == XFXMLTextKind) {
             [element removeChildAtIndex:[child index]];
         }
     }
     if (value.length > 0) {
-        NSXMLNode *text = [NSXMLNode textWithStringValue:value];
+        XFXMLNode *text = [XFXMLNode textWithStringValue:value];
         [element addChild:text];
     }
 }

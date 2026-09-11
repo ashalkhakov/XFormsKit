@@ -9,9 +9,7 @@
 #import "XFXML.h"
 #import "XFErrors.h"
 #import "XFXMLEvents.h"
-#import <Foundation/NSXMLElement.h>
-#import <Foundation/NSXMLNode.h>
-#import <Foundation/NSXMLDocument.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @interface XFModel ()
 @property (nonatomic, copy, readwrite) NSArray<XFInstance *> *instances;
@@ -20,30 +18,30 @@
 @property (nonatomic, copy, readwrite) NSArray<XFSubmission *> *submissions;
 @property (nonatomic, strong) NSMutableArray<XFRepeat *> *mutableRepeats;
 @property (nonatomic, strong) NSMutableArray<XFBind *> *mutableBinds;
-@property (nonatomic, strong, readwrite) NSMutableArray<NSXMLNode *> *nodesChanged;
-@property (nonatomic, strong, readwrite) NSMutableArray<NSXMLNode *> *pendingNodesChanged;
+@property (nonatomic, strong, readwrite) NSMutableArray<XFXMLNode *> *nodesChanged;
+@property (nonatomic, strong, readwrite) NSMutableArray<XFXMLNode *> *pendingNodesChanged;
 @end
 
 @implementation XFModel
 
-+ (instancetype)modelWithElement:(NSXMLElement *)modelElement
++ (instancetype)modelWithElement:(XFXMLElement *)modelElement
                            error:(NSError **)error
 {
     XFModel *model = [[self alloc] init];
     model.element = modelElement;
-    NSXMLNode *idAttr = [modelElement attributeForName:@"id"];
+    XFXMLNode *idAttr = [modelElement attributeForName:@"id"];
     model.identifier = idAttr ? [idAttr stringValue] : nil;
     model.mutableBinds = [NSMutableArray array];
     model.mutableRepeats = [NSMutableArray array];
     model.nodesChanged = [NSMutableArray array];
     model.pendingNodesChanged = [NSMutableArray array];
 
-    NSArray<NSXMLElement *> *instanceElements =
+    NSArray<XFXMLElement *> *instanceElements =
         [XFXML childElementsWithLocalName:@"instance"
                             namespaceURI:XFXFormsNamespaceURI
                                ofElement:modelElement];
     NSMutableArray<XFInstance *> *instances = [NSMutableArray array];
-    for (NSXMLElement *el in instanceElements) {
+    for (XFXMLElement *el in instanceElements) {
         NSError *inner = nil;
         XFInstance *instance = [XFInstance instanceWithElement:el error:&inner];
         if (instance == nil) {
@@ -76,19 +74,19 @@
     // xf:itext/xf:translation[@lang]/xf:text[@id]/xf:value (G-94)
     NSMutableDictionary *translations = [NSMutableDictionary dictionary];
     NSString *defaultLanguage = nil;
-    for (NSXMLElement *itext in [XFXML childElementsWithLocalName:@"itext" namespaceURI:XFXFormsNamespaceURI ofElement:modelElement]) {
-        for (NSXMLElement *tr in [XFXML childElementsWithLocalName:@"translation" namespaceURI:XFXFormsNamespaceURI ofElement:itext]) {
+    for (XFXMLElement *itext in [XFXML childElementsWithLocalName:@"itext" namespaceURI:XFXFormsNamespaceURI ofElement:modelElement]) {
+        for (XFXMLElement *tr in [XFXML childElementsWithLocalName:@"translation" namespaceURI:XFXFormsNamespaceURI ofElement:itext]) {
             NSString *lang = [[tr attributeForName:@"lang"] stringValue] ?: @"";
             if (defaultLanguage == nil) {
                 defaultLanguage = lang;
             }
             NSMutableDictionary *texts = translations[lang] ?: [NSMutableDictionary dictionary];
-            for (NSXMLElement *text in [XFXML childElementsWithLocalName:@"text" namespaceURI:XFXFormsNamespaceURI ofElement:tr]) {
+            for (XFXMLElement *text in [XFXML childElementsWithLocalName:@"text" namespaceURI:XFXFormsNamespaceURI ofElement:tr]) {
                 NSString *tid = [[text attributeForName:@"id"] stringValue];
                 if (tid.length == 0) {
                     continue;
                 }
-                NSXMLElement *value = [XFXML childElementsWithLocalName:@"value" namespaceURI:XFXFormsNamespaceURI ofElement:text].firstObject;
+                XFXMLElement *value = [XFXML childElementsWithLocalName:@"value" namespaceURI:XFXFormsNamespaceURI ofElement:text].firstObject;
                 texts[tid] = [XFXML stringValueOfNode:value ?: text] ?: @"";
             }
             translations[lang] = texts;
@@ -97,12 +95,12 @@
     model.translations = translations;
     model.defaultLanguage = defaultLanguage;
 
-    NSArray<NSXMLElement *> *submissionElements =
+    NSArray<XFXMLElement *> *submissionElements =
         [XFXML childElementsWithLocalName:@"submission"
                             namespaceURI:XFXFormsNamespaceURI
                                ofElement:modelElement];
     NSMutableArray<XFSubmission *> *submissions = [NSMutableArray array];
-    for (NSXMLElement *el in submissionElements) {
+    for (XFXMLElement *el in submissionElements) {
         NSError *inner = nil;
         XFSubmission *submission = [XFSubmission submissionWithElement:el model:model error:&inner];
         if (submission == nil) {
@@ -118,11 +116,11 @@
     }
     model.submissions = submissions;
 
-    NSArray<NSXMLElement *> *bindElements =
+    NSArray<XFXMLElement *> *bindElements =
         [XFXML childElementsWithLocalName:@"bind"
                             namespaceURI:XFXFormsNamespaceURI
                                ofElement:modelElement];
-    for (NSXMLElement *el in bindElements) {
+    for (XFXMLElement *el in bindElements) {
         NSError *inner = nil;
         XFBind *bind = [XFBind bindWithElement:el model:model parent:nil error:&inner];
         if (bind == nil) {
@@ -143,7 +141,7 @@
     }
 }
 
-- (BOOL)adoptElement:(NSXMLElement *)element error:(NSError **)error
+- (BOOL)adoptElement:(XFXMLElement *)element error:(NSError **)error
 {
     NSString *name = [element localName];
     NSError *inner = nil;
@@ -187,7 +185,7 @@
     return NO;
 }
 
-- (void)dropElement:(NSXMLElement *)element
+- (void)dropElement:(XFXMLElement *)element
 {
     NSString *name = [element localName];
     if ([name isEqualToString:@"bind"]) {
@@ -261,16 +259,37 @@
     return self.instances.firstObject;
 }
 
-+ (NSXMLElement *)synthesisedInstanceElementFor:(NSXMLElement *)modelElement
+/// Every unprefixed @ref attribute in the tree, in document order.
+///
+/// This was the engine's one use of the DOM's own XPath ("//@ref"), which
+/// XFDOM deliberately does not implement — XFormsKit has its own XPath
+/// engine, and a DOM-level second one would be a parallel implementation
+/// to keep correct for no gain.
+static void XFCollectRefAttributes(XFXMLNode *node, NSMutableArray<XFXMLNode *> *out)
+{
+    if ([node kind] == XFXMLElementKind) {
+        XFXMLNode *ref = [(XFXMLElement *)node attributeForName:@"ref"];
+        if (ref != nil) {
+            [out addObject:ref];
+        }
+    }
+    for (XFXMLNode *child in [node children]) {
+        XFCollectRefAttributes(child, out);
+    }
+}
+
++ (XFXMLElement *)synthesisedInstanceElementFor:(XFXMLElement *)modelElement
 {
     NSMutableArray<NSString *> *names = [NSMutableArray array];
     NSCharacterSet *nameChars = [NSCharacterSet characterSetWithCharactersInString:
         @"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-."];
     NSCharacterSet *startChars = [NSCharacterSet characterSetWithCharactersInString:
         @"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"];
-    NSXMLNode *root = [modelElement rootDocument] ?: (NSXMLNode *)modelElement;
-    for (NSXMLNode *attr in [root nodesForXPath:@"//@ref" error:NULL]) {
-        NSXMLNode *parent = [attr parent];
+    XFXMLNode *root = [modelElement rootDocument] ?: (XFXMLNode *)modelElement;
+    NSMutableArray<XFXMLNode *> *refAttributes = [NSMutableArray array];
+    XFCollectRefAttributes(root, refAttributes);
+    for (XFXMLNode *attr in refAttributes) {
+        XFXMLNode *parent = [attr parent];
         if (![[parent URI] isEqualToString:XFXFormsNamespaceURI]) {
             continue;
         }
@@ -280,8 +299,8 @@
             // lazy authoring auto-constructs only plain element NCNames:
             // any other binding expression over the synthesised instance
             // is an xforms-binding-exception (4.2.2.c2)
-            if (ref.length && [parent isKindOfClass:[NSXMLElement class]]) {
-                [XFXMLEvents raise:@"xforms-binding-exception" on:(NSXMLElement *)parent
+            if (ref.length && [parent isKindOfClass:[XFXMLElement class]]) {
+                [XFXMLEvents raise:@"xforms-binding-exception" on:(XFXMLElement *)parent
                            message:[NSString stringWithFormat:
                                     @"lazy authoring cannot construct '%@'", ref]];
             }
@@ -291,25 +310,25 @@
             [names addObject:ref];
         }
     }
-    NSXMLElement *data = [[NSXMLElement alloc] initWithName:@"data"];
-    [data addNamespace:[NSXMLNode namespaceWithName:@"" stringValue:@""]];
+    XFXMLElement *data = [[XFXMLElement alloc] initWithName:@"data"];
+    [data addNamespace:[XFXMLNode namespaceWithName:@"" stringValue:@""]];
     for (NSString *name in names) {
-        [data addChild:[[NSXMLElement alloc] initWithName:name]];
+        [data addChild:[[XFXMLElement alloc] initWithName:name]];
     }
-    NSXMLElement *instance = [[NSXMLElement alloc] initWithName:@"xf:instance" URI:XFXFormsNamespaceURI];
-    [instance addNamespace:[NSXMLNode namespaceWithName:@"xf" stringValue:XFXFormsNamespaceURI]];
-    [instance addAttribute:[NSXMLNode attributeWithName:@"id" stringValue:@"instance-default"]];
+    XFXMLElement *instance = [[XFXMLElement alloc] initWithName:@"xf:instance" URI:XFXFormsNamespaceURI];
+    [instance addNamespace:[XFXMLNode namespaceWithName:@"xf" stringValue:XFXFormsNamespaceURI]];
+    [instance addAttribute:[XFXMLNode attributeWithName:@"id" stringValue:@"instance-default"]];
     [instance addChild:data];
     return instance;
 }
 
-- (XFInstance *)instanceOwningNode:(NSXMLNode *)node
+- (XFInstance *)instanceOwningNode:(XFXMLNode *)node
 {
     if (node == nil) {
         return nil;
     }
-    NSXMLDocument *doc = ([node kind] == NSXMLDocumentKind)
-        ? (NSXMLDocument *)node
+    XFXMLDocument *doc = ([node kind] == XFXMLDocumentKind)
+        ? (XFXMLDocument *)node
         : [node rootDocument];
     for (XFInstance *instance in self.instances) {
         if (instance.document == doc) {
@@ -319,7 +338,7 @@
     return nil;
 }
 
-- (XFInstance *)instanceContainingNode:(NSXMLNode *)node
+- (XFInstance *)instanceContainingNode:(XFXMLNode *)node
 {
     if (node == nil) {
         return nil;
@@ -392,7 +411,7 @@
     return nil;
 }
 
-- (void)addChange:(NSXMLNode *)node
+- (void)addChange:(XFXMLNode *)node
 {
     if (node == nil) {
         return;
@@ -411,17 +430,17 @@
     // XsltForms_model.addChange: pick the list by the global `building`
     // state and register the model with the deferred-update queue.
     XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
-    NSMutableArray<NSXMLNode *> *list = du.building ? self.pendingNodesChanged : self.nodesChanged;
+    NSMutableArray<XFXMLNode *> *list = du.building ? self.pendingNodesChanged : self.nodesChanged;
     if ([list indexOfObjectIdenticalTo:node] == NSNotFound) {
         [du addChangedModel:self];
     }
-    if ([node kind] == NSXMLAttributeKind) {
+    if ([node kind] == XFXMLAttributeKind) {
         if ([list indexOfObjectIdenticalTo:node] == NSNotFound) {
             [list addObject:node];
         }
         node = [node parent];
     }
-    while (node && [node kind] != NSXMLDocumentKind) {
+    while (node && [node kind] != XFXMLDocumentKind) {
         if ([list indexOfObjectIdenticalTo:node] == NSNotFound) {
             [list addObject:node];
         }

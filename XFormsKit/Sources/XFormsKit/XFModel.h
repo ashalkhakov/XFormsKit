@@ -1,11 +1,10 @@
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFInstance;
 @class XFBind;
 @class XFSubmission;
 @class XFRepeat;
-@class NSXMLElement;
-@class NSXMLNode;
 @protocol XFSubmissionTransport;
 
 NS_ASSUME_NONNULL_BEGIN
@@ -21,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// The subform this model was loaded with (nil for the main form), G-90.
 @property (nonatomic, weak, nullable) XFSubform *subform;
 @property (nonatomic, copy, nullable) NSString *identifier;
-@property (nonatomic, strong, nullable) NSXMLElement *element;
+@property (nonatomic, strong, nullable) XFXMLElement *element;
 @property (nonatomic, weak, nullable) id<XFModelOwner> owner;
 @property (nonatomic, copy, readonly) NSArray<XFInstance *> *instances;
 @property (nonatomic, copy, readonly) NSArray<XFBind *> *binds;
@@ -46,28 +45,28 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL pendingRebuild;
 @property (nonatomic, assign) BOOL building;
 
-@property (nonatomic, strong, readonly) NSMutableArray<NSXMLNode *> *nodesChanged;
+@property (nonatomic, strong, readonly) NSMutableArray<XFXMLNode *> *nodesChanged;
 /// XSLTForms `newNodesChanged`.
-@property (nonatomic, strong, readonly) NSMutableArray<NSXMLNode *> *pendingNodesChanged;
+@property (nonatomic, strong, readonly) NSMutableArray<XFXMLNode *> *pendingNodesChanged;
 
-+ (nullable instancetype)modelWithElement:(NSXMLElement *)modelElement
++ (nullable instancetype)modelWithElement:(XFXMLElement *)modelElement
                                     error:(NSError **)error;
 
 - (nullable XFInstance *)instanceWithIdentifier:(nullable NSString *)identifier;
 - (nullable XFInstance *)defaultInstance;
 /// The instance holding `node`, else the default instance.
-- (nullable XFInstance *)instanceContainingNode:(nullable NSXMLNode *)node;
+- (nullable XFInstance *)instanceContainingNode:(nullable XFXMLNode *)node;
 /// The instance holding `node`, or nil when no instance of this model does.
-- (nullable XFInstance *)instanceOwningNode:(nullable NSXMLNode *)node;
+- (nullable XFInstance *)instanceOwningNode:(nullable XFXMLNode *)node;
 - (nullable XFBind *)bindWithIdentifier:(NSString *)identifier;
 - (nullable XFSubmission *)submissionWithIdentifier:(nullable NSString *)identifier;
 - (nullable XFRepeat *)repeatWithIdentifier:(nullable NSString *)identifier;
 - (void)addRepeat:(XFRepeat *)repeat;
 
 - (void)addBind:(XFBind *)bind;
-- (BOOL)adoptElement:(NSXMLElement *)element error:(NSError **)error;
-- (void)dropElement:(NSXMLElement *)element;
-- (void)addChange:(NSXMLNode *)node;
+- (BOOL)adoptElement:(XFXMLElement *)element error:(NSError **)error;
+- (void)dropElement:(XFXMLElement *)element;
+- (void)addChange:(XFXMLNode *)node;
 - (void)setRebuilded:(BOOL)rebuilded;
 - (void)swapChangeLists;
 

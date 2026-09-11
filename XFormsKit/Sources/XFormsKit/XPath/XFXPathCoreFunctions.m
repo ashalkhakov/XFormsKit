@@ -9,9 +9,7 @@
 #import "XFXMLEvents.h"
 #import "XFNodeState.h"
 #import "XFType.h"
-#import <Foundation/NSXMLNode.h>
-#import <Foundation/NSXMLDocument.h>
-#import <Foundation/NSXMLElement.h>
+#import <XFormsKit/XFXMLTypes.h>
 #import <math.h>
 #import <objc/runtime.h>
 #if __has_include(<CommonCrypto/CommonDigest.h>)
@@ -307,19 +305,19 @@ static NSString *XFDigestString(NSString *data, NSString *alg, NSString *enc, NS
     return [out base64EncodedStringWithOptions:0];
 }
 
-static BOOL XFSubtreeIsValid(NSXMLNode *n)
+static BOOL XFSubtreeIsValid(XFXMLNode *n)
 {
     XFNodeState *st = [XFNodeState existingStateOnNode:n];
     if (st && !st.valid) {
         return NO;
     }
-    if ([n kind] == NSXMLElementKind) {
-        for (NSXMLNode *a in [(NSXMLElement *)n attributes]) {
+    if ([n kind] == XFXMLElementKind) {
+        for (XFXMLNode *a in [(XFXMLElement *)n attributes]) {
             if (!XFSubtreeIsValid(a)) return NO;
         }
     }
-    for (NSXMLNode *c in [n children]) {
-        if ([c kind] == NSXMLElementKind && !XFSubtreeIsValid(c)) return NO;
+    for (XFXMLNode *c in [n children]) {
+        if ([c kind] == XFXMLElementKind && !XFSubtreeIsValid(c)) return NO;
     }
     return YES;
 }
@@ -333,7 +331,7 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
         if ([key isEqualToString:@"response-body"]) {
             NSString *t = [v stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
             if ([t hasPrefix:@"<"]) {
-                NSXMLDocument *doc = [[NSXMLDocument alloc] initWithXMLString:t options:0 error:NULL];
+                XFXMLDocument *doc = [[XFXMLDocument alloc] initWithXMLString:t options:0 error:NULL];
                 if (doc.rootElement) {
                     XFXPathValue *nodes = [XFXPathValue nodeSet:@[ doc.rootElement ]];
                     // keep the document alive as long as the node-set
@@ -347,13 +345,13 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
     if ([v isKindOfClass:[NSNumber class]]) {
         return [XFXPathValue number:[v doubleValue]];
     }
-    if ([v isKindOfClass:[NSXMLNode class]]) {
+    if ([v isKindOfClass:[XFXMLNode class]]) {
         return [XFXPathValue nodeSet:@[ v ]];
     }
     if ([v isKindOfClass:[NSArray class]]) {
         NSMutableArray *nodes = [NSMutableArray array];
         for (id item in v) {
-            if ([item isKindOfClass:[NSXMLNode class]]) {
+            if ([item isKindOfClass:[XFXMLNode class]]) {
                 [nodes addObject:item];
             }
         }
@@ -363,13 +361,13 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
         return [XFXPathValue string:[v componentsJoinedByString:@" "]];
     }
     if ([v isKindOfClass:[NSDictionary class]]) {
-        NSXMLElement *root = [NSXMLElement elementWithName:@"headers"];
-        NSXMLDocument *doc = [[NSXMLDocument alloc] initWithRootElement:root];
+        XFXMLElement *root = [XFXMLElement elementWithName:@"headers"];
+        XFXMLDocument *doc = [[XFXMLDocument alloc] initWithRootElement:root];
         NSMutableArray *nodes = [NSMutableArray array];
         for (NSString *name in [[v allKeys] sortedArrayUsingSelector:@selector(compare:)]) {
-            NSXMLElement *h = [NSXMLElement elementWithName:@"header"];
-            [h addChild:[NSXMLElement elementWithName:@"name" stringValue:name]];
-            [h addChild:[NSXMLElement elementWithName:@"value" stringValue:[v[name] description]]];
+            XFXMLElement *h = [XFXMLElement elementWithName:@"header"];
+            [h addChild:[XFXMLElement elementWithName:@"name" stringValue:name]];
+            [h addChild:[XFXMLElement elementWithName:@"value" stringValue:[v[name] description]]];
             [root addChild:h];
             [nodes addObject:h];
         }
@@ -401,18 +399,18 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
             }],
             @"local-name": [XFXPathFunction acceptContext:NO defaultTo:XFXPathFnDefaultNodeSet body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)ctx; (void)err;
-                NSXMLNode *n = XFArg(args, 0).firstNode;
+                XFXMLNode *n = XFArg(args, 0).firstNode;
                 if (n == nil) return [XFXPathValue string:@""];
                 return [XFXPathValue string:([n localName] ?: [n name]) ?: @""];
             }],
             @"namespace-uri": [XFXPathFunction acceptContext:NO defaultTo:XFXPathFnDefaultNodeSet body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)ctx; (void)err;
-                NSXMLNode *n = XFArg(args, 0).firstNode;
+                XFXMLNode *n = XFArg(args, 0).firstNode;
                 return [XFXPathValue string:n.URI ?: @""];
             }],
             @"name": [XFXPathFunction acceptContext:NO defaultTo:XFXPathFnDefaultNodeSet body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)ctx; (void)err;
-                NSXMLNode *n = XFArg(args, 0).firstNode;
+                XFXMLNode *n = XFArg(args, 0).firstNode;
                 return [XFXPathValue string:[n name] ?: @""];
             }],
             @"string": [XFXPathFunction acceptContext:NO defaultTo:XFXPathFnDefaultNodeSet body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
@@ -527,7 +525,7 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
             @"sum": [XFXPathFunction acceptContext:NO defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)ctx; (void)err;
                 double sum = 0;
-                for (NSXMLNode *n in XFArg(args, 0).nodes) {
+                for (XFXMLNode *n in XFArg(args, 0).nodes) {
                     sum += [XFXPathValue nodeSet:@[ n ]].numberValue;
                 }
                 return [XFXPathValue number:sum];
@@ -573,7 +571,7 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
                     inst = ctx.contextNode ? [model instanceContainingNode:ctx.contextNode] : nil;
                     inst = inst ?: [model defaultInstance];
                 }
-                NSXMLElement *root = [inst documentElement];
+                XFXMLElement *root = [inst documentElement];
                 if (root) {
                     [ctx addDependency:root];
                     [ctx addDepElement:model];
@@ -593,12 +591,12 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
             }],
             @"context": [XFXPathFunction acceptContext:YES defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)args; (void)err;
-                NSXMLNode *n = ctx.currentNode ?: ctx.contextNode;
+                XFXMLNode *n = ctx.currentNode ?: ctx.contextNode;
                 return [XFXPathValue nodeSet:n ? @[ n ] : @[]];
             }],
             @"current": [XFXPathFunction acceptContext:YES defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)args; (void)err;
-                NSXMLNode *n = ctx.expressionStartNode ?: ctx.currentNode ?: ctx.contextNode;
+                XFXMLNode *n = ctx.expressionStartNode ?: ctx.currentNode ?: ctx.contextNode;
                 if (n) {
                     [ctx addDependency:n];
                     if (ctx.model) [ctx addDepElement:ctx.model];
@@ -625,7 +623,7 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
             @"count-non-empty": [XFXPathFunction acceptContext:NO defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)ctx; (void)err;
                 NSUInteger n = 0;
-                for (NSXMLNode *node in XFArg(args, 0).nodes) {
+                for (XFXMLNode *node in XFArg(args, 0).nodes) {
                     if (XFXPathNodeValue(node).length) {
                         n++;
                     }
@@ -699,7 +697,7 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
                 NSMutableArray *ids = [NSMutableArray array];
                 XFXPathValue *arg = XFArg(args, 0);
                 if (arg.nodes.count) {
-                    for (NSXMLNode *n in arg.nodes) {
+                    for (XFXMLNode *n in arg.nodes) {
                         NSString *s = XFXPathNodeValue(n);
                         for (NSString *tok in [s componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]) {
                             if (tok.length) [ids addObject:tok];
@@ -712,11 +710,11 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
                 }
                 // optional second argument: the SUBTREE searched — ids
                 // outside it are not returned (7.10.3.b)
-                NSXMLNode *scope = args.count > 1 ? XFArg(args, 1).firstNode : nil;
-                NSXMLNode *root = scope ?: XFRootNode(ctx.contextNode);
+                XFXMLNode *scope = args.count > 1 ? XFArg(args, 1).firstNode : nil;
+                XFXMLNode *root = scope ?: XFRootNode(ctx.contextNode);
                 NSMutableArray *found = [NSMutableArray array];
                 for (NSString *ident in ids) {
-                    NSXMLElement *el = [XFXML elementWithID:ident inNode:root];
+                    XFXMLElement *el = [XFXML elementWithID:ident inNode:root];
                     if (el) [found addObject:el];
                 }
                 return [XFXPathValue nodeSet:found];
@@ -725,11 +723,11 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
                 (void)err;
                 NSString *want = [[XFArg(args, 0) stringValue] lowercaseString];
                 NSString *have = nil;
-                for (NSXMLNode *n = ctx.contextNode; n; n = [n parent]) {
-                    if ([n kind] != NSXMLElementKind) continue;
-                    NSXMLNode *attr = [(NSXMLElement *)n attributeForName:@"xml:lang"];
+                for (XFXMLNode *n = ctx.contextNode; n; n = [n parent]) {
+                    if ([n kind] != XFXMLElementKind) continue;
+                    XFXMLNode *attr = [(XFXMLElement *)n attributeForName:@"xml:lang"];
                     if (attr == nil) {
-                        attr = [(NSXMLElement *)n attributeForName:@"lang"];
+                        attr = [(XFXMLElement *)n attributeForName:@"lang"];
                     }
                     if (attr) {
                         have = [[attr stringValue] lowercaseString];
@@ -796,7 +794,7 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
                     nodes = @[ ctx.contextNode ];
                 }
                 // XSLTForms validate_(): the node, its attributes and descendants
-                for (NSXMLNode *n in nodes) {
+                for (XFXMLNode *n in nodes) {
                     if (!XFSubtreeIsValid(n)) {
                         ok = NO;
                         break;

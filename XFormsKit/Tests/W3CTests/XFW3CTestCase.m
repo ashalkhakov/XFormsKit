@@ -147,7 +147,7 @@
 - (void)traceEventOfKind:(XFTraceKind)kind
                  message:(NSString *)message
                eventName:(NSString *)eventName
-                 element:(NSXMLElement *)element
+                 element:(XFXMLElement *)element
 {
     (void)message; (void)element;
     if (kind == XFTraceKindEvent && eventName.length) {
@@ -393,7 +393,7 @@ static void XFW3CWalk(NSArray<XFControl *> *controls, void (^visit)(XFControl *)
     if (xp == nil) {
         return @"";
     }
-    NSXMLNode *root = [[model defaultInstance].document rootElement];
+    XFXMLNode *root = [[model defaultInstance].document rootElement];
     if (root == nil) {
         return @"";
     }

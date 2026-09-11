@@ -1,6 +1,5 @@
 #import "XFRichText.h"
-#import <Foundation/NSXMLDocument.h>
-#import <Foundation/NSXMLElement.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 void XFAppKitHasRichTextFile(void) {}
 
@@ -112,14 +111,14 @@ typedef struct {
     return out;
 }
 
-+ (void)appendInlineNodes:(NSArray<NSXMLNode *> *)nodes
++ (void)appendInlineNodes:(NSArray<XFXMLNode *> *)nodes
                     block:(NSString *)block
                    style:(XFRichInline)style
                  baseFont:(NSFont *)baseFont
                      into:(NSMutableAttributedString *)out
 {
-    for (NSXMLNode *node in nodes) {
-        if ([node kind] == NSXMLTextKind) {
+    for (XFXMLNode *node in nodes) {
+        if ([node kind] == XFXMLTextKind) {
             NSString *text = [self collapse:[node stringValue] ?: @""];
             // no doubled separators across node boundaries
             if ([text hasPrefix:@" "] && out.length) {
@@ -135,7 +134,7 @@ typedef struct {
             }
             continue;
         }
-        if ([node kind] != NSXMLElementKind) {
+        if ([node kind] != XFXMLElementKind) {
             continue;
         }
         NSString *tag = [[node localName] lowercaseString] ?: @"";
@@ -160,7 +159,7 @@ typedef struct {
     }
 }
 
-+ (void)appendParagraph:(NSArray<NSXMLNode *> *)content
++ (void)appendParagraph:(NSArray<XFXMLNode *> *)content
                   block:(NSString *)block
                  prefix:(NSString *)prefix
                baseFont:(NSFont *)baseFont
@@ -193,7 +192,7 @@ typedef struct {
     NSString *source = html ?: @"";
     // tolerate the usual non-XML entity
     source = [source stringByReplacingOccurrencesOfString:@"&nbsp;" withString:@" "];
-    NSXMLDocument *doc = [[NSXMLDocument alloc]
+    XFXMLDocument *doc = [[XFXMLDocument alloc]
         initWithXMLString:[NSString stringWithFormat:@"<x>%@</x>", source]
                   options:0 error:NULL];
     NSMutableAttributedString *out = [[NSMutableAttributedString alloc] init];
@@ -203,15 +202,15 @@ typedef struct {
                                                attributes:@{ NSFontAttributeName: baseFont }];
     }
 
-    NSMutableArray<NSXMLNode *> *pending = [NSMutableArray array];   // loose inline content
+    NSMutableArray<XFXMLNode *> *pending = [NSMutableArray array];   // loose inline content
     void (^flushPending)(void) = ^{
         if (pending.count) {
             [self appendParagraph:pending block:@"p" prefix:nil baseFont:baseFont into:out];
             [pending removeAllObjects];
         }
     };
-    for (NSXMLNode *node in [[doc rootElement] children]) {
-        NSString *tag = [node kind] == NSXMLElementKind ? [[node localName] lowercaseString] : nil;
+    for (XFXMLNode *node in [[doc rootElement] children]) {
+        NSString *tag = [node kind] == XFXMLElementKind ? [[node localName] lowercaseString] : nil;
         if ([tag isEqualToString:@"p"] || [tag isEqualToString:@"div"] || [tag isEqualToString:@"blockquote"]
             || [tag isEqualToString:@"h1"] || [tag isEqualToString:@"h2"] || [tag isEqualToString:@"h3"]) {
             flushPending();
@@ -220,8 +219,8 @@ typedef struct {
         } else if ([tag isEqualToString:@"ul"] || [tag isEqualToString:@"ol"]) {
             flushPending();
             NSUInteger number = 1;
-            for (NSXMLNode *item in [node children]) {
-                if ([item kind] != NSXMLElementKind
+            for (XFXMLNode *item in [node children]) {
+                if ([item kind] != XFXMLElementKind
                     || ![[[item localName] lowercaseString] isEqualToString:@"li"]) {
                     continue;
                 }
@@ -230,7 +229,7 @@ typedef struct {
                     : @"• ";
                 [self appendParagraph:[item children] block:tag prefix:prefix baseFont:baseFont into:out];
             }
-        } else if ([node kind] == NSXMLTextKind
+        } else if ([node kind] == XFXMLTextKind
                    && [self collapse:[node stringValue] ?: @""].length == 0) {
             continue;   // whitespace between blocks
         } else {

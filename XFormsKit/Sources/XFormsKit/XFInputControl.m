@@ -3,7 +3,7 @@
 #import "XFErrors.h"
 #import "XFNodeState.h"
 #import "XFExprContext.h"
-#import <Foundation/NSXMLNode.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @implementation XFInputControl
 

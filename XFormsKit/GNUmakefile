@@ -23,6 +23,11 @@ XFormsKit_DEPLOY_WITH_CURRENT_VERSION = yes
 XFormsKit_HEADER_FILES_DIR = Sources/XFormsKit
 XFormsKit_HEADER_FILES = \
 	XFormsKit.h \
+	XFDOM.h \
+	XFXMLTypes.h \
+	XFDOMNode.h \
+	XFDOMElement.h \
+	XFDOMDocument.h \
 	XFNamespaces.h \
 	XFErrors.h \
 	XFXML.h \
@@ -150,6 +155,10 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/XFEvent.m \
 	Sources/XFormsKit/XFListener.m \
 	Sources/XFormsKit/XFXMLEvents.m \
+	Sources/XFormsKit/DOM/XFDOMNode.m \
+	Sources/XFormsKit/DOM/XFDOMElement.m \
+	Sources/XFormsKit/DOM/XFDOMDocument.m \
+	Sources/XFormsKit/DOM/XFDOMParser.m \
 	Sources/XFormsKit/AppKit/XFFormView.m \
 	Sources/XFormsKit/AppKit/XFFormView+Widgets.m \
 	Sources/XFormsKit/AppKit/XFFormView+Layout.m \
@@ -165,6 +174,7 @@ XFormsKit_LIBRARIES_DEPEND_UPON += -ldispatch -lcrypto
 
 XFormsKitTests_NEEDS_GUI = yes
 XFormsKitTests_OBJC_FILES = \
+	Tests/XFormsKitTests/XFDOMTests.m \
 	Tests/XFormsKitTests/XFXPathTests.m \
 	Tests/XFormsKitTests/XFInstanceTests.m \
 	Tests/XFormsKitTests/XFHelloFormTests.m \
@@ -209,6 +219,17 @@ XFW3CTests_OBJC_FILES = \
 
 XFW3CTests_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath -ITests/W3CTests
 XFW3CTests_OBJCFLAGS += -fobjc-arc -Wall
+
+# Build the engine against the portable DOM instead of NSXML:
+#   make check XF_PORTABLE_DOM=1
+#   make w3ccheck XF_PORTABLE_DOM=1
+# XFDOM is compiled either way, so XFDOMTests keeps comparing the two
+# implementations in both configurations.
+ifeq ($(XF_PORTABLE_DOM),1)
+XFormsKit_OBJCFLAGS += -DXF_PORTABLE_DOM=1
+XFormsKitTests_OBJCFLAGS += -DXF_PORTABLE_DOM=1
+XFW3CTests_OBJCFLAGS += -DXF_PORTABLE_DOM=1
+endif
 XFW3CTests_BUNDLE_LIBS += -lXFormsKit -lXCTest
 XFW3CTests_LIB_DIRS += -L./XFormsKit.framework/Versions/Current
 XFW3CTests_PRINCIPAL_CLASS = XCTestCase
