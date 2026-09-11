@@ -8,7 +8,11 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)elementWithName:(NSString *)name URI:(NSString *)URI;
 + (instancetype)elementWithName:(NSString *)name stringValue:(NSString *)stringValue;
 - (instancetype)initWithName:(NSString *)name;
-- (instancetype)initWithName:(NSString *)name URI:(nullable NSString *)URI NS_DESIGNATED_INITIALIZER;
+/// The designated initializer. `name` is nullable only because a bare
+/// element is built internally before its name is known; the public
+/// factories above all require one.
+- (instancetype)initWithName:(nullable NSString *)name
+                          URI:(nullable NSString *)URI NS_DESIGNATED_INITIALIZER;
 
 /* Attributes. Namespace declarations are NOT attributes here — they live
    in `namespaces`, as in NSXML, and the serialisation and submission code

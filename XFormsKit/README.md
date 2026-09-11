@@ -94,6 +94,19 @@ XFormsViewer is a small document-based editor, not only a previewer.
     xcodebuild -project XFormsKit.xcodeproj -scheme XFormsKit -configuration Debug build
     xcodebuild -project XFormsKit.xcodeproj -scheme XFormsKit -configuration Debug test
 
+### The portable DOM
+
+The engine speaks one XML API, `XFXML*`, declared in
+`Sources/XFormsKit/XFXMLTypes.h`. It is bound to NSXML by default and to
+XFDOM — the project's own portable tree, in `Sources/XFormsKit/DOM/` —
+when `XF_PORTABLE_DOM` is defined. Both configurations are expected to
+pass every suite:
+
+    xcodebuild -project XFormsKit.xcodeproj -scheme XFormsKit test \
+      GCC_PREPROCESSOR_DEFINITIONS='$(inherited) XF_PORTABLE_DOM=1'
+    make check XF_PORTABLE_DOM=1
+    make w3ccheck XF_PORTABLE_DOM=1
+
 ### GNUstep
 
 Requires GNUstep Base, GUI, Make, and [tools-xctest](https://github.com/gnustep/tools-xctest).
@@ -114,6 +127,20 @@ the left, Form / Source / Instance in the center, inspector on the right.
     # or: xcodebuild -project XFormsKit.xcodeproj -scheme XFormsViewer build
 
 File ▸ Open Sample lists the ported XSLTForms forms.
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on every push:
+
+- **macOS (Xcode)** — builds the framework, the viewer and the designer,
+  then runs the unit suite and the W3C suite against *both* XML back ends.
+  It also compiles the DOM against the iOS SDK, which is what keeps the
+  portable half portable: iOS Foundation has no NSXML, so a stray
+  dependency on it fails there and nowhere else.
+- **Ubuntu (GNUstep, clang, gnustep-2.0)** — builds the whole GNUstep
+  stack from source into a cached prefix (`.github/scripts/dependencies.sh`,
+  including the NSXML patch in `patches/gnustep/`), then builds and runs
+  both suites in both configurations under `xvfb`.
 
 ## License
 
