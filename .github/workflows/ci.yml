@@ -225,8 +225,14 @@ jobs:
             libssl-dev libavahi-client-dev zlib1g-dev gnutls-bin libcurl4-gnutls-dev \
             libgmp-dev libcairo2-dev libjpeg-dev libtiff-dev libpng-dev libicns-dev \
             libpthread-workqueue-dev \
+            libfreetype-dev libfontconfig1-dev libxrender-dev liblcms2-dev \
             libxt-dev libxmu-dev libxft-dev libxrandr-dev libxfixes-dev libxcursor-dev \
             xvfb
+          # freetype2, fontconfig, Xrender and lcms2 are Opal's: its
+          # Source/GNUmakefile links all four (plus cairo, libpng, jpeg and
+          # tiff, which are already here). Xft pulls the first three in
+          # practice, but Opal names them, so name them too.
+          #
           # The gnustep-2.0 runtime needs ld.gold or lld. ld.gold is gone from
           # binutils on newer Ubuntu, so fall back to lld rather than failing
           # on a missing alternative.

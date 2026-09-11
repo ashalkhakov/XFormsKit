@@ -182,7 +182,17 @@ install_libs_corebase() {
     . "$GNUSTEP_SH"
     git clone -q https://github.com/gnustep/libs-corebase.git
     cd libs-corebase
-    ./configure --prefix="$INSTALL_PATH" || cat config.log
+    # corebase's toll-free bridge probe is AC_CHECK_HEADERS(objc/runtime.h)
+    # followed by AC_SEARCH_LIBS(objc_getClass, [objc objc2]). The runtime
+    # built in the first step lives in this prefix, and neither probe looks
+    # there on its own -- C_INCLUDE_PATH covers the header but the link test
+    # needs a -L, and LD_LIBRARY_PATH is a RUNTIME path, not a link one.
+    # Without these it fails with "Objective-C library not found!".
+    ./configure --prefix="$INSTALL_PATH" \
+                CPPFLAGS="-I$INSTALL_PATH/include" \
+                LDFLAGS="-L$INSTALL_PATH/lib -Wl,-rpath,$INSTALL_PATH/lib" \
+                || cat config.log
+    make
     make install
     echo "::endgroup::"
 }
@@ -193,8 +203,12 @@ install_libs_opal() {
     . "$GNUSTEP_SH"
     git clone -q https://github.com/gnustep/libs-opal.git
     cd libs-opal
-    ./configure --prefix="$INSTALL_PATH" || cat config.log
-    make install
+    # No configure script: Opal is a plain gnustep-make project. Only the
+    # Source subproject is built -- the aggregate also builds Tests, which
+    # is a set of example tools this build has no use for and would only
+    # add ways to fail.
+    make -C Source
+    make -C Source install
     echo "::endgroup::"
 }
 
