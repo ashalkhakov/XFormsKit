@@ -263,6 +263,6 @@ w3ccheck: all
 
 # The W3C XForms 1.1 suite, end to end and headless (TestSuite/README.md).
 testsuite: all
-	$(MAKE) -C Tools/xftestrun
+	$(MAKE) -C tools/xftestrun
 	LD_LIBRARY_PATH="$(CURDIR)/XFormsKit.framework/Versions/Current:$$LD_LIBRARY_PATH" \
-	  ./Tools/xftestrun/obj/xftestrun TestSuite/XForms1.1/Edition1
+	  ./tools/xftestrun/obj/xftestrun TestSuite/XForms1.1/Edition1
