@@ -18,6 +18,17 @@
 
 @implementation XFDOMTests
 
+/// Apple's NSXML and GNUstep's do NOT agree on everything, so for some
+/// questions there is no single reference answer to assert against. Those
+/// cases are marked below: XFDOM picks one answer, the test pins that
+/// answer exactly — it has to be identical on every platform, which is the
+/// entire point of having our own DOM — and the platform's answer is
+/// recorded here for whoever reads the log.
+static void XFNoteReference(NSString *what, id value)
+{
+    NSLog(@"[XFDOMTests] this platform's NSXML: %@ = %@", what, value ?: @"(nil)");
+}
+
 - (XFDOMDocument *)parse:(NSString *)xml
 {
     NSError *error = nil;
@@ -120,8 +131,11 @@
 
     XCTAssertEqualObjects([mine attributeForName:@"h:k"].stringValue,
                           [[theirs attributeForName:@"h:k"] stringValue]);
-    XCTAssertNil([mine attributeForName:@"k"]);
-    XCTAssertNil([theirs attributeForName:@"k"], @"pinning: NSXML matches the qualified name only");
+    XCTAssertNil([mine attributeForName:@"k"], @"lookup is by qualified name");
+    // DIVERGENT: Apple answers nil here, GNUstep finds the prefixed
+    // attribute by its local name. XFDOM follows Apple, which is also what
+    // NSXML documents; the engine only ever asks for names it wrote.
+    XFNoteReference(@"attributeForName:@\"k\" against h:k", [theirs attributeForName:@"k"]);
     XCTAssertEqualObjects([mine attributeForLocalName:@"k" URI:@"urn:h"].stringValue, @"prefixed");
 
     XCTAssertNil([mine attributeForName:@"plain"].URI);
@@ -152,12 +166,15 @@
 
     XCTAssertEqualObjects([mine attributeForName:@"xml:id"].URI,
                           @"http://www.w3.org/XML/1998/namespace");
-    XCTAssertEqualObjects([mine attributeForName:@"xml:id"].URI,
-                          [[theirs attributeForName:@"xml:id"] URI]);
     XCTAssertEqualObjects([[mine resolveNamespaceForName:@"xml:id"] stringValue],
-                          [[theirs resolveNamespaceForName:@"xml:id"] stringValue]);
-    XCTAssertEqual(mine.namespaces.count, [[theirs namespaces] count],
+                          @"http://www.w3.org/XML/1998/namespace");
+    XCTAssertEqual(mine.namespaces.count, (NSUInteger)0,
                    @"the implicit binding is not a declaration");
+
+    // DIVERGENT: Apple resolves the reserved prefix, GNUstep leaves xml:id
+    // in no namespace. XFDOM follows the XML Namespaces specification,
+    // which makes xml: bound everywhere without a declaration.
+    XFNoteReference(@"URI of xml:id", [[theirs attributeForName:@"xml:id"] URI]);
 }
 
 #pragma mark - Values
@@ -191,8 +208,11 @@
 {
     XFDOMElement *withComment = [[self parse:@"<r>a<b>c</b>d<!--x--></r>"] rootElement];
     XCTAssertEqualObjects(withComment.stringValue, @"acd");
-    XCTAssertEqualObjects([[[self parseNS:@"<r>a<b>c</b>d<!--x--></r>"] rootElement] stringValue],
-                          @"acdx", @"pinning the Apple behaviour we are diverging from");
+    // DIVERGENT: Apple answers "acdx", GNUstep "acd". XFDOM implements the
+    // XPath meaning, so it agrees with GNUstep and deliberately not with
+    // Apple.
+    XFNoteReference(@"stringValue of <r>a<b>c</b>d<!--x--></r>",
+                    [[[self parseNS:@"<r>a<b>c</b>d<!--x--></r>"] rootElement] stringValue]);
 
     XFDOMElement *withPI = [[self parse:@"<r>a<?pi dat?>b</r>"] rootElement];
     XCTAssertEqualObjects(withPI.stringValue, @"ab");
@@ -201,15 +221,23 @@
     XCTAssertEqualObjects([withComment childAtIndex:3].stringValue, @"x");
 }
 
-/// CDATA parses to an ordinary text node, as in NSXML: the CDATA form is
-/// a serialisation option, not a property of the content.
-- (void)testCDATARoundTripMatchesNSXML
+/// CDATA parses to an ordinary text node: the CDATA form is a
+/// serialisation option, not a property of the content.
+- (void)testCDATAParsesToTextAndSerialisesEscaped
 {
     NSString *xml = @"<r><![CDATA[c & d]]></r>";
+
+    // the value is the same everywhere, and both NSXMLs agree on it
+    XCTAssertEqualObjects([[self parse:xml] rootElement].stringValue, @"c & d");
     XCTAssertEqualObjects([[self parse:xml] rootElement].stringValue,
                           [[[self parseNS:xml] rootElement] stringValue]);
-    XCTAssertEqualObjects([[[self parse:xml] rootElement] XMLString],
-                          [[[self parseNS:xml] rootElement] XMLString]);
+
+    // DIVERGENT: Apple re-serialises it as escaped text, GNUstep keeps the
+    // CDATA section. XFDOM escapes, so the bytes it writes for a given tree
+    // are the same on every platform.
+    XCTAssertEqualObjects([[[self parse:xml] rootElement] XMLString], @"<r>c &amp; d</r>");
+    XFNoteReference(@"XMLString of a parsed CDATA section",
+                    [[[self parseNS:xml] rootElement] XMLString]);
 
     // asked for explicitly, the text comes back wrapped
     XCTAssertEqualObjects([[[self parse:xml] rootElement] XMLStringWithOptions:XFDOMNodeIsCDATA],
@@ -218,28 +246,40 @@
 
 #pragma mark - Serialisation
 
-- (void)testXMLStringMatchesNSXML
+/// The exact bytes XFDOM writes for a parsed document. Pinned literally
+/// rather than compared with NSXML: the two NSXMLs disagree on the empty
+/// element form (Apple writes <empty></empty>, GNUstep <empty/>), and a
+/// serialisation that changed with the platform would defeat the point of
+/// the portable DOM — the W3C suite compares submitted instance bytes.
+- (void)testDocumentSerialisationIsExactAndPlatformIndependent
 {
-    // element-only content, so the two agree on whitespace too
     NSString *xml = @"<data xmlns=\"urn:d\" xmlns:h=\"urn:h\">"
                      "<name h:k=\"v &amp; w\">Ada &amp; Co</name>"
                      "<empty/><lt>a &lt; b</lt></data>";
-    NSString *mine = [[self parse:xml] XMLString];
-    NSString *theirs = [[self parseNS:xml] XMLString];
-    XCTAssertEqualObjects(mine, theirs);
+    XCTAssertEqualObjects([[self parse:xml] XMLString],
+        @"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+         "<data xmlns=\"urn:d\" xmlns:h=\"urn:h\">"
+         "<name h:k=\"v &amp; w\">Ada &amp; Co</name>"
+         "<empty></empty><lt>a &lt; b</lt></data>");
+    XFNoteReference(@"XMLString of the same document", [[self parseNS:xml] XMLString]);
 }
 
-- (void)testEscapingMatchesNSXML
+/// Escaping, pinned exactly. Markup characters are escaped in text; an
+/// attribute value additionally escapes the delimiter. Apostrophes are
+/// left alone in both, since the delimiter written is always a quote.
+///
+/// Not compared with NSXML: GNUstep's -setStringValue: runs the string
+/// through libxml2's entity parser, which reports "unterminated entity
+/// reference" for a bare ampersand and does not produce a comparable
+/// answer.
+- (void)testEscapingIsExactAndPlatformIndependent
 {
-    NSXMLElement *theirs = [NSXMLElement elementWithName:@"e"];
-    [theirs setStringValue:@"< & > \" '"];
-    [theirs addAttribute:[NSXMLNode attributeWithName:@"a" stringValue:@"< & > \" '"]];
-
     XFDOMElement *mine = [XFDOMElement elementWithName:@"e"];
     mine.stringValue = @"< & > \" '";
     [mine addAttribute:[XFDOMNode attributeWithName:@"a" stringValue:@"< & > \" '"]];
 
-    XCTAssertEqualObjects([mine XMLString], [theirs XMLString]);
+    XCTAssertEqualObjects([mine XMLString],
+                          @"<e a=\"&lt; &amp; &gt; &quot; '\">&lt; &amp; &gt; \" '</e>");
 }
 
 - (void)testBuiltTreeSerialisesLikeNSXML
