@@ -24,10 +24,6 @@
 # Expects: CC, CXX, LIBRARY_COMBO, RUNTIME_VERSION, DEPS_PATH, INSTALL_PATH.
 set -ex
 
-# Captured before anything cds away: the patch below is named relative to the
-# checkout.
-WORKSPACE_DIR=$(pwd)
-
 mkdir -p "$DEPS_PATH"
 
 # With --with-layout=gnustep this is where tools-make puts the makefiles.
@@ -102,16 +98,9 @@ install_libs_base() {
     . "$GNUSTEP_SH"
     git clone -q -b ${LIBS_BASE_BRANCH:-master} https://github.com/gnustep/libs-base.git
     cd libs-base
-    # Required for this project: setTreeDoc() in Source/NSXMLNode.m has no
-    # XML_ATTRIBUTE_NODE branch, so a detached attribute keeps its name
-    # interned in the old document's libxml2 dictionary and xmlFreeProp later
-    # frees an interior pointer of it. The designer's host-XML editing hits
-    # this reliably. See patches/gnustep/README.md, which also carries a
-    # standalone reproduction.
+    # No patches are applied here any more: the NSXMLNode detached-attribute
+    # fix this project used to carry has been upstreamed into libs-base.
     #
-    # Only the default (NSXML) configuration depends on this. Built against
-    # XFDOM the engine never touches gnustep-base's NSXML at all.
-    patch -p1 < "$WORKSPACE_DIR/patches/gnustep/gnustep-base-nsxmlnode-detached-attribute-dict-strings.patch"
     # The reference recipe names $PREFIX/etc/GNUstep.conf here. This
     # gnustep-make writes it to $PREFIX/etc/GNUstep/GNUstep.conf instead, and
     # when the named file does not exist libs-base falls back to the built-in

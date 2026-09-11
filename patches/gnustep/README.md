@@ -2,41 +2,37 @@
 
 XFormsKit's test suite (and the apps) exercise gnustep-base harder than
 most projects in two places: heavy NSXML mutation, and run-loop-driven
-asynchrony. Two things about the gnustep-base build decide whether a
-fresh Linux setup passes `make check`.
+asynchrony. The notes below are what a fresh Linux setup needs to know;
+the one patch this directory used to carry is now upstream.
 
-## 1. The NSXML detached-attribute patch (required)
+## 1. The NSXML detached-attribute bug (fixed upstream — nothing to do)
 
-`gnustep-base-nsxmlnode-detached-attribute-dict-strings.patch` — apply to
-the gnustep-base source tree before building:
+This project used to carry
+`gnustep-base-nsxmlnode-detached-attribute-dict-strings.patch`, which had
+to be applied to gnustep-base before building. **It has been upstreamed**,
+so a current libs-base needs no patch and none is applied by
+`.github/scripts/dependencies.sh`. The patch and its reproduction have
+been deleted; this note stays because the failure is worth recognising if
+you ever build against an older gnustep-base.
 
-```sh
-cd libs-base
-patch -p1 < .../patches/gnustep/gnustep-base-nsxmlnode-detached-attribute-dict-strings.patch
-make -j$(nproc) && sudo -E make install
-```
+`setTreeDoc()` in `Source/NSXMLNode.m` adopted dictionary-interned strings
+for text and element nodes when a node moved between documents, but had no
+`XML_ATTRIBUTE_NODE` branch. A directly detached attribute
+(`-removeAttributeForName:`, or the subnode detach `-dealloc` performs)
+therefore kept its name interned in the OLD document's libxml2 dictionary,
+and `xmlFreeProp` later freed an interior pointer of it. Depending on heap
+layout that is a `free(): invalid pointer` / `munmap_chunk(): invalid
+pointer` abort, a segfault at autorelease-pool drain — or silent luck. In
+this project the designer's host-XML editing (XFHostEdit
+setAttribute/removeAttribute, e.g. `testItemsetAuthoring`) was a reliable
+trigger on some machines and quiet corruption on others.
 
-Without it, adding or removing ATTRIBUTES on elements of a parsed
-NSXMLDocument frees interior pointers of the document's libxml2
-dictionary: `setTreeDoc()` in Source/NSXMLNode.m adopts
-dictionary-interned strings for text and element nodes when a node moves
-between documents, but has no XML_ATTRIBUTE_NODE branch, so a directly
-detached attribute (`-removeAttributeForName:`, or the subnode detach
-`-dealloc` performs) keeps its name interned in the OLD document's
-dictionary and `xmlFreeProp` later frees an interior pointer of it.
-Depending on heap layout this is `free(): invalid pointer` /
-`munmap_chunk(): invalid pointer` aborts, a segfault at autorelease-pool
-drain — or silent luck. In this project the designer's host-XML editing
-(XFHostEdit setAttribute/removeAttribute paths, e.g.
-`testItemsetAuthoring`) is a reliable trigger on some machines and quiet
-corruption on others: `nsxml-detached-attribute-repro.m` beside the patch
-is a 30-line standalone reproduction (crashes unpatched, prints
-"drained OK" patched; `valgrind -q` shows two deterministic Invalid
-free reports unpatched).
+The fix came from the FreeCoreData project (PR #27), which hit the same bug
+through Core Data's model files.
 
-The patch comes from the FreeCoreData project (PR #27), which hit the
-same bug through Core Data's model files. Upstreaming it to
-gnustep/libs-base is the real fix; until then it travels here.
+Worth knowing either way: built against XFDOM (`XF_PORTABLE_DOM=1`) the
+engine never touches gnustep-base's NSXML at all, so this class of
+gnustep-base XML bug cannot reach it.
 
 ## 2. Run-loop asynchrony without GS_USE_LIBDISPATCH_RUNLOOP
 

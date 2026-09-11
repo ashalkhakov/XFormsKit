@@ -138,9 +138,10 @@ File ▸ Open Sample lists the ported XSLTForms forms.
   portable half portable: iOS Foundation has no NSXML, so a stray
   dependency on it fails there and nowhere else.
 - **Ubuntu (GNUstep, clang, gnustep-2.0)** — builds the whole GNUstep
-  stack from source into a cached prefix (`.github/scripts/dependencies.sh`,
-  including the NSXML patch in `patches/gnustep/`), then builds and runs
-  both suites in both configurations under `xvfb`.
+  stack from source into a cached prefix
+  (`.github/scripts/dependencies.sh`), then builds and runs both suites in
+  both configurations under `xvfb`. No patches are applied to gnustep-base;
+  see `patches/gnustep/README.md` for what a Linux setup should know.
 
 ## License
 
