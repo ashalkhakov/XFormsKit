@@ -208,6 +208,15 @@ install_libs_opal() {
     # is a set of example tools this build has no use for and would only
     # add ways to fail.
     make -C Source
+    # OpalGraphics/GNUmakefile.postamble finishes the install by copying the
+    # ImageIO headers into GNUSTEP_SYSTEM_HEADERS with a bare `cp -r`: no
+    # mkdir, and regardless of the installation domain, which here is LOCAL
+    # (Opal's own headers land in Local/Library/Headers/CoreGraphics). The
+    # System headers directory does not exist in this prefix, so the copy
+    # fails and takes the install down with it. Creating the directory it
+    # assumes is cheaper than carrying a patch for headers nothing here
+    # uses -- XFormsKit imports CoreGraphics and CoreText, not ImageIO.
+    mkdir -p "$(gnustep-config --variable=GNUSTEP_SYSTEM_HEADERS)"
     make -C Source install
     echo "::endgroup::"
 }
