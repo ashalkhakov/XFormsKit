@@ -107,6 +107,17 @@ pass every suite:
     make check XF_PORTABLE_DOM=1
     make w3ccheck XF_PORTABLE_DOM=1
 
+### iOS
+
+The framework target is multiplatform. On an iPhone SDK it excludes the
+AppKit view layer and builds the engine, the XPath layer and XFDOM
+against Foundation alone:
+
+    xcodebuild -project XFormsKit.xcodeproj -target XFormsKit \
+      -sdk iphonesimulator -configuration Debug build
+
+There is no UI layer for iOS yet — see `docs/ios-port-plan.md`.
+
 ### GNUstep
 
 Requires GNUstep Base, GUI, Make, and [tools-xctest](https://github.com/gnustep/tools-xctest).
@@ -140,8 +151,10 @@ File ▸ Open Sample lists the ported XSLTForms forms.
 - **Ubuntu (GNUstep, clang, gnustep-2.0)** — builds the whole GNUstep
   stack from source into a cached prefix
   (`.github/scripts/dependencies.sh`), then builds and runs both suites in
-  both configurations under `xvfb`. No patches are applied to gnustep-base;
-  see `patches/gnustep/README.md` for what a Linux setup should know.
+  both configurations under `xvfb`. One patch is applied to gnustep-base
+  (`patches/gnustep/`, an `-[NSXMLElement addAttribute:]` use-after-free
+  that the NSXML configuration hits); see `patches/gnustep/README.md` for
+  it and for what else a Linux setup should know.
 
 ## License
 

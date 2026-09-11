@@ -217,12 +217,23 @@ to a thin `drawRect:` host each.
 Each phase is independently landable and verifiable. Phases 1–3 are
 macOS-only work that leaves the shipping product unchanged.
 
-### Phase 0 — Module split (≈3 days)
+### Phase 0 — Module split — **DONE**
 
-Split the Xcode project and `GNUmakefile` into `XFormsCore` +
-`XFormsUI-AppKit`; add an iOS framework target for Core that is expected
-to fail to compile. Exit: `xcodebuild -scheme XFormsKit test` still green
-(667 tests); the iOS target's error list is exactly the NSXML references.
+No separate `XFormsCore` target was needed. The framework target is
+multiplatform instead: on an iPhone SDK it excludes
+`Sources/XFormsKit/AppKit/` and defines `XF_PORTABLE_DOM`, which is the
+same split without a second product to keep in sync, and without touching
+how macOS builds.
+
+    SUPPORTED_PLATFORMS = macosx iphoneos iphonesimulator
+    SDKROOT = auto
+    EXCLUDED_SOURCE_FILE_NAMES[sdk=iphone*] = <the AppKit layer>
+    GCC_PREPROCESSOR_DEFINITIONS[sdk=iphone*] = $(inherited) XF_PORTABLE_DOM=1
+
+The header split that would have been the bulk of this phase turned out to
+exist already: no engine source imports AppKit, and
+[XFormsKit.h](../Sources/XFormsKit/XFormsKit.h) guards its five view
+headers behind `#if __has_include(<AppKit/AppKit.h>)`.
 
 ### Phase 1 — The portable DOM (≈2–3.5 weeks, critical path)
 
@@ -255,10 +266,26 @@ option B. Exit: macOS form rendering pixel-identical; the layout pass has
 its own unit tests asserting widget specs (which is also the first time
 the label-per-item class of bug becomes directly testable without a view).
 
-### Phase 4 — iOS Core lands (≈2 days)
+### Phase 4 — iOS Core lands — **DONE (build), test host outstanding**
 
-Exit: `XFormsCore` compiles and its ~630 engine tests run green in an iOS
-Simulator test target. The engine is ported at this point.
+`XFormsKit.framework` builds for both iOS SDKs:
+
+    xcodebuild -project XFormsKit.xcodeproj -target XFormsKit \
+      -sdk iphonesimulator -configuration Debug build
+    xcodebuild -project XFormsKit.xcodeproj -target XFormsKit \
+      -sdk iphoneos -configuration Debug build CODE_SIGNING_ALLOWED=NO
+
+The simulator slice is a universal x86_64 + arm64 Mach-O with a minimum of
+iOS 15, carrying 99 Objective-C classes — the engine, the XPath layer and
+XFDOM — and linking **Foundation, CoreFoundation and libobjc only**. No
+AppKit, no UIKit, no libxml2. CI asserts that shape on every run rather
+than trusting the exclusion list: it fails if a view class appears in the
+binary or if anything but Foundation is linked.
+
+What is left of this phase is running the ~630 engine tests *on* iOS.
+That needs an iOS unit-test target and a host app, which is a scheme and
+signing question rather than a porting one — the same test sources should
+run unchanged, since only `XFUIControlTests` touches AppKit.
 
 ### Phase 5 — The UIKit widget factory (≈2–3 weeks)
 
@@ -287,11 +314,11 @@ A minimal iOS viewer, an iOS test target in CI, README updates.
 
 | Phase | Work | Estimate |
 | --- | --- | ---: |
-| 0 | Module split | 3 d |
-| 1 | Portable DOM (clean-room `XFDOM*`) | 2–3.5 w |
+| 0 | Module split | **done** |
+| 1 | Portable DOM (clean-room `XFDOM*`) | **done** |
 | 2 | Core Graphics SVG | 1–1.5 w |
 | 3 | Portable text + layout extraction | 2–3 w |
-| 4 | iOS Core green | 2 d |
+| 4 | iOS Core green | **done** (tests on-device outstanding) |
 | 5 | UIKit widget factory | 2–3 w |
 | 6 | iOS interaction gaps | 1–2 w |
 | 7 | Host app + CI | 1 w |

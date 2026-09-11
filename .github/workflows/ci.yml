@@ -96,22 +96,51 @@ jobs:
             -resultBundlePath "$RUNNER_TEMP/XFW3CTests-${{ matrix.name }}.xcresult" test \
             GCC_PREPROCESSOR_DEFINITIONS='$(inherited) '"$XF_DEFS"
 
-      # The reason the portable DOM exists. iOS Foundation has NSXMLParser and
-      # no DOM at all, so anything that reaches for NSXMLDocument here fails to
-      # compile -- which is the check. There is no iOS target to build yet, so
-      # the DOM sources are compiled directly against the iOS SDK.
-      - name: XFDOM compiles for iOS
+      # The reason the portable DOM exists. The framework target is
+      # multiplatform: on an iPhone SDK it excludes Sources/XFormsKit/AppKit
+      # and defines XF_PORTABLE_DOM, so what builds here is the engine, the
+      # XPath layer and XFDOM against Foundation alone. iOS Foundation has
+      # NSXMLParser and no DOM, so anything that reaches for NSXMLDocument
+      # fails here and nowhere else.
+      #
+      # Both SDKs: the simulator is what a test host would use, and the
+      # device slice is the one with the real linker constraints.
+      - name: Build the framework for iOS
         if: ${{ matrix.portable }}
         run: |
-          mkdir -p "$RUNNER_TEMP/include"
-          ln -sfn "$PWD/Sources/XFormsKit" "$RUNNER_TEMP/include/XFormsKit"
-          sdk=$(xcrun --sdk iphoneos --show-sdk-path)
-          for f in Sources/XFormsKit/DOM/*.m; do
-            echo "  $f"
-            clang -fsyntax-only -fobjc-arc -Wall \
-              -target arm64-apple-ios15.0 -isysroot "$sdk" \
-              -I"$RUNNER_TEMP/include" -ISources/XFormsKit/DOM "$f"
+          xcodebuild -project XFormsKit.xcodeproj -target XFormsKit \
+            -sdk iphonesimulator -configuration Debug build
+          xcodebuild -project XFormsKit.xcodeproj -target XFormsKit \
+            -sdk iphoneos -configuration Debug build CODE_SIGNING_ALLOWED=NO
+
+      # A framework that builds but quietly drags in the view layer, or links
+      # something not on iOS, would defeat the point -- so assert the shape of
+      # what came out rather than trusting the build to have excluded it.
+      - name: The iOS framework is Foundation-only
+        if: ${{ matrix.portable }}
+        run: |
+          products=$(xcodebuild -project XFormsKit.xcodeproj -target XFormsKit \
+                       -sdk iphonesimulator -configuration Debug -showBuildSettings 2>/dev/null \
+                     | awk -F' = ' '/ BUILT_PRODUCTS_DIR/{print $2; exit}')
+          binary="$products/XFormsKit.framework/XFormsKit"
+          echo "== linked libraries =="
+          otool -L "$binary" | tail -n +2
+          for framework in AppKit UIKit QuartzCore CoreGraphics; do
+            if otool -L "$binary" | grep -q "/$framework.framework/"; then
+              echo "::error::the iOS framework links $framework; the core must be Foundation-only"
+              exit 1
+            fi
           done
+          classes=$(nm -arch arm64 -gU "$binary" | sed -n 's/.*_OBJC_CLASS_\$_//p')
+          for c in XFProcessor XFDOMDocument XFXPath XFSubmission; do
+            echo "$classes" | grep -qx "$c" \
+              || { echo "::error::$c is missing from the iOS framework"; exit 1; }
+          done
+          for c in XFFormView XFSVGView XFRichTextEditor XFTableAdapter; do
+            echo "$classes" | grep -qx "$c" \
+              && { echo "::error::the view layer leaked into the iOS framework ($c)"; exit 1; }
+          done
+          echo "engine present, view layer excluded, Foundation only"
 
       # XFDOMTests is a differential suite: it asserts XFDOM and NSXML agree.
       # A rename that quietly points both sides at the same implementation
@@ -209,7 +238,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ env.INSTALL_PATH }}
-          key: gnustep-v1-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh') }}
+          key: gnustep-v1-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh', 'source/patches/gnustep/*.patch') }}
 
       - name: Build GNUstep
         if: steps.gnustep-cache.outputs.cache-hit != 'true'
@@ -220,7 +249,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ${{ env.INSTALL_PATH }}
-          key: gnustep-v1-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh') }}
+          key: gnustep-v1-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh', 'source/patches/gnustep/*.patch') }}
 
       # ---- default configuration: the engine on gnustep-base's NSXML ----
 
