@@ -7,7 +7,17 @@ project) as the portable XML tree this port needs. Companion to
 the critical path: `NSXMLDocument` / `NSXMLElement` / `NSXMLNode` do not
 exist on iOS.
 
-**Verdict: yes, lift it.** The tree, the namespace model and the parser
+> **Decision: not adopted.** The DOM is being written clean-room instead,
+> as `XFDOM*` in [Sources/XFormsKit/DOM/](../Sources/XFormsKit/DOM/) — no
+> ESXML, no Xfolite translation. This assessment is kept because its
+> measurements still hold and explain the choice: the lift would have
+> saved roughly a week of typing while inheriting a broken serialiser, a
+> W3C-DOM API the engine cannot call, and three semantic gaps that the
+> facade would have had to paper over anyway. Writing to the NSXML shape
+> directly skips the facade entirely. The gap analysis in §"Semantic gaps"
+> became the specification for the new implementation's tests.
+
+**Original verdict: yes, lift it.** The tree, the namespace model and the parser
 are sound and land on iOS almost untouched. The serializer has to be
 rewritten, and an NSXML-shaped facade has to go on top. That is a
 meaningful head start on the riskiest part of the port — though less of a

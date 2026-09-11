@@ -7,6 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA00000100000000000000200 /* XFDOMNode.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000200 /* XFDOMNode.m */; };
+		AA00000100000000000000201 /* XFDOMElement.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000201 /* XFDOMElement.m */; };
+		AA00000100000000000000202 /* XFDOMDocument.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000202 /* XFDOMDocument.m */; };
+		AA00000100000000000000203 /* XFDOMParser.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000203 /* XFDOMParser.m */; };
+		AA00000100000000000000204 /* XFDOM.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000204 /* XFDOM.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA00000100000000000000205 /* XFDOMNode.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000205 /* XFDOMNode.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA00000100000000000000206 /* XFDOMElement.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000206 /* XFDOMElement.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA00000100000000000000207 /* XFDOMDocument.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000207 /* XFDOMDocument.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA00000100000000000000209 /* XFDOMTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000209 /* XFDOMTests.m */; };
 		AA0000010000000000000001 /* XFNamespaces.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000001 /* XFNamespaces.m */; };
 		AA0000010000000000000002 /* XFErrors.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000002 /* XFErrors.m */; };
 		AA0000010000000000000003 /* XFXML.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000003 /* XFXML.m */; };
@@ -233,6 +242,16 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		BB00000100000000000000200 /* XFDOMNode.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMNode.m; sourceTree = "<group>"; };
+		BB00000100000000000000201 /* XFDOMElement.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMElement.m; sourceTree = "<group>"; };
+		BB00000100000000000000202 /* XFDOMDocument.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMDocument.m; sourceTree = "<group>"; };
+		BB00000100000000000000203 /* XFDOMParser.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMParser.m; sourceTree = "<group>"; };
+		BB00000100000000000000204 /* XFDOM.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDOM.h; sourceTree = "<group>"; };
+		BB00000100000000000000205 /* XFDOMNode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDOMNode.h; sourceTree = "<group>"; };
+		BB00000100000000000000206 /* XFDOMElement.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDOMElement.h; sourceTree = "<group>"; };
+		BB00000100000000000000207 /* XFDOMDocument.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDOMDocument.h; sourceTree = "<group>"; };
+		BB00000100000000000000208 /* XFDOMPriv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDOMPriv.h; sourceTree = "<group>"; };
+		BB00000100000000000000209 /* XFDOMTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMTests.m; sourceTree = "<group>"; };
 		BB0000010000000000000001 /* XFNamespaces.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFNamespaces.m; sourceTree = "<group>"; };
 		BB0000010000000000000002 /* XFErrors.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFErrors.m; sourceTree = "<group>"; };
 		BB0000010000000000000003 /* XFXML.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXML.m; sourceTree = "<group>"; };
@@ -663,6 +682,11 @@
 				BB0000010000000000000054 /* XFXMLEvents.h */,
 				BB0000010000000000000055 /* XFXMLEvents.m */,
 				BB000001000000000000001E /* XFFormView.h */,
+				GG0000010000000000000200 /* DOM */,
+				BB00000100000000000000204 /* XFDOM.h */,
+				BB00000100000000000000205 /* XFDOMNode.h */,
+				BB00000100000000000000206 /* XFDOMElement.h */,
+				BB00000100000000000000207 /* XFDOMDocument.h */,
 				GG0000010000000000000008 /* XPath */,
 				GG0000010000000000000009 /* AppKit */,
 			);
@@ -672,6 +696,7 @@
 		GG0000010000000000000006 /* XFormsKitTests */ = {
 			isa = PBXGroup;
 			children = (
+				BB00000100000000000000209 /* XFDOMTests.m */,
 				BB0000010000000000000020 /* XFXPathTests.m */,
 				BB0000010000000000000021 /* XFInstanceTests.m */,
 				BB0000010000000000000022 /* XFHelloFormTests.m */,
@@ -693,6 +718,18 @@
 				BB0000010000000000000023 /* hello.xhtml */,
 			);
 			path = Fixtures;
+			sourceTree = "<group>";
+		};
+		GG0000010000000000000200 /* DOM */ = {
+			isa = PBXGroup;
+			children = (
+				BB00000100000000000000200 /* XFDOMNode.m */,
+				BB00000100000000000000201 /* XFDOMElement.m */,
+				BB00000100000000000000202 /* XFDOMDocument.m */,
+				BB00000100000000000000203 /* XFDOMParser.m */,
+				BB00000100000000000000208 /* XFDOMPriv.h */,
+			);
+			path = DOM;
 			sourceTree = "<group>";
 		};
 		GG0000010000000000000008 /* XPath */ = {
@@ -865,6 +902,10 @@
 				AA0000010000000000000015 /* XFModel.h in Headers */,
 				AA0000010000000000000016 /* XFExprContext.h in Headers */,
 				AA0000010000000000000017 /* XFXPathValue.h in Headers */,
+				AA00000100000000000000204 /* XFDOM.h in Headers */,
+				AA00000100000000000000205 /* XFDOMNode.h in Headers */,
+				AA00000100000000000000206 /* XFDOMElement.h in Headers */,
+				AA00000100000000000000207 /* XFDOMDocument.h in Headers */,
 				AA0000010000000000000018 /* XFXPath.h in Headers */,
 				AA0000010000000000000019 /* XFBinding.h in Headers */,
 				AA000001000000000000001A /* XFControl.h in Headers */,
@@ -1082,6 +1123,10 @@
 			files = (
 				AA0000010000000000000001 /* XFNamespaces.m in Sources */,
 				AA0000010000000000000002 /* XFErrors.m in Sources */,
+				AA00000100000000000000200 /* XFDOMNode.m in Sources */,
+				AA00000100000000000000201 /* XFDOMElement.m in Sources */,
+				AA00000100000000000000202 /* XFDOMDocument.m in Sources */,
+				AA00000100000000000000203 /* XFDOMParser.m in Sources */,
 				AA0000010000000000000003 /* XFXML.m in Sources */,
 				AA0000010000000000000004 /* XFInstance.m in Sources */,
 				AA0000010000000000000005 /* XFModel.m in Sources */,
@@ -1163,6 +1208,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA00000100000000000000209 /* XFDOMTests.m in Sources */,
 				AA0000010000000000000020 /* XFXPathTests.m in Sources */,
 				AA0000010000000000000021 /* XFInstanceTests.m in Sources */,
 				AA0000010000000000000022 /* XFHelloFormTests.m in Sources */,

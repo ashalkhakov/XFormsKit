@@ -116,14 +116,21 @@ New classes `XFDOMNode`, `XFDOMElement`, `XFDOMDocument` — named to avoid
 confusion with the existing [XFXML](../Sources/XFormsKit/XFXML.h) static-helper
 facade. A pure Objective-C tree, parsed with `NSXMLParser`.
 
-**This does not have to be written from scratch.** The previous iteration
-of this project (`/Volumes/ExtraSSD/Projects/XFormsKit`) contains a
-1,864-line W3C-shaped Objective-C DOM with namespace support, cloning and
-an `NSXMLParser`-based parser. A spike confirmed it compiles for iOS
-arm64 with zero errors after removing two imports, and parses correctly.
-Its serializer is broken and must be rewritten, and it needs an
-NSXML-shaped facade on top. Full assessment, spike results and work
-items: [ios-port-dom-lift.md](ios-port-dom-lift.md).
+Written clean-room, directly against the NSXML shape, so the engine's
+call sites move over by renaming the class rather than through a
+compatibility facade. Lifting the previous project's DOM was assessed and
+declined — the reasoning, and the gap analysis that became this
+implementation's test specification, are in
+[ios-port-dom-lift.md](ios-port-dom-lift.md).
+
+**Status: started.** `Sources/XFormsKit/DOM/` holds `XFDOMNode`,
+`XFDOMElement`, `XFDOMDocument` and the `NSXMLParser`-based builder —
+about 1,100 lines covering the full inventory below. It builds in the
+framework on macOS and compiles for iOS arm64, and
+`Tests/XFormsKitTests/XFDOMTests.m` holds 15 differential tests that run
+every operation through both NSXML and XFDOM and assert they agree.
+Still to do: switch the engine over behind `XF_PORTABLE_DOM` and get the
+630 engine tests green against it.
 
 On macOS the names alias the system classes so the shipping product keeps
 the battle-tested implementation and carries zero regression risk:
@@ -202,12 +209,11 @@ to fail to compile. Exit: `xcodebuild -scheme XFormsKit test` still green
 
 ### Phase 1 — The portable DOM (≈2–3.5 weeks, critical path)
 
-Lift the previous project's DOM per
-[ios-port-dom-lift.md](ios-port-dom-lift.md), rewrite its serializer, and
-put an NSXML-shaped facade over it covering the inventory in
-[ios-port-widget-map.md](ios-port-widget-map.md); then rename engine
-references behind the `XF_PORTABLE_DOM` flag. Exit: the **full existing
-suite passes in both configurations** —
+Write `XFDOM*` against the inventory in
+[ios-port-widget-map.md](ios-port-widget-map.md), pinning each behaviour
+with a differential test against NSXML; then rename engine references
+behind the `XF_PORTABLE_DOM` flag. Exit: the **full existing suite passes
+in both configurations** —
 
     xcodebuild -scheme XFormsKit test                                   # NSXML
     xcodebuild -scheme XFormsKit test XF_PORTABLE_DOM=1                 # XFDOM
@@ -265,7 +271,7 @@ A minimal iOS viewer, an iOS test target in CI, README updates.
 | Phase | Work | Estimate |
 | --- | --- | ---: |
 | 0 | Module split | 3 d |
-| 1 | Portable DOM (lifted, see dom-lift) | 2–3.5 w |
+| 1 | Portable DOM (clean-room `XFDOM*`) | 2–3.5 w |
 | 2 | Core Graphics SVG | 1–1.5 w |
 | 3 | Portable text + layout extraction | 2–3 w |
 | 4 | iOS Core green | 2 d |
