@@ -187,6 +187,9 @@ XFormsKit_LIBRARIES_DEPEND_UPON += -ldispatch -lcrypto -lopal
 XFormsKitTests_NEEDS_GUI = yes
 XFormsKitTests_OBJC_FILES = \
 	Tests/XFormsKitTests/XFDOMTests.m \
+	Tests/XFormsKitTests/XFDateDisplayTests.m \
+	Tests/XFormsKitTests/XFRichSupportTests.m \
+	Tests/XFormsKitTests/XFSVGRenderTests.m \
 	Tests/XFormsKitTests/XFDXPathHighlightTests.m \
 	Apps/XFormsDesigner/XFDXPathTextStorage.m \
 	Tests/XFormsKitTests/XFFormRowsTests.m \

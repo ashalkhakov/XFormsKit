@@ -231,6 +231,15 @@
 
 @implementation XFRichDisplayViewTests
 
+/// AppKit headless bring-up. Every test here asks for a font, and
+/// GNUstep's font enumerator asserts unless the shared NSApplication
+/// exists; on Apple it is harmless.
+- (void)setUp
+{
+    [super setUp];
+    [NSApplication sharedApplication];
+}
+
 - (void)testDisplayViewIsReadOnlyAndSizedToItsText
 {
     NSTextView *view = [XFRichText displayViewWithMarkup:@"Enter your <b>full</b> name"

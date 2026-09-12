@@ -12,6 +12,9 @@
 #import <XFormsKit/XFHostNode.h>
 #import <XFormsKit/XFFormRows.h>
 #import <CoreGraphics/CoreGraphics.h>
+#if __has_include(<AppKit/AppKit.h>)
+#import <AppKit/AppKit.h>
+#endif
 
 /// The bounding box of everything painted, in the drawn rect's own
 /// coordinates (y down from the top, like SVG); an empty box when
@@ -22,6 +25,17 @@ typedef struct { NSInteger minX, minY, maxX, maxY; NSUInteger count; } XFInkBoun
 @end
 
 @implementation XFSVGRenderTests
+
+- (void)setUp
+{
+    [super setUp];
+#if __has_include(<AppKit/AppKit.h>)
+    // Painting <text> rasterizes glyphs through the platform font
+    // machinery, and GNUstep's font enumerator asserts unless the
+    // shared NSApplication exists; on Apple it is harmless.
+    [NSApplication sharedApplication];
+#endif
+}
 
 - (void)collectSVG:(NSArray<XFHostNode *> *)nodes into:(NSMutableArray *)out
 {
