@@ -1,4 +1,6 @@
 #import "XFDXPathField.h"
+#import "XFDXPathTextStorage.h"
+#import "XFDExpressionField.h"
 #import <XFormsKit/XFXMLTypes.h>
 
 #pragma mark - Location-path step model
@@ -14,103 +16,13 @@ static NSArray *XFDKnownAxes(void)
 }
 
 #pragma mark - Syntax highlighting
-
-/// Semantic color, cross-SDK: try the named system color (keeps contrast
-/// in dark themes where it exists), fall back to a fixed calibrated one.
-static NSColor *XFDSystemColor(NSString *selectorName, CGFloat r, CGFloat g, CGFloat b)
-{
-    SEL sel = NSSelectorFromString(selectorName);
-    if ([NSColor respondsToSelector:sel]) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-        NSColor *color = [NSColor performSelector:sel];
-#pragma clang diagnostic pop
-        if (color != nil) {
-            return color;
-        }
-    }
-    return [NSColor colorWithCalibratedRed:r green:g blue:b alpha:1];
-}
-
-static NSColor *XFDTokenColor(NSString *kind)
-{
-    if ([kind isEqualToString:@"string"]) {
-        return XFDSystemColor(@"systemRedColor", 0.77, 0.10, 0.09);
-    }
-    if ([kind isEqualToString:@"number"]) {
-        return XFDSystemColor(@"systemBlueColor", 0.11, 0.00, 0.81);
-    }
-    if ([kind isEqualToString:@"function"]) {
-        return XFDSystemColor(@"systemPurpleColor", 0.42, 0.13, 0.66);
-    }
-    if ([kind isEqualToString:@"axis"]) {
-        return XFDSystemColor(@"systemBrownColor", 0.42, 0.30, 0.16);
-    }
-    if ([kind isEqualToString:@"variable"]) {
-        return XFDSystemColor(@"systemTealColor", 0.00, 0.46, 0.54);
-    }
-    if ([kind isEqualToString:@"operator"]) {
-        return XFDSystemColor(@"systemOrangeColor", 0.64, 0.35, 0.00);
-    }
-    if ([kind isEqualToString:@"punct"]) {
-        return [NSColor disabledControlTextColor];
-    }
-    return [NSColor controlTextColor];   // name
-}
-
-/// The expression, colored by the ENGINE's lexer (token spans from
-/// +highlightTokensForString: — no second tokenizer). `invalid` paints
-/// everything red instead, keeping the existing does-not-compile signal.
-static NSAttributedString *XFDHighlightedXPath(NSString *expression,
-                                               NSFont *font, BOOL invalid)
-{
-    NSString *text = expression ?: @"";
-    NSMutableDictionary *base = [NSMutableDictionary dictionary];
-    if (font != nil) {
-        base[NSFontAttributeName] = font;
-    }
-    base[NSForegroundColorAttributeName] =
-        invalid ? [NSColor redColor] : [NSColor controlTextColor];
-    NSMutableAttributedString *out =
-        [[NSMutableAttributedString alloc] initWithString:text attributes:base];
-    if (!invalid) {
-        for (NSDictionary *token in [XFXPath highlightTokensForString:text]) {
-            NSRange range = [token[@"range"] rangeValue];
-            if (NSMaxRange(range) <= text.length) {
-                [out addAttribute:NSForegroundColorAttributeName
-                            value:XFDTokenColor(token[@"kind"])
-                            range:range];
-            }
-        }
-    }
-    return out;
-}
-
-/// Restyle a text field in place: while it is being edited, recolor the
-/// FIELD EDITOR's storage (attributes only — content and selection stay,
-/// and attribute edits post no textDidChange); otherwise set the
-/// attributed value.
-static void XFDApplyXPathHighlight(NSTextField *field, BOOL invalid)
-{
-    NSAttributedString *styled = XFDHighlightedXPath([field stringValue],
-                                                     [field font], invalid);
-    NSTextView *editor = (NSTextView *)[field currentEditor];
-    if ([editor isKindOfClass:[NSTextView class]]
-        && [[[editor textStorage] string] isEqualToString:[styled string]]) {
-        NSTextStorage *storage = [editor textStorage];
-        [storage beginEditing];
-        NSUInteger i = 0;
-        while (i < styled.length) {
-            NSRange run;
-            NSDictionary *attrs = [styled attributesAtIndex:i effectiveRange:&run];
-            [storage setAttributes:attrs range:run];
-            i = NSMaxRange(run);
-        }
-        [storage endEditing];
-    } else {
-        [field setAttributedStringValue:styled];
-    }
-}
+//
+// Lives in XFDExpressionField: an NSTextView backed by
+// XFDXPathTextStorage, which recolours itself on every change. One path,
+// always on, like a code editor. What used to be here -- an attributed
+// value for an idle field and a pass over the window's shared field
+// editor for an edited one -- AppKit could overwrite at any moment, and
+// did, which is why expressions stopped looking highlighted.
 
 /// Unwraps a structure node for "instance('id')" — the quoted single
 /// string argument — or nil.
@@ -306,7 +218,7 @@ NSDictionary *XFDPredicatePreview(NSString *baseExpression,
 @interface XFDPredicateEditor : NSObject <NSTextFieldDelegate, NSTableViewDataSource, NSTableViewDelegate>
 {
     NSPanel *_panel;
-    NSTextField *_field;
+    XFDExpressionField *_field;
     NSTextField *_statusField;
     NSTableView *_table;
     NSButton *_okButton;
@@ -355,9 +267,9 @@ NSDictionary *XFDPredicatePreview(NSString *baseExpression,
         NSMakeRect(12, H - 48, W - 24, 32));
 
     label(@"Predicates:", NSMakeRect(12, H - 74, 80, 17));
-    _field = [[NSTextField alloc] initWithFrame:NSMakeRect(96, H - 78, W - 108, 22)];
+    _field = [[XFDExpressionField alloc] initWithFrame:NSMakeRect(96, H - 78, W - 108, 22)];
     [_field setFont:[NSFont userFixedPitchFontOfSize:11]];
-    [[_field cell] setPlaceholderString:@"[price > 10]  \u2014 or a bare expression"];
+    [_field setPlaceholderString:@"[price > 10]  \u2014 or a bare expression"];
     [_field setDelegate:self];
     [content addSubview:_field];
 
@@ -413,7 +325,7 @@ NSDictionary *XFDPredicatePreview(NSString *baseExpression,
     _rows = p[@"rows"] ?: @[];
     [_table reloadData];
     [_okButton setEnabled:_valid];
-    XFDApplyXPathHighlight(_field, !_valid);
+    [_field setInvalid:!_valid];
     if (!_valid) {
         [_statusField setStringValue:[@"\u2717 " stringByAppendingString:p[@"error"] ?: @""]];
         [_statusField setTextColor:[NSColor redColor]];
@@ -637,7 +549,7 @@ NSArray *XFDEventContextProperties(NSString *eventName)
     NSTableView *_stepsTable;
     NSSegmentedControl *_stepsControl;
     NSTextField *_stepsStatusField;
-    NSTextField *_pathField;
+    XFDExpressionField *_pathField;
     NSTextField *_statusField;
     NSTableView *_resultTable;
     NSButton *_okButton;
@@ -917,9 +829,8 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
 
     // the expression itself — always editable
     [self makeLabel:@"Expression:" frame:NSMakeRect(12, H - 412, 90, 17) in:content];
-    _pathField = [[NSTextField alloc] initWithFrame:NSMakeRect(12, H - 436, W - 24, 22)];
+    _pathField = [[XFDExpressionField alloc] initWithFrame:NSMakeRect(12, H - 436, W - 24, 22)];
     [_pathField setFont:[NSFont userFixedPitchFontOfSize:11]];
-    [[_pathField cell] setSendsActionOnEndEditing:YES];
     [_pathField setTarget:self];
     [_pathField setAction:@selector(expressionEdited:)];
     [_pathField setDelegate:(id)self];
@@ -1252,9 +1163,8 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
 - (void)evaluate
 {
     NSString *expr = [self expression];
-    XFDApplyXPathHighlight(_pathField,
-        expr.length != 0
-        && [XFXPath xpathWithString:expr element:_hostElement error:NULL] == nil);
+    [_pathField setInvalid:(expr.length != 0
+        && [XFXPath xpathWithString:expr element:_hostElement error:NULL] == nil)];
     if (expr.length == 0) {
         _resultRows = @[];
         [_resultTable reloadData];
@@ -1551,8 +1461,8 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
                         stringByAppendingString:node[@"label"]];
         }
         if ([ident isEqualToString:@"test"]) {
-            return XFDHighlightedXPath(node[@"source"],
-                [NSFont systemFontOfSize:[NSFont smallSystemFontSize]], NO);
+            return XFDXPathAttributedString(node[@"source"],
+                [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]);
         }
         return @"";
     }
@@ -1771,7 +1681,7 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
 #pragma mark - The field component
 
 @interface XFDXPathField () <NSTextFieldDelegate>
-@property (nonatomic, strong) NSTextField *field;
+@property (nonatomic, strong) XFDExpressionField *field;
 @property (nonatomic, strong) NSButton *pickButton;
 @property (nonatomic, assign, readwrite, getter=isValid) BOOL valid;
 @end
@@ -1804,13 +1714,10 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
     _valid = YES;
     NSRect bounds = [self bounds];
     CGFloat buttonWidth = 22;
-    self.field = [[NSTextField alloc] initWithFrame:
+    self.field = [[XFDExpressionField alloc] initWithFrame:
         NSMakeRect(0, 0, NSWidth(bounds) - buttonWidth - 4, NSHeight(bounds))];
     [self.field setAutoresizingMask:NSViewWidthSizable];
-    [[self.field cell] setControlSize:NSSmallControlSize];
     [self.field setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-    [[self.field cell] setScrollable:YES];
-    [[self.field cell] setSendsActionOnEndEditing:YES];
     [self.field setTarget:self];
     [self.field setAction:@selector(fieldEdited:)];
     [self.field setDelegate:self];   // live re-validate + highlight
@@ -1854,7 +1761,7 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
     if (expression.length == 0 || host == nil) {
         self.valid = YES;
         [self.field setToolTip:nil];
-        XFDApplyXPathHighlight(self.field, NO);
+        [self.field setInvalid:NO];
         return;
     }
     NSError *error = nil;
@@ -1865,7 +1772,7 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
     } else {
         [self.field setToolTip:nil];
     }
-    XFDApplyXPathHighlight(self.field, compiled == nil);
+    [self.field setInvalid:compiled == nil];
 }
 
 - (void)controlTextDidChange:(NSNotification *)note

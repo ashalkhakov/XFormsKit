@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		MN0000010000000000000064 /* XFDExpressionField.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000064 /* XFDExpressionField.m */; };
+		MN0000010000000000000062 /* XFDXPathHighlightTests.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000062 /* XFDXPathHighlightTests.m */; };
+		MN0000010000000000000063 /* XFDXPathTextStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000060 /* XFDXPathTextStorage.m */; };
+		MN0000010000000000000060 /* XFDXPathTextStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000060 /* XFDXPathTextStorage.m */; };
 		MN0000010000000000000052 /* XFDateDisplayTests.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000052 /* XFDateDisplayTests.m */; };
 		MN0000010000000000000050 /* XFDateDisplay.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000050 /* XFDateDisplay.m */; };
 		MN0000010000000000000051 /* XFDateDisplay.h in Headers */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000051 /* XFDateDisplay.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -290,6 +294,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		MM0000010000000000000064 /* XFDExpressionField.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDExpressionField.m; sourceTree = "<group>"; };
+		MM0000010000000000000065 /* XFDExpressionField.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDExpressionField.h; sourceTree = "<group>"; };
+		MM0000010000000000000062 /* XFDXPathHighlightTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDXPathHighlightTests.m; sourceTree = "<group>"; };
+		MM0000010000000000000060 /* XFDXPathTextStorage.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDXPathTextStorage.m; sourceTree = "<group>"; };
+		MM0000010000000000000061 /* XFDXPathTextStorage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDXPathTextStorage.h; sourceTree = "<group>"; };
 		MM0000010000000000000052 /* XFDateDisplayTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDateDisplayTests.m; sourceTree = "<group>"; };
 		MM0000010000000000000050 /* XFDateDisplay.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDateDisplay.m; sourceTree = "<group>"; };
 		MM0000010000000000000051 /* XFDateDisplay.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDateDisplay.h; sourceTree = "<group>"; };
@@ -806,6 +815,7 @@
 				BB00000100000000000000C6 /* XFRepeatGroupTests.m */,
 				BB00000100000000000000DA /* XFInsertDeleteTests.m */,
 				BB00000100000000000000EC /* XFUIControlTests.m */,
+				MM0000010000000000000062 /* XFDXPathHighlightTests.m */,
 				MM0000010000000000000052 /* XFDateDisplayTests.m */,
 				MM0000010000000000000090 /* XFSVGRenderTests.m */,
 				MM0000010000000000000030 /* XFMobileAppTests.m */,
@@ -938,6 +948,10 @@
 				BB0000020000000000000004 /* XFDWindowController.m */,
 				BB000002000000000000001B /* XFDXPathField.h */,
 				BB000002000000000000000B /* XFDXPathField.m */,
+				MM0000010000000000000060 /* XFDXPathTextStorage.m */,
+				MM0000010000000000000064 /* XFDExpressionField.m */,
+				MM0000010000000000000065 /* XFDExpressionField.h */,
+				MM0000010000000000000061 /* XFDXPathTextStorage.h */,
 				BB000002000000000000001C /* XFDRichTextField.h */,
 				BB000002000000000000000C /* XFDRichTextField.m */,
 				BB000002000000000000001D /* XFDIDRefField.h */,
@@ -1420,6 +1434,8 @@
 				AA00000100000000000000C6 /* XFRepeatGroupTests.m in Sources */,
 				AA00000100000000000000DA /* XFInsertDeleteTests.m in Sources */,
 				AA00000100000000000000EC /* XFUIControlTests.m in Sources */,
+				MN0000010000000000000062 /* XFDXPathHighlightTests.m in Sources */,
+				MN0000010000000000000063 /* XFDXPathTextStorage.m in Sources */,
 				MN0000010000000000000052 /* XFDateDisplayTests.m in Sources */,
 				MN0000010000000000000090 /* XFSVGRenderTests.m in Sources */,
 				MN0000010000000000000030 /* XFMobileAppTests.m in Sources */,
@@ -1449,6 +1465,8 @@
 				AA0000020000000000000003 /* XFDEditors.m in Sources */,
 				AA0000020000000000000004 /* XFDWindowController.m in Sources */,
 				AA000002000000000000000B /* XFDXPathField.m in Sources */,
+				MN0000010000000000000060 /* XFDXPathTextStorage.m in Sources */,
+				MN0000010000000000000064 /* XFDExpressionField.m in Sources */,
 				AA000002000000000000000C /* XFDRichTextField.m in Sources */,
 				AA000002000000000000000D /* XFDIDRefField.m in Sources */,
 				AA000002000000000000000E /* XFDDesignOverlay.m in Sources */,
@@ -1665,6 +1683,8 @@
 				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphone*]" = (
 					XFUIControlTests.m,
 					XFDOMTests.m,
+					XFDXPathHighlightTests.m,
+					XFDXPathTextStorage.m,
 				);
 				"EXCLUDED_SOURCE_FILE_NAMES[sdk=macosx*]" = XFFormBrowserViewController.m;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1673,6 +1693,7 @@
 					"$(SRCROOT)/Sources/XFormsKit",
 					"$(SRCROOT)/Sources/XFormsKit/XPath",
 					"$(SRCROOT)/Apps/XFormsMobile",
+					"$(SRCROOT)/Apps/XFormsDesigner",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1696,6 +1717,8 @@
 				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphone*]" = (
 					XFUIControlTests.m,
 					XFDOMTests.m,
+					XFDXPathHighlightTests.m,
+					XFDXPathTextStorage.m,
 				);
 				"EXCLUDED_SOURCE_FILE_NAMES[sdk=macosx*]" = XFFormBrowserViewController.m;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1704,6 +1727,7 @@
 					"$(SRCROOT)/Sources/XFormsKit",
 					"$(SRCROOT)/Sources/XFormsKit/XPath",
 					"$(SRCROOT)/Apps/XFormsMobile",
+					"$(SRCROOT)/Apps/XFormsDesigner",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1824,6 +1848,7 @@
 					"$(SRCROOT)/Sources/XFormsKit",
 					"$(SRCROOT)/Sources/XFormsKit/XPath",
 					"$(SRCROOT)/Apps/XFormsMobile",
+					"$(SRCROOT)/Apps/XFormsDesigner",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1854,6 +1879,7 @@
 					"$(SRCROOT)/Sources/XFormsKit",
 					"$(SRCROOT)/Sources/XFormsKit/XPath",
 					"$(SRCROOT)/Apps/XFormsMobile",
+					"$(SRCROOT)/Apps/XFormsDesigner",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1881,6 +1907,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/Sources",
 					"$(SRCROOT)/Apps/XFormsMobile",
+					"$(SRCROOT)/Apps/XFormsDesigner",
 				);
 				INFOPLIST_FILE = Apps/XFormsMobile/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
@@ -1908,6 +1935,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/Sources",
 					"$(SRCROOT)/Apps/XFormsMobile",
+					"$(SRCROOT)/Apps/XFormsDesigner",
 				);
 				INFOPLIST_FILE = Apps/XFormsMobile/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
