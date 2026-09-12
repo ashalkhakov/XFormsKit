@@ -44,6 +44,7 @@
 
 - (void)testAccessKeyFocusesANonTriggerControl
 {
+    [NSApplication sharedApplication];   // AppKit headless bring-up
     NSError *error = nil;
     XFProcessor *p = [self form:
                       @"<xf:instance><data xmlns=\"\"><n>Ada</n></data></xf:instance>"
@@ -70,6 +71,7 @@
 
 - (void)testAccessKeyIgnoresAnUnrelatedKey
 {
+    [NSApplication sharedApplication];   // AppKit headless bring-up
     NSError *error = nil;
     XFProcessor *p = [self form:
                       @"<xf:instance><data xmlns=\"\"><n>Ada</n></data></xf:instance>"
