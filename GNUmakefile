@@ -181,8 +181,12 @@ XFormsKit_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath
 XFormsKit_OBJCFLAGS += -fobjc-arc -Wall -Wextra
 # Opal supplies CoreGraphics and CoreText on GNUstep; the SVG renderer
 # draws through both. Apple platforms get them from the system frameworks,
-# which the Xcode project links instead.
-XFormsKit_LIBRARIES_DEPEND_UPON += -ldispatch -lcrypto -lopal
+# which the Xcode project links instead. corebase comes with them: the
+# CoreText calls are reference counted with CFRelease and name their
+# arguments with CFSTR, and those two live in corebase rather than in
+# Opal -- without it the framework loads and then dies at the first
+# <text> it paints.
+XFormsKit_LIBRARIES_DEPEND_UPON += -ldispatch -lcrypto -lopal -lgnustep-corebase
 
 XFormsKitTests_NEEDS_GUI = yes
 XFormsKitTests_OBJC_FILES = \

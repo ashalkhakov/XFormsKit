@@ -896,7 +896,9 @@ static CTFontRef XFSVGCreateFont(NSDictionary *style)
         size, NULL);
 #endif
     if (font == NULL) {
-        font = CTFontCreateWithName(CFSTR("Helvetica"), size, NULL);
+        // a bridged literal rather than CFSTR: the same string, with
+        // one less CoreFoundation feature to be present on GNUstep
+        font = CTFontCreateWithName((__bridge CFStringRef)@"Helvetica", size, NULL);
     }
     return font;
 }
