@@ -962,9 +962,18 @@ static void XFSVGDrawText(CGContextRef ctx, XFSVGNode *node, NSDictionary *style
     CGPoint positions[count > 0 ? count : 1];
     CGFloat pen = baselineX;
     for (CFIndex i = 0; i < count; i++) {
-        positions[i] = CGPointMake(pen, baselineY);
+        // The y is NEGATED because the text matrix below is applied to
+        // these positions as well as to the glyph outlines: without it a
+        // baseline at y=110 is drawn at y=-110, off the top of the
+        // viewport. Text inside a translate() then lands mirrored about
+        // that origin instead of vanishing, which is why this looked
+        // half-right — a label at the top of a group appeared at the
+        // bottom of it.
+        positions[i] = CGPointMake(pen, -baselineY);
         pen += advances[i].width;
     }
+    // SVG's y axis grows downward and a glyph's does not, so the run is
+    // flipped back; -baselineY above keeps the placement upright.
     CGContextSetTextMatrix(ctx, CGAffineTransformMakeScale(1, -1));
     CTFontDrawGlyphs(font, glyphs, positions, (size_t)count, ctx);
     CGContextRestoreGState(ctx);
@@ -1302,21 +1311,56 @@ static void XFSVGDrawNode(CGContextRef ctx, XFSVGNode *node,
 /// viewport scale, then viewBox scale.
 - (CGAffineTransform)viewportTransformForRect:(CGRect)rect
 {
-    CGAffineTransform viewport = CGAffineTransformMakeTranslation(rect.origin.x,
-                                                                  rect.origin.y);
-    viewport = CGAffineTransformScale(viewport,
-                                      rect.size.width / _size.width,
-                                      rect.size.height / _size.height);
+    // The user units the content is drawn in: the viewBox where there is
+    // one, the declared width/height otherwise.
+    CGFloat vx = 0, vy = 0, vw = _size.width, vh = _size.height;
     NSString *viewBox = _root.attributes[@"viewBox"] ?: _root.attributes[@"viewbox"];
     if (viewBox.length) {
-        XFSVGScan s = { [viewBox UTF8String] };
-        CGFloat vx, vy, vw, vh;
-        if (XFSVGNumber(&s, &vx) && XFSVGNumber(&s, &vy)
-            && XFSVGNumber(&s, &vw) && XFSVGNumber(&s, &vh) && vw > 0 && vh > 0) {
-            viewport = CGAffineTransformScale(viewport, _size.width / vw, _size.height / vh);
-            viewport = CGAffineTransformTranslate(viewport, -vx, -vy);
+        XFSVGScan scan = { [viewBox UTF8String] };
+        CGFloat bx, by, bw, bh;
+        if (XFSVGNumber(&scan, &bx) && XFSVGNumber(&scan, &by)
+            && XFSVGNumber(&scan, &bw) && XFSVGNumber(&scan, &bh) && bw > 0 && bh > 0) {
+            vx = bx; vy = by; vw = bw; vh = bh;
         }
     }
+    if (vw <= 0 || vh <= 0) {
+        return CGAffineTransformIdentity;
+    }
+    CGFloat sx = rect.size.width / vw;
+    CGFloat sy = rect.size.height / vh;
+    CGFloat tx = rect.origin.x;
+    CGFloat ty = rect.origin.y;
+
+    // preserveAspectRatio. The DEFAULT is "xMidYMid meet" — uniform scale,
+    // centred — and only an explicit "none" stretches the drawing to fill
+    // the rect. Scaling the axes independently (which is what this did
+    // before) shows up wherever the host cannot give the view the
+    // document's own proportions: on AppKit the view frame IS the document
+    // size, so it never appeared there, while the iOS form, whose rows are
+    // as wide as the table, drew every chart squashed.
+    NSString *par = XFSVGCollapse(_root.attributes[@"preserveAspectRatio"] ?: @"");
+    if (![par isEqualToString:@"none"]) {
+        NSArray<NSString *> *words = [par componentsSeparatedByString:@" "];
+        NSString *align = words.firstObject.length ? words.firstObject : @"xMidYMid";
+        BOOL slice = [words containsObject:@"slice"];
+        CGFloat scale = slice ? MAX(sx, sy) : MIN(sx, sy);
+        CGFloat slack = rect.size.width - vw * scale;
+        if ([align hasPrefix:@"xMid"]) {
+            tx += slack / 2;
+        } else if ([align hasPrefix:@"xMax"]) {
+            tx += slack;
+        }
+        slack = rect.size.height - vh * scale;
+        if ([align rangeOfString:@"YMid"].location != NSNotFound) {
+            ty += slack / 2;
+        } else if ([align rangeOfString:@"YMax"].location != NSNotFound) {
+            ty += slack;
+        }
+        sx = sy = scale;
+    }
+    CGAffineTransform viewport = CGAffineTransformMakeTranslation(tx, ty);
+    viewport = CGAffineTransformScale(viewport, sx, sy);
+    viewport = CGAffineTransformTranslate(viewport, -vx, -vy);
     return viewport;
 }
 

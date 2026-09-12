@@ -28,9 +28,13 @@ XFormsKit_HEADER_FILES = \
 	XFDOMNode.h \
 	XFDOMElement.h \
 	XFDOMDocument.h \
+	XFFormRows.h \
+	XFFormViewController.h \
 	XFNamespaces.h \
 	XFErrors.h \
 	XFXML.h \
+	XFMarkupParts.h \
+	XFDateDisplay.h \
 	XFInstance.h \
 	XFModel.h \
 	XFBind.h \
@@ -91,6 +95,8 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/XFNamespaces.m \
 	Sources/XFormsKit/XFErrors.m \
 	Sources/XFormsKit/XFXML.m \
+	Sources/XFormsKit/XFMarkupParts.m \
+	Sources/XFormsKit/XFDateDisplay.m \
 	Sources/XFormsKit/XFInstance.m \
 	Sources/XFormsKit/XFNodeState.m \
 	Sources/XFormsKit/XFType.m \
@@ -161,6 +167,7 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/DOM/XFDOMParser.m \
 	Sources/XFormsKit/SVG/XFSVGDocument.m \
 	Sources/XFormsKit/RichText/XFRichText.m \
+	Sources/XFormsKit/UIKit/XFFormRows.m \
 	Sources/XFormsKit/AppKit/XFFormView.m \
 	Sources/XFormsKit/AppKit/XFFormView+Widgets.m \
 	Sources/XFormsKit/AppKit/XFFormView+Layout.m \
@@ -180,6 +187,7 @@ XFormsKit_LIBRARIES_DEPEND_UPON += -ldispatch -lcrypto -lopal
 XFormsKitTests_NEEDS_GUI = yes
 XFormsKitTests_OBJC_FILES = \
 	Tests/XFormsKitTests/XFDOMTests.m \
+	Tests/XFormsKitTests/XFFormRowsTests.m \
 	Tests/XFormsKitTests/XFXPathTests.m \
 	Tests/XFormsKitTests/XFInstanceTests.m \
 	Tests/XFormsKitTests/XFHelloFormTests.m \

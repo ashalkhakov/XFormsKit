@@ -27,6 +27,16 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL hintMinimal;
 @property (nonatomic, copy, nullable) NSString *help;
 @property (nonatomic, copy, nullable) NSString *alert;
+
+/* The same three as MARKUP, when the form wrote any: `<xf:hint>Enter your
+   <b>full</b> name</xf:hint>` keeps its emphasis here while `hint` holds
+   the flattened text. nil when the child was plain text, which is the
+   common case — a host that cannot render markup ignores these and loses
+   only the styling. XFRichText converts them. */
+
+@property (nonatomic, copy, nullable) NSString *hintMarkup;
+@property (nonatomic, copy, nullable) NSString *helpMarkup;
+@property (nonatomic, copy, nullable) NSString *alertMarkup;
 @property (nonatomic, copy, readonly) NSArray<NSString *> *mipEvents;
 @property (nonatomic, copy, nullable) NSString *appearance;
 /// `incremental="true"`: the host UI commits on every keystroke (XForms 1.1

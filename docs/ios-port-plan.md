@@ -325,12 +325,36 @@ presentation, and that decorating adds it back.
 
 `XFRichText` is in the iOS framework, which still links no UI framework.
 
-**Layout extraction: still to do.** This is the half that blocks phase 5.
-`XFFormView+Layout.m` computes frames and builds AppKit views in the same
-pass; the geometry has to come out as a list of widget specs that a
-per-platform factory instantiates. Two things already make it cheaper than
-it looks: the views are flipped, so the arithmetic is UIKit's orientation
-already, and measurement funnels through one `widthOfText:font:`.
+**Layout extraction: deferred deliberately, and smaller than it looked.**
+
+It does not block phase 5; phase 5 shipped without it. Measuring what the
+iOS form actually loses, of the three cases only one needs it:
+
+| Case | Needs the extraction? |
+| --- | --- |
+| An image `xf:output` | No — it needed a row kind. Done. |
+| A host `<table>` | No — `XFTableModel` already models it. Done. |
+| A control inline in a sentence | **Yes** |
+
+`<p>Please enter <xf:input/> to continue.</p>` becomes three full-width
+rows: prose, field, prose. Interleaving text and widgets on a wrapping
+line is what `collectAtomsFrom:` (47 lines), `layoutAtoms:` (124) and
+`placeInlineControl:` (77) do — about 250 of `XFFormView+Layout.m`'s 638,
+and the only part with no iOS equivalent.
+
+That split is ugly for document-shaped forms and defensible for the rest:
+one control per row is what a phone wants anyway. So it waits until a form
+needs it.
+
+One thing has moved in its favour since this was written. The plan assumed
+measurement was the obstacle — `widthOfText:font:` goes through NSFont. But
+Opal brought **CoreText to all three platforms**, and the SVG renderer
+already measures with `CTFontGetAdvancesForGlyphs`, so a portable text
+measurement exists now. The shape would be: a portable pass taking host
+nodes plus a width, answering positioned fragments, control frames and a
+height; AppKit places NSViews from it, the markup cell places labels and
+control views from the same answer, and both get exact heights instead of
+Auto Layout estimates.
 
 ### Phase 4 — iOS Core lands — **DONE**
 
@@ -365,28 +389,375 @@ shape on every run rather than trusting the exclusion lists, and runs both
 suites in the simulator on a device it resolves by UDID (naming a model
 would pin the job to an Xcode version).
 
-### Phase 5 — The UIKit widget factory (≈2–3 weeks)
+### Phase 5 — The UIKit form (≈2–3 weeks) — **design decided**
 
-The part the question was about. Per-control mapping and the
-AppKit-idiom translations (target/action → `UIControlEvents`, editing
-notifications → delegates, key-view loop → input accessory) are tabulated
-in [ios-port-widget-map.md](ios-port-widget-map.md). Radio buttons,
-checkboxes and the hover badges have no UIKit equivalent and need custom
-views — budgeted inside this phase.
+Not a transliteration of the AppKit layout. That layout is a fixed-width
+two-column form — `kWrapWidth` 620, a 110pt label column beside a 280pt
+field column, `kIndent` per nesting level, and a canvas that sizes to its
+content so the host scrolls both ways. On a 390pt phone that is sideways
+scrolling from the first row, and sideways scrolling is the one thing a
+mobile form must not do.
+
+**The target is the iOS form idiom, as [XLForm](https://github.com/xmartlabs/XLForm)
+renders it** (MIT, ~5.7k stars, still maintained): a grouped
+`UITableView`, one control per row, vertical scrolling only. XLForm is a
+reference and a design target, not a dependency — it carries its own form
+model (descriptors, validators, NSPredicate visibility), and XForms
+already has a far stronger one in bindings and MIPs. Layering the two
+would put two form engines in the same app.
+
+Reading its cells, every control it uses is stock UIKit, and the
+arrangements reduce to three idioms:
+
+| Our control | Cell content | Placement |
+| --- | --- | --- |
+| `xf:input` (text, number, email, URL) | `UILabel` + `UITextField` | subviews of `contentView` |
+| `xf:secret` | `UITextField`, `secureTextEntry` | `contentView` |
+| `xf:textarea` | `UILabel` + `UITextView` | `contentView` |
+| boolean `xf:input` | `UISwitch` | cell `textLabel` + switch as **`accessoryView`** |
+| `xf:select1` (`minimal`) | `UIPickerView` | picker as the cell's **`inputView`**; value in `detailTextLabel` |
+| `xf:select1` (`full`, few items) | `UISegmentedControl` | `contentView` |
+| `xf:select1` / `xf:select` (`full`, many) | one row per item | `textLabel` + `UITableViewCellAccessoryCheckmark` |
+| date / time / dateTime `xf:input` | `UIDatePicker` | **`inputView`**, or an inline row below holding the picker |
+| `xf:range` | `UISlider` or `UIStepper` + `UILabel` | `contentView` |
+| `xf:trigger`, `xf:submit` | *(nothing)* | `textLabel`, optional disclosure |
+| `xf:output` (text) | *(nothing)* | `UITableViewCellStyleValue1` |
+| `xf:upload` | *(nothing)* | `textLabel` + disclosure → document picker |
+| `xf:repeat` | multivalued section | its add / remove / reorder ARE `xf:insert` / `xf:delete` |
+| `xf:group` | section, label as header | |
+
+Worth noticing: a third of those cells add no control at all — a stock
+cell's `textLabel`, `detailTextLabel` and accessory carry them. The
+`inputView` idiom is the one that makes pickers work without changing row
+heights: the row shows a value and the wheel rises where the keyboard
+would. Field-to-field navigation comes from an `inputAccessoryView`
+toolbar on the base cell, which replaces the key-view loop.
+
+**What the idiom has no answer for, and we do:** `xf:output` with an image
+or SVG, and arbitrary host markup — prose, `<table>`, mixed content. Those
+get a markup cell that renders a run of host nodes through the portable
+layout pass at a measured height, with `XFSVGDocument` drawing into its
+`CGContext`. That is the escape hatch XLForm lacks, and it is why the
+layout extraction still matters: it serves markup runs and measurement
+rather than the whole canvas.
+
+**The known hard parts**, none of which XLForm solves for us:
+
+- **Nesting.** XForms groups nest arbitrarily; a table view has two
+  levels. Nested groups flatten to indented header rows, or push a
+  sub-screen.
+- **Cell reuse versus control identity.** Our controls are long-lived
+  objects carrying value, focus and MIP state; cells recycle. The
+  controls stay the source of truth and cells become pure views bound at
+  `cellForRowAtIndexPath:`.
+- **Churn.** Every recalculate can change relevance and readonly, so rows
+  appear and vanish constantly; that wants batch updates, or focus and
+  scroll position jump.
+
+**Status: the form renders and edits.**
+`Sources/XFormsKit/UIKit/` holds two halves:
+
+- `XFFormRows` — the host tree flattened into sections and rows. Portable:
+  it names no view framework, so it builds and is tested on all three
+  platforms, and the same rows would drive any renderer.
+- `XFFormViewController` — the grouped table view and its cells.
+
+Implemented: text field, switch, segmented, check, selector (with its
+pushed options screen), date, slider, button, value, markup. Every write
+goes through the engine entry point the AppKit widgets already use —
+`setValue:ofControl:`, `selectValue:`, `toggleValue:`, `commitDateValue:`,
+`commitNumericValue:` — so the two front ends cannot drift in what they
+mean by an edit.
+
+The two appearances split the way XForms defines them. `minimal` means the
+options are not on the form: the row shows the choice and pushes a screen
+of them. `full` means they all are: a `UISegmentedControl` for a handful,
+one checkmarked row each beyond that. A single select PICKS rather than
+toggles, or tapping the chosen item would leave it with nothing.
+
+Every row kind in the inventory is implemented, upload and markup
+included. Markup renders prose with Dynamic Type styles taken from the
+host tags, and draws SVG through the portable `XFSVGDocument` — the same
+renderer the AppKit widget uses, so a chart is identical on both.
+
+An image `xf:output` gets a row that draws the picture: sent to the value
+cell it printed the base64. A control-free host `<table>` gets a row that
+**transposes** it into "Header value" blocks rather than drawing a grid —
+columns on a phone are the sideways-scrolling problem in miniature, and a
+form that scrolls sideways is what this whole layer exists to avoid. A
+table that HOLDS controls is walked into instead, so each control keeps an
+editable row; rendering it as text would have lost them silently.
+
+Two things learned in the simulator that are not obvious:
+
+- **`sendActionsForControlEvents:` does nothing in a host-less iOS test.**
+  It routes through UIApplication, and a logic-test bundle has none; the
+  action silently never fires, which reads exactly like a wiring bug. The
+  tests walk `allTargets` and invoke the registered action instead, which
+  still proves the wiring and the handler.
+- The host tree keeps inter-element whitespace deliberately, so a naive
+  flattening puts an empty markup cell between every pair of controls.
 
 Exit: `Samples/hello.xhtml` and the kaldi onboarding form are usable end
-to end in the Simulator.
+to end in the Simulator, scrolling vertically only.
 
-### Phase 6 — iOS interaction gaps (≈1–2 weeks)
+### Phase 6 — iOS interaction gaps — **done**
 
-Upload (`NSOpenPanel` runs modal and synchronous; `UIDocumentPickerViewController`
-is presented and async — the form view needs a presenting-controller
-delegate, an API addition), badges and tooltips without hover, host
-`<table>` rendering, hardware-keyboard `accesskey` via `UIKeyCommand`.
+Upload and host `<table>` rendering were listed here and shipped in phase
+5 instead.
 
-### Phase 7 — Host app and CI (≈1 week)
+**Done:**
 
-A minimal iOS viewer, an iOS test target in CI, README updates.
+- **xf:hint and xf:alert.** AppKit shows both as hover badges, which a
+  phone has no gesture for. XLForm's answer is a `UIAlertController` when
+  the form is submitted, which says nothing while a field is being filled
+  in — and XForms' validity is live, not a submit-time verdict. So each
+  gets a footnote row under its control: secondary grey for a hint, red
+  for an alert while the control is invalid, appearing and disappearing as
+  the MIP changes. That is what Settings and Apple's own sign-up forms do,
+  which is the "blend in" test.
+
+  A row rather than a second line inside the cell: the cells mix
+  `UITableViewCell`'s own `textLabel` with custom constraints, and a label
+  anchored beneath both fights whichever laid out first. The note row
+  carries no separator, so it reads as part of the row above.
+
+- **Prose with controls in it flows as a line** (`XFInlineFlowView`),
+  which was phase 3's deferred half. `<p><xf:output ref="@firstname"/>
+  <xf:output ref="@lastname"/> <xf:trigger><xf:label>Show
+  Books</xf:label></xf:trigger></p>` — the writers sample — reads as a
+  name followed by a button, and is drawn that way: words and widgets
+  share lines and wrap at the edge of the row. Giving each control a
+  full-width row turned that sentence into three disconnected rows.
+
+  A block is not all one thing, so the decision is per RUN rather than
+  per block: maximal runs of inline material become one flowed line
+  each, and anything block-level between them is laid out as it would be
+  anywhere else. That matters for the same sample, whose `<p>` ends with
+  the empty `xf:group` a subform embeds into — an all-or-nothing rule
+  rejected the whole paragraph because of it. Two deliberate
+  exceptions: prose with NO controls stays with the markup run, so a
+  paragraph split by a control still reads as one piece; and a lone
+  control with no words around it is not a sentence, so it keeps the
+  ordinary labelled row a phone form wants for a field.
+
+  Words are placed one at a time, because a widget can sit mid-sentence
+  and the text either side has to break around it. Blocks without
+  controls never reach here — one label lays those out properly — so the
+  pieces stay few. The row answers its own height through
+  `-systemLayoutSizeFittingSize:`, the hook the table view uses for an
+  automatic row height: a flowed line's height depends on the width it is
+  given, which an intrinsic content size cannot express.
+
+  The widget factory is shared with the table grid, so a trigger in a
+  table cell and the same trigger in a sentence are one button with one
+  behaviour.
+
+- **A host `<table>` is a real grid** (`XFTableGridView`), not a list of
+  its cells. It used to be transposed into a block of "Title value" text
+  when it held no controls, and flattened to one row per cell when it
+  did — which broke every form whose table IS the layout: the
+  calculator's keypad became twenty rows of one button, and a spreadsheet
+  lost its columns.
+
+  Any host table now renders as a grid, driven by the same portable
+  `XFTableModel` that feeds AppKit's `NSTableView` — one model, two
+  renderers, so the two platforms agree about what a cell contains
+  (including the unwrapping of a block-level wrapper down to the single
+  control inside it).
+
+  Columns take their natural widths and share out any slack; when the
+  total does not fit, **that one table scrolls horizontally inside its own
+  row**. The form itself still only ever scrolls vertically, which was the
+  point of the whole layout; a single wide table moving under the finger
+  is the iOS answer for content that cannot be narrowed, and beats
+  squeezing ten columns into a phone's width.
+
+  Laid out by hand rather than with nested stack views, for two reasons:
+  columns have to line up ACROSS rows, which stacks do not do, and the
+  height has to be known at BIND time — a self-sizing cell is measured
+  before it is laid out, so a height discovered during layout arrives too
+  late and the row is left at the minimum with everything below the first
+  line clipped. Measuring at the natural column widths makes the answer
+  independent of the row's width.
+
+- **A minimal hint is the placeholder**, per XSLTForms, and is not
+  repeated in a note row.
+
+- **xf:textarea is a real multi-line field**, and a rich one where the
+  control asks for `mediatype="application/xhtml+xml"` (§8.1.5, the
+  TinyMCE sample). Both kinds shared the one-line `UITextField` at first,
+  which made a rich textarea show its markup as tags for the user to
+  hand-edit — the wrong content, offered the wrong way. The editor now
+  converts through `XFRichText`, the same converter the AppKit editor
+  uses, so a document round-trips identically on either platform, and the
+  keyboard bar carries bold / italic / underline for the selection, since
+  iOS has no menu bar to hang formatting on.
+
+  `xf:output` with that mediatype renders its markup too, instead of
+  printing the tags. The TinyMCE sample shows the same value twice, with
+  and without the mediatype, and the two must not look alike.
+- **xf:message and xf:help** present a `UIAlertController` — here XLForm's
+  idiom is the right one, because a message IS a modal interruption. A
+  message that carries markup gets a Done sheet instead (below).
+- **Rich text in hint / alert / help / message.** XForms 1.1 gives all
+  four the label's content model (§9.3.1): text, inline host markup, AND
+  `xf:output`. The engine had been flattening all of it, so a form
+  writing `Enter your <b>full</b> name` showed plain text on every
+  platform, and — the sharper bug — an `xf:output` inside a hint or alert
+  contributed *nothing at all*, because those were read by flattening the
+  element rather than by walking it.
+
+  Both are fixed in the portable half, in `XFMarkupParts`: each support
+  child is split once at load into literal parts and `xf:output` holes,
+  and joined again on every refresh, exactly as `XFControl`'s label parts
+  already were. Each child yields two joins — the plain text every host
+  can show (`hint`, `alert`, `help`) and, only where the form wrote
+  formatting, the markup a host that draws XHTML shows instead
+  (`hintMarkup`, `alertMarkup`, `helpMarkup`). An output's value is
+  escaped into the markup unless it declares an XHTML mediatype, so an
+  instance value holding `<` stays text.
+
+  Presentation is per platform, over the shared `XFRichText` converter:
+  iOS renders the note row's markup as an `NSAttributedString` in its
+  `UILabel`, and shows a rich `xf:message` in a sheet with a read-only
+  `UITextView` (`UIAlertController` has no public attributed-message
+  API, and reaching into its label is private). AppKit puts the same
+  content in a non-editable, non-selectable `NSTextView`
+  (`+[XFRichText displayViewWithMarkup:font:maxWidth:textColor:]`, sized
+  to fit) — inside the hint/alert hover box, and as the accessory view of
+  the message and help alerts.
+
+  `xf:message` reaches the host through a new optional
+  `richMessageHandler(markup, text, level)`; a host that does not set one
+  keeps getting `messageHandler` with the flattened text, so nothing
+  changes for a host that cannot draw markup.
+- **xf:setfocus** scrolls to the row and makes its field first responder.
+- **incremental="true" for text**, debounced by `@delay`. Only the
+  focus-loss event had been bound, so incremental silently did nothing on
+  iOS while working on macOS.
+
+  Committing on every keystroke means the form is rebuilt on every
+  keystroke, and a rebuilt cell is not the one holding the keyboard. Two
+  rounds were needed to make that harmless. First, an unchanged form
+  re-binds its visible cells in place instead of reloading. Then the case
+  that actually bites: an `xf:alert` note row appears or disappears as the
+  value goes in and out of validity — typing the "@" of an email address
+  makes it valid, drops the alert row, and the reload that followed took
+  the keyboard with it, so the field stopped accepting input mid-word.
+  Such a change is now applied as row insertions and deletions
+  (`performBatchUpdates:`), which leaves every cell UIKit does not touch —
+  the editor among them — exactly as it was. The new sections are adopted
+  INSIDE the update block, since the table reads the old counts to apply
+  the diff and the new ones to draw the result.
+
+- **Dates are shown in the reader's locale** (`XFDateDisplay`, portable).
+  An `xsd:date` node holds `2025-01-01` and must keep it — that lexical
+  form is the value that calculates, comparisons and submissions depend
+  on — but it is not what a host should print. The date pickers were
+  already localized on both platforms; the read-only paths were not, so
+  an `xf:output` of a date showed the raw value on iOS AND on macOS. Both
+  go through the helper now. A value that does not parse is left as
+  typed, so a half-entered date is never shown as a guess.
+
+- **Field-to-field navigation** is a toolbar above the keyboard
+  (`inputAccessoryView`) with previous / next / Done, shared by every
+  editable field. It replaces the key-view loop, which a phone has no Tab
+  to drive: without it the only way to the next field is to dismiss the
+  keyboard, scroll and tap. Readonly fields are skipped, and the two
+  chevrons disable at the ends of the form. Taking the keyboard now also
+  moves the ENGINE's focus (`focusControl:fromUI:`), so `DOMFocusIn` /
+  `DOMFocusOut` fire on iOS as they do on AppKit.
+
+- **accesskey** becomes a `UIKeyCommand` per control, with ⌘ as the
+  modifier — UIKit will not register an unmodified letter while a field
+  can be editing, and AppKit's trigger buttons already use ⌘ for the
+  same thing. A trigger activates; anything else takes focus, which is
+  what XForms 1.1 asks for and what browsers do. The AppKit side gained
+  the other half of this at the same time: `-[XFFormView
+  performKeyEquivalent:]` focuses a non-trigger control by its accesskey,
+  which only buttons could answer before.
+
+- **xf:dialog** is presented as a form sheet holding a second
+  `XFFormViewController` pointed at the dialog's group — which is what
+  `rootGroup` was for — with a Done button that hides it through the
+  engine, so `xforms-dialog-close` fires and a later `xf:show` works. A
+  controller with a `rootGroup` no longer installs the processor's host
+  hooks: it is a view of a form another controller drives, and taking
+  them would leave that form without hooks once the sheet is dismissed.
+  Everything modal is now presented from the frontmost sheet, since UIKit
+  refuses to present from a controller that is already presenting.
+
+- **Repeat add / remove** is the table's own idiom: swipe a row to delete
+  its item, tap the "Add item" row that closes the section to append one.
+  A tappable add row rather than the table's insert control, because that
+  control only appears in editing mode and this form has no Edit button —
+  Contacts and Settings add rows the same way.
+
+  Both go through `-[XFRepeat insertItemAfterPosition:]` /
+  `-deleteItemAtPosition:`, new and portable: the narrow case of §10.3 /
+  §10.4 where the nodeset is the repeat's own and the position is known,
+  so nothing is evaluated. Everything after that is what `xf:insert` and
+  `xf:delete` do — dispose the bindings, mutate the instance, mark the
+  model rebuilt, dispatch `xforms-insert` / `xforms-delete`, rebuild the
+  items and move the index — inside one deferred-update action, so a
+  form whose binds depend on the nodeset recalculates exactly once. A
+  form's own add/remove triggers keep working unchanged; this is an
+  affordance, not a capability.
+
+  `XFFormRow` now carries the `repeat` and the 1-based `repeatPosition`
+  it came from, so a gesture on a row knows which node it acts on. A
+  nested repeat tags its rows first and is not overwritten: the innermost
+  repeat owns the row, which is the one a swipe on it means.
+
+### Phase 7 — Host app and CI — **done**
+
+`Apps/XFormsMobile` is the iOS host: pick a form document, fill it in.
+
+Deliberately that and no more. XForms is a client for a form SERVER —
+submissions, `xf:load`, instances fetched over HTTP — and there is no
+server to point this at yet, so the useful thing a host can do today is
+open a document from the file system and hand it to the engine and the
+UIKit form layer.
+
+- `XFFormBrowserViewController` is the first screen: the bundled sample
+  forms as a list, and a folder button opening a
+  `UIDocumentPickerViewController` over `.xhtml` / XML / HTML for
+  anything else. Either pushes an `XFFormViewController` onto the
+  navigation stack, so the back button closes it. A form the engine
+  rejects raises an alert carrying the engine's own reason — which
+  element or expression is at fault — rather than a flat "could not
+  open".
+- `Samples/` is bundled, as the macOS viewer bundles it for File ▸ Open
+  Sample. A folder REFERENCE, not a group: several forms pull in a
+  sibling resource (`counties.xml`, `flag.svg`, `textarea.css`), which
+  only resolves if the directory is copied whole. Without it the app is
+  unusable on a fresh simulator, where the Files app starts empty — a
+  picker with nothing to pick. `UIFileSharingEnabled` puts the app's
+  Documents folder in Files too, so a form of your own can be dropped in
+  and picked.
+- `XFMobileForm` owns one opened document: the processor, the file, and
+  that file's read access. A picked URL is security-scoped, and the scope
+  has to outlive the read that builds the processor — `xf:instance src=`,
+  a schema, a submission reading a resource beside the document can all
+  reach back to the file — so it is released in `-dealloc` rather than
+  after loading. The base URL rides in with the source, since relative
+  resources resolve during construction.
+- Forms also arrive from other apps: the Info.plist declares the
+  document types and `LSSupportsOpeningDocumentsInPlace`, and
+  `application:openURL:options:` opens them through the same path.
+- No storyboard and no scene manifest — an empty `UILaunchScreen`
+  dictionary and a window from the app delegate.
+
+CI builds the app for the simulator on the portable leg of the matrix. A
+device build is not attempted: signing an app needs an identity the
+runner has no reason to hold, and the framework's `iphoneos` slice
+already covers the linker constraints.
+
+`XFMobileForm` and the browser are compiled into the framework's test
+bundle as well, so the loading path and the push are tested rather than
+only built (`XFMobileAppTests`); the browser is excluded on macOS, where
+there is no UIKit.
 
 ## Effort
 
@@ -394,12 +765,12 @@ A minimal iOS viewer, an iOS test target in CI, README updates.
 | --- | --- | ---: |
 | 0 | Module split | **done** |
 | 1 | Portable DOM (clean-room `XFDOM*`) | **done** |
-| 2 | Portable SVG (Core Graphics + Opal) | **done** (GNUstep unverified) |
-| 3 | Portable text (**done**) + layout extraction | 1.5–2 w |
-| 4 | iOS Core green | **done** (630 tests green on iOS) |
-| 5 | UIKit widget factory | 2–3 w |
-| 6 | iOS interaction gaps | 1–2 w |
-| 7 | Host app + CI | 1 w |
+| 2 | Portable SVG (Core Graphics + Opal) | **done** |
+| 3 | Portable text + inline flow | **done** |
+| 4 | iOS Core green | **done** (735 tests green on iOS) |
+| 5 | UIKit form (table-view cells) | **done** |
+| 6 | iOS interaction gaps | **done** |
+| 7 | Host app + CI | **done** |
 | | **Total** | **11–16 weeks** |
 
 One engineer already familiar with this codebase. The spread is

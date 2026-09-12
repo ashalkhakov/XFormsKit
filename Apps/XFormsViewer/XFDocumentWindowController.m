@@ -554,8 +554,39 @@
         });
         return;
     }
+    [self runMessageAlertWithText:text accessory:nil level:level];
+}
+
+/// xf:message whose content carries host markup (`Do <b>not</b> …`). The
+/// same alert, with the body drawn by a read-only rich text view instead
+/// of the alert's own label, so what the form wrote is what the user
+/// reads. Falls back to the plain alert wherever that cannot be built.
+- (void)showRichMessage:(NSString *)markup text:(NSString *)text level:(NSString *)level
+{
+    if ([level isEqualToString:@"ephemeral"]) {
+        [self showMessage:text level:level];   // a title-bar flash has no markup
+        return;
+    }
+    NSTextView *rich = [XFRichText displayViewWithMarkup:markup
+                                                    font:[NSFont systemFontOfSize:[NSFont systemFontSize]]
+                                                maxWidth:360
+                                               textColor:nil];
+    if (rich == nil) {
+        [self showMessage:text level:level];
+        return;
+    }
+    [self runMessageAlertWithText:@"" accessory:rich level:level];
+}
+
+- (void)runMessageAlertWithText:(NSString *)text
+                      accessory:(NSView *)accessory
+                          level:(NSString *)level
+{
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:text];
+    if (accessory && [alert respondsToSelector:@selector(setAccessoryView:)]) {
+        [alert setAccessoryView:accessory];
+    }
     if ([level isEqualToString:@"modeless"] && [self window]
         && [alert respondsToSelector:@selector(beginSheetModalForWindow:completionHandler:)]) {
         [alert beginSheetModalForWindow:[self window] completionHandler:nil];
@@ -664,12 +695,21 @@
         }
     }
     NSString *text = control.help.length ? control.help : control.hint;
+    NSString *markup = control.help.length ? control.helpMarkup : control.hintMarkup;
     if (text.length == 0) {
         return;
     }
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:control.label.length ? control.label : @"Help"];
-    [alert setInformativeText:text];
+    NSTextView *rich = [XFRichText displayViewWithMarkup:markup
+                                                    font:[NSFont systemFontOfSize:[NSFont systemFontSize]]
+                                                maxWidth:360
+                                               textColor:nil];
+    if (rich && [alert respondsToSelector:@selector(setAccessoryView:)]) {
+        [alert setAccessoryView:rich];
+    } else {
+        [alert setInformativeText:text];
+    }
     [alert runModal];
 }
 
@@ -704,6 +744,9 @@
         // (G-50), xforms-help (G-62)
         doc.processor.messageHandler = ^(NSString *text, NSString *level) {
             [weakSelf showMessage:text level:level];
+        };
+        doc.processor.richMessageHandler = ^(NSString *markup, NSString *text, NSString *level) {
+            [weakSelf showRichMessage:markup text:text level:level];
         };
         doc.processor.loadRequestHandler = ^BOOL(NSURL *url, NSString *show) {
             (void)show;

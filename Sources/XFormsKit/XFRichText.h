@@ -2,6 +2,9 @@
 #if __has_include(<AppKit/AppKit.h>)
 #import <AppKit/AppKit.h>
 #endif
+#if __has_include(<UIKit/UIKit.h>)
+#import <UIKit/UIKit.h>
+#endif
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -67,6 +70,43 @@ FOUNDATION_EXPORT NSString * const XFRichStrikeAttributeName;
                     bold:(BOOL)bold
                   italic:(BOOL)italic
                 baseFont:(nullable NSFont *)baseFont;
+
+/// A read-only text view showing `markup`, already sized to the height it
+/// needs at `width` (its frame is the fitting size, origin zero). Not
+/// editable and not selectable: it is a label that happens to draw bold,
+/// italics and headings, so it takes no clicks and no focus and can be
+/// dropped wherever a wrapped NSTextField would have gone — an NSAlert
+/// accessory view, a hint popup.
+///
+/// Nil for empty markup, so a caller can fall back to its plain-text path
+/// with one test.
++ (nullable NSTextView *)displayViewWithMarkup:(nullable NSString *)markup
+                                          font:(nullable NSFont *)font
+                                      maxWidth:(CGFloat)maxWidth
+                                     textColor:(nullable NSColor *)textColor;
+
+@end
+
+#endif
+
+#if __has_include(<UIKit/UIKit.h>)
+
+/* The same presentation on iOS. Same selector, same meaning; only the
+   font class and the attribute names differ, and those come from UIKit
+   here and AppKit there. The converter above is shared. */
+
+@interface XFRichText (XFRichTextUIKitPresentation)
+
++ (NSAttributedString *)decoratedString:(NSAttributedString *)text
+                               baseFont:(nullable UIFont *)baseFont;
+
+/// Markup straight to something a label can show: convert, then decorate.
+/// Plain text in, plain text out — nothing here needs the caller to know
+/// whether the form wrote markup.
++ (NSAttributedString *)attributedStringFromMarkup:(nullable NSString *)markup
+                                         plainText:(nullable NSString *)plain
+                                          baseFont:(nullable UIFont *)baseFont
+                                         textColor:(nullable UIColor *)textColor;
 
 @end
 

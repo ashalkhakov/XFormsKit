@@ -5,6 +5,7 @@
 #import "XFBinding.h"
 #import "XFExprContext.h"
 #import "XFXML.h"
+#import "XFMarkupParts.h"
 #import "XFDeferredUpdates.h"
 #import "XFModel.h"
 #import "XFEvent.h"
@@ -13,6 +14,9 @@
 @property (nonatomic, strong) XFBinding *binding;
 @property (nonatomic, copy, readwrite) NSString *level;
 @property (nonatomic, copy, readwrite) NSString *lastText;
+@property (nonatomic, copy, readwrite) NSString *lastMarkup;
+/// Split once, joined per run: the message's markup can hold xf:output too.
+@property (nonatomic, copy) NSArray *markupParts;
 @end
 
 @implementation XFMessageAction
@@ -28,6 +32,7 @@
     self.level = [[element attributeForName:@"level"] stringValue] ?: @"modal";
     NSError *bindError = nil;
     self.binding = [XFBinding bindingForElement:element attribute:@"ref" error:&bindError];
+    self.markupParts = [XFMarkupParts partsOfElement:element];
     if (bindError) {
         if (error) {
             *error = bindError;
@@ -59,6 +64,7 @@
 {
     (void)event;
     NSString *text = nil;
+    NSString *markup = nil;
     XFExprContext *ctx = [[XFExprContext alloc] initWithNode:contextNode];
     ctx.model = self.model;
     if (self.binding && contextNode) {
@@ -69,14 +75,18 @@
         NSMutableString *built = [NSMutableString string];
         [self appendTextOf:self.element context:ctx into:built];
         text = built;
+        markup = [XFMarkupParts markupFromParts:self.markupParts context:ctx];
     }
     text = [XFXML normalizeSpace:text ?: @""];
     self.lastText = text;
+    self.lastMarkup = markup;
     if (text.length == 0) {
         return;
     }
     XFProcessor *processor = [self.model.owner isKindOfClass:[XFProcessor class]] ? (XFProcessor *)self.model.owner : nil;
-    if (processor.messageHandler) {
+    if (markup.length && processor.richMessageHandler) {
+        processor.richMessageHandler(markup, text, self.level ?: @"modal");
+    } else if (processor.messageHandler) {
         processor.messageHandler(text, self.level ?: @"modal");
     } else {
         [[XFDeferredUpdates sharedUpdates].messages addObject:text];
@@ -102,6 +112,7 @@
         NSMutableString *built = [NSMutableString string];
         [self appendTextOf:self.element context:ctx into:built];
         text = built;
+        self.lastMarkup = [XFMarkupParts markupFromParts:self.markupParts context:ctx];
     }
     text = [XFXML normalizeSpace:text ?: @""];
     self.lastText = text;

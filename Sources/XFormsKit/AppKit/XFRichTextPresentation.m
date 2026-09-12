@@ -108,3 +108,52 @@ void XFAppKitHasRichTextFile(void) {}
 }
 
 @end
+
+@implementation XFRichText (XFRichTextDisplayView)
+
++ (NSTextView *)displayViewWithMarkup:(NSString *)markup
+                                 font:(NSFont *)font
+                             maxWidth:(CGFloat)maxWidth
+                            textColor:(NSColor *)textColor
+{
+    if (markup.length == 0) {
+        return nil;
+    }
+    NSFont *base = font ?: [NSFont systemFontOfSize:[NSFont smallSystemFontSize]];
+    NSAttributedString *rich =
+        [self decoratedString:[self attributedStringFromHTML:markup] baseFont:base];
+    if (rich.length == 0) {
+        return nil;
+    }
+    if (textColor) {
+        // the converter emits no colours, so the host decides one for the
+        // whole run — without it the theme's default text can land on a
+        // deliberately coloured background
+        NSMutableAttributedString *coloured = [rich mutableCopy];
+        [coloured addAttribute:NSForegroundColorAttributeName
+                         value:textColor
+                         range:NSMakeRange(0, coloured.length)];
+        rich = coloured;
+    }
+    NSTextView *view = [[NSTextView alloc] initWithFrame:NSMakeRect(0, 0, maxWidth, 1)];
+    [view setEditable:NO];
+    [view setSelectable:NO];
+    [view setDrawsBackground:NO];
+    [view setTextContainerInset:NSZeroSize];
+    [[view textContainer] setLineFragmentPadding:0];
+    [[view textContainer] setContainerSize:NSMakeSize(maxWidth, CGFLOAT_MAX)];
+    [[view textContainer] setWidthTracksTextView:NO];
+    [view setHorizontallyResizable:NO];
+    [view setVerticallyResizable:YES];
+    [[view textStorage] setAttributedString:rich];
+    // measure through the layout manager: -sizeToFit on a text view tracks
+    // the container, which is exactly what was just pinned
+    [[view layoutManager] ensureLayoutForTextContainer:[view textContainer]];
+    NSRect used = [[view layoutManager] usedRectForTextContainer:[view textContainer]];
+    [view setFrame:NSMakeRect(0, 0,
+                              MIN(maxWidth, ceil(NSMaxX(used))),
+                              ceil(NSMaxY(used)))];
+    return view;
+}
+
+@end

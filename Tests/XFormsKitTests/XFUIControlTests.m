@@ -42,6 +42,55 @@
     return nil;
 }
 
+- (void)testAccessKeyFocusesANonTriggerControl
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><n>Ada</n></data></xf:instance>"
+                      extra:
+                      @"<xf:input ref=\"n\" accesskey=\"n\"><xf:label>Name</xf:label></xf:input>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *view = [[XFFormView alloc] initWithProcessor:p];
+    NSEvent *event = [NSEvent keyEventWithType:NSKeyDown
+                                      location:NSZeroPoint
+                                 modifierFlags:NSCommandKeyMask
+                                     timestamp:0
+                                  windowNumber:0
+                                       context:nil
+                                    characters:@"n"
+                   charactersIgnoringModifiers:@"n"
+                                     isARepeat:NO
+                                       keyCode:45];
+    XCTAssertTrue([view performKeyEquivalent:event]);
+    // a button's key equivalent covers triggers; this is the other half,
+    // and XForms says accesskey gives the control focus
+    XCTAssertEqual(p.focusedControl, [self firstControlOfClass:[XFInputControl class] in:p]);
+}
+
+- (void)testAccessKeyIgnoresAnUnrelatedKey
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><n>Ada</n></data></xf:instance>"
+                      extra:
+                      @"<xf:input ref=\"n\" accesskey=\"n\"><xf:label>Name</xf:label></xf:input>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *view = [[XFFormView alloc] initWithProcessor:p];
+    NSEvent *event = [NSEvent keyEventWithType:NSKeyDown
+                                      location:NSZeroPoint
+                                 modifierFlags:NSCommandKeyMask
+                                     timestamp:0
+                                  windowNumber:0
+                                       context:nil
+                                    characters:@"z"
+                   charactersIgnoringModifiers:@"z"
+                                     isARepeat:NO
+                                       keyCode:6];
+    XCTAssertFalse([view performKeyEquivalent:event]);
+}
+
 - (void)testSecretAndTextarea
 {
     NSError *error = nil;

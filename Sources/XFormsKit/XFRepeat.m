@@ -9,6 +9,8 @@
 #import "XFDeferredUpdates.h"
 #import "XFModel.h"
 #import "XFHostNode.h"
+#import "XFBind.h"
+#import "XFInstance.h"
 
 @interface XFRepeatItem ()
 @property (nonatomic, strong) NSMutableArray<XFControl *> *mutableControls;
@@ -354,6 +356,102 @@
         i++;
     }
     self.relevant = self.nodes.count > 0;
+}
+
+#pragma mark - Add / remove from a host affordance
+
+/// The evaluation context a repeat rebuild wants: its model's default
+/// instance root, which is what both actions use for the same call.
+- (XFExprContext *)rebuildContext
+{
+    XFExprContext *ctx =
+        [[XFExprContext alloc] initWithNode:[[self.model defaultInstance] documentElement]];
+    ctx.model = self.model;
+    return ctx;
+}
+
+/// Re-read the nodeset and put the index back where it belongs, the way
+/// xf:insert and xf:delete each finish.
+- (void)rebuildAfterEditKeepingIndex:(NSUInteger)wanted
+{
+    [self rebuildItemsWithContext:[self rebuildContext] error:NULL];
+    if (self.nodes.count == 0) {
+        [self setIndex:0];
+        return;
+    }
+    [self setIndex:MIN(MAX(wanted, (NSUInteger)1), self.nodes.count)];
+    // the index now names a DIFFERENT node even where its number did not
+    // change, so repeats nested in it start at their startindex again
+    [self resetNestedRepeatIndexes];
+}
+
+- (BOOL)insertItemAfterPosition:(NSUInteger)position
+{
+    NSArray<XFXMLNode *> *nodes = self.nodes;
+    XFModel *model = self.model;
+    if (model == nil || position < 1 || position > nodes.count) {
+        return NO;
+    }
+    XFXMLNode *origin = nodes[position - 1];
+    XFXMLNode *parent = [origin parent];
+    if (![parent isKindOfClass:[XFXMLElement class]]) {
+        return NO;   // nothing to insert into (an instance root)
+    }
+    XFXMLElement *owner = (XFXMLElement *)parent;
+    XFXMLNode *clone = [origin copy];
+    if (clone == nil) {
+        return NO;
+    }
+    XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
+    [du openAction:@"insert"];
+    XFXMLNode *before = [origin nextSibling];
+    if (before && [before parent] == owner) {
+        [owner insertChild:clone atIndex:[before index]];
+    } else {
+        [owner addChild:clone];
+    }
+    [model addChange:owner];
+    [model setRebuilded:YES];
+    [du addChangedModel:model];
+    XFInstance *instance = [model instanceContainingNode:owner];
+    [XFXMLEvents dispatch:instance ?: model name:@"xforms-insert" context:@{
+        @"inserted-nodes": @[ clone ],
+        @"origin-nodes": @[ origin ],
+        @"insert-location-node": @(position),
+        @"position": @"after",
+    }];
+    [self rebuildAfterEditKeepingIndex:position + 1];
+    [du closeAction:@"insert"];
+    return YES;
+}
+
+- (BOOL)deleteItemAtPosition:(NSUInteger)position
+{
+    NSArray<XFXMLNode *> *nodes = self.nodes;
+    XFModel *model = self.model;
+    if (model == nil || position < 1 || position > nodes.count) {
+        return NO;
+    }
+    XFXMLNode *node = nodes[position - 1];
+    XFXMLNode *parent = [node parent];
+    if (![parent isKindOfClass:[XFXMLElement class]]) {
+        return NO;   // the instance root is not deletable (§10.4)
+    }
+    XFInstance *instance = [model instanceContainingNode:node];
+    XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
+    [du openAction:@"delete"];
+    [XFBind disposeNode:node model:model];
+    [(XFXMLElement *)parent removeChildAtIndex:[node index]];
+    [model addChange:parent];
+    [model setRebuilded:YES];
+    [du addChangedModel:model];
+    [XFXMLEvents dispatch:instance ?: model name:@"xforms-delete" context:@{
+        @"deleted-nodes": @[ node ],
+        @"delete-location": @(position),
+    }];
+    [self rebuildAfterEditKeepingIndex:self.index];
+    [du closeAction:@"delete"];
+    return YES;
 }
 
 @end

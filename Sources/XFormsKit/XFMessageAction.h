@@ -8,6 +8,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// `level`: modal (default) | modeless | ephemeral (G-51).
 @property (nonatomic, copy, readonly, nullable) NSString *level;
 @property (nonatomic, copy, readonly, nullable) NSString *lastText;
+/// The message's inner markup with its xf:output values substituted, or
+/// nil when the message is plain text. `lastText` is always set.
+@property (nonatomic, copy, readonly, nullable) NSString *lastMarkup;
 
 @end
 

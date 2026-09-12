@@ -10,8 +10,40 @@
 #import <XFormsKit/XFXML.h>
 #import <XFormsKit/XFAbstractAction.h>
 #import <XFormsKit/XFNamespaces.h>
+#import <XFormsKit/XFXMLEvents.h>
 #import <math.h>
 #import <unistd.h>
+
+/// Collects the names of every event the engine dispatches, so a test can
+/// assert that a host-driven edit raises the same ones xf:insert and
+/// xf:delete do.
+@interface XFRepeatEventRecorder : NSObject <XFEventTraceSink>
+@property (nonatomic, strong) NSMutableArray<NSString *> *names;
+@end
+
+@implementation XFRepeatEventRecorder
+
+- (instancetype)init
+{
+    self = [super init];
+    if (self) {
+        _names = [NSMutableArray array];
+    }
+    return self;
+}
+
+- (void)traceEventOfKind:(XFTraceKind)kind
+                 message:(NSString *)message
+               eventName:(NSString *)eventName
+                 element:(XFXMLElement *)element
+{
+    (void)kind; (void)message; (void)element;
+    if (eventName.length) {
+        [self.names addObject:eventName];
+    }
+}
+
+@end
 
 @interface XFRepeatGroupTests : XCTestCase
 @end
@@ -28,6 +60,120 @@
          @"  <xf:model id=\"m\">%@</xf:model>%@"
          @"</html>", modelBody, extra ?: @""];
     return [XFProcessor processorWithXMLString:xml error:error];
+}
+
+#pragma mark - host-driven add / remove (G-20)
+
+- (XFProcessor *)threeItemRepeatForm
+{
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+        @"<xf:instance><data xmlns=\"\">"
+        @"  <item><name>one</name></item>"
+        @"  <item><name>two</name></item>"
+        @"  <item><name>three</name></item>"
+        @"</data></xf:instance>"
+        extra:
+        @"<xf:repeat id=\"r\" nodeset=\"item\">"
+        @"  <xf:input ref=\"name\"><xf:label>Name</xf:label></xf:input>"
+        @"</xf:repeat>" error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    return p;
+}
+
+- (XFRepeat *)repeatIn:(XFProcessor *)p
+{
+    for (XFControl *c in p.controls) {
+        if ([c isKindOfClass:[XFRepeat class]]) { return (XFRepeat *)c; }
+    }
+    return nil;
+}
+
+- (NSArray<NSString *> *)namesIn:(XFProcessor *)p
+{
+    NSMutableArray<NSString *> *names = [NSMutableArray array];
+    for (XFXMLNode *item in [[[p.model defaultInstance] documentElement] elementsForName:@"item"]) {
+        [names addObject:[XFXML stringValueOfNode:
+            [(XFXMLElement *)item elementsForName:@"name"].firstObject]];
+    }
+    return names;
+}
+
+- (void)testHostDeleteRemovesThatItemOnly
+{
+    XFProcessor *p = [self threeItemRepeatForm];
+    XFRepeat *repeat = [self repeatIn:p];
+    XCTAssertEqual(repeat.items.count, (NSUInteger)3);
+    XCTAssertTrue([repeat deleteItemAtPosition:2]);
+    XCTAssertEqualObjects([self namesIn:p], (@[ @"one", @"three" ]));
+    // the repeat re-read its nodeset, so the rows a host draws follow
+    XCTAssertEqual(repeat.items.count, (NSUInteger)2);
+    XCTAssertEqual(repeat.nodes.count, (NSUInteger)2);
+}
+
+- (void)testHostInsertCopiesTheItemAfterIt
+{
+    XFProcessor *p = [self threeItemRepeatForm];
+    XFRepeat *repeat = [self repeatIn:p];
+    XCTAssertTrue([repeat insertItemAfterPosition:1]);
+    // a copy of the node, in place, the way xf:insert with no @origin
+    // copies rather than inventing an empty one
+    XCTAssertEqualObjects([self namesIn:p], (@[ @"one", @"one", @"two", @"three" ]));
+    XCTAssertEqual(repeat.items.count, (NSUInteger)4);
+    // and the index follows the new item, as after xf:insert
+    XCTAssertEqual(repeat.index, (NSUInteger)2);
+}
+
+- (void)testHostEditsDispatchTheInsertAndDeleteEvents
+{
+    XFProcessor *p = [self threeItemRepeatForm];
+    XFRepeat *repeat = [self repeatIn:p];
+    XFRepeatEventRecorder *recorder = [[XFRepeatEventRecorder alloc] init];
+    [XFXMLEvents setTraceSink:recorder];
+    XCTAssertTrue([repeat insertItemAfterPosition:3]);
+    XCTAssertTrue([repeat deleteItemAtPosition:4]);
+    [XFXMLEvents setTraceSink:nil];
+    // the same notifications a form's own xf:insert / xf:delete raise, so
+    // a form listening for them sees the host's gesture too
+    XCTAssertTrue([recorder.names containsObject:@"xforms-insert"], @"%@", recorder.names);
+    XCTAssertTrue([recorder.names containsObject:@"xforms-delete"], @"%@", recorder.names);
+}
+
+- (void)testHostEditsRejectAPositionOutsideTheNodeset
+{
+    XFProcessor *p = [self threeItemRepeatForm];
+    XFRepeat *repeat = [self repeatIn:p];
+    XCTAssertFalse([repeat deleteItemAtPosition:0]);
+    XCTAssertFalse([repeat deleteItemAtPosition:4]);
+    XCTAssertFalse([repeat insertItemAfterPosition:0]);
+    XCTAssertFalse([repeat insertItemAfterPosition:9]);
+    XCTAssertEqualObjects([self namesIn:p], (@[ @"one", @"two", @"three" ]));
+}
+
+- (void)testDeletingEveryItemLeavesAnEmptyRepeat
+{
+    XFProcessor *p = [self threeItemRepeatForm];
+    XFRepeat *repeat = [self repeatIn:p];
+    XCTAssertTrue([repeat deleteItemAtPosition:3]);
+    XCTAssertTrue([repeat deleteItemAtPosition:2]);
+    XCTAssertTrue([repeat deleteItemAtPosition:1]);
+    XCTAssertEqual(repeat.items.count, (NSUInteger)0);
+    XCTAssertEqual(repeat.index, (NSUInteger)0);   // 0 means "no item"
+    // and the form can be built back up again
+    XCTAssertFalse([repeat insertItemAfterPosition:1]);
+}
+
+- (void)testValuesEditedAfterAHostInsertGoToTheRightNode
+{
+    XFProcessor *p = [self threeItemRepeatForm];
+    XFRepeat *repeat = [self repeatIn:p];
+    XCTAssertTrue([repeat insertItemAfterPosition:1]);
+    // the second item's input now binds the COPY: editing it must not
+    // write through to the original
+    XFControl *second = repeat.items[1].controls.firstObject;
+    NSError *error = nil;
+    XCTAssertTrue([p setValue:@"copy" ofControl:second error:&error], @"%@", error);
+    XCTAssertEqualObjects([self namesIn:p], (@[ @"one", @"copy", @"two", @"three" ]));
 }
 
 - (void)testGroupShiftsContext

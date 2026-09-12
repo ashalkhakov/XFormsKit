@@ -113,6 +113,16 @@ jobs:
           xcodebuild -project XFormsKit.xcodeproj -target XFormsKit \
             -sdk iphoneos -configuration Debug build CODE_SIGNING_ALLOWED=NO
 
+      # The iOS host app (Apps/XFormsMobile): a form picker and the UIKit
+      # form. Simulator only -- a device build of an app needs a signing
+      # identity this runner has no reason to hold, and the framework's
+      # device slice above already covers the linker constraints.
+      - name: Build the iOS app
+        if: ${{ matrix.portable }}
+        run: |
+          xcodebuild -project XFormsKit.xcodeproj -target XFormsMobile \
+            -sdk iphonesimulator -configuration Debug build
+
       # Building proves the engine compiles for iOS; this proves it WORKS
       # there. Both test bundles are multiplatform: on an iPhone SDK they
       # drop the AppKit widget tests and the NSXML differential tests, and

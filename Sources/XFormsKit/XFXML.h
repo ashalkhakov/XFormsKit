@@ -21,6 +21,16 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (NSString *)stringValueOfNode:(XFXMLNode *)node;
 
+/// The element's children serialized as XHTML — its markup, not its text.
+/// nil when the element holds no element children, so a caller can tell
+/// "<xf:hint>plain</xf:hint>" from "<xf:hint>with <b>emphasis</b></xf:hint>"
+/// and only pay for the second.
++ (nullable NSString *)innerMarkupOfElement:(nullable XFXMLElement *)element;
+
+/// `text` with the five XML metacharacters escaped, for splicing a value
+/// into markup.
++ (NSString *)escapedText:(nullable NSString *)text;
+
 + (void)setStringValue:(NSString *)value ofNode:(XFXMLNode *)node;
 /// XPath normalize-space().
 + (NSString *)normalizeSpace:(NSString *)string;

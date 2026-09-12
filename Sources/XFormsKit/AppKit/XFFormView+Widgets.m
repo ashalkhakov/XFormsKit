@@ -1,4 +1,5 @@
 #import "XFAppKitPriv.h"
+#import <XFormsKit/XFDateDisplay.h>
 
 void XFAppKitHasWidgetsFile(void) {}
 
@@ -270,7 +271,10 @@ void XFAppKitHasWidgetsFile(void) {}
     if (type.fractionDigits && value.length) {
         return [type normalizeValue:value];
     }
-    return value;
+    // a date belongs in the reader's locale, the way the date picker
+    // writes it — the instance keeps the lexical value either way
+    NSString *localized = [XFDateDisplay localizedStringForControl:control];
+    return localized ?: value;
 }
 
 
