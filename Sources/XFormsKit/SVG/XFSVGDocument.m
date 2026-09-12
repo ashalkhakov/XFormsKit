@@ -856,18 +856,45 @@ static BOOL XFSVGStrokeOnlyTag(NSString *tag)
 /// Text metrics shared by drawing and hit testing: the drawn rectangle
 /// (local coordinates, top-left origin in the flipped context) plus the
 /// string attributes.
+/// The size a <text> node asks for, in user-space units.
+static CGFloat XFSVGFontSize(NSDictionary *style)
+{
+    return [XFSVGDocument lengthWithSVGString:style[@"font-size"] fallback:16];
+}
+
+static BOOL XFSVGFontIsBold(NSDictionary *style)
+{
+    NSString *weight = style[@"font-weight"];
+    return [weight isEqualToString:@"bold"] || [weight isEqualToString:@"bolder"]
+        || [weight doubleValue] >= 600;
+}
+
+/// The face a <text> node is drawn in, by name. Only GNUstep needs this:
+/// there the face has to be named twice, once to measure and once to
+/// paint, because the two halves come from different font systems.
+static NSString *XFSVGFontFaceName(NSDictionary *style)
+{
+    return XFSVGFontIsBold(style) ? @"Helvetica-Bold" : @"Helvetica";
+}
+
 /// The font a <text> node asks for. Core Text rather than NSFont: it is
 /// the one text API present on all three targets — Opal ships CoreText
 /// for GNUstep — and it draws through a CGContext like everything else
 /// here.
 static CTFontRef XFSVGCreateFont(NSDictionary *style)
 {
-    CGFloat size = [XFSVGDocument lengthWithSVGString:style[@"font-size"] fallback:16];
-    NSString *weight = style[@"font-weight"];
-    BOOL bold = [weight isEqualToString:@"bold"] || [weight isEqualToString:@"bolder"]
-        || [weight doubleValue] >= 600;
+    CGFloat size = XFSVGFontSize(style);
+#if defined(GNUSTEP)
+    // Opal's CTFontCreateUIFontForLanguage ignores the UI font type
+    // altogether and wraps the language in an array without checking it,
+    // so asking for a UI font with no language raises. Name a face.
+    CTFontRef font = CTFontCreateWithName(
+        (CFStringRef)XFSVGFontFaceName(style), size, NULL);
+#else
     CTFontRef font = CTFontCreateUIFontForLanguage(
-        bold ? kCTFontUIFontEmphasizedSystem : kCTFontUIFontSystem, size, NULL);
+        XFSVGFontIsBold(style) ? kCTFontUIFontEmphasizedSystem : kCTFontUIFontSystem,
+        size, NULL);
+#endif
     if (font == NULL) {
         font = CTFontCreateWithName(CFSTR("Helvetica"), size, NULL);
     }
@@ -909,6 +936,9 @@ static CGRect XFSVGTextRect(XFSVGNode *node, NSDictionary *style, CGFloat *outBa
         return CGRectZero;
     }
     CTFontRef font = XFSVGCreateFont(style);
+    if (font == NULL) {
+        return CGRectZero;   // no font, no text: draw nothing rather than raise
+    }
     CGGlyph glyphs[text.length];
     CGSize advances[text.length];
     CGFloat width = 0;
@@ -946,6 +976,9 @@ static void XFSVGDrawText(CGContextRef ctx, XFSVGNode *node, NSDictionary *style
         return;
     }
     CTFontRef font = XFSVGCreateFont(style);
+    if (font == NULL) {
+        return;
+    }
     CGGlyph glyphs[text.length];
     CGSize advances[text.length];
     CFIndex count = XFSVGGlyphs(font, text, glyphs, advances, NULL);
@@ -975,7 +1008,22 @@ static void XFSVGDrawText(CGContextRef ctx, XFSVGNode *node, NSDictionary *style
     // SVG's y axis grows downward and a glyph's does not, so the run is
     // flipped back; -baselineY above keeps the placement upright.
     CGContextSetTextMatrix(ctx, CGAffineTransformMakeScale(1, -1));
+#if defined(GNUSTEP)
+    // Opal's CTFontDrawGlyphs is an empty stub; the CoreGraphics glyph
+    // call is the one that paints there, and it wants the face as a
+    // CGFont rather than the CTFont measured with above. Both come from
+    // the same family name, so the glyph ids agree.
+    CGFontRef faceToPaintWith =
+        CGFontCreateWithFontName((CFStringRef)XFSVGFontFaceName(style));
+    if (faceToPaintWith != NULL) {
+        CGContextSetFont(ctx, faceToPaintWith);
+        CGContextSetFontSize(ctx, XFSVGFontSize(style));
+        CGFontRelease(faceToPaintWith);
+        CGContextShowGlyphsAtPositions(ctx, glyphs, positions, (size_t)count);
+    }
+#else
     CTFontDrawGlyphs(font, glyphs, positions, (size_t)count, ctx);
+#endif
     CGContextRestoreGState(ctx);
     CFRelease(font);
 }

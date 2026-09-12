@@ -204,10 +204,11 @@ typedef struct { NSInteger minX, minY, maxX, maxY; NSUInteger count; } XFInkBoun
         @"    <text x=\"10\" y=\"20\" font-size=\"20\">Hello</text>"
         @"  </g></svg>"];
     XFInkBounds ink = [self inkOf:document width:200 height:200];
-    XCTAssertTrue(ink.count > 0);
+    XCTAssertTrue(ink.count > 0, @"the text was not painted at all");
     // baseline 150 + 20 = 170, NOT 150 - 20 = 130
     XCTAssertTrue(ink.maxY > 150 && ink.maxY <= 175,
-                  @"text mirrored about the group origin (maxY %ld)", (long)ink.maxY);
+                  @"text mirrored about the group origin (ink y %ld..%ld)",
+                  (long)ink.minY, (long)ink.maxY);
 }
 
 #pragma mark - preserveAspectRatio
