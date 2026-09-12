@@ -1,4 +1,5 @@
 #import "XFDocumentWindowController.h"
+#import <XFormsKit/XFXMLTypes.h>
 #import "XFFormDocument.h"
 #import <XFormsKit/XFFormView.h>
 #import <XFormsKit/XFNodeState.h>
@@ -6,7 +7,7 @@
 #import <XFormsKit/XFNamespaces.h>
 
 @interface XFTreeItem : NSObject
-@property (nonatomic, strong) NSXMLNode *node;
+@property (nonatomic, strong) XFXMLNode *node;
 @property (nonatomic, copy) NSString *title;
 @property (nonatomic, assign) BOOL instanceSide;
 @property (nonatomic, strong) NSMutableArray<XFTreeItem *> *children;
@@ -340,14 +341,14 @@
 
 #pragma mark - Tree
 
-- (XFTreeItem *)itemForNode:(NSXMLNode *)node instanceSide:(BOOL)instanceSide
+- (XFTreeItem *)itemForNode:(XFXMLNode *)node instanceSide:(BOOL)instanceSide
 {
     XFTreeItem *item = [[XFTreeItem alloc] init];
     item.node = node;
     item.instanceSide = instanceSide;
     item.children = [NSMutableArray array];
-    if ([node kind] == NSXMLElementKind) {
-        NSXMLElement *el = (NSXMLElement *)node;
+    if ([node kind] == XFXMLElementKind) {
+        XFXMLElement *el = (XFXMLElement *)node;
         NSString *prefix = [el prefix];
         NSString *local = [el localName] ?: [el name];
         NSString *ident = [[el attributeForName:@"id"] stringValue];
@@ -361,7 +362,7 @@
             [title appendFormat:@" #%@", ident];
         }
         item.title = title;
-    } else if ([node kind] == NSXMLTextKind) {
+    } else if ([node kind] == XFXMLTextKind) {
         NSString *text = [[node stringValue] stringByTrimmingCharactersInSet:
                           [NSCharacterSet whitespaceAndNewlineCharacterSet]];
         if (text.length == 0) {
@@ -374,7 +375,7 @@
     } else {
         item.title = [node name] ?: @"node";
     }
-    for (NSXMLNode *child in [node children]) {
+    for (XFXMLNode *child in [node children]) {
         XFTreeItem *kid = [self itemForNode:child instanceSide:instanceSide];
         if (kid) {
             [item.children addObject:kid];
@@ -387,13 +388,13 @@
 {
     self.roots = [NSMutableArray array];
     XFFormDocument *doc = [self formDocument];
-    NSXMLElement *host = doc.processor.hostDocument.rootElement;
+    XFXMLElement *host = doc.processor.hostDocument.rootElement;
     if (host) {
         XFTreeItem *hostRoot = [self itemForNode:host instanceSide:NO];
         hostRoot.title = [NSString stringWithFormat:@"host · %@", hostRoot.title];
         [self.roots addObject:hostRoot];
     }
-    NSXMLElement *inst = [[doc.processor defaultInstance] documentElement];
+    XFXMLElement *inst = [[doc.processor defaultInstance] documentElement];
     if (inst) {
         XFTreeItem *instRoot = [self itemForNode:inst instanceSide:YES];
         instRoot.title = [NSString stringWithFormat:@"instance · %@", instRoot.title];
@@ -411,7 +412,7 @@
     }
 }
 
-- (void)collectExpandedNodes:(XFTreeItem *)item into:(NSMutableArray<NSXMLNode *> *)nodes
+- (void)collectExpandedNodes:(XFTreeItem *)item into:(NSMutableArray<XFXMLNode *> *)nodes
 {
     if ([self.outline isItemExpanded:item] && item.node) {
         [nodes addObject:item.node];
@@ -421,7 +422,7 @@
     }
 }
 
-- (void)expandItemsForNodes:(NSArray<NSXMLNode *> *)nodes in:(XFTreeItem *)item
+- (void)expandItemsForNodes:(NSArray<XFXMLNode *> *)nodes in:(XFTreeItem *)item
 {
     if ([nodes indexOfObjectIdenticalTo:item.node] != NSNotFound) {
         [self.outline expandItem:item];
@@ -439,7 +440,7 @@
 - (void)refreshInstanceTree
 {
     XFFormDocument *doc = [self formDocument];
-    NSXMLElement *inst = [[doc.processor defaultInstance] documentElement];
+    XFXMLElement *inst = [[doc.processor defaultInstance] documentElement];
     XFTreeItem *oldRoot = nil;
     for (XFTreeItem *root in self.roots) {
         if (root.instanceSide) {
@@ -452,9 +453,9 @@
         [self reloadSources];
         return;
     }
-    NSMutableArray<NSXMLNode *> *expanded = [NSMutableArray array];
+    NSMutableArray<XFXMLNode *> *expanded = [NSMutableArray array];
     [self collectExpandedNodes:oldRoot into:expanded];
-    NSXMLNode *selectedNode = self.selectedItem.instanceSide ? self.selectedItem.node : nil;
+    XFXMLNode *selectedNode = self.selectedItem.instanceSide ? self.selectedItem.node : nil;
 
     XFTreeItem *newRoot = [self itemForNode:inst instanceSide:YES];
     newRoot.title = [NSString stringWithFormat:@"instance · %@", newRoot.title];
@@ -479,8 +480,8 @@
 
 - (XFTreeItem *)findItem:(XFTreeItem *)item withID:(NSString *)ident
 {
-    if ([item.node kind] == NSXMLElementKind) {
-        NSString *have = [[(NSXMLElement *)item.node attributeForName:@"id"] stringValue];
+    if ([item.node kind] == XFXMLElementKind) {
+        NSString *have = [[(XFXMLElement *)item.node attributeForName:@"id"] stringValue];
         if ([have isEqualToString:ident]) {
             return item;
         }
@@ -814,7 +815,7 @@ static BOOL XFAlertTakeAccessoryView(NSAlert *alert, NSView *accessory)
 
 #pragma mark - Inspector
 
-- (NSArray<NSDictionary *> *)fieldsForElement:(NSXMLElement *)el
+- (NSArray<NSDictionary *> *)fieldsForElement:(XFXMLElement *)el
 {
     NSString *local = [el localName] ?: @"";
     NSMutableArray *fields = [NSMutableArray array];
@@ -882,33 +883,33 @@ static BOOL XFAlertTakeAccessoryView(NSAlert *alert, NSView *accessory)
     return fields;
 }
 
-- (NSString *)childText:(NSString *)local of:(NSXMLElement *)el
+- (NSString *)childText:(NSString *)local of:(XFXMLElement *)el
 {
-    NSXMLElement *child = [XFXML firstElementWithLocalName:local
+    XFXMLElement *child = [XFXML firstElementWithLocalName:local
                                              namespaceURI:XFXFormsNamespaceURI
                                                    inNode:el];
     return child ? [XFXML stringValueOfNode:child] : @"";
 }
 
-- (void)setChildText:(NSString *)local of:(NSXMLElement *)el to:(NSString *)text
+- (void)setChildText:(NSString *)local of:(XFXMLElement *)el to:(NSString *)text
 {
-    NSXMLElement *child = [XFXML firstElementWithLocalName:local
+    XFXMLElement *child = [XFXML firstElementWithLocalName:local
                                              namespaceURI:XFXFormsNamespaceURI
                                                    inNode:el];
     if (text.length == 0) {
         if (child) {
-            [(NSXMLElement *)[child parent] removeChildAtIndex:[child index]];
+            [(XFXMLElement *)[child parent] removeChildAtIndex:[child index]];
         }
         return;
     }
     if (child == nil) {
-        child = [[NSXMLElement alloc] initWithName:[@"xf:" stringByAppendingString:local]];
+        child = [[XFXMLElement alloc] initWithName:[@"xf:" stringByAppendingString:local]];
         [el insertChild:child atIndex:0];
     }
     [XFXML setStringValue:text ofNode:child];
 }
 
-- (void)setAttribute:(NSString *)name on:(NSXMLElement *)el to:(NSString *)value
+- (void)setAttribute:(NSString *)name on:(XFXMLElement *)el to:(NSString *)value
 {
     if (name.length == 0) {
         return;
@@ -918,19 +919,19 @@ static BOOL XFAlertTakeAccessoryView(NSAlert *alert, NSView *accessory)
         if (colon.location == NSNotFound) {
             [el removeAttributeForName:name];
         } else {
-            NSXMLNode *attr = [el attributeForName:name];
+            XFXMLNode *attr = [el attributeForName:name];
             if (attr) {
                 [el removeAttributeForName:[attr name]];
             }
         }
         return;
     }
-    NSXMLNode *existing = [el attributeForName:name];
+    XFXMLNode *existing = [el attributeForName:name];
     if (existing) {
         [existing setStringValue:value];
         return;
     }
-    [el addAttribute:[NSXMLNode attributeWithName:name stringValue:value]];
+    [el addAttribute:[XFXMLNode attributeWithName:name stringValue:value]];
 }
 
 - (void)rebuildInspector
@@ -983,7 +984,7 @@ static BOOL XFAlertTakeAccessoryView(NSAlert *alert, NSView *accessory)
     [self.inspectorPane addSubview:head];
     y += 24;
 
-    if ([item.node kind] != NSXMLElementKind) {
+    if ([item.node kind] != XFXMLElementKind) {
         NSTextField *lab = [[NSTextField alloc] initWithFrame:NSMakeRect(8, y, 70, 18)];
         [lab setBezeled:NO]; [lab setEditable:NO]; [lab setDrawsBackground:NO];
         [lab setStringValue:@"text"];
@@ -996,7 +997,7 @@ static BOOL XFAlertTakeAccessoryView(NSAlert *alert, NSView *accessory)
         [self.inspectorBindings addObject:@{ @"kind": @"text", @"field": field }];
         y += 28;
     } else {
-        NSXMLElement *el = (NSXMLElement *)item.node;
+        XFXMLElement *el = (XFXMLElement *)item.node;
         NSArray *fields = [self fieldsForElement:el];
         for (NSDictionary *spec in fields) {
             NSTextField *lab = [[NSTextField alloc] initWithFrame:NSMakeRect(8, y, 78, 18)];
@@ -1055,16 +1056,16 @@ static BOOL XFAlertTakeAccessoryView(NSAlert *alert, NSView *accessory)
     if (item == nil) {
         return;
     }
-    if ([item.node kind] != NSXMLElementKind) {
+    if ([item.node kind] != XFXMLElementKind) {
         NSTextField *field = self.inspectorBindings.firstObject[@"field"];
         [item.node setStringValue:[field stringValue] ?: @""];
-        if ([item.node parent].kind == NSXMLElementKind) {
-            [[[self formDocument] processor] noteElementChanged:(NSXMLElement *)[item.node parent]];
+        if ([item.node parent].kind == XFXMLElementKind) {
+            [[[self formDocument] processor] noteElementChanged:(XFXMLElement *)[item.node parent]];
         }
         [self refreshLiveKeepingNode:item.node];
         return;
     }
-    NSXMLElement *el = (NSXMLElement *)item.node;
+    XFXMLElement *el = (XFXMLElement *)item.node;
     if (item.instanceSide) {
         for (NSDictionary *bind in self.inspectorBindings) {
             if ([bind[@"kind"] isEqualToString:@"attr"] && [bind[@"key"] isEqualToString:@"id"]) {
@@ -1103,59 +1104,59 @@ static BOOL XFAlertTakeAccessoryView(NSAlert *alert, NSView *accessory)
 
 #pragma mark - Insert / delete
 
-- (NSXMLElement *)makeElement:(XFPaletteItem *)spec
+- (XFXMLElement *)makeElement:(XFPaletteItem *)spec
 {
-    NSXMLElement *el = [[NSXMLElement alloc] initWithName:[@"xf:" stringByAppendingString:spec.localName]];
+    XFXMLElement *el = [[XFXMLElement alloc] initWithName:[@"xf:" stringByAppendingString:spec.localName]];
     [spec.attributes enumerateKeysAndObjectsUsingBlock:^(NSString *k, NSString *v, BOOL *stop) {
         (void)stop;
         if ([k isEqualToString:@"id"]) {
             return;
         }
         if (v.length) {
-            [el addAttribute:[NSXMLNode attributeWithName:k stringValue:v]];
+            [el addAttribute:[XFXMLNode attributeWithName:k stringValue:v]];
         }
     }];
     NSString *ident = [[self formDocument] uniqueIdentifierWithPrefix:spec.idPrefix];
-    [el addAttribute:[NSXMLNode attributeWithName:@"id" stringValue:ident]];
+    [el addAttribute:[XFXMLNode attributeWithName:@"id" stringValue:ident]];
     if (spec.labelText.length) {
-        NSXMLElement *label = [[NSXMLElement alloc] initWithName:@"xf:label"];
+        XFXMLElement *label = [[XFXMLElement alloc] initWithName:@"xf:label"];
         [label setStringValue:spec.labelText];
         [el addChild:label];
     }
     if ([spec.localName isEqualToString:@"select1"] || [spec.localName isEqualToString:@"select"]) {
-        NSXMLElement *item = [[NSXMLElement alloc] initWithName:@"xf:item"];
-        NSXMLElement *l = [[NSXMLElement alloc] initWithName:@"xf:label"];
+        XFXMLElement *item = [[XFXMLElement alloc] initWithName:@"xf:item"];
+        XFXMLElement *l = [[XFXMLElement alloc] initWithName:@"xf:label"];
         [l setStringValue:@"One"];
-        NSXMLElement *v = [[NSXMLElement alloc] initWithName:@"xf:value"];
+        XFXMLElement *v = [[XFXMLElement alloc] initWithName:@"xf:value"];
         [v setStringValue:@"one"];
         [item addChild:l];
         [item addChild:v];
         [el addChild:item];
     }
     if ([spec.localName isEqualToString:@"switch"]) {
-        NSXMLElement *c = [[NSXMLElement alloc] initWithName:@"xf:case"];
-        [c addAttribute:[NSXMLNode attributeWithName:@"id" stringValue:
+        XFXMLElement *c = [[XFXMLElement alloc] initWithName:@"xf:case"];
+        [c addAttribute:[XFXMLNode attributeWithName:@"id" stringValue:
                          [[self formDocument] uniqueIdentifierWithPrefix:@"case"]]];
-        NSXMLElement *l = [[NSXMLElement alloc] initWithName:@"xf:label"];
+        XFXMLElement *l = [[XFXMLElement alloc] initWithName:@"xf:label"];
         [l setStringValue:@"Case"];
         [c addChild:l];
         [el addChild:c];
     }
     if ([spec.localName isEqualToString:@"instance"]) {
-        NSXMLElement *data = [[NSXMLElement alloc] initWithName:@"data"];
-        [data addChild:[[NSXMLElement alloc] initWithName:@"n"]];
+        XFXMLElement *data = [[XFXMLElement alloc] initWithName:@"data"];
+        [data addChild:[[XFXMLElement alloc] initWithName:@"n"]];
         [el addChild:data];
     }
     return el;
 }
 
-- (NSXMLElement *)parentForPalette:(XFPaletteItem *)spec
+- (XFXMLElement *)parentForPalette:(XFPaletteItem *)spec
 {
     XFFormDocument *doc = [self formDocument];
-    NSXMLElement *selected = nil;
+    XFXMLElement *selected = nil;
     if (self.selectedItem && !self.selectedItem.instanceSide
-        && [self.selectedItem.node kind] == NSXMLElementKind) {
-        selected = (NSXMLElement *)self.selectedItem.node;
+        && [self.selectedItem.node kind] == XFXMLElementKind) {
+        selected = (XFXMLElement *)self.selectedItem.node;
     }
     if ([spec.zone isEqualToString:@"model"]) {
         return [doc modelElement] ?: selected;
@@ -1184,12 +1185,12 @@ static BOOL XFAlertTakeAccessoryView(NSAlert *alert, NSView *accessory)
         return;
     }
     XFPaletteItem *spec = self.paletteItems[(NSUInteger)row];
-    NSXMLElement *parent = [self parentForPalette:spec];
+    XFXMLElement *parent = [self parentForPalette:spec];
     if (parent == nil) {
         NSBeep();
         return;
     }
-    NSXMLElement *el = [self makeElement:spec];
+    XFXMLElement *el = [self makeElement:spec];
     [parent addChild:el];
     self.restoreIdentifier = [[el attributeForName:@"id"] stringValue];
     [[[self formDocument] processor] attachElement:el error:NULL];
@@ -1203,23 +1204,23 @@ static BOOL XFAlertTakeAccessoryView(NSAlert *alert, NSView *accessory)
         NSBeep();
         return;
     }
-    if ([item.node kind] != NSXMLElementKind) {
-        NSXMLNode *parent = [item.node parent];
-        // parent is an NSXMLElement or NSXMLDocument; both implement this.
-        [(NSXMLElement *)parent removeChildAtIndex:[item.node index]];
+    if ([item.node kind] != XFXMLElementKind) {
+        XFXMLNode *parent = [item.node parent];
+        // parent is an XFXMLElement or XFXMLDocument; both implement this.
+        [(XFXMLElement *)parent removeChildAtIndex:[item.node index]];
         self.restoreIdentifier = nil;
         [self refreshLiveKeepingNode:parent];
         return;
     }
-    NSXMLElement *el = (NSXMLElement *)item.node;
+    XFXMLElement *el = (XFXMLElement *)item.node;
     NSString *local = [el localName];
     if ([local isEqualToString:@"html"] || [local isEqualToString:@"head"] || [local isEqualToString:@"body"]) {
         NSBeep();
         return;
     }
-    NSXMLNode *parent = [el parent];
+    XFXMLNode *parent = [el parent];
     [[[self formDocument] processor] detachElement:el];
-    [(NSXMLElement *)parent removeChildAtIndex:[el index]];
+    [(XFXMLElement *)parent removeChildAtIndex:[el index]];
     self.selectedItem = nil;
     self.restoreIdentifier = nil;
     [self refreshLiveKeepingNode:parent];
@@ -1228,26 +1229,26 @@ static BOOL XFAlertTakeAccessoryView(NSAlert *alert, NSView *accessory)
 - (void)duplicateSelected:(id)sender
 {
     XFTreeItem *item = self.selectedItem;
-    if (item == nil || item.instanceSide || [item.node kind] != NSXMLElementKind) {
+    if (item == nil || item.instanceSide || [item.node kind] != XFXMLElementKind) {
         NSBeep();
         return;
     }
-    NSXMLElement *el = (NSXMLElement *)item.node;
-    NSXMLElement *copy = [el copy];
+    XFXMLElement *el = (XFXMLElement *)item.node;
+    XFXMLElement *copy = [el copy];
     NSString *ident = [[self formDocument] uniqueIdentifierWithPrefix:[el localName]];
-    NSXMLNode *idAttr = [copy attributeForName:@"id"];
+    XFXMLNode *idAttr = [copy attributeForName:@"id"];
     if (idAttr) {
         [idAttr setStringValue:ident];
     } else {
-        [copy addAttribute:[NSXMLNode attributeWithName:@"id" stringValue:ident]];
+        [copy addAttribute:[XFXMLNode attributeWithName:@"id" stringValue:ident]];
     }
-    [(NSXMLElement *)[el parent] insertChild:copy atIndex:[el index] + 1];
+    [(XFXMLElement *)[el parent] insertChild:copy atIndex:[el index] + 1];
     self.restoreIdentifier = ident;
     [[[self formDocument] processor] attachElement:copy error:NULL];
     [self refreshLiveKeepingNode:copy];
 }
 
-- (XFTreeItem *)findItem:(XFTreeItem *)item withNode:(NSXMLNode *)node
+- (XFTreeItem *)findItem:(XFTreeItem *)item withNode:(XFXMLNode *)node
 {
     if (item.node == node) {
         return item;
@@ -1259,7 +1260,7 @@ static BOOL XFAlertTakeAccessoryView(NSAlert *alert, NSView *accessory)
     return nil;
 }
 
-- (void)selectNode:(NSXMLNode *)node
+- (void)selectNode:(XFXMLNode *)node
 {
     XFTreeItem *hit = nil;
     for (XFTreeItem *root in self.roots) {
@@ -1278,7 +1279,7 @@ static BOOL XFAlertTakeAccessoryView(NSAlert *alert, NSView *accessory)
     }
 }
 
-- (void)refreshLiveKeepingNode:(NSXMLNode *)node
+- (void)refreshLiveKeepingNode:(XFXMLNode *)node
 {
     [[self formDocument] markHostEdited];
     [self rebuildForm];

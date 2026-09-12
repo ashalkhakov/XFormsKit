@@ -1,4 +1,5 @@
 #import "XFDIDRefField.h"
+#import <XFormsKit/XFXMLTypes.h>
 
 @interface XFDIDRefField ()
 @property (nonatomic, strong) NSComboBox *combo;
@@ -20,7 +21,7 @@ static NSArray *XFDCommonEventNames(void)
               @"xforms-insert", @"xforms-delete" ];
 }
 
-static void XFDCollectIDs(NSXMLElement *element, NSSet *localNames, NSMutableArray *ids)
+static void XFDCollectIDs(XFXMLElement *element, NSSet *localNames, NSMutableArray *ids)
 {
     if (localNames == nil || [localNames containsObject:[element localName] ?: @""]) {
         NSString *identifier = [[element attributeForName:@"id"] stringValue];
@@ -28,9 +29,9 @@ static void XFDCollectIDs(NSXMLElement *element, NSSet *localNames, NSMutableArr
             [ids addObject:identifier];
         }
     }
-    for (NSXMLNode *child in [element children]) {
-        if ([child kind] == NSXMLElementKind) {
-            XFDCollectIDs((NSXMLElement *)child, localNames, ids);
+    for (XFXMLNode *child in [element children]) {
+        if ([child kind] == XFXMLElementKind) {
+            XFDCollectIDs((XFXMLElement *)child, localNames, ids);
         }
     }
 }
@@ -41,7 +42,7 @@ static void XFDCollectIDs(NSXMLElement *element, NSSet *localNames, NSMutableArr
     if ([kind isEqualToString:@"#event"]) {
         return XFDCommonEventNames();
     }
-    NSXMLElement *root = [processor.hostDocument rootElement];
+    XFXMLElement *root = [processor.hostDocument rootElement];
     if (root == nil || kind.length == 0) {
         return @[];
     }
@@ -60,7 +61,7 @@ static void XFDCollectIDs(NSXMLElement *element, NSSet *localNames, NSMutableArr
         }
         XFDCollectIDs(root, controls, ids);
     } else {
-        for (NSXMLElement *e in [XFXML elementsWithLocalName:kind
+        for (XFXMLElement *e in [XFXML elementsWithLocalName:kind
                                                 namespaceURI:XFXFormsNamespaceURI
                                                       inNode:root]) {
             NSString *identifier = [[e attributeForName:@"id"] stringValue];

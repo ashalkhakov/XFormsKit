@@ -26,6 +26,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)copyContentsOf:(XFDOMNode *)other;
 /// Append the node's serialisation, used by the recursive writer.
 - (void)appendXMLStringWithOptions:(XFDOMNodeOptions)options into:(NSMutableString *)out;
+/// The same, carrying the nesting level that XFDOMNodePrettyPrint indents
+/// by. The depthless version above is this one at level 0.
+- (void)appendXMLStringWithOptions:(XFDOMNodeOptions)options
+                             depth:(NSUInteger)depth
+                              into:(NSMutableString *)out;
 
 @end
 

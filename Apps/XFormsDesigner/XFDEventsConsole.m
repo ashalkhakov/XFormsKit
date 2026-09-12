@@ -1,5 +1,6 @@
 /* Copyright (c) 2026 the XFormsKit contributors. LGPL 2.1. */
 #import "XFDEventsConsole.h"
+#import <XFormsKit/XFXMLTypes.h>
 
 void XFDEventsConsoleFilePresent(void) {}
 
@@ -52,7 +53,7 @@ void XFDEventsConsoleFilePresent(void) {}
 - (void)traceEventOfKind:(XFTraceKind)kind
                  message:(NSString *)message
                eventName:(NSString *)eventName
-                 element:(NSXMLElement *)element
+                 element:(XFXMLElement *)element
 {
     if (self.paused) {
         return;
@@ -100,26 +101,26 @@ void XFDEventsConsoleFilePresent(void) {}
 {
     // XSLTForms debugMode tracelog: createXMLDocument('<tracelog xmlns=""/>'),
     // one <event> per line, "yyyy-MM-ddThh:mm:ssz -> text".
-    NSXMLElement *root = [[NSXMLElement alloc] initWithName:@"tracelog"];
+    XFXMLElement *root = [[XFXMLElement alloc] initWithName:@"tracelog"];
     NSDateFormatter *fmt = [[NSDateFormatter alloc] init];
     [fmt setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
     for (XFDEventsLogEntry *e in self.store) {
-        NSXMLElement *ev = [[NSXMLElement alloc] initWithName:@"event"];
+        XFXMLElement *ev = [[XFXMLElement alloc] initWithName:@"event"];
         [ev setStringValue:[NSString stringWithFormat:@"%@ -> %@",
                             [fmt stringFromDate:e.date], e.message]];
         [root addChild:ev];
     }
-    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithRootElement:root];
+    XFXMLDocument *doc = [[XFXMLDocument alloc] initWithRootElement:root];
     [doc setVersion:@"1.0"];
     [doc setCharacterEncoding:@"UTF-8"];
-    return [doc XMLStringWithOptions:NSXMLNodePrettyPrint];
+    return [doc XMLStringWithOptions:XFXMLNodePrettyPrint];
 }
 
 @end
 
 #pragma mark - duplicate-id scan
 
-NSArray<NSString *> *XFDDuplicateIDsInDocument(NSXMLDocument *document)
+NSArray<NSString *> *XFDDuplicateIDsInDocument(XFXMLDocument *document)
 {
     // XSLTForms debugging(): walk every element, count id attribute
     // values, warn on the ones seen more than once.
@@ -130,10 +131,10 @@ NSArray<NSString *> *XFDDuplicateIDsInDocument(NSXMLDocument *document)
     NSMutableArray *order = [NSMutableArray array];
     NSMutableArray *queue = [NSMutableArray arrayWithObject:document];
     while (queue.count) {
-        NSXMLNode *node = queue.firstObject;
+        XFXMLNode *node = queue.firstObject;
         [queue removeObjectAtIndex:0];
-        if ([node kind] == NSXMLElementKind) {
-            NSString *ident = [[(NSXMLElement *)node attributeForName:@"id"] stringValue];
+        if ([node kind] == XFXMLElementKind) {
+            NSString *ident = [[(XFXMLElement *)node attributeForName:@"id"] stringValue];
             if (ident.length) {
                 if ([seen countForObject:ident] == 0) {
                     [order addObject:ident];
@@ -141,7 +142,7 @@ NSArray<NSString *> *XFDDuplicateIDsInDocument(NSXMLDocument *document)
                 [seen addObject:ident];
             }
         }
-        for (NSXMLNode *child in [node children]) {
+        for (XFXMLNode *child in [node children]) {
             [queue addObject:child];
         }
     }
@@ -322,7 +323,7 @@ static NSString *XFDTraceKindName(XFTraceKind kind)
 
 #pragma mark show / close
 
-- (void)showWithHostDocument:(NSXMLDocument *)hostDocument
+- (void)showWithHostDocument:(XFXMLDocument *)hostDocument
 {
     [self buildPanelIfNeeded];
     [self.log install];
@@ -345,7 +346,7 @@ static NSString *XFDTraceKindName(XFTraceKind kind)
     [self.panel orderOut:nil];
 }
 
-- (void)toggleWithHostDocument:(NSXMLDocument *)hostDocument
+- (void)toggleWithHostDocument:(XFXMLDocument *)hostDocument
 {
     if (self.visible) {
         [self close];

@@ -13,10 +13,11 @@
    XFDEditors facades; every apply writes host XML through XFHostEdit, so
    it is undoable and refreshes the processor in place.
 
-   The selection is the host NSXMLElement, never a runtime control.
+   The selection is the host XFXMLElement, never a runtime control.
    Copyright (c) 2026 the XFormsKit contributors. LGPL 2.1. */
 #pragma once
 #import <AppKit/AppKit.h>
+#import <XFormsKit/XFXMLTypes.h>
 #import "XFDXPathField.h"
 #import "XFDRichTextField.h"
 #import "XFDIDRefField.h"

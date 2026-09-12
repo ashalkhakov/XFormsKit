@@ -27,31 +27,24 @@ concurrency:
 
 jobs:
   ########################### macOS / Cocoa ###########################
-  # Every suite runs twice, once against each XML back end. XFXMLTypes.h binds
-  # the engine's XFXML* names to NSXML by default and to the portable XFDOM
-  # under XF_PORTABLE_DOM, and only running both keeps the two honest: a
-  # divergence in XFDOM shows up here as an engine test failure, not months
-  # later on iOS.
+  # One XML back end: XFDOM, the portable tree, on every platform.
+  #
+  # This job used to run every suite twice, once against NSXML and once
+  # against XFDOM, because the engine could be built either way. XFDOM has
+  # since passed every suite on macOS, GNUstep and iOS, so the second tree
+  # was retired -- one implementation means one set of behaviours to know,
+  # and the apps no longer need a second configuration to be built in.
+  #
+  # XFDOMTests still compares against the platform's NSXML where there is
+  # one, as a reference for what a mature DOM does; see the step below.
   #
   # macOS minutes bill at 10x on a private repository. Adding
   #   if: github.event_name != 'push' || github.ref == 'refs/heads/master'
   # confines this job to pull requests and the default branch.
   macos:
-    name: macOS (${{ matrix.name }})
+    name: macOS
     runs-on: macos-15
     timeout-minutes: 45
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: NSXML
-            defs: ""
-            portable: false
-          - name: XFDOM
-            defs: "XF_PORTABLE_DOM=1"
-            portable: true
-    env:
-      XF_DEFS: ${{ matrix.defs }}
     steps:
       - uses: actions/checkout@v4
 
@@ -63,14 +56,12 @@ jobs:
       - name: Build XFormsKit
         run: |
           xcodebuild -project XFormsKit.xcodeproj -scheme XFormsKit \
-            -destination 'platform=macOS' -configuration Debug build \
-            GCC_PREPROCESSOR_DEFINITIONS='$(inherited) '"$XF_DEFS"
+            -destination 'platform=macOS' -configuration Debug build
 
-      # The apps still name NSXML types directly, so they only build in the
-      # default configuration. When they are migrated to XFXML*, drop the
-      # condition and let them build in both.
+      # Both apps speak XFXML* now, like the engine, so they build in the
+      # one configuration there is. They used to name NSXML types directly
+      # and were pinned to the NSXML leg of a two-leg matrix.
       - name: Build the viewer and the designer
-        if: ${{ !matrix.portable }}
         run: |
           for scheme in XFormsViewer XFormsDesigner; do
             xcodebuild -project XFormsKit.xcodeproj -scheme "$scheme" \
@@ -82,8 +73,7 @@ jobs:
         run: |
           xcodebuild -project XFormsKit.xcodeproj -scheme XFormsKit \
             -destination 'platform=macOS' -configuration Debug \
-            -resultBundlePath "$RUNNER_TEMP/XFormsKitTests-${{ matrix.name }}.xcresult" test \
-            GCC_PREPROCESSOR_DEFINITIONS='$(inherited) '"$XF_DEFS"
+            -resultBundlePath "$RUNNER_TEMP/XFormsKitTests.xcresult" test
 
       # The W3C XForms 1.1 suite. docs/w3c-xctests.md calls it a conformance
       # report rather than a regression gate, but it has been fully green
@@ -93,20 +83,19 @@ jobs:
         run: |
           xcodebuild -project XFormsKit.xcodeproj -scheme XFW3CTests \
             -destination 'platform=macOS' -configuration Debug \
-            -resultBundlePath "$RUNNER_TEMP/XFW3CTests-${{ matrix.name }}.xcresult" test \
-            GCC_PREPROCESSOR_DEFINITIONS='$(inherited) '"$XF_DEFS"
+            -resultBundlePath "$RUNNER_TEMP/XFW3CTests.xcresult" test
 
       # The reason the portable DOM exists. The framework target is
-      # multiplatform: on an iPhone SDK it excludes Sources/XFormsKit/AppKit
-      # and defines XF_PORTABLE_DOM, so what builds here is the engine, the
-      # XPath layer and XFDOM against Foundation alone. iOS Foundation has
-      # NSXMLParser and no DOM, so anything that reaches for NSXMLDocument
-      # fails here and nowhere else.
+      # multiplatform: on an iPhone SDK it excludes Sources/XFormsKit/AppKit,
+      # so what builds here is the engine, the XPath layer and XFDOM against
+      # Foundation alone. iOS Foundation has NSXMLParser and no DOM, so
+      # anything that reaches for NSXMLDocument fails here and nowhere else
+      # -- which is what made XFDOM necessary, and is now moot for the
+      # engine itself since XFDOM is the only tree.
       #
       # Both SDKs: the simulator is what a test host would use, and the
       # device slice is the one with the real linker constraints.
       - name: Build the framework for iOS
-        if: ${{ matrix.portable }}
         run: |
           xcodebuild -project XFormsKit.xcodeproj -target XFormsKit \
             -sdk iphonesimulator -configuration Debug build
@@ -118,7 +107,6 @@ jobs:
       # identity this runner has no reason to hold, and the framework's
       # device slice above already covers the linker constraints.
       - name: Build the iOS app
-        if: ${{ matrix.portable }}
         run: |
           xcodebuild -project XFormsKit.xcodeproj -target XFormsMobile \
             -sdk iphonesimulator -configuration Debug build
@@ -129,7 +117,6 @@ jobs:
       # what is left -- the engine and the whole W3C conformance suite --
       # runs against XFDOM in the simulator.
       - name: Test on the iOS Simulator
-        if: ${{ matrix.portable }}
         run: |
           # Whatever iPhone this runner's Xcode ships with, by UDID: naming a
           # model pins the job to an Xcode version, and the name changes
@@ -158,7 +145,6 @@ jobs:
       # ships the UIKit form layer, so the invariant has moved: UIKit is
       # expected, and AppKit is the one that must never appear.
       - name: The iOS framework is the engine plus the UIKit form layer
-        if: ${{ matrix.portable }}
         run: |
           products=$(xcodebuild -project XFormsKit.xcodeproj -target XFormsKit \
                        -sdk iphonesimulator -configuration Debug -showBuildSettings 2>/dev/null \
@@ -195,6 +181,11 @@ jobs:
       # A rename that quietly points both sides at the same implementation
       # would leave it green while testing nothing, so check it still names
       # the one it is comparing against.
+      # XFDOMTests is the one place NSXML is still used, deliberately: it
+      # is the reference for what a mature DOM does, and asserting XFDOM
+      # against it is how a divergence gets noticed. Now that the engine
+      # has no NSXML configuration, this guard is the only thing keeping
+      # that comparison from quietly disappearing.
       - name: The DOM tests still compare against NSXML
         run: |
           grep -q "NSXMLDocument" Tests/XFormsKitTests/XFDOMTests.m \
@@ -204,7 +195,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: macos-${{ matrix.name }}-test-results
+          name: macos-test-results
           path: ${{ runner.temp }}/*.xcresult
           retention-days: 7
 
@@ -331,19 +322,22 @@ jobs:
           path: ${{ env.INSTALL_PATH }}
           key: gnustep-v1-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh', 'source/patches/gnustep/*.patch') }}
 
-      # ---- default configuration: the engine on gnustep-base's NSXML ----
+      # One pass: the engine on XFDOM, which is now the only tree. There
+      # used to be a second pass against gnustep-base's NSXML, with a
+      # `make clean` between them because the flag changed how every source
+      # compiled.
 
-      - name: Build XFormsKit (NSXML)
+      - name: Build XFormsKit
         run: |
           . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
           make
 
-      - name: Unit tests (NSXML)
+      - name: Unit tests
         run: |
           . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
           xvfb-run -a make check
 
-      - name: W3C conformance suite (NSXML)
+      - name: W3C conformance suite
         run: |
           . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
           xvfb-run -a make w3ccheck
@@ -352,24 +346,3 @@ jobs:
         run: |
           . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
           make viewer
-
-      # ---- portable configuration: the same engine on XFDOM ----
-      #
-      # The flag changes how every source compiles, so the tree is cleaned
-      # between the two passes rather than relinked.
-
-      - name: Build XFormsKit (XFDOM)
-        run: |
-          . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
-          make clean
-          make XF_PORTABLE_DOM=1
-
-      - name: Unit tests (XFDOM)
-        run: |
-          . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
-          xvfb-run -a make check XF_PORTABLE_DOM=1
-
-      - name: W3C conformance suite (XFDOM)
-        run: |
-          . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
-          xvfb-run -a make w3ccheck XF_PORTABLE_DOM=1

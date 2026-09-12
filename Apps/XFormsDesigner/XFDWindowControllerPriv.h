@@ -39,8 +39,8 @@ typedef NS_ENUM(NSInteger, XFDInspectorPage) {
    over the preview's content area and swallows the mouse while the
    checkbox is on; off = the form is live, as always. */
 @property (nonatomic, strong) XFDDesignOverlay *designOverlay;
-/// The selection is the host NSXMLElement, never a runtime control.
-@property (nonatomic, strong) NSXMLElement *selected;
+/// The selection is the host XFXMLElement, never a runtime control.
+@property (nonatomic, strong) XFXMLElement *selected;
 @property (nonatomic, strong) XFDEventsPane *eventsPane;
 @property (nonatomic, strong) XFDActionRowsPane *actionRowsPane;
 
@@ -55,18 +55,18 @@ typedef NS_ENUM(NSInteger, XFDInspectorPage) {
    AppKit split's lesson). Each is implemented by the like-named file. */
 
 @interface XFDWindowController (XFDOutlinePrivate)
-- (NSXMLElement *)rootElement;
-- (NSArray *)elementChildrenOf:(NSXMLElement *)element;
-- (void)reloadOutlineKeepingSelection:(NSXMLElement *)keep;
-- (void)selectElement:(NSXMLElement *)element;
-- (NSXMLElement *)instanceElementForSelection:(NSXMLElement *)element;
+- (XFXMLElement *)rootElement;
+- (NSArray *)elementChildrenOf:(XFXMLElement *)element;
+- (void)reloadOutlineKeepingSelection:(XFXMLElement *)keep;
+- (void)selectElement:(XFXMLElement *)element;
+- (XFXMLElement *)instanceElementForSelection:(XFXMLElement *)element;
 - (void)outlineDoubleClicked:(id)sender;
 - (void)insertPaletteName:(NSString *)name;
-- (NSXMLElement *)insertParentForSelection:(NSInteger *)indexOut;
+- (XFXMLElement *)insertParentForSelection:(NSInteger *)indexOut;
 @end
 
 @interface XFDWindowController (XFDInspectorPrivate)
-- (XFDInspectorPage)pageForElement:(NSXMLElement *)element;
+- (XFDInspectorPage)pageForElement:(XFXMLElement *)element;
 - (void)showInspectorForSelection;
 - (void)inspectorTabSelected:(id)sender;
 - (void)fillInspector;
@@ -76,7 +76,7 @@ typedef NS_ENUM(NSInteger, XFDInspectorPage) {
 - (void)showAttributesGroup;
 - (NSArray *)xpathFields;
 - (NSArray *)richTextFields;
-- (NSXMLElement *)selectedInstanceDataNode;
+- (XFXMLElement *)selectedInstanceDataNode;
 @end
 
 @interface XFDWindowController (XFDPreviewPrivate)

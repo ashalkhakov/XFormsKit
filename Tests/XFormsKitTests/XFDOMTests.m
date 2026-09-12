@@ -272,6 +272,55 @@ static void XFNoteReference(NSString *what, id value)
 /// through libxml2's entity parser, which reports "unterminated entity
 /// reference" for a bare ampersand and does not produce a comparable
 /// answer.
+/// XFDOMNodePrettyPrint, which the source views and the instance editor
+/// serialise through.
+///
+/// Asserted literally, and logged beside the platform's NSXML for
+/// comparison — the same shape as the rest of this suite. Two rules
+/// matter more than the exact spacing: an element whose children are all
+/// elements is broken across lines, and an element with TEXT in it is
+/// left exactly as it stands, since indentation inside mixed content
+/// would change the value the document carries.
+- (void)testPrettyPrintIndentsStructureAndLeavesTextAlone
+{
+    NSString *xml = @"<data><item><name>Ada</name><qty>7</qty></item>"
+                    @"<note>a <b>bold</b> word</note></data>";
+    XFDOMDocument *doc = [self parse:xml];
+    XCTAssertNotNil(doc);
+    NSString *pretty = [doc.rootElement XMLStringWithOptions:XFDOMNodePrettyPrint];
+    NSLog(@"[XFDOMTests] XFDOM pretty print:\n%@", pretty);
+
+    // structure is broken across lines and indented two spaces per level
+    XCTAssertTrue([pretty containsString:@"<data>\n  <item>"], @"%@", pretty);
+    XCTAssertTrue([pretty containsString:@"\n    <name>Ada</name>"], @"%@", pretty);
+    XCTAssertTrue([pretty containsString:@"\n  </item>"], @"%@", pretty);
+    // a text-bearing element keeps its content verbatim, mixed or not
+    XCTAssertTrue([pretty containsString:@"<name>Ada</name>"], @"%@", pretty);
+    XCTAssertTrue([pretty containsString:@"<note>a <b>bold</b> word</note>"],
+                  @"mixed content must not be reflowed: %@", pretty);
+    // and it is still the same document
+    XCTAssertFalse([pretty containsString:@"  Ada"], @"%@", pretty);
+
+#if !TARGET_OS_IPHONE
+    NSError *error = nil;
+    NSXMLDocument *reference = [[NSXMLDocument alloc] initWithXMLString:xml
+                                                               options:0
+                                                                 error:&error];
+    NSLog(@"[XFDOMTests] this platform's NSXML pretty print:\n%@",
+          [[reference rootElement] XMLStringWithOptions:NSXMLNodePrettyPrint]);
+#endif
+}
+
+/// Without the option nothing is indented — the engine's own
+/// serialisation, which submissions depend on, is untouched.
+- (void)testPlainSerialisationIsUnchangedByThePrettyPrinter
+{
+    NSString *xml = @"<data><item><name>Ada</name></item></data>";
+    XFDOMDocument *doc = [self parse:xml];
+    XCTAssertEqualObjects([doc.rootElement XMLStringWithOptions:XFDOMNodeOptionsNone],
+                          @"<data><item><name>Ada</name></item></data>");
+}
+
 - (void)testEscapingIsExactAndPlatformIndependent
 {
     XFDOMElement *mine = [XFDOMElement elementWithName:@"e"];

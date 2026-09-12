@@ -4,6 +4,7 @@
    attribute tooltips, and the field-provider plumbing every
    XFDXPathField / XFDRichTextField / XFDIDRefField shares. */
 #import "XFDWindowControllerPriv.h"
+#import <XFormsKit/XFXMLTypes.h>
 #import "XFDDocument.h"
 #import "XFDEditors.h"
 #import "XFDInspectorSpecs.h"
@@ -51,7 +52,7 @@
 
 #pragma mark - Inspector pages
 
-- (XFDInspectorPage)pageForElement:(NSXMLElement *)element
+- (XFDInspectorPage)pageForElement:(XFXMLElement *)element
 {
     if (element == nil) {
         return XFDPageElement;
@@ -369,9 +370,9 @@
         return;
     }
     XFHostEdit *edit = [self formDocument].hostEdit;
-    NSXMLElement *modelEl = (NSXMLElement *)[self processor].model.element;
+    XFXMLElement *modelEl = (XFXMLElement *)[self processor].model.element;
     NSError *error = nil;
-    NSXMLElement *bind = [edit insertElementNamed:@"bind" underParent:modelEl
+    XFXMLElement *bind = [edit insertElementNamed:@"bind" underParent:modelEl
                                           atIndex:-1 error:&error];
     if (bind == nil) {
         [self presentError:error];
@@ -386,29 +387,29 @@
 
 /// The instance-data node under the selection when there is one (the
 /// selection itself must live INSIDE an xf:instance, not be the instance).
-- (NSXMLElement *)selectedInstanceDataNode
+- (XFXMLElement *)selectedInstanceDataNode
 {
     if (self.selected == nil
         || [XFXML element:self.selected hasLocalName:[self.selected localName]
              namespaceURI:XFXFormsNamespaceURI]) {
         return nil;
     }
-    NSXMLElement *instance = [self instanceElementForSelection:self.selected];
+    XFXMLElement *instance = [self instanceElementForSelection:self.selected];
     return (instance != nil && instance != self.selected) ? self.selected : nil;
 }
 
 /// The ref that reaches `node` from the picker's default context: plain
 /// steps for the default instance, instance('id')/… for a named one, nil
 /// when the node's instance cannot be addressed.
-- (NSString *)refForDataNode:(NSXMLElement *)node
+- (NSString *)refForDataNode:(XFXMLElement *)node
 {
     // the outline shows the HOST document's inline instance content;
     // XFInstance works on a COPY — map through the owning xf:instance
-    NSXMLElement *instanceHost = [self instanceElementForSelection:node];
-    NSXMLElement *dataRoot = nil;
-    for (NSXMLNode *c in [instanceHost children]) {
-        if ([c kind] == NSXMLElementKind) {
-            dataRoot = (NSXMLElement *)c;
+    XFXMLElement *instanceHost = [self instanceElementForSelection:node];
+    XFXMLElement *dataRoot = nil;
+    for (XFXMLNode *c in [instanceHost children]) {
+        if ([c kind] == XFXMLElementKind) {
+            dataRoot = (XFXMLElement *)c;
             break;
         }
     }
@@ -446,14 +447,14 @@
 /// selected instance-data node — form-building straight from the data.
 - (void)createBoundControlOfKind:(NSString *)kind
 {
-    NSXMLElement *dataNode = [self selectedInstanceDataNode];
+    XFXMLElement *dataNode = [self selectedInstanceDataNode];
     NSString *ref = dataNode ? [self refForDataNode:dataNode] : nil;
     if (ref == nil) {
         XFDBeep();
         return;
     }
-    NSXMLElement *body = nil;
-    for (NSXMLElement *top in [self elementChildrenOf:[self rootElement]]) {
+    XFXMLElement *body = nil;
+    for (XFXMLElement *top in [self elementChildrenOf:[self rootElement]]) {
         if ([[top localName] isEqualToString:@"body"]) {
             body = top;
         }
@@ -464,7 +465,7 @@
     }
     XFHostEdit *edit = [self formDocument].hostEdit;
     NSError *error = nil;
-    NSXMLElement *control = [edit insertElementNamed:kind underParent:body
+    XFXMLElement *control = [edit insertElementNamed:kind underParent:body
                                              atIndex:-1 error:&error];
     if (control == nil) {
         [self presentError:error];
@@ -547,7 +548,7 @@
               self.itemsetValueRefField ];
 }
 
-- (NSXMLElement *)hostElementForXPathField:(XFDXPathField *)field
+- (XFXMLElement *)hostElementForXPathField:(XFDXPathField *)field
 {
     (void)field;
     return self.selected;
@@ -578,7 +579,7 @@
     return nil;
 }
 
-- (NSXMLNode *)contextNodeForXPathField:(XFDXPathField *)field
+- (XFXMLNode *)contextNodeForXPathField:(XFDXPathField *)field
 {
     if ([self pageForElement:self.selected] == XFDPageBind) {
         // MIP expressions (calculate, constraint, …) evaluate PER BOUND
@@ -617,7 +618,7 @@
 
 #pragma mark - Rich text field provider (the Insert Output token flow)
 
-- (NSXMLElement *)hostElementForRichTextField:(XFDRichTextField *)field
+- (XFXMLElement *)hostElementForRichTextField:(XFDRichTextField *)field
 {
     (void)field;
     return self.selected;
@@ -634,7 +635,7 @@
 /// picker's Relative style starts there — one level closer than the ref
 /// field's context — then the nearest bound ancestor, then the default
 /// instance root.
-- (NSXMLNode *)contextNodeForRichTextField:(XFDRichTextField *)field
+- (XFXMLNode *)contextNodeForRichTextField:(XFDRichTextField *)field
 {
     (void)field;
     if ([self pageForElement:self.selected] == XFDPageControl) {

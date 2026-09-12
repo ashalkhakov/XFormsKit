@@ -123,6 +123,17 @@ declined — the reasoning, and the gap analysis that became this
 implementation's test specification, are in
 [ios-port-dom-lift.md](ios-port-dom-lift.md).
 
+> **Superseded — XFDOM is now the only tree.** Everything below describes
+> the period when the engine could be built against either DOM. NSXML has
+> since been dropped entirely: `XFXMLTypes.h` has one branch, the
+> `XF_PORTABLE_DOM` flag is gone, both apps and the test tool speak
+> `XFXML*`, and CI runs one back end on all three platforms. XFDOM grew
+> pretty-printing (`XFDOMNodePrettyPrint`) for the source views and the
+> instance editor, which was the last thing NSXML was still doing for the
+> apps. `XFDOMTests` keeps comparing against the platform's NSXML as a
+> reference oracle. The "still to do" list at the end of this section is
+> therefore done, except the two workarounds it names.
+
 **Status: the engine runs on it.** `Sources/XFormsKit/DOM/` holds
 `XFDOMNode`, `XFDOMElement`, `XFDOMDocument` and the `NSXMLParser`-based
 builder. The engine, the XPath layer, the AppKit layer and the tests were

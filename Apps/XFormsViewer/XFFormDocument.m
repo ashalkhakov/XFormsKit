@@ -1,4 +1,5 @@
 #import "XFFormDocument.h"
+#import <XFormsKit/XFXMLTypes.h>
 #import "XFDocumentWindowController.h"
 #import <XFormsKit/XFNamespaces.h>
 #import <XFormsKit/XFXML.h>
@@ -136,9 +137,9 @@
 
 - (void)markHostEdited
 {
-    NSXMLDocument *host = self.processor.hostDocument;
+    XFXMLDocument *host = self.processor.hostDocument;
     if (host) {
-        NSString *xml = XFHostXMLString(host, NSXMLNodePrettyPrint);
+        NSString *xml = XFHostXMLString(host, XFXMLNodePrettyPrint);
         if (xml.length) {
             self.sourceXML = xml;
         }
@@ -148,20 +149,20 @@
 
 - (BOOL)commitHostTree:(NSError **)error
 {
-    NSXMLDocument *host = self.processor.hostDocument;
+    XFXMLDocument *host = self.processor.hostDocument;
     if (host == nil) {
         return [self reloadProcessor:error];
     }
-    NSString *xml = XFHostXMLString(host, NSXMLNodePrettyPrint);
+    NSString *xml = XFHostXMLString(host, XFXMLNodePrettyPrint);
     return [self replaceHostWithXMLString:xml error:error];
 }
 
-- (NSXMLElement *)hostRoot
+- (XFXMLElement *)hostRoot
 {
     return [self.processor.hostDocument rootElement];
 }
 
-- (NSXMLElement *)firstElement:(NSString *)local URI:(NSString *)uri under:(NSXMLNode *)node
+- (XFXMLElement *)firstElement:(NSString *)local URI:(NSString *)uri under:(XFXMLNode *)node
 {
     if (node == nil) {
         return nil;
@@ -169,29 +170,29 @@
     return [XFXML firstElementWithLocalName:local namespaceURI:uri inNode:node];
 }
 
-- (NSXMLElement *)modelElement
+- (XFXMLElement *)modelElement
 {
     return [self firstElement:@"model" URI:XFXFormsNamespaceURI under:[self hostRoot]];
 }
 
-- (NSXMLElement *)bodyElement
+- (XFXMLElement *)bodyElement
 {
-    NSXMLElement *html = [self hostRoot];
-    NSXMLElement *body = [self firstElement:@"body" URI:XFXHTMLNamespaceURI under:html];
+    XFXMLElement *html = [self hostRoot];
+    XFXMLElement *body = [self firstElement:@"body" URI:XFXHTMLNamespaceURI under:html];
     if (body == nil) {
         body = [self firstElement:@"body" URI:@"" under:html];
     }
     if (body == nil && html) {
-        for (NSXMLNode *c in [html children]) {
-            if ([c kind] == NSXMLElementKind && [[(NSXMLElement *)c localName] isEqualToString:@"body"]) {
-                return (NSXMLElement *)c;
+        for (XFXMLNode *c in [html children]) {
+            if ([c kind] == XFXMLElementKind && [[(XFXMLElement *)c localName] isEqualToString:@"body"]) {
+                return (XFXMLElement *)c;
             }
         }
     }
     return body;
 }
 
-- (NSXMLElement *)elementWithID:(NSString *)identifier
+- (XFXMLElement *)elementWithID:(NSString *)identifier
 {
     if (identifier.length == 0) {
         return nil;
@@ -202,7 +203,7 @@
 - (NSString *)uniqueIdentifierWithPrefix:(NSString *)prefix
 {
     NSString *base = prefix.length ? prefix : @"xf";
-    NSXMLElement *root = [self hostRoot];
+    XFXMLElement *root = [self hostRoot];
     for (NSUInteger i = 1; i < 10000; i++) {
         NSString *ident = [NSString stringWithFormat:@"%@%lu", base, (unsigned long)i];
         if ([XFXML elementWithID:ident inNode:root] == nil) {
@@ -215,7 +216,7 @@
 - (NSString *)hostXMLString
 {
     if (self.processor.hostDocument) {
-        NSString *xml = XFHostXMLString(self.processor.hostDocument, NSXMLNodePrettyPrint);
+        NSString *xml = XFHostXMLString(self.processor.hostDocument, XFXMLNodePrettyPrint);
         return xml.length ? xml : self.sourceXML;
     }
     return self.sourceXML ?: @"";
@@ -223,11 +224,11 @@
 
 - (NSString *)instanceXMLString
 {
-    NSXMLDocument *doc = [[self.processor defaultInstance] document];
+    XFXMLDocument *doc = [[self.processor defaultInstance] document];
     if (doc == nil) {
         return @"";
     }
-    return [doc XMLStringWithOptions:NSXMLNodePrettyPrint] ?: @"";
+    return [doc XMLStringWithOptions:XFXMLNodePrettyPrint] ?: @"";
 }
 
 - (NSData *)dataOfType:(NSString *)typeName error:(NSError **)error

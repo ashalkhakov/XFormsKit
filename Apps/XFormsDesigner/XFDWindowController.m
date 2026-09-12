@@ -8,6 +8,7 @@
    shared catalogs live in XFDInspectorSpecs.
    Copyright (c) 2026 the XFormsKit contributors. LGPL 2.1. */
 #import "XFDWindowControllerPriv.h"
+#import <XFormsKit/XFXMLTypes.h>
 #import "XFDDocument.h"
 #import "XFDEditors.h"
 #import "XFDDesignOverlay.h"
@@ -209,7 +210,7 @@ __attribute__((used)) static void (*const XFDWindowControllerFileChecks[])(void)
 
     XFDDocument *doc = [self formDocument];
     __weak XFDWindowController *weakSelf = self;
-    doc.hostChangedHandler = ^(NSXMLElement *element) {
+    doc.hostChangedHandler = ^(XFXMLElement *element) {
         [weakSelf hostChanged:element];
     };
     doc.processorReplacedHandler = ^{
@@ -232,7 +233,7 @@ __attribute__((used)) static void (*const XFDWindowControllerFileChecks[])(void)
 #pragma mark - Change plumbing
 
 /// After every XFHostEdit mutation (undo and redo included).
-- (void)hostChanged:(NSXMLElement *)element
+- (void)hostChanged:(XFXMLElement *)element
 {
     (void)element;
     [self reloadOutlineKeepingSelection:self.selected];

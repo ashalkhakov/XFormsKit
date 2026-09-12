@@ -1,14 +1,15 @@
 #import "XFDEditors.h"
+#import <XFormsKit/XFXMLTypes.h>
 #import "XFDDocument.h"
 
 @interface XFDElementEditor ()
-@property (nonatomic, strong, readwrite) NSXMLElement *element;
+@property (nonatomic, strong, readwrite) XFXMLElement *element;
 @property (nonatomic, strong, readwrite) XFDDocument *document;
 @end
 
 @implementation XFDElementEditor
 
-+ (instancetype)editorForElement:(NSXMLElement *)element document:(XFDDocument *)document
++ (instancetype)editorForElement:(XFXMLElement *)element document:(XFDDocument *)document
 {
     if (element == nil || document == nil) {
         return nil;

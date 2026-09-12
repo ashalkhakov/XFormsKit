@@ -100,18 +100,26 @@ XFormsViewer is a small document-based editor, not only a previewer.
     xcodebuild -project XFormsKit.xcodeproj -scheme XFormsKit -configuration Debug build
     xcodebuild -project XFormsKit.xcodeproj -scheme XFormsKit -configuration Debug test
 
-### The portable DOM
+### The DOM
 
 The engine speaks one XML API, `XFXML*`, declared in
-`Sources/XFormsKit/XFXMLTypes.h`. It is bound to NSXML by default and to
-XFDOM — the project's own portable tree, in `Sources/XFormsKit/DOM/` —
-when `XF_PORTABLE_DOM` is defined. Both configurations are expected to
-pass every suite:
+`Sources/XFormsKit/XFXMLTypes.h`, and one tree stands behind it on every
+platform: **XFDOM**, the project's own portable implementation in
+`Sources/XFormsKit/DOM/`. There is nothing to configure.
 
-    xcodebuild -project XFormsKit.xcodeproj -scheme XFormsKit test \
-      GCC_PREPROCESSOR_DEFINITIONS='$(inherited) XF_PORTABLE_DOM=1'
-    make check XF_PORTABLE_DOM=1
-    make w3ccheck XF_PORTABLE_DOM=1
+It was a build switch for a while — NSXML by default, XFDOM under
+`XF_PORTABLE_DOM`, which iOS required because Foundation there has no
+`NSXMLDocument`. Once XFDOM passed every suite on macOS, GNUstep and iOS,
+the second tree was retired: one implementation means one set of
+behaviours to know, the apps stopped needing a configuration of their
+own, and a gnustep-base NSXML bug the engine used to trip over
+(`patches/gnustep/`) stopped mattering to it.
+
+`XFDOMTests` still compares against the platform's NSXML wherever there
+is one. That is deliberate: NSXML is a mature DOM and a useful reference
+for what the behaviour ought to be, so the suite asserts XFDOM literally
+and logs NSXML's answer beside it. Five documented divergences are
+recorded there.
 
 ### iOS
 

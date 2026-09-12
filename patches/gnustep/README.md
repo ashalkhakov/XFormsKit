@@ -102,9 +102,12 @@ trigger on some machines and quiet corruption on others.
 The fix came from the FreeCoreData project (PR #27), which hit the same bug
 through Core Data's model files.
 
-Worth knowing either way: built against XFDOM (`XF_PORTABLE_DOM=1`) the
-engine never touches gnustep-base's NSXML at all, so this class of
-gnustep-base XML bug cannot reach it.
+Worth knowing either way: the engine is built against XFDOM everywhere
+now, so it never touches gnustep-base's NSXML at all and this class of
+gnustep-base XML bug cannot reach it. Section 1's patch is still applied
+because `XFDOMTests` uses NSXML as a reference oracle, and because a
+gnustep-base built without it is broken for anyone else's NSXML code —
+but the engine no longer depends on it.
 
 ## 4. Run-loop asynchrony without GS_USE_LIBDISPATCH_RUNLOOP
 

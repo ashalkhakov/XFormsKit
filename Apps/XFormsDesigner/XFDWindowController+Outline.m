@@ -4,6 +4,7 @@
    delete â XFHostEdit's insertion zones are the single validity
    authority. */
 #import "XFDWindowControllerPriv.h"
+#import <XFormsKit/XFXMLTypes.h>
 #import "XFDDocument.h"
 #import "XFDInspectorSpecs.h"
 #import "XFDPalettePanel.h"
@@ -13,16 +14,16 @@
 
 #pragma mark - Outline (host document)
 
-- (NSXMLElement *)rootElement
+- (XFXMLElement *)rootElement
 {
     return [[self processor].hostDocument rootElement];
 }
 
-- (NSArray *)elementChildrenOf:(NSXMLElement *)element
+- (NSArray *)elementChildrenOf:(XFXMLElement *)element
 {
     NSMutableArray *out = [NSMutableArray array];
-    for (NSXMLNode *c in [element children]) {
-        if ([c kind] == NSXMLElementKind) {
+    for (XFXMLNode *c in [element children]) {
+        if ([c kind] == XFXMLElementKind) {
             [out addObject:c];
         }
     }
@@ -57,7 +58,7 @@
 {
     (void)ov;
     (void)column;
-    NSXMLElement *e = item;
+    XFXMLElement *e = item;
     NSString *name = [e name] ?: [e localName] ?: @"?";
     NSString *detail = nil;
     XFHostEdit *edit = [self formDocument].hostEdit;
@@ -103,16 +104,16 @@
     [self.designOverlay setNeedsDisplay:YES];
 }
 
-- (void)reloadOutlineKeepingSelection:(NSXMLElement *)keep
+- (void)reloadOutlineKeepingSelection:(XFXMLElement *)keep
 {
     self.updating = YES;
     [self.outline reloadData];
     // the always-open levels
-    NSXMLElement *root = [self rootElement];
+    XFXMLElement *root = [self rootElement];
     [self.outline expandItem:root];
-    for (NSXMLElement *top in [self elementChildrenOf:root]) {
+    for (XFXMLElement *top in [self elementChildrenOf:root]) {
         [self.outline expandItem:top];
-        for (NSXMLElement *second in [self elementChildrenOf:top]) {
+        for (XFXMLElement *second in [self elementChildrenOf:top]) {
             if ([[second localName] isEqualToString:@"model"]) {
                 [self.outline expandItem:second];
             }
@@ -121,8 +122,8 @@
     if (keep) {
         // expand the ancestors, then reselect by identity
         NSMutableArray *chain = [NSMutableArray array];
-        NSXMLNode *walk = [keep parent];
-        while (walk && [walk kind] == NSXMLElementKind) {
+        XFXMLNode *walk = [keep parent];
+        while (walk && [walk kind] == XFXMLElementKind) {
             [chain insertObject:walk atIndex:0];
             walk = [walk parent];
         }
@@ -139,7 +140,7 @@
     self.selected = keep;
 }
 
-- (void)selectElement:(NSXMLElement *)element
+- (void)selectElement:(XFXMLElement *)element
 {
     [self reloadOutlineKeepingSelection:element];
     [self showInspectorForSelection];
@@ -151,13 +152,13 @@
 /// The xf:instance the selection lives in (the selection itself, or an
 /// instance-data ancestor). nil when the selection has nothing to do with
 /// an instance.
-- (NSXMLElement *)instanceElementForSelection:(NSXMLElement *)element
+- (XFXMLElement *)instanceElementForSelection:(XFXMLElement *)element
 {
-    for (NSXMLNode *walk = element; walk != nil; walk = [walk parent]) {
-        if ([walk kind] == NSXMLElementKind
-            && [XFXML element:(NSXMLElement *)walk hasLocalName:@"instance"
+    for (XFXMLNode *walk = element; walk != nil; walk = [walk parent]) {
+        if ([walk kind] == XFXMLElementKind
+            && [XFXML element:(XFXMLElement *)walk hasLocalName:@"instance"
                  namespaceURI:XFXFormsNamespaceURI]) {
-            return (NSXMLElement *)walk;
+            return (XFXMLElement *)walk;
         }
     }
     return nil;
@@ -166,7 +167,7 @@
 - (IBAction)editInstanceXML:(id)sender
 {
     (void)sender;
-    NSXMLElement *instance = [self instanceElementForSelection:self.selected];
+    XFXMLElement *instance = [self instanceElementForSelection:self.selected];
     if (instance == nil) {
         XFDBeep();
         return;
@@ -190,7 +191,7 @@
 - (void)outlineDoubleClicked:(id)sender
 {
     NSInteger row = [self.outline clickedRow];
-    NSXMLElement *element = row >= 0 ? [self.outline itemAtRow:row] : nil;
+    XFXMLElement *element = row >= 0 ? [self.outline itemAtRow:row] : nil;
     if ([self instanceElementForSelection:element] != nil) {
         [self editInstanceXML:sender];
         return;
@@ -211,13 +212,13 @@
 - (void)insertPaletteName:(NSString *)name
 {
     NSInteger index = -1;
-    NSXMLElement *parent = [self insertParentForName:name index:&index];
+    XFXMLElement *parent = [self insertParentForName:name index:&index];
     if (parent == nil) {
         XFDBeep();
         return;
     }
     NSError *error = nil;
-    NSXMLElement *element = [[self formDocument].hostEdit insertElementNamed:name
+    XFXMLElement *element = [[self formDocument].hostEdit insertElementNamed:name
                                                                 underParent:parent
                                                                     atIndex:index
                                                                       error:&error];
@@ -240,13 +241,13 @@
     }
 }
 
-- (NSXMLElement *)insertStartParent
+- (XFXMLElement *)insertStartParent
 {
     if (self.selected != nil) {
         return self.selected;
     }
-    NSXMLElement *body = nil;
-    for (NSXMLElement *top in [self elementChildrenOf:[self rootElement]]) {
+    XFXMLElement *body = nil;
+    for (XFXMLElement *top in [self elementChildrenOf:[self rootElement]]) {
         if ([[top localName] isEqualToString:@"body"]) {
             body = top;
         }
@@ -258,14 +259,14 @@
 /// contain children, else the nearest ancestor that can — inserting AFTER
 /// the selection there (so "+ with an input selected" adds a sibling,
 /// like Xcode's outline). No selection targets the body.
-- (NSXMLElement *)insertParentForSelection:(NSInteger *)indexOut
+- (XFXMLElement *)insertParentForSelection:(NSInteger *)indexOut
 {
-    NSXMLElement *parent = [self insertStartParent];
-    NSXMLElement *child = nil;
+    XFXMLElement *parent = [self insertStartParent];
+    XFXMLElement *child = nil;
     while (parent != nil && [XFHostEdit insertableNamesUnderParent:parent].count == 0) {
         child = parent;
-        NSXMLNode *up = [child parent];
-        parent = (up != nil && [up kind] == NSXMLElementKind) ? (NSXMLElement *)up : nil;
+        XFXMLNode *up = [child parent];
+        parent = (up != nil && [up kind] == XFXMLElementKind) ? (XFXMLElement *)up : nil;
     }
     if (indexOut) {
         *indexOut = (parent != nil && child != nil) ? (NSInteger)[child index] + 1 : -1;
@@ -278,14 +279,14 @@
 /// input selected, setvalue goes INTO the input while another input lands
 /// as its SIBLING in the container above. Nearest accepting ancestor
 /// wins; nil when nothing on the chain takes the name.
-- (NSXMLElement *)insertParentForName:(NSString *)name index:(NSInteger *)indexOut
+- (XFXMLElement *)insertParentForName:(NSString *)name index:(NSInteger *)indexOut
 {
-    NSXMLElement *parent = [self insertStartParent];
-    NSXMLElement *child = nil;
+    XFXMLElement *parent = [self insertStartParent];
+    XFXMLElement *child = nil;
     while (parent != nil && ![XFHostEdit canInsertElementNamed:name underParent:parent]) {
         child = parent;
-        NSXMLNode *up = [child parent];
-        parent = (up != nil && [up kind] == NSXMLElementKind) ? (NSXMLElement *)up : nil;
+        XFXMLNode *up = [child parent];
+        parent = (up != nil && [up kind] == XFXMLElementKind) ? (XFXMLElement *)up : nil;
     }
     if (indexOut) {
         *indexOut = (parent != nil && child != nil) ? (NSInteger)[child index] + 1 : -1;
@@ -299,11 +300,11 @@
 - (NSSet *)insertableNamesForSelection
 {
     NSMutableSet *names = [NSMutableSet set];
-    NSXMLElement *parent = [self insertStartParent];
+    XFXMLElement *parent = [self insertStartParent];
     while (parent != nil) {
         [names addObjectsFromArray:[XFHostEdit insertableNamesUnderParent:parent]];
-        NSXMLNode *up = [parent parent];
-        parent = (up != nil && [up kind] == NSXMLElementKind) ? (NSXMLElement *)up : nil;
+        XFXMLNode *up = [parent parent];
+        parent = (up != nil && [up kind] == XFXMLElementKind) ? (XFXMLElement *)up : nil;
     }
     return names;
 }
@@ -316,7 +317,7 @@
         XFDBeep();
         return;
     }
-    NSXMLElement *start = [self insertStartParent];
+    XFXMLElement *start = [self insertStartParent];
     NSString *name = [XFDPalettePanel
         runWithValidNames:valid
                parentName:[start name] ?: @"element"];
@@ -328,7 +329,7 @@
 - (IBAction)deleteElement:(id)sender
 {
     (void)sender;
-    NSXMLElement *element = self.selected;
+    XFXMLElement *element = self.selected;
     if (element == nil) {
         XFDBeep();
         return;
@@ -340,7 +341,7 @@
         XFDBeep();
         return;
     }
-    NSXMLElement *parent = (NSXMLElement *)[element parent];
+    XFXMLElement *parent = (XFXMLElement *)[element parent];
     [[self formDocument].hostEdit deleteElement:element];
     [self selectElement:parent];
 }

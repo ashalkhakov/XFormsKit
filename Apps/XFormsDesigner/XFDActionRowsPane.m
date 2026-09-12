@@ -1,5 +1,6 @@
 /* Copyright (c) 2026 the XFormsKit contributors. LGPL 2.1. */
 #import "XFDActionRowsPane.h"
+#import <XFormsKit/XFXMLTypes.h>
 #import "XFDWindowControllerPriv.h"
 #import "XFDInspectorSpecs.h"
 #import "XFDDocument.h"
@@ -10,7 +11,7 @@
 
 @implementation XFDActionRowsPane {
     NSView *_host;
-    NSXMLElement *_element;
+    XFXMLElement *_element;
 }
 
 - (instancetype)initWithController:(XFDWindowController *)controller host:(NSView *)host
@@ -26,7 +27,7 @@
 /// (Re)build the Action page's rows for the selected action element —
 /// only when the element actually changed: rebuilding under a component
 /// that is mid-action-send would free it.
-- (void)buildRowsIfNeededForElement:(NSXMLElement *)element
+- (void)buildRowsIfNeededForElement:(XFXMLElement *)element
 {
     if (_element == element && _rows != nil) {
         return;
@@ -128,7 +129,7 @@
     _element = element;
 }
 
-- (void)fillForElement:(NSXMLElement *)element
+- (void)fillForElement:(XFXMLElement *)element
 {
     [self buildRowsIfNeededForElement:element];
     XFDElementEditor *e = [XFDElementEditor editorForElement:element
@@ -151,7 +152,7 @@
     }
 }
 
-- (void)applyToElement:(NSXMLElement *)element
+- (void)applyToElement:(XFXMLElement *)element
 {
     if (_element != element || _rows == nil) {
         return;

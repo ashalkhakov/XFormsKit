@@ -1,4 +1,5 @@
 #import "XFDDocument.h"
+#import <XFormsKit/XFXMLTypes.h>
 #import "XFDWindowController.h"
 
 @interface XFDDocument ()
@@ -32,7 +33,7 @@
     self.processor = p;
     XFHostEdit *edit = [XFHostEdit editWithProcessor:p undoManager:[self undoManager]];
     __weak XFDDocument *weakSelf = self;
-    edit.changedHandler = ^(NSXMLElement *element) {
+    edit.changedHandler = ^(XFXMLElement *element) {
         XFDDocument *doc = weakSelf;
         if (doc.hostChangedHandler) {
             doc.hostChangedHandler(element);

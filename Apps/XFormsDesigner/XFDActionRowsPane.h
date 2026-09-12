@@ -5,6 +5,7 @@
    and applied to the element's attributes / inline content. */
 #pragma once
 #import <AppKit/AppKit.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFDWindowController;
 
@@ -15,8 +16,8 @@
 @property (nonatomic, copy, readonly) NSArray *rows;
 
 - (instancetype)initWithController:(XFDWindowController *)controller host:(NSView *)host;
-- (void)fillForElement:(NSXMLElement *)element;
-- (void)applyToElement:(NSXMLElement *)element;
+- (void)fillForElement:(XFXMLElement *)element;
+- (void)applyToElement:(XFXMLElement *)element;
 
 @end
 

@@ -1,5 +1,6 @@
 /* Copyright (c) 2026 the XFormsKit contributors. LGPL 2.1. */
 #import "XFDEventsPane.h"
+#import <XFormsKit/XFXMLTypes.h>
 #import "XFDWindowControllerPriv.h"
 #import "XFDInspectorSpecs.h"
 #import "XFDDocument.h"
@@ -71,7 +72,7 @@
     return self;
 }
 
-static BOOL XFDElementIsActionHandler(NSXMLElement *e)
+static BOOL XFDElementIsActionHandler(XFXMLElement *e)
 {
     return XFDActionSpecs()[[e localName]] != nil
         && [XFXML element:e hasLocalName:[e localName]
@@ -80,7 +81,7 @@ static BOOL XFDElementIsActionHandler(NSXMLElement *e)
 
 /// The handler's effective observer id (ev:observer, engine-style "#id"
 /// tolerated) — empty when it observes its parent, the default.
-static NSString *XFDHandlerObserverID(NSXMLElement *e)
+static NSString *XFDHandlerObserverID(XFXMLElement *e)
 {
     NSString *observer = [XFXML attributeValue:@"observer"
                                   namespaceURI:XFXMLEventsNamespaceURI
@@ -91,14 +92,14 @@ static NSString *XFDHandlerObserverID(NSXMLElement *e)
     return observer ?: @"";
 }
 
-static void XFDCollectHandlersObserving(NSString *observerID, NSXMLElement *scope,
-                                        NSXMLElement *skipParent, NSMutableArray *out)
+static void XFDCollectHandlersObserving(NSString *observerID, XFXMLElement *scope,
+                                        XFXMLElement *skipParent, NSMutableArray *out)
 {
-    for (NSXMLNode *c in [scope children]) {
-        if ([c kind] != NSXMLElementKind) {
+    for (XFXMLNode *c in [scope children]) {
+        if ([c kind] != XFXMLElementKind) {
             continue;
         }
-        NSXMLElement *e = (NSXMLElement *)c;
+        XFXMLElement *e = (XFXMLElement *)c;
         if ([e parent] != skipParent && XFDElementIsActionHandler(e)
             && [XFDHandlerObserverID(e) isEqualToString:observerID]) {
             [out addObject:e];
@@ -107,7 +108,7 @@ static void XFDCollectHandlersObserving(NSString *observerID, NSXMLElement *scop
     }
 }
 
-- (NSArray *)handlerElementsOf:(NSXMLElement *)element
+- (NSArray *)handlerElementsOf:(XFXMLElement *)element
 {
     // The table shows what LISTENS ON this element. XML Events defaults
     // the observer to the handler's parent, but ev:observer redirects it:
@@ -116,11 +117,11 @@ static void XFDCollectHandlersObserving(NSString *observerID, NSXMLElement *scop
     // the ev:observer that brought it here).
     NSString *elementID = [[element attributeForName:@"id"] stringValue];
     NSMutableArray *out = [NSMutableArray array];
-    for (NSXMLNode *c in [element children]) {
-        if ([c kind] != NSXMLElementKind) {
+    for (XFXMLNode *c in [element children]) {
+        if ([c kind] != XFXMLElementKind) {
             continue;
         }
-        NSXMLElement *e = (NSXMLElement *)c;
+        XFXMLElement *e = (XFXMLElement *)c;
         if (!XFDElementIsActionHandler(e)) {
             continue;
         }
@@ -208,7 +209,7 @@ static void XFDCollectHandlersObserving(NSString *observerID, NSXMLElement *scop
 {
     NSString *name = [item representedObject];
     NSError *error = nil;
-    NSXMLElement *element = [[self.controller formDocument].hostEdit
+    XFXMLElement *element = [[self.controller formDocument].hostEdit
         insertElementNamed:name underParent:self.controller.selected atIndex:-1 error:&error];
     if (element == nil) {
         [self.controller presentError:error];
@@ -258,7 +259,7 @@ static void XFDCollectHandlersObserving(NSString *observerID, NSXMLElement *scop
     if (table != _eventsTable || (NSUInteger)row >= _handlerElements.count) {
         return nil;
     }
-    NSXMLElement *e = _handlerElements[(NSUInteger)row];
+    XFXMLElement *e = _handlerElements[(NSUInteger)row];
     NSString *ident = [column identifier];
     if ([ident isEqualToString:@"event"]) {
         return [XFXML attributeValue:@"event"
@@ -270,7 +271,7 @@ static void XFDCollectHandlersObserving(NSString *observerID, NSXMLElement *scop
     }
     // detail: the interesting attributes, else the text content
     NSMutableArray *parts = [NSMutableArray array];
-    for (NSXMLNode *attr in [e attributes]) {
+    for (XFXMLNode *attr in [e attributes]) {
         NSString *name = [attr name] ?: @"";
         if ([name isEqualToString:@"id"] || [name hasSuffix:@":event"]
             || [name isEqualToString:@"event"]) {

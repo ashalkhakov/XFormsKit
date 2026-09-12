@@ -7,12 +7,12 @@
 /// Parse `fragment` with the label vocabulary bound (XHTML as the default
 /// namespace, xf: for XForms — XFHostEdit rebinds to the document's real
 /// prefix at commit time). nil when it does not parse.
-static NSXMLElement *XFDParseFragment(NSString *fragment, NSError **error)
+static XFXMLElement *XFDParseFragment(NSString *fragment, NSError **error)
 {
     NSString *wrapped = [NSString stringWithFormat:
         @"<xfd-wrap xmlns=\"%@\" xmlns:xf=\"%@\">%@</xfd-wrap>",
         XFXHTMLNamespaceURI, XFXFormsNamespaceURI, fragment ?: @""];
-    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithXMLString:wrapped
+    XFXMLDocument *doc = [[XFXMLDocument alloc] initWithXMLString:wrapped
                                                           options:0 error:error];
     return [doc rootElement];
 }
@@ -38,7 +38,7 @@ static NSString * const XFDTokenClose = @"⟧";
 /// A dynamic output simple enough to ride through the rich editor as a
 /// `⟦expr⟧` token: `<xf:output value="…"/>` — exactly that attribute, no
 /// children, and an expression free of the bracket characters.
-static BOOL XFDOutputElementIsToken(NSXMLElement *e)
+static BOOL XFDOutputElementIsToken(XFXMLElement *e)
 {
     if (![[e localName] isEqualToString:@"output"]) {
         return NO;
@@ -61,7 +61,7 @@ static BOOL XFDOutputElementIsToken(NSXMLElement *e)
 /// give back losslessly: the XFRichText subset, attribute-free, nothing
 /// namespaced — except simple xf:output values, which become ⟦expr⟧
 /// tokens. NO also for a fragment that does not parse.
-static BOOL XFDFragmentSubtreeIsRichEditable(NSXMLElement *el)
+static BOOL XFDFragmentSubtreeIsRichEditable(XFXMLElement *el)
 {
     static NSSet *allowed;
     if (allowed == nil) {
@@ -69,14 +69,14 @@ static BOOL XFDFragmentSubtreeIsRichEditable(NSXMLElement *el)
             @"h1", @"h2", @"h3", @"ul", @"ol", @"li",
             @"strong", @"b", @"em", @"i", @"u", @"s", @"strike", @"del", @"br" ]];
     }
-    for (NSXMLNode *c in [el children]) {
-        if ([c kind] == NSXMLTextKind) {
+    for (XFXMLNode *c in [el children]) {
+        if ([c kind] == XFXMLTextKind) {
             continue;
         }
-        if ([c kind] != NSXMLElementKind) {
+        if ([c kind] != XFXMLElementKind) {
             return NO;   // comments / PIs would be dropped
         }
-        NSXMLElement *e = (NSXMLElement *)c;
+        XFXMLElement *e = (XFXMLElement *)c;
         if (XFDOutputElementIsToken(e)) {
             continue;
         }
@@ -93,19 +93,19 @@ static BOOL XFDFragmentSubtreeIsRichEditable(NSXMLElement *el)
 
 #pragma mark - Output tokens (⟦expr⟧ ↔ xf:output)
 
-static void XFDTokenizeIn(NSXMLElement *el)
+static void XFDTokenizeIn(XFXMLElement *el)
 {
     NSArray *kids = [[el children] copy];
-    for (NSXMLNode *c in kids) {
-        if ([c kind] != NSXMLElementKind) {
+    for (XFXMLNode *c in kids) {
+        if ([c kind] != XFXMLElementKind) {
             continue;
         }
-        NSXMLElement *e = (NSXMLElement *)c;
+        XFXMLElement *e = (XFXMLElement *)c;
         if (XFDOutputElementIsToken(e)) {
             NSUInteger i = [e index];
             NSString *expr = [[e attributeForName:@"value"] stringValue];
             [e detach];
-            [el insertChild:[NSXMLNode textWithStringValue:
+            [el insertChild:[XFXMLNode textWithStringValue:
                 [NSString stringWithFormat:@"%@%@%@", XFDTokenOpen, expr, XFDTokenClose]]
                     atIndex:i];
         } else {
@@ -116,27 +116,27 @@ static void XFDTokenizeIn(NSXMLElement *el)
 
 NSString *XFDTokenizeFragment(NSString *fragment)
 {
-    NSXMLElement *wrap = XFDParseFragment(fragment, NULL);
+    XFXMLElement *wrap = XFDParseFragment(fragment, NULL);
     if (wrap == nil) {
         return fragment;
     }
     XFDTokenizeIn(wrap);
     NSMutableString *out = [NSMutableString string];
-    for (NSXMLNode *c in [wrap children]) {
+    for (XFXMLNode *c in [wrap children]) {
         [out appendString:[c XMLString] ?: @""];
     }
     return out;
 }
 
-static void XFDDetokenizeIn(NSXMLElement *el)
+static void XFDDetokenizeIn(XFXMLElement *el)
 {
     NSArray *kids = [[el children] copy];
-    for (NSXMLNode *c in kids) {
-        if ([c kind] == NSXMLElementKind) {
-            XFDDetokenizeIn((NSXMLElement *)c);
+    for (XFXMLNode *c in kids) {
+        if ([c kind] == XFXMLElementKind) {
+            XFDDetokenizeIn((XFXMLElement *)c);
             continue;
         }
-        if ([c kind] != NSXMLTextKind) {
+        if ([c kind] != XFXMLTextKind) {
             continue;
         }
         NSString *text = [c stringValue] ?: @"";
@@ -158,14 +158,14 @@ static void XFDDetokenizeIn(NSXMLElement *el)
                 break;   // unmatched bracket: stays literal text
             }
             if (open.location > pos) {
-                [replacement addObject:[NSXMLNode textWithStringValue:
+                [replacement addObject:[XFXMLNode textWithStringValue:
                     [text substringWithRange:NSMakeRange(pos, open.location - pos)]]];
             }
             NSString *expr = [text substringWithRange:
                 NSMakeRange(after, close.location - after)];
             if (expr.length) {
-                NSXMLElement *output = [NSXMLElement elementWithName:@"xf:output"];
-                [output addAttribute:[NSXMLNode attributeWithName:@"value" stringValue:expr]];
+                XFXMLElement *output = [XFXMLElement elementWithName:@"xf:output"];
+                [output addAttribute:[XFXMLNode attributeWithName:@"value" stringValue:expr]];
                 [replacement addObject:output];
             }
             pos = NSMaxRange(close);
@@ -174,12 +174,12 @@ static void XFDDetokenizeIn(NSXMLElement *el)
             continue;   // only unmatched brackets
         }
         if (pos < text.length) {
-            [replacement addObject:[NSXMLNode textWithStringValue:
+            [replacement addObject:[XFXMLNode textWithStringValue:
                 [text substringFromIndex:pos]]];
         }
         NSUInteger i = [c index];
         [c detach];
-        for (NSXMLNode *node in replacement) {
+        for (XFXMLNode *node in replacement) {
             [el insertChild:node atIndex:i++];
         }
     }
@@ -190,13 +190,13 @@ NSString *XFDDetokenizeFragment(NSString *fragment)
     if ([fragment rangeOfString:XFDTokenOpen].location == NSNotFound) {
         return fragment;
     }
-    NSXMLElement *wrap = XFDParseFragment(fragment, NULL);
+    XFXMLElement *wrap = XFDParseFragment(fragment, NULL);
     if (wrap == nil) {
         return fragment;
     }
     XFDDetokenizeIn(wrap);
     NSMutableString *out = [NSMutableString string];
-    for (NSXMLNode *c in [wrap children]) {
+    for (XFXMLNode *c in [wrap children]) {
         [out appendString:[c XMLString] ?: @""];
     }
     return out;
@@ -204,7 +204,7 @@ NSString *XFDDetokenizeFragment(NSString *fragment)
 
 static BOOL XFDFragmentIsRichEditable(NSString *fragment)
 {
-    NSXMLElement *wrap = XFDParseFragment(fragment, NULL);
+    XFXMLElement *wrap = XFDParseFragment(fragment, NULL);
     return wrap != nil && XFDFragmentSubtreeIsRichEditable(wrap);
 }
 
@@ -241,15 +241,15 @@ static NSString *XFDUnwrapSingleParagraph(NSString *html)
     NSButton *_okButton;
     NSString *_result;
     XFProcessor *_processor;
-    NSXMLNode *_contextNode;
-    NSXMLElement *_hostElement;
+    XFXMLNode *_contextNode;
+    XFXMLElement *_hostElement;
     BOOL _adjustingSelection;
 }
 + (NSString *)runWithFragment:(NSString *)fragment
                         title:(NSString *)title
                     processor:(XFProcessor *)processor
-                  contextNode:(NSXMLNode *)contextNode
-                  hostElement:(NSXMLElement *)hostElement;
+                  contextNode:(XFXMLNode *)contextNode
+                  hostElement:(XFXMLElement *)hostElement;
 @end
 
 @implementation XFDRichTextPanel
@@ -614,8 +614,8 @@ static NSString *XFDUnwrapSingleParagraph(NSString *html)
 + (NSString *)runWithFragment:(NSString *)fragment
                         title:(NSString *)title
                     processor:(XFProcessor *)processor
-                  contextNode:(NSXMLNode *)contextNode
-                  hostElement:(NSXMLElement *)hostElement
+                  contextNode:(XFXMLNode *)contextNode
+                  hostElement:(XFXMLElement *)hostElement
 {
     XFDRichTextPanel *panel = [[XFDRichTextPanel alloc] init];
     panel->_processor = processor;
@@ -779,10 +779,10 @@ static NSString *XFDUnwrapSingleParagraph(NSString *html)
     if (edited == nil || [edited isEqualToString:fragment]) {
         return;
     }
-    NSXMLElement *wrap = XFDParseFragment(edited, NULL);
+    XFXMLElement *wrap = XFDParseFragment(edited, NULL);
     BOOL plain = YES;
-    for (NSXMLNode *c in [wrap children]) {
-        if ([c kind] != NSXMLTextKind) {
+    for (XFXMLNode *c in [wrap children]) {
+        if ([c kind] != XFXMLTextKind) {
             plain = NO;
             break;
         }
