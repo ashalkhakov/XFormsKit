@@ -153,7 +153,11 @@ jobs:
       # A framework that builds but quietly drags in the view layer, or links
       # something not on iOS, would defeat the point -- so assert the shape of
       # what came out rather than trusting the build to have excluded it.
-      - name: The iOS framework carries no view layer
+      # The framework's SHAPE on iOS. It used to be asserted to carry no
+      # view layer at all, which was true while the port had none; it now
+      # ships the UIKit form layer, so the invariant has moved: UIKit is
+      # expected, and AppKit is the one that must never appear.
+      - name: The iOS framework is the engine plus the UIKit form layer
         if: ${{ matrix.portable }}
         run: |
           products=$(xcodebuild -project XFormsKit.xcodeproj -target XFormsKit \
@@ -163,24 +167,29 @@ jobs:
           echo "== linked libraries =="
           otool -L "$binary" | tail -n +2
           # CoreGraphics and CoreText are expected: the SVG renderer draws
-          # through them, and GNUstep gets both from Opal. A UI framework is
-          # not — the view layer must stay out of this build.
-          for framework in AppKit UIKit; do
-            if otool -L "$binary" | grep -q "/$framework.framework/"; then
-              echo "::error::the iOS framework links $framework; it must carry no view layer"
-              exit 1
-            fi
-          done
+          # through them, and GNUstep gets both from Opal. AppKit does not
+          # exist on iOS, so linking it means the macOS widget layer was
+          # dragged in.
+          if otool -L "$binary" | grep -q "/AppKit.framework/"; then
+            echo "::error::the iOS framework links AppKit"
+            exit 1
+          fi
+          otool -L "$binary" | grep -q "/UIKit.framework/" \
+            || { echo "::error::the iOS framework does not link UIKit — the form layer is missing"; exit 1; }
           classes=$(nm -arch arm64 -gU "$binary" | sed -n 's/.*_OBJC_CLASS_\$_//p')
-          for c in XFProcessor XFDOMDocument XFXPath XFSubmission XFSVGDocument XFRichText; do
+          for c in XFProcessor XFDOMDocument XFXPath XFSubmission XFSVGDocument XFRichText \
+                   XFFormRows XFFormViewController; do
             echo "$classes" | grep -qx "$c" \
               || { echo "::error::$c is missing from the iOS framework"; exit 1; }
           done
+          # The AppKit widget layer stays out: these are what
+          # EXCLUDED_SOURCE_FILE_NAMES[sdk=iphone*] drops, and a rename that
+          # quietly re-included one would otherwise go unnoticed.
           for c in XFFormView XFSVGView XFRichTextEditor XFTableAdapter XFBadgeView; do
             echo "$classes" | grep -qx "$c" \
-              && { echo "::error::the view layer leaked into the iOS framework ($c)"; exit 1; }
+              && { echo "::error::the AppKit view layer leaked into the iOS framework ($c)"; exit 1; }
           done
-          echo "engine, SVG renderer and rich-text converter present, view layer excluded"
+          echo "engine, SVG, rich text and the UIKit form layer present; AppKit layer excluded"
 
       # XFDOMTests is a differential suite: it asserts XFDOM and NSXML agree.
       # A rename that quietly points both sides at the same implementation
@@ -239,19 +248,37 @@ jobs:
       # <CoreText/CoreText.h>, which the SVG renderer draws through. What it
       # does not: Cocoa.h, QuartzCore, UIKit.
       #
+      # UIKit is a special case since the iOS form layer landed in this
+      # tree. Its headers are READ on GNUstep -- XFormsKit.h pulls in
+      # XFFormViewController.h, and XFRichText.h declares both
+      # presentations -- so a UIKit import is allowed, but only behind
+      # `#if __has_include(<UIKit/UIKit.h>)`. A bare one compiles on a Mac
+      # and breaks this job half an hour later, which is the mistake this
+      # step exists to catch early.
+      #
       # Matches import lines only. An earlier version grepped for the bare
       # framework name and failed on prose in a comment.
       #
       # Scoped to what this job actually builds: the framework, the tests and
       # the viewer. The designer is macOS-only and vendors third-party views
-      # that do import Cocoa.h.
+      # that do import Cocoa.h; Apps/XFormsMobile is iOS-only and is never
+      # built here.
       - name: No imports GNUstep cannot satisfy
         run: |
-          if grep -rnE '^[[:space:]]*#[[:space:]]*(import|include)[[:space:]]*[<"](Cocoa/|QuartzCore/|UIKit/)' \
+          if grep -rnE '^[[:space:]]*#[[:space:]]*(import|include)[[:space:]]*[<"](Cocoa/|QuartzCore/)' \
                --include="*.h" --include="*.m" Sources Tests Apps/XFormsViewer; then
             echo "::error::an import GNUstep cannot satisfy; see the step's comment"
             exit 1
           fi
+          unguarded=0
+          for f in $(grep -rlE '^[[:space:]]*#[[:space:]]*(import|include)[[:space:]]*[<"]UIKit/' \
+                       --include="*.h" --include="*.m" Sources Tests Apps/XFormsViewer || true); do
+            if ! grep -q '__has_include(<UIKit/UIKit.h>)' "$f"; then
+              echo "::error file=$f::imports UIKit without a __has_include guard"
+              unguarded=1
+            fi
+          done
+          [ "$unguarded" -eq 0 ] || exit 1
           echo "none found"
 
       - name: Install packages
