@@ -889,7 +889,7 @@ static CTFontRef XFSVGCreateFont(NSDictionary *style)
     // altogether and wraps the language in an array without checking it,
     // so asking for a UI font with no language raises. Name a face.
     CTFontRef font = CTFontCreateWithName(
-        (CFStringRef)XFSVGFontFaceName(style), size, NULL);
+        (__bridge CFStringRef)XFSVGFontFaceName(style), size, NULL);
 #else
     CTFontRef font = CTFontCreateUIFontForLanguage(
         XFSVGFontIsBold(style) ? kCTFontUIFontEmphasizedSystem : kCTFontUIFontSystem,
@@ -1014,7 +1014,7 @@ static void XFSVGDrawText(CGContextRef ctx, XFSVGNode *node, NSDictionary *style
     // CGFont rather than the CTFont measured with above. Both come from
     // the same family name, so the glyph ids agree.
     CGFontRef faceToPaintWith =
-        CGFontCreateWithFontName((CFStringRef)XFSVGFontFaceName(style));
+        CGFontCreateWithFontName((__bridge CFStringRef)XFSVGFontFaceName(style));
     if (faceToPaintWith != NULL) {
         CGContextSetFont(ctx, faceToPaintWith);
         CGContextSetFontSize(ctx, XFSVGFontSize(style));
