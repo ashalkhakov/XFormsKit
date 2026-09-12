@@ -578,15 +578,29 @@
     [self runMessageAlertWithText:@"" accessory:rich level:level];
 }
 
+/// Gives `alert` an accessory view where the platform has them.
+///
+/// Sent dynamically because GNUstep's NSAlert does not declare
+/// -setAccessoryView: — a -respondsToSelector: guard keeps the call safe
+/// at RUNTIME, but the direct message send still has to compile, and
+/// there it does not. The alert falls back to its own informative text,
+/// which every platform has.
+static BOOL XFAlertTakeAccessoryView(NSAlert *alert, NSView *accessory)
+{
+    if (accessory == nil || ![alert respondsToSelector:@selector(setAccessoryView:)]) {
+        return NO;
+    }
+    [alert performSelector:@selector(setAccessoryView:) withObject:accessory];
+    return YES;
+}
+
 - (void)runMessageAlertWithText:(NSString *)text
                       accessory:(NSView *)accessory
                           level:(NSString *)level
 {
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:text];
-    if (accessory && [alert respondsToSelector:@selector(setAccessoryView:)]) {
-        [alert setAccessoryView:accessory];
-    }
+    XFAlertTakeAccessoryView(alert, accessory);
     if ([level isEqualToString:@"modeless"] && [self window]
         && [alert respondsToSelector:@selector(beginSheetModalForWindow:completionHandler:)]) {
         [alert beginSheetModalForWindow:[self window] completionHandler:nil];
@@ -705,9 +719,7 @@
                                                     font:[NSFont systemFontOfSize:[NSFont systemFontSize]]
                                                 maxWidth:360
                                                textColor:nil];
-    if (rich && [alert respondsToSelector:@selector(setAccessoryView:)]) {
-        [alert setAccessoryView:rich];
-    } else {
+    if (!XFAlertTakeAccessoryView(alert, rich)) {
         [alert setInformativeText:text];
     }
     [alert runModal];
