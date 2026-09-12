@@ -89,7 +89,11 @@
     XFSubmissionRequest *r = [self submitAndGrab:@"Submit with Synchronous"];
     XCTAssertTrue([r.body containsString:@"white"], @"%@", r.body);
     [self activateTriggerLabeled:@"Submit with Asynchronous"];
-    [[self submissionWithID:@"submitColorA"] waitUntilFinished:5];
+    // Generous for the same reason as XFSubmissionTests' async case:
+    // the wait is for COMPLETION, and a loaded CI simulator can take
+    // seconds to schedule the background thread the submission runs
+    // on. The assertions below are what actually judge the result.
+    [[self submissionWithID:@"submitColorA"] waitUntilFinished:30];
     XCTAssertEqual(self.submittedRequests.count, (NSUInteger)2,
                    @"the asynchronous submission also reaches the transport");
     XCTAssertTrue([[self lastBody] containsString:@"white"]);
