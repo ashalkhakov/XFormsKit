@@ -87,6 +87,7 @@ XFormsKit_HEADER_FILES = \
 	XFSubmission.h \
 	XFSubmissionTransport.h \
 	XFFormView.h \
+	XFCrashReporter.h \
 	XFEvent.h \
 	XFListener.h \
 	XFXMLEvents.h
@@ -175,7 +176,8 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/AppKit/XFTableAdapter.m \
 	Sources/XFormsKit/AppKit/XFRichTextEditor.m \
 	Sources/XFormsKit/AppKit/XFRichTextPresentation.m \
-	Sources/XFormsKit/AppKit/XFSVGView.m
+	Sources/XFormsKit/AppKit/XFSVGView.m \
+	Sources/XFormsKit/AppKit/XFCrashReporter.m
 
 XFormsKit_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath
 XFormsKit_OBJCFLAGS += -fobjc-arc -Wall -Wextra

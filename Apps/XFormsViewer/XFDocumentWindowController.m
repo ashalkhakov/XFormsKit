@@ -257,7 +257,10 @@
     [left addSubview:paletteBox];
     [left addSubview:navScroll];
 
-    NSTabView *tabs = [[NSTabView alloc] initWithFrame:NSZeroRect];
+    // A real size from the start: GNUstep lays a tab's view out as each
+    // item is added, and from a zero frame that is a negative content rect
+    // (the "given negative width" it logs). The frame is set properly below.
+    NSTabView *tabs = [[NSTabView alloc] initWithFrame:NSMakeRect(0, 0, 400, 400)];
     [tabs setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
     self.centerTabs = tabs;
 

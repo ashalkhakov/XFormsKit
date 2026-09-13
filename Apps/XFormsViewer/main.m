@@ -1,6 +1,9 @@
 #import <AppKit/AppKit.h>
 #import "XFFormDocument.h"
 #import "XFDocumentWindowController.h"
+#if defined(GNUSTEP)
+#import <XFormsKit/XFCrashReporter.h>   // not in the Xcode project: GNUstep-only
+#endif
 
 @interface XFViewerApp : NSObject
 @end
@@ -276,6 +279,11 @@ static void XFRegisterSampleFunctions(void)
 int main(int argc, const char *argv[])
 {
     @autoreleasepool {
+#if defined(GNUSTEP)
+        // A crash in the AppImage reports its own backtrace on stderr:
+        // gdb cannot be started against the image's libraries.
+        XFInstallCrashReporter();
+#endif
         [NSApplication sharedApplication];
         XFRegisterSampleFunctions();
         XFViewerApp *app = [[XFViewerApp alloc] init];

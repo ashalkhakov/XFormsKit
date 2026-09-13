@@ -17,6 +17,8 @@ include $(GNUSTEP_MAKEFILES)/common.make
 APP_NAME = XFormsDesigner
 
 XFormsDesigner_LDFLAGS += -ldispatch
+# The app's own methods by name in a crash report (XFCrashReporter.h).
+XFormsDesigner_LDFLAGS += -rdynamic
 XFormsDesigner_OBJC_FILES = \
 	main.m \
 	XFDDocument.m \

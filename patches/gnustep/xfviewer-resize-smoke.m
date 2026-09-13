@@ -43,6 +43,11 @@
  *                its address and value -- the same address after a commit
  *                means the widget was reused, not rebuilt
  *   XF_PAUSE     seconds to sit after typing (time for a screenshot)
+ *   XF_HOVER_BADGES  park the pointer on every hint / alert badge first (its
+ *                info box comes up) and leave it on the last one while typing
+ *   XF_FILE2     a second sample to open after the first typing round, with
+ *                the first window still up; the run then continues in it
+ *   XF_CLOSE_FIRST  with XF_FILE2: close the first window once the second is up
  *
  * Run over Samples/*.xhtml with MALLOC_PERTURB_ set, it is the quickest way
  * to see whether a gnustep-gui build has the patches in README.md section 3.
@@ -69,6 +74,7 @@ static void warp(int x, int y)
 @property (nonatomic, copy) NSString *path;
 @property (nonatomic, assign) double delay;
 @property (nonatomic, strong) XFFormDocument *doc;
+@property (nonatomic, assign) BOOL secondOpened;
 @end
 
 @implementation Driver
@@ -156,6 +162,29 @@ static NSTextField *firstEditableField(NSView *v)
     const char *text = getenv("XF_TYPE");
     if (!text) { [self maximize]; return; }
     NSWindow *w = [[[self.doc windowControllers] firstObject] window];
+    if (getenv("XF_HOVER_BADGES")) {
+        // Park the pointer on each hint / alert badge (its info box comes
+        // up), and leave it on the last one while typing: the refresh that
+        // every keystroke runs then happens with the pointer inside a
+        // tracking rect it re-registers.
+        NSMutableArray *badges = [NSMutableArray array];
+        NSMutableArray *stack = [NSMutableArray arrayWithObject:[w contentView]];
+        while (stack.count) {
+            NSView *v = stack.lastObject; [stack removeLastObject];
+            if ([NSStringFromClass([v class]) isEqualToString:@"XFBadgeView"]) [badges addObject:v];
+            [stack addObjectsFromArray:[v subviews]];
+        }
+        fprintf(stderr, "== hovering %lu badges\n", (unsigned long)badges.count);
+        CGFloat screenH = [[NSScreen mainScreen] frame].size.height;
+        for (NSView *b in badges) {
+            NSRect r = [b convertRect:[b bounds] toView:nil];
+            NSPoint p = [w convertBaseToScreen:NSMakePoint(NSMidX(r), NSMidY(r))];
+            warp((int)p.x, (int)(screenH - p.y));
+            [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.6]];
+            warp((int)p.x + 1, (int)(screenH - p.y));
+            [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.3]];
+        }
+    }
     NSMutableArray *fields = [NSMutableArray array];
     collectEditableFields([w contentView], fields);
     NSUInteger count = getenv("XF_TYPE_ALL") ? [fields count] : MIN(1u, [fields count]);
@@ -169,7 +198,7 @@ static NSTextField *firstEditableField(NSView *v)
     [fields removeAllObjects];
     fprintf(stderr, "== typing '%s' into %s\n", text, f ? [[f description] UTF8String] : "(no field)");
     if (f) {
-        if (getenv("XF_HOVER")) {
+        if (getenv("XF_HOVER") && !getenv("XF_HOVER_BADGES")) {
             NSRect r = [f convertRect:[f bounds] toView:nil];
             NSPoint p = [w convertBaseToScreen:NSMakePoint(NSMidX(r), NSMidY(r))];
             CGFloat screenH = [[NSScreen mainScreen] frame].size.height;
@@ -207,6 +236,35 @@ static NSTextField *firstEditableField(NSView *v)
     if (getenv("XF_HOVER")) {
         fprintf(stderr, "== hovering again\n");
         [self hoverOver:w linger:atof(getenv("XF_HOVER"))];
+    }
+    // A second form, opened while the first one is still up (its field
+    // possibly mid-edit): what a person does from File > Open Sample.
+    const char *second = getenv("XF_FILE2");
+    if (second && !self.secondOpened) {
+        self.secondOpened = YES;
+        NSError *error = nil;
+        NSURL *url = [NSURL fileURLWithPath:[NSString stringWithUTF8String:second]];
+        XFFormDocument *doc = [[XFFormDocument alloc] init];
+        fprintf(stderr, "== opening second %s\n", second);
+        if (![doc readFromURL:url ofType:@"xhtml" error:&error]) {
+            fprintf(stderr, "read failed: %s\n", [[error description] UTF8String]);
+            exit(2);
+        }
+        [doc setFileURL:url];
+        [doc setFileType:@"xhtml"];
+        [[NSDocumentController sharedDocumentController] addDocument:doc];
+        [doc makeWindowControllers];
+        [doc showWindows];
+        [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
+        if (getenv("XF_CLOSE_FIRST")) {
+            fprintf(stderr, "== closing first\n");
+            [[[[self.doc windowControllers] firstObject] window] performClose:nil];
+            [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.0]];
+        }
+        self.doc = doc;   // the rest of the run works the second window
+        fprintf(stderr, "== second shown; typing into it\n");
+        [self typeText];
+        return;
     }
     [self maximize];
 }

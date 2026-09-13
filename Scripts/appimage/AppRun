@@ -115,4 +115,15 @@ if [ -z "$REAL_BIN" ]; then
     REAL_BIN="$HERE/usr/System/Applications/$APP.app/$APP"
 fi
 
+# XF_GDB=1: the app under gdb. gdb itself must run against the host's
+# libraries -- started inside this environment it loads the image's and dies
+# before the prompt -- so it gets the host's paths back and applies the
+# image's to the program alone, through its exec wrapper. Then: `run`,
+# reproduce, `bt`.
+if [ -n "${XF_GDB:-}" ]; then
+    exec env LD_LIBRARY_PATH="$XF_HOST_LD_LIBRARY_PATH" PATH="$XF_HOST_PATH" \
+        gdb -iex "set exec-wrapper env LD_LIBRARY_PATH=$LD_LIBRARY_PATH PATH=$PATH" \
+            --args "$REAL_BIN" "$@"
+fi
+
 exec "$REAL_BIN" "$@"
