@@ -215,7 +215,11 @@ XFormsKitTests_RESOURCE_FILES = Tests/Fixtures/hello.xhtml
 # compiled into this bundle rather than linked from the app: the
 # designer is an executable, not a library, and the syntax
 # highlighting is worth testing without it.
-XFormsKitTests_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath -IApps/XFormsDesigner
+# AppKit/ is on this list for XFAppKitPriv.h: the widget tests reach into the
+# view layer's private interfaces -- the table adapter, for one -- which the
+# Xcode target's header search path already allowed and this did not.
+XFormsKitTests_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath \
+                              -ISources/XFormsKit/AppKit -IApps/XFormsDesigner
 XFormsKitTests_OBJCFLAGS += -fobjc-arc -Wall
 XFormsKitTests_BUNDLE_LIBS += -lXFormsKit -lXCTest
 XFormsKitTests_LIB_DIRS += -L./XFormsKit.framework/Versions/Current
