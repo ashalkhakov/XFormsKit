@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=XFormsKit
+GenericName=XForms Tools
+Comment=Open the XForms viewer or the form designer
+Exec=AppRun %f
+Icon=xformskit
+Terminal=false
+Categories=Office;Development;
+MimeType=application/xhtml+xml;application/xml;

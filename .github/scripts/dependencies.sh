@@ -17,9 +17,10 @@
 #
 # XFormsKit needs more of the stack than a Foundation-only project would:
 # XFFormView draws through AppKit, so libs-gui and a graphics backend are
-# required, and both test bundles are XCTest, so tools-xctest is too. The
-# theme and libs-corebase from that recipe are not built here; nothing in
-# XFormsKit uses them, and CI does not package an app.
+# required, both test bundles are XCTest, so tools-xctest is too, the SVG
+# renderer draws through Opal (and Opal through libs-corebase), and the
+# packaged apps ship with the Eau theme, which has to be built against the
+# same gui it will be loaded into.
 #
 # Expects: CC, CXX, LIBRARY_COMBO, RUNTIME_VERSION, DEPS_PATH, INSTALL_PATH.
 set -ex
@@ -225,6 +226,30 @@ install_libs_opal() {
     echo "::endgroup::"
 }
 
+# The look users expect on Linux. It is a theme bundle that gnustep-gui
+# dlopens at runtime, so it has to be inside the AppImage and it has to be
+# selected -- Scripts/appimage/AppRun does the selecting. Built here rather
+# than shipped prebuilt because a theme links against the same gui it will be
+# loaded into.
+install_eau_theme() {
+    echo "::group::Eau theme"
+    cd "$DEPS_PATH"
+    . "$GNUSTEP_SH"
+    git clone -q --depth 1 https://github.com/gershwin-desktop/gershwin-eau-theme.git Eau
+    cd Eau
+    # The theme uses blocks, and nothing in a theme bundle's link line pulls
+    # the runtime in on its own. BlocksRuntime is only a separate library when
+    # libdispatch built its own; ours is told to use libobjc's, so ask for it
+    # only if it is there.
+    ldflags="-L$INSTALL_PATH/lib -Wl,-rpath,$INSTALL_PATH/lib -ldispatch"
+    if [ -e "$INSTALL_PATH/lib/libBlocksRuntime.so" ]; then
+        ldflags="$ldflags -lBlocksRuntime"
+    fi
+    make ADDITIONAL_LDFLAGS="$ldflags"
+    make install
+    echo "::endgroup::"
+}
+
 install_tools_xctest() {
     echo "::group::tools-xctest"
     cd "$DEPS_PATH"
@@ -247,6 +272,7 @@ install_libs_gui
 install_libs_back
 install_libs_corebase
 install_libs_opal
+install_eau_theme
 install_tools_xctest
 
 echo "=== the prefix ==="

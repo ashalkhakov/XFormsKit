@@ -271,7 +271,12 @@ viewer: all
 designer: all
 	$(MAKE) -C Apps/XFormsDesigner
 
-apps: viewer designer
+# The chooser the AppImage opens. GNUstep only: a Mac installs the two apps
+# separately and has nothing to choose between.
+launcher:
+	$(MAKE) -C Apps/XFormsLauncher
+
+apps: viewer designer launcher
 
 # The W3C suite as XCTest assertions (spec-true: engine gaps stay red).
 w3ccheck: all

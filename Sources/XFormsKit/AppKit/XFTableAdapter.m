@@ -408,6 +408,16 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     if (control && [cell respondsToSelector:@selector(setTextColor:)] && [cell isKindOfClass:[NSTextFieldCell class]]) {
         [(NSTextFieldCell *)cell setTextColor:control.valid ? [NSColor controlTextColor] : XFInvalidTextColor()];
     }
+    // A trigger's title, re-applied after the table has set the cell's object
+    // value. The object value is the button's STATE (NSOffState), which is
+    // what Cocoa's NSButtonCell reads it as -- GNUstep's takes it as the
+    // cell's contents instead and draws every button captioned "0", which is
+    // what Samples/calculator.xhtml looked like there: a working keypad with
+    // no labels on it.
+    if ([control isKindOfClass:[XFTriggerControl class]]
+        && [cell isKindOfClass:[NSButtonCell class]]) {
+        [(NSButtonCell *)cell setTitle:control.label ?: @"OK"];
+    }
 }
 
 - (void)tableViewSelectionDidChange:(NSNotification *)note

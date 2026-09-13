@@ -235,17 +235,29 @@ triggers it from anywhere.
   RDLKit's, which are ports of UDQuakeTools'; the places they differ are
   marked in the files.
 
-  Launching the image opens the **viewer** — the desktop entry AppImage
-  integration installs. The designer is the same image under another name:
+  Launching the image opens **XFormsLauncher**, a chooser with a button per
+  app — one image, two applications, so it asks which. (It is the same answer
+  UDQuakeTools' `UDLauncher` gives for three.) Either app is also reachable
+  directly:
 
-      ./XFormsKit-Linux-*.AppImage designer form.xhtml
+      ./XFormsKit-Linux-*.AppImage designer
+      ./XFormsKit-Linux-*.AppImage form.xhtml        # a file opens the viewer
       ln -s XFormsKit-Linux-*.AppImage xformsdesigner && ./xformsdesigner
 
   `AppRun` picks the app from the name it was invoked through, then from the
-  first argument, and defaults to the viewer. A second desktop entry for the
-  designer ships in `usr/share/applications` inside the image.
+  first argument — `viewer`, `designer`, or a path, which means the viewer —
+  and with none of those it opens the launcher. Desktop entries for all three
+  ship in `usr/share/applications` inside the image; the launcher's is the one
+  at the top level, which is what desktop integration installs.
 
-  The image carries the **Eau** theme if the prefix has it, and `AppRun`
+  The launcher is GNUstep-only (`make launcher`, or `make apps` for all
+  three). A Mac installs `XFormsViewer.app` and `XFormsDesigner.app`
+  separately and has nothing to choose between, so the Xcode project does not
+  build it.
+
+  The image carries the **Eau** theme, built from source into the prefix by
+  `.github/scripts/dependencies.sh` (a theme bundle links against the gui it
+  will be dlopened into, so it cannot be shipped prebuilt), and `AppRun`
   selects it — along with the bundled Liberation fonts — by writing them into
   each app's own defaults domain at launch, so they look the way a GNUstep
   desktop is expected to look rather than like stock GNUstep. It also carries

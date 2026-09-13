@@ -59,7 +59,8 @@ trap 'rm -rf "$XDG_CACHE_HOME" "$GNUSTEP_CONFIG_FILE"' EXIT
 DEFAULTS_TOOL=$(find "$HERE" -name defaults -type f -perm -111 | head -n 1)
 if [ -n "$DEFAULTS_TOOL" ]; then
     for domain in XFormsViewer org.xformskit.XFormsViewer \
-                  XFormsDesigner org.gnustep.XFormsDesigner; do
+                  XFormsDesigner org.gnustep.XFormsDesigner \
+                  XFormsLauncher org.xformskit.XFormsLauncher; do
         "$DEFAULTS_TOOL" write "$domain" GSTheme Eau
         "$DEFAULTS_TOOL" write "$domain" NSFont LiberationSans
         "$DEFAULTS_TOOL" write "$domain" NSBoldFont LiberationSans-Bold
@@ -91,15 +92,21 @@ if [ -n "$DEFAULTS_TOOL" ]; then
 fi
 
 # Which app to start. The symlink the image was invoked through wins (so
-# `ln -s XFormsKit-Linux.AppImage xformsdesigner` works), otherwise the first
-# argument names one, otherwise it is the viewer -- what opening a form means.
-APP=XFormsViewer
+# `ln -s XFormsKit-Linux.AppImage xformsdesigner` works), then the first
+# argument, and with neither it is the launcher: one image, two applications,
+# so opening it asks which. Opening a FILE goes straight to the viewer --
+# a form dropped on the image is a form to fill in, not a question.
+APP=XFormsLauncher
 case "$(basename "${ARGV0:-$0}")" in
   *[Dd]esigner*) APP=XFormsDesigner ;;
+  *[Vv]iewer*)   APP=XFormsViewer ;;
 esac
 case "${1:-}" in
   designer|XFormsDesigner) APP=XFormsDesigner; shift ;;
   viewer|XFormsViewer) APP=XFormsViewer; shift ;;
+  "") ;;
+  -*) ;;
+  *) APP=XFormsViewer ;;   # a path: the viewer opens it, or says why not
 esac
 
 REAL_BIN=$(find "$HERE" -type f -name "$APP" -perm -111 -exec file {} \; 2>/dev/null \

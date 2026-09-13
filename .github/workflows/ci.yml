@@ -294,12 +294,12 @@ jobs:
       # Matches import lines only. An earlier version grepped for the bare
       # framework name and failed on prose in a comment.
       #
-      # Scoped to what this job builds: the framework, the tests and both
-      # apps -- the AppImage carries the designer as well as the viewer.
+      # Scoped to what this job builds: the framework, the tests, both apps
+      # and the launcher that chooses between them inside the AppImage.
       # Apps/XFormsMobile is iOS-only and is never built here.
       - name: No imports GNUstep cannot satisfy
         run: |
-          tree="Sources Tests Apps/XFormsViewer Apps/XFormsDesigner"
+          tree="Sources Tests Apps/XFormsViewer Apps/XFormsDesigner Apps/XFormsLauncher"
           unguarded=0
           for framework in Cocoa UIKit QuartzCore; do
             files=$(grep -rlE "^[[:space:]]*#[[:space:]]*(import|include)[[:space:]]*[<\"]${framework}/" \
@@ -414,17 +414,19 @@ jobs:
         run: |
           image=$(ls XFormsKit-Linux-*.AppImage)
           chmod +x "$image"
-          for app in viewer designer; do
-            timeout 90 xvfb-run -a ./"$image" "$app" Samples/hello.xhtml &
+          # "" is the no-argument case: the launcher, which is what
+          # opening the image does.
+          for app in "" viewer designer; do
+            timeout 90 xvfb-run -a ./"$image" $app &
             pid=$!
             sleep 25
             if kill -0 $pid 2>/dev/null; then
-              echo "$app: up after 25s"
+              echo "${app:-launcher}: up after 25s"
               kill $pid 2>/dev/null || true
               wait $pid 2>/dev/null || true
             else
               wait $pid; status=$?
-              echo "::error::$app exited on its own with status $status"
+              echo "::error::${app:-launcher} exited on its own with status $status"
               exit 1
             fi
           done

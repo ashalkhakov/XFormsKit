@@ -14,6 +14,7 @@
 #import <XFormsKit/XFNodeState.h>
 #import <XFormsKit/XFXML.h>
 #import <XFormsKit/XFDeferredUpdates.h>
+#import "XFAppKitPriv.h"
 
 @interface XFUIControlTests : XCTestCase
 @end
@@ -262,6 +263,43 @@
     // the field editor, not the window: the field is still being edited
     XCTAssertEqualObjects([field currentEditor], [window firstResponder],
                           @"the field lost its editor as editing began");
+}
+
+/// A trigger in a host <table> keeps its caption.
+///
+/// The table hands the cell an object value, and for a button that value is
+/// its STATE -- which Cocoa's NSButtonCell reads it as and GNUstep's takes for
+/// the cell's contents, drawing every button captioned "0". calculator.xhtml
+/// is a whole keypad of triggers in a table, and on GNUstep it came up blank
+/// but clickable.
+- (void)testATriggerInATableKeepsItsTitle
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><n>1</n></data></xf:instance>"
+                      extra:
+                      @"<table><tr><td>"
+                      @"<xf:trigger><xf:label>Clear</xf:label>"
+                      @"  <xf:setvalue ev:event=\"DOMActivate\" ref=\"n\" value=\"'0'\"/>"
+                      @"</xf:trigger></td></tr></table>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *view = [[XFFormView alloc] initWithProcessor:p];
+    XFTableAdapter *adapter = view.tables.firstObject;
+    XCTAssertNotNil(adapter, @"the table became a grid");
+    NSTableColumn *column = adapter.tableView.tableColumns.firstObject;
+
+    NSCell *cell = [adapter tableView:adapter.tableView
+                   dataCellForTableColumn:column row:0];
+    XCTAssertTrue([cell isKindOfClass:[NSButtonCell class]]);
+    // what the table does before the cell is drawn
+    [cell setObjectValue:[adapter tableView:adapter.tableView
+                  objectValueForTableColumn:column row:0]];
+    [adapter tableView:adapter.tableView willDisplayCell:cell
+        forTableColumn:column row:0];
+    XCTAssertEqualObjects([(NSButtonCell *)cell title], @"Clear",
+                          @"the button lost its caption to the object value");
 }
 
 - (void)testTriggerActivatesAction

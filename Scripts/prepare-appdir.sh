@@ -29,7 +29,7 @@ mkdir -p AppDir/usr/local/bin
 # put the test bundles in the image, and nothing in it runs tests.
 make BUNDLE_NAME=
 make BUNDLE_NAME= install GNUSTEP_INSTALLATION_DOMAIN=SYSTEM
-for app in XFormsViewer XFormsDesigner; do
+for app in XFormsViewer XFormsDesigner XFormsLauncher; do
     make -C "Apps/$app"
     make -C "Apps/$app" install GNUSTEP_INSTALLATION_DOMAIN=SYSTEM
 done
@@ -106,9 +106,9 @@ find AppDir -maxdepth 1 -type d ! -name "AppDir" ! -name "usr" -exec rm -rf {} +
 
 echo "AppDir assembled:"
 du -sh AppDir
-# Both apps, or the image is only half of what it says it is.
+# All three, or the image is not what it says it is.
 missing=0
-for app in XFormsViewer XFormsDesigner; do
+for app in XFormsViewer XFormsDesigner XFormsLauncher; do
     found=$(find AppDir/usr -maxdepth 5 -name "$app.app" | head -n 1)
     if [ -n "$found" ]; then
         echo "  $found"

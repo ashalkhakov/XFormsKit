@@ -101,17 +101,19 @@ jobs:
           sudo apt-get -q -y install xvfb
           image=$(ls XFormsKit-Linux-*.AppImage)
           chmod +x "$image"
-          for app in viewer designer; do
-            timeout 90 xvfb-run -a ./"$image" "$app" Samples/hello.xhtml &
+          # "" is the no-argument case: the launcher, which is what
+          # opening the image does.
+          for app in "" viewer designer; do
+            timeout 90 xvfb-run -a ./"$image" $app &
             pid=$!
             sleep 25
             if kill -0 $pid 2>/dev/null; then
-              echo "$app: still running after 25s"
+              echo "${app:-launcher}: up after 25s"
               kill $pid 2>/dev/null || true
               wait $pid 2>/dev/null || true
             else
               wait $pid; status=$?
-              echo "::error::$app exited early with status $status"
+              echo "::error::${app:-launcher} exited on its own with status $status"
               exit 1
             fi
           done
