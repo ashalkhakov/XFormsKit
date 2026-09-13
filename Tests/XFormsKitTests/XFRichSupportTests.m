@@ -9,6 +9,7 @@
 #import <XFormsKit/XFormsKit.h>
 #import <XFormsKit/XFInputControl.h>
 #import <XFormsKit/XFMessageAction.h>
+#import <XFormsKit/XFTriggerControl.h>
 #import <XFormsKit/XFXML.h>
 #import <XFormsKit/XFMarkupParts.h>
 
@@ -158,7 +159,7 @@
         gotMarkup = markup; gotText = text; gotLevel = level;
     };
     p.messageHandler = ^(NSString *text, NSString *level) { plainCalls++; };
-    [p activateControl:p.controls.firstObject];
+    [p activateControl:(XFTriggerControl *)p.controls.firstObject];
     XCTAssertEqualObjects(gotMarkup, @"Hello <b>Ada</b>!");
     XCTAssertEqualObjects(gotText, @"Hello Ada!");
     XCTAssertEqualObjects(gotLevel, @"modal");
@@ -179,7 +180,7 @@
     __block NSUInteger richCalls = 0;
     p.richMessageHandler = ^(NSString *m, NSString *t, NSString *l) { richCalls++; };
     p.messageHandler = ^(NSString *text, NSString *level) { plain = text; };
-    [p activateControl:p.controls.firstObject];
+    [p activateControl:(XFTriggerControl *)p.controls.firstObject];
     XCTAssertEqualObjects(plain, @"Hello Ada");
     XCTAssertEqual(richCalls, (NSUInteger)0);
 }
@@ -196,7 +197,7 @@
     XCTAssertNotNil(p, @"%@", error);
     __block NSString *plain = nil;
     p.messageHandler = ^(NSString *text, NSString *level) { plain = text; };
-    [p activateControl:p.controls.firstObject];
+    [p activateControl:(XFTriggerControl *)p.controls.firstObject];
     // no richMessageHandler: the host that cannot draw markup still gets
     // the message, exactly as before this feature existed
     XCTAssertEqualObjects(plain, @"Do not panic");
