@@ -2,78 +2,39 @@
 
 void XFAppKitHasTableAdapterFile(void) {}
 
-#if defined(GNUSTEP)
-/// A table view that draws the cell the delegate asked for.
+/// A column that answers the adapter's per-row cell.
 ///
-/// GNUstep hands row drawing to the theme, and `-[GSTheme
-/// drawTableViewRow:clipRect:inView:]` takes each cell from
-/// `-[NSTableColumn dataCellForRow:]` -- the COLUMN's cell. It never asks
-/// `-preparedCellAtColumn:row:`, which is the one that consults
-/// `tableView:dataCellForTableColumn:row:`. Clicking and editing do go
-/// through the prepared cell, so a table of controls was live but drawn
-/// entirely as text: Samples/calculator.xhtml came up as a grid of "0"s that
-/// worked when pressed, because a trigger's object value is its button state.
+/// A table of XForms controls needs a different cell in different ROWS of one
+/// column -- a trigger here, a field there -- and the delegate method for that
+/// is `tableView:dataCellForTableColumn:row:`. Cocoa's NSTableView asks for it
+/// everywhere. GNUstep asks in `-preparedCellAtColumn:row:`, which covers
+/// clicking and editing, but its row DRAWING goes through the theme, and
+/// `-[GSTheme drawTableViewRow:clipRect:inView:]` takes the cell from
+/// `-[NSTableColumn dataCellForRow:]` instead: a table of controls was live
+/// but drawn as plain text -- Samples/calculator.xhtml came up as a grid of
+/// "0"s (a trigger's object value is its button state) that worked when
+/// pressed.
 ///
-/// This draws the row the way the theme does, but from the prepared cell.
-/// Apple needs none of it -- its NSTableView asks for the prepared cell
-/// itself -- so the class only exists here.
-@interface XFPreparedCellTableView : NSTableView
+/// Overriding the column's own accessor puts the right cell in front of every
+/// caller on both platforms, and leaves selection, highlighting and editing to
+/// the table as they were.
+@interface XFControlTableColumn : NSTableColumn
+@property (nonatomic, weak) XFTableAdapter *adapter;
 @end
 
-@implementation XFPreparedCellTableView
+@implementation XFControlTableColumn
 
-- (void)drawRow:(NSInteger)rowIndex clipRect:(NSRect)clipRect
+- (NSCell *)dataCellForRow:(NSInteger)row
 {
-    // plain id: GNUstep's NSTableViewDataSource protocol does not adopt
-    // <NSObject>, so a variable typed by it does not even know
-    // -respondsToSelector:
-    id source = [self dataSource];
-    id delegate = [self delegate];
-    NSArray<NSTableColumn *> *columns = [self tableColumns];
-    NSRange visible = [self columnsInRect:clipRect];
-    BOOL rowSelected = [[self selectedRowIndexes] containsIndex:(NSUInteger)rowIndex];
-
-    for (NSUInteger i = visible.location; i < NSMaxRange(visible); i++) {
-        if (i >= columns.count) {
-            break;
-        }
-        // the cell being edited has a field editor over it; drawing it here
-        // as well would show the old value through the new one
-        if ((NSInteger)i == [self editedColumn] && rowIndex == [self editedRow]) {
-            continue;
-        }
-        NSTableColumn *column = columns[i];
-        NSCell *cell = [self preparedCellAtColumn:(NSInteger)i row:rowIndex];
-        if (cell == nil) {
-            continue;
-        }
-        if ([source respondsToSelector:@selector(tableView:objectValueForTableColumn:row:)]) {
-            [cell setObjectValue:[source tableView:self
-                         objectValueForTableColumn:column
-                                               row:rowIndex]];
-        }
-        if ([delegate respondsToSelector:@selector(tableView:willDisplayCell:forTableColumn:row:)]) {
-            [delegate tableView:self willDisplayCell:cell
-                 forTableColumn:column row:rowIndex];
-        }
-        // the theme repaints selected text in its own colour; a cell drawn
-        // from here would otherwise keep the unselected one over the
-        // selection background
-        NSColor *restore = nil;
-        if (rowSelected && [cell isKindOfClass:[NSTextFieldCell class]]) {
-            restore = [(NSTextFieldCell *)cell textColor];
-            [(NSTextFieldCell *)cell setTextColor:[NSColor alternateSelectedControlTextColor]];
-        }
-        [cell drawWithFrame:[self frameOfCellAtColumn:(NSInteger)i row:rowIndex]
-                     inView:self];
-        if (restore != nil) {
-            [(NSTextFieldCell *)cell setTextColor:restore];
-        }
-    }
+    // the adapter ignores the table it is handed, and this is the one path
+    // that has none to hand it
+    NSCell *cell = [self.adapter tableView:(NSTableView *)[self tableView]
+                    dataCellForTableColumn:self
+                                       row:row];
+    return cell ?: [super dataCellForRow:row];
 }
 
 @end
-#endif
 
 static const CGFloat kTableRowHeight = 22.0;
 static const CGFloat kTableHeaderHeight = 20.0;
@@ -204,11 +165,7 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
 
 - (NSSize)build
 {
-#if defined(GNUSTEP)
-    NSTableView *table = [[XFPreparedCellTableView alloc] initWithFrame:NSZeroRect];
-#else
     NSTableView *table = [[NSTableView alloc] initWithFrame:NSZeroRect];
-#endif
     self.tableView = table;
     [table setRowHeight:kTableRowHeight];
     [table setAllowsColumnReordering:NO];
@@ -218,7 +175,9 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     [table setColumnAutoresizingStyle:NSTableViewNoColumnAutoresizing];
     CGFloat width = 0;
     for (NSUInteger col = 0; col < self.model.columnCount; col++) {
-        NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:[self identifierForColumn:col]];
+        XFControlTableColumn *column = [[XFControlTableColumn alloc]
+            initWithIdentifier:[self identifierForColumn:col]];
+        column.adapter = self;
         NSString *title = col < self.model.columnTitles.count ? self.model.columnTitles[col] : @"";
         [[column headerCell] setStringValue:title ?: @""];
         CGFloat w = [self preferredWidthForColumn:col];

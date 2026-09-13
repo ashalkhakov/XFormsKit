@@ -290,9 +290,14 @@
     XCTAssertNotNil(adapter, @"the table became a grid");
     NSTableColumn *column = adapter.tableView.tableColumns.firstObject;
 
-    NSCell *cell = [adapter tableView:adapter.tableView
-                   dataCellForTableColumn:column row:0];
-    XCTAssertTrue([cell isKindOfClass:[NSButtonCell class]]);
+    // through the COLUMN, which is what GNUstep's row drawing asks, rather
+    // than the delegate method Cocoa asks -- both must answer the same cell
+    NSCell *cell = [column dataCellForRow:0];
+    XCTAssertTrue([cell isKindOfClass:[NSButtonCell class]],
+                  @"the column answers the trigger's own cell");
+    XCTAssertEqual(cell, [adapter tableView:adapter.tableView
+                     dataCellForTableColumn:column row:0],
+                   @"and the same one the delegate does");
     // what the table does before the cell is drawn
     [cell setObjectValue:[adapter tableView:adapter.tableView
                   objectValueForTableColumn:column row:0]];
