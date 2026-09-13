@@ -319,9 +319,16 @@
     [split setPosition:leftWidth ofDividerAtIndex:0];
     [split setPosition:leftWidth + divider + centerWidth ofDividerAtIndex:1];
     [left setPosition:220 ofDividerAtIndex:0];
-    if ([split respondsToSelector:@selector(layoutSubtreeIfNeeded)]) {
-        [split layoutSubtreeIfNeeded];
-    }
+#if !defined(GNUSTEP)
+    // Cocoa only. On GNUstep -layoutSubtreeIfNeeded is not a no-op for a
+    // window without constraints: it runs -updateConstraints over the whole
+    // subtree, which translates every autoresizing mask into
+    // NSAutoresizingMaskLayoutConstraints, creates the window's
+    // GSAutoLayoutEngine, and from then on every resize of the content view
+    // goes through the Cassowary solver -- for a window that never asked for
+    // Auto Layout. Nothing here needs it: the frames were just set by hand.
+    [split layoutSubtreeIfNeeded];
+#endif
     [self reloadAll];
 }
 

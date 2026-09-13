@@ -141,6 +141,15 @@ install_libs_gui() {
     . "$GNUSTEP_SH"
     git clone -q -b ${LIBS_GUI_BRANCH:-master} https://github.com/gnustep/libs-gui.git
     cd libs-gui
+    # -[GSCSTableau removeRowForVariable:] uses a row expression after the
+    # row dictionary, its only owner, has released it, so every resize of a
+    # window that has a layout engine is a use-after-free. See
+    # patches/gnustep/README.md, which also carries a standalone
+    # reproduction. The viewer no longer engages the engine on GNUstep (it
+    # skipped -layoutSubtreeIfNeeded), so XFormsKit itself does not depend
+    # on this patch -- but anything drawn by gnustep-gui that does use
+    # Auto Layout, and the AppImage's users, do.
+    patch -p1 < "$WORKSPACE_DIR/patches/gnustep/gnustep-gui-gscstableau-removerow-use-after-free.patch"
     ./configure --prefix="$INSTALL_PATH" || cat config.log
     make install
     echo "::endgroup::"
