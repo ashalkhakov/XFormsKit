@@ -24,8 +24,11 @@ void XFAppKitHasTableAdapterFile(void) {}
 
 - (void)drawRow:(NSInteger)rowIndex clipRect:(NSRect)clipRect
 {
-    id<NSTableViewDataSource> source = [self dataSource];
-    id<NSTableViewDelegate> delegate = [self delegate];
+    // plain id: GNUstep's NSTableViewDataSource protocol does not adopt
+    // <NSObject>, so a variable typed by it does not even know
+    // -respondsToSelector:
+    id source = [self dataSource];
+    id delegate = [self delegate];
     NSArray<NSTableColumn *> *columns = [self tableColumns];
     NSRange visible = [self columnsInRect:clipRect];
     BOOL rowSelected = [[self selectedRowIndexes] containsIndex:(NSUInteger)rowIndex];
