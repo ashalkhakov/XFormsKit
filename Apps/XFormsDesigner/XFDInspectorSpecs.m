@@ -1,5 +1,6 @@
 /* Copyright (c) 2026 the XFormsKit contributors. LGPL 2.1. */
 #import "XFDInspectorSpecs.h"
+#import <XFormsKit/XFXMLTypes.h>
 
 /// The Action page's row specs, per action local name (XForms 1.1 §10
 /// plus the XSLTForms show/hide pair). Row keys: label, attr, kind
@@ -108,7 +109,7 @@ NSSet *XFDValueControlKinds(void)
 
 /// The odd state the user called out: a value control (or repeat) with no
 /// ref / nodeset / bind — the preview will not keep what is typed into it.
-BOOL XFDElementIsUnbound(NSXMLElement *element)
+BOOL XFDElementIsUnbound(XFXMLElement *element)
 {
     NSString *local = [element localName];
     BOOL needs = [XFDValueControlKinds() containsObject:local]

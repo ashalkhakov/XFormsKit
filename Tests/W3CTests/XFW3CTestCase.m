@@ -86,7 +86,9 @@
 + (void)initialize
 {
     if (self == [XFW3CTestCase class]) {
+#if __has_include(<AppKit/AppKit.h>)
         [NSApplication sharedApplication];   // AppKit headless bring-up
+#endif
     }
 }
 
@@ -140,7 +142,9 @@
     }
     [self.processor close];
     self.processor = nil;
+#if __has_include(<AppKit/AppKit.h>)
     self.formView = nil;
+#endif
     [super tearDown];
 }
 
@@ -204,7 +208,9 @@
     for (XFModel *model in processor.models) {
         model.transport = transport;
     }
+#if __has_include(<AppKit/AppKit.h>)
     self.formView = [[XFFormView alloc] initWithProcessor:processor];
+#endif
     // The form view installs its own focusRequestHandler (first-responder
     // routing) in its initializer — install the capture AFTER it, chained,
     // or the capture is silently clobbered.

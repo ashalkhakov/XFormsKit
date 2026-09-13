@@ -28,9 +28,13 @@ XFormsKit_HEADER_FILES = \
 	XFDOMNode.h \
 	XFDOMElement.h \
 	XFDOMDocument.h \
+	XFFormRows.h \
+	XFFormViewController.h \
 	XFNamespaces.h \
 	XFErrors.h \
 	XFXML.h \
+	XFMarkupParts.h \
+	XFDateDisplay.h \
 	XFInstance.h \
 	XFModel.h \
 	XFBind.h \
@@ -91,6 +95,8 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/XFNamespaces.m \
 	Sources/XFormsKit/XFErrors.m \
 	Sources/XFormsKit/XFXML.m \
+	Sources/XFormsKit/XFMarkupParts.m \
+	Sources/XFormsKit/XFDateDisplay.m \
 	Sources/XFormsKit/XFInstance.m \
 	Sources/XFormsKit/XFNodeState.m \
 	Sources/XFormsKit/XFType.m \
@@ -159,22 +165,38 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/DOM/XFDOMElement.m \
 	Sources/XFormsKit/DOM/XFDOMDocument.m \
 	Sources/XFormsKit/DOM/XFDOMParser.m \
+	Sources/XFormsKit/SVG/XFSVGDocument.m \
+	Sources/XFormsKit/RichText/XFRichText.m \
+	Sources/XFormsKit/UIKit/XFFormRows.m \
 	Sources/XFormsKit/AppKit/XFFormView.m \
 	Sources/XFormsKit/AppKit/XFFormView+Widgets.m \
 	Sources/XFormsKit/AppKit/XFFormView+Layout.m \
 	Sources/XFormsKit/AppKit/XFFormView+Editing.m \
 	Sources/XFormsKit/AppKit/XFTableAdapter.m \
 	Sources/XFormsKit/AppKit/XFRichTextEditor.m \
-	Sources/XFormsKit/AppKit/XFRichText.m \
+	Sources/XFormsKit/AppKit/XFRichTextPresentation.m \
 	Sources/XFormsKit/AppKit/XFSVGView.m
 
 XFormsKit_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath
 XFormsKit_OBJCFLAGS += -fobjc-arc -Wall -Wextra
-XFormsKit_LIBRARIES_DEPEND_UPON += -ldispatch -lcrypto
+# Opal supplies CoreGraphics and CoreText on GNUstep; the SVG renderer
+# draws through both. Apple platforms get them from the system frameworks,
+# which the Xcode project links instead. corebase comes with them: the
+# CoreText calls are reference counted with CFRelease and name their
+# arguments with CFSTR, and those two live in corebase rather than in
+# Opal -- without it the framework loads and then dies at the first
+# <text> it paints.
+XFormsKit_LIBRARIES_DEPEND_UPON += -ldispatch -lcrypto -lopal -lgnustep-corebase
 
 XFormsKitTests_NEEDS_GUI = yes
 XFormsKitTests_OBJC_FILES = \
 	Tests/XFormsKitTests/XFDOMTests.m \
+	Tests/XFormsKitTests/XFDateDisplayTests.m \
+	Tests/XFormsKitTests/XFRichSupportTests.m \
+	Tests/XFormsKitTests/XFSVGRenderTests.m \
+	Tests/XFormsKitTests/XFDXPathHighlightTests.m \
+	Apps/XFormsDesigner/XFDXPathTextStorage.m \
+	Tests/XFormsKitTests/XFFormRowsTests.m \
 	Tests/XFormsKitTests/XFXPathTests.m \
 	Tests/XFormsKitTests/XFInstanceTests.m \
 	Tests/XFormsKitTests/XFHelloFormTests.m \
@@ -188,7 +210,12 @@ XFormsKitTests_OBJC_FILES = \
 	Tests/XFormsKitTests/XFTypeTests.m
 
 XFormsKitTests_RESOURCE_FILES = Tests/Fixtures/hello.xhtml
-XFormsKitTests_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath
+# Apps/XFormsDesigner is on the path for XFDXPathHighlightTests, which
+# drives the designer's XFDXPathTextStorage directly. The storage is
+# compiled into this bundle rather than linked from the app: the
+# designer is an executable, not a library, and the syntax
+# highlighting is worth testing without it.
+XFormsKitTests_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath -IApps/XFormsDesigner
 XFormsKitTests_OBJCFLAGS += -fobjc-arc -Wall
 XFormsKitTests_BUNDLE_LIBS += -lXFormsKit -lXCTest
 XFormsKitTests_LIB_DIRS += -L./XFormsKit.framework/Versions/Current
@@ -220,16 +247,6 @@ XFW3CTests_OBJC_FILES = \
 XFW3CTests_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath -ITests/W3CTests
 XFW3CTests_OBJCFLAGS += -fobjc-arc -Wall
 
-# Build the engine against the portable DOM instead of NSXML:
-#   make check XF_PORTABLE_DOM=1
-#   make w3ccheck XF_PORTABLE_DOM=1
-# XFDOM is compiled either way, so XFDOMTests keeps comparing the two
-# implementations in both configurations.
-ifeq ($(XF_PORTABLE_DOM),1)
-XFormsKit_OBJCFLAGS += -DXF_PORTABLE_DOM=1
-XFormsKitTests_OBJCFLAGS += -DXF_PORTABLE_DOM=1
-XFW3CTests_OBJCFLAGS += -DXF_PORTABLE_DOM=1
-endif
 XFW3CTests_BUNDLE_LIBS += -lXFormsKit -lXCTest
 XFW3CTests_LIB_DIRS += -L./XFormsKit.framework/Versions/Current
 XFW3CTests_PRINCIPAL_CLASS = XCTestCase

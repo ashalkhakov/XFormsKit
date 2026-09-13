@@ -5,6 +5,7 @@
    the palette panel alike. */
 #pragma once
 #import <AppKit/AppKit.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 /// The Action page's row specs, per action local name (XForms 1.1 Â§10
 /// plus the XSLTForms show/hide pair); see the .m for the row keys.
@@ -15,7 +16,7 @@ NSSet *XFDControlKinds(void);
 NSSet *XFDValueControlKinds(void);
 /// A value control (or repeat) with no ref / nodeset / bind â the
 /// preview will not keep what is typed into it.
-BOOL XFDElementIsUnbound(NSXMLElement *element);
+BOOL XFDElementIsUnbound(XFXMLElement *element);
 NSColor *XFDWarningColor(void);
 /// The palette: every insertable tag with a one-line description.
 NSArray *XFDPaletteCatalog(void);

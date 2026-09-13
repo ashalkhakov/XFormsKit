@@ -1,4 +1,4 @@
-/* XFormsDesigner document — the host NSXMLDocument is the document; the
+/* XFormsDesigner document — the host XFXMLDocument is the document; the
    XFProcessor is a rebuildable projection of it. Authoring goes through
    XFHostEdit (insert / delete / attribute / support-child commands with
    undo and in-place processor notification); the full-reload path exists
@@ -17,7 +17,7 @@
 /// The command layer bound to `processor` and this document's undo manager.
 @property (nonatomic, strong, readonly) XFHostEdit *hostEdit;
 /// Forwarded from XFHostEdit after every mutation, undo and redo included.
-@property (nonatomic, copy) void (^hostChangedHandler)(NSXMLElement *element);
+@property (nonatomic, copy) void (^hostChangedHandler)(XFXMLElement *element);
 /// Called after the processor was REPLACED (source apply / preview reset):
 /// everything referencing the old processor must be rebuilt.
 @property (nonatomic, copy) void (^processorReplacedHandler)(void);

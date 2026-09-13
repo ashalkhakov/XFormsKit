@@ -53,10 +53,10 @@
 @implementation XFTSCase
 @end
 
-static NSString *XFTSText(NSXMLElement *parent, NSString *localName)
+static NSString *XFTSText(XFXMLElement *parent, NSString *localName)
 {
-    for (NSXMLNode *c in [parent children]) {
-        if ([c kind] == NSXMLElementKind
+    for (XFXMLNode *c in [parent children]) {
+        if ([c kind] == XFXMLElementKind
             && [[c localName] isEqualToString:localName]) {
             return [c stringValue] ?: @"";
         }
@@ -77,27 +77,27 @@ static NSArray<XFTSCase *> *XFTSLoadCatalog(NSURL *suiteRoot)
             continue;
         }
         NSURL *url = [xmlDir URLByAppendingPathComponent:file];
-        NSXMLDocument *doc = [[NSXMLDocument alloc]
+        XFXMLDocument *doc = [[XFXMLDocument alloc]
             initWithContentsOfURL:url options:0 error:NULL];
         if (doc == nil) {
             fprintf(stderr, "manifest unreadable: %s\n", [file UTF8String]);
             continue;
         }
-        for (NSXMLNode *chapterNode in [[doc rootElement] children]) {
-            if ([chapterNode kind] != NSXMLElementKind
+        for (XFXMLNode *chapterNode in [[doc rootElement] children]) {
+            if ([chapterNode kind] != XFXMLElementKind
                 || ![[chapterNode localName] isEqualToString:@"specChapter"]) {
                 continue;
             }
-            NSXMLElement *chapter = (NSXMLElement *)chapterNode;
+            XFXMLElement *chapter = (XFXMLElement *)chapterNode;
             NSString *chapterName = [NSString stringWithFormat:@"%@%@",
                 [[chapter attributeForName:@"chapterName"] stringValue] ?: @"",
                 [[chapter attributeForName:@"chapterTitle"] stringValue] ?: @""];
-            for (NSXMLNode *caseNode in [chapter children]) {
-                if ([caseNode kind] != NSXMLElementKind
+            for (XFXMLNode *caseNode in [chapter children]) {
+                if ([caseNode kind] != XFXMLElementKind
                     || ![[caseNode localName] isEqualToString:@"testCase"]) {
                     continue;
                 }
-                NSXMLElement *tc = (NSXMLElement *)caseNode;
+                XFXMLElement *tc = (XFXMLElement *)caseNode;
                 XFTSCase *c = [[XFTSCase alloc] init];
                 c.name = XFTSText(tc, @"testCaseName");
                 c.section = XFTSText(tc, @"testCaseSection");
@@ -157,20 +157,20 @@ static NSArray<XFTSCase *> *XFTSLoadCatalog(NSURL *suiteRoot)
 
 /// The quoted strings of the form's instruction text ("You must see a
 /// value of "4"…") — ASCII and typographic quotes both.
-static NSArray<NSString *> *XFTSQuotedExpectations(NSXMLDocument *doc)
+static NSArray<NSString *> *XFTSQuotedExpectations(XFXMLDocument *doc)
 {
     NSMutableArray *out = [NSMutableArray array];
     NSMutableArray *labels = [NSMutableArray array];
     NSMutableArray *queue = [NSMutableArray arrayWithObject:[doc rootElement]];
     while (queue.count) {
-        NSXMLElement *e = [queue lastObject];
+        XFXMLElement *e = [queue lastObject];
         [queue removeLastObject];
         if ([[e localName] isEqualToString:@"label"]) {
             [labels addObject:[e stringValue] ?: @""];
         }
-        for (NSXMLNode *c in [e children]) {
-            if ([c kind] == NSXMLElementKind) {
-                [queue addObject:(NSXMLElement *)c];
+        for (XFXMLNode *c in [e children]) {
+            if ([c kind] == XFXMLElementKind) {
+                [queue addObject:(XFXMLElement *)c];
             }
         }
     }
@@ -199,12 +199,12 @@ static NSArray<NSString *> *XFTSQuotedExpectations(NSXMLDocument *doc)
 
 /// The texts of the document's xf:message elements — what the form CAN
 /// pop; an observed message matching one of these is the tested behavior.
-static NSArray<NSString *> *XFTSMessageTexts(NSXMLDocument *doc)
+static NSArray<NSString *> *XFTSMessageTexts(XFXMLDocument *doc)
 {
     NSMutableArray *out = [NSMutableArray array];
     NSMutableArray *queue = [NSMutableArray arrayWithObject:[doc rootElement]];
     while (queue.count) {
-        NSXMLElement *e = [queue lastObject];
+        XFXMLElement *e = [queue lastObject];
         [queue removeLastObject];
         if ([[e localName] isEqualToString:@"message"]) {
             NSString *text = [[e stringValue] stringByTrimmingCharactersInSet:
@@ -213,9 +213,9 @@ static NSArray<NSString *> *XFTSMessageTexts(NSXMLDocument *doc)
                 [out addObject:text];
             }
         }
-        for (NSXMLNode *c in [e children]) {
-            if ([c kind] == NSXMLElementKind) {
-                [queue addObject:(NSXMLElement *)c];
+        for (XFXMLNode *c in [e children]) {
+            if ([c kind] == XFXMLElementKind) {
+                [queue addObject:(XFXMLElement *)c];
             }
         }
     }
@@ -308,7 +308,7 @@ static XFTSResult *XFTSRunCase(XFTSCase *tc)
         return result;
     }
     NSError *error = nil;
-    NSXMLDocument *doc = [[NSXMLDocument alloc]
+    XFXMLDocument *doc = [[XFXMLDocument alloc]
         initWithContentsOfURL:tc.fileURL options:0 error:&error];
     if (doc == nil) {
         result.status = @"error";

@@ -55,6 +55,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// Host hook for xf:message (G-51): text and level (modal | modeless |
 /// ephemeral). Without a handler messages queue in XFDeferredUpdates.messages.
 @property (nonatomic, copy, nullable) void (^messageHandler)(NSString *text, NSString *level);
+/// The same hook for a message that carries host markup (`<xf:message>Do
+/// <b>not</b> …`). Optional: when it is nil, or the message is plain,
+/// `messageHandler` is called with the text as before, so a host only
+/// implements this if it can display XHTML. `markup` is the inner markup
+/// with any xf:output already substituted; `text` is the same content
+/// flattened, for logging and accessibility.
+@property (nonatomic, copy, nullable) void (^richMessageHandler)(NSString *markup, NSString *text, NSString *level);
 /// Host hook for xf:load with show="new" | "replace" and no @instance
 /// (G-50): open the URL. Return YES when handled.
 @property (nonatomic, copy, nullable) BOOL (^loadRequestHandler)(NSURL *url, NSString *show);

@@ -99,12 +99,21 @@
 
 #pragma mark Serialisation
 
-- (void)appendXMLStringWithOptions:(XFDOMNodeOptions)options into:(NSMutableString *)out
+- (void)appendXMLStringWithOptions:(XFDOMNodeOptions)options
+                             depth:(NSUInteger)depth
+                              into:(NSMutableString *)out
 {
+    (void)depth;   // the declaration and the root both sit at the margin
     [out appendFormat:@"<?xml version=\"%@\" encoding=\"%@\"?>",
                       self.version ?: @"1.0", self.characterEncoding ?: @"UTF-8"];
     for (XFDOMNode *child in self.mutableChildren) {
-        [child appendXMLStringWithOptions:options into:out];
+        if (options & XFDOMNodePrettyPrint) {
+            if (child.kind == XFDOMTextKind) {
+                continue;
+            }
+            [out appendString:@"\n"];
+        }
+        [child appendXMLStringWithOptions:options depth:0 into:out];
     }
 }
 

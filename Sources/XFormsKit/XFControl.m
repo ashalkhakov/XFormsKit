@@ -23,6 +23,7 @@
 #import "XFProcessor.h"
 #import "XFErrors.h"
 #import "XFXMLEvents.h"
+#import "XFMarkupParts.h"
 #import "XFDeferredUpdates.h"
 
 @interface XFControl ()
@@ -36,6 +37,18 @@
 /// xf:output elements / the label's own ref|value|bind (G-23).
 @property (nonatomic, copy) NSArray *labelParts;
 @property (nonatomic, assign) BOOL labelIsDynamic;
+/// The same split for the markup of hint/help/alert, so an xf:output
+/// inside one re-renders on refresh (9.3.1 gives them the label's content
+/// model). nil where the child holds no markup.
+@property (nonatomic, copy) NSArray *hintMarkupParts;
+@property (nonatomic, copy) NSArray *helpMarkupParts;
+@property (nonatomic, copy) NSArray *alertMarkupParts;
+/// And for their plain text, which takes xf:output too: flattening the
+/// element instead would drop every output's value.
+@property (nonatomic, copy) NSArray *hintTextParts;
+@property (nonatomic, copy) NSArray *helpTextParts;
+@property (nonatomic, copy) NSArray *alertTextParts;
+@property (nonatomic, assign) BOOL supportIsDynamic;
 @property (nonatomic, copy, readwrite) NSArray<NSString *> *mipEvents;
 @property (nonatomic, assign) BOOL mipKnown;
 @end
@@ -84,21 +97,6 @@
         return nil;
     }
     return [XFBinding bindingWithExpression:expr element:el error:NULL];
-}
-
-- (NSString *)literalFromChild:(NSString *)name
-{
-    XFXMLElement *el = [XFXML childElementWithLocalName:name
-                                          namespaceURI:XFXFormsNamespaceURI
-                                             ofElement:self.element];
-    if (el == nil) {
-        return nil;
-    }
-    if ([el attributeForName:@"ref"] || [el attributeForName:@"value"]) {
-        return nil;
-    }
-    NSString *s = [XFXML stringValueOfNode:el];
-    return s.length ? s : nil;
 }
 
 /// XsltForms_label: a label with ref/value/bind is a bound element
@@ -220,16 +218,82 @@
     self.hintBinding = [self bindingFromChild:@"hint"];
     self.helpBinding = [self bindingFromChild:@"help"];
     self.alertBinding = [self bindingFromChild:@"alert"];
-    if (self.hint == nil) {
-        self.hint = [self literalFromChild:@"hint"];
-    }
     XFXMLElement *hintEl = [XFXML childElementWithLocalName:@"hint"
                                                namespaceURI:XFXFormsNamespaceURI
                                                   ofElement:self.element];
     self.hintMinimal = [[[hintEl attributeForName:@"appearance"] stringValue]
                            isEqualToString:@"minimal"];
-    self.help = [self literalFromChild:@"help"];
-    self.alert = [self literalFromChild:@"alert"];
+    // Text and markup both as parts, for the same reason the label is: an
+    // xf:output in any of them re-renders on refresh (9.3.1). The text is
+    // what every host shows; the markup is what a host that draws XHTML
+    // shows instead, and is nil unless the form wrote formatting.
+    self.hintTextParts = [self textPartsOfChild:@"hint"];
+    self.helpTextParts = [self textPartsOfChild:@"help"];
+    self.alertTextParts = [self textPartsOfChild:@"alert"];
+    self.hintMarkupParts = [self markupPartsOfChild:@"hint"];
+    self.helpMarkupParts = [self markupPartsOfChild:@"help"];
+    self.alertMarkupParts = [self markupPartsOfChild:@"alert"];
+    self.supportIsDynamic = NO;
+    for (NSArray *parts in @[ self.hintTextParts ?: @[], self.helpTextParts ?: @[],
+                              self.alertTextParts ?: @[], self.hintMarkupParts ?: @[],
+                              self.helpMarkupParts ?: @[], self.alertMarkupParts ?: @[] ]) {
+        self.supportIsDynamic |= [XFMarkupParts partsAreDynamic:parts];
+    }
+    // A literal joins once, for good; a dynamic one is joined again on
+    // every refresh, and until the first one it reads as empty.
+    [self refreshSupportTextAndMarkupInContext:nil];
+}
+
+/// The plain-text parts of a support child, or nil when it is bound (its
+/// value comes from the node, not from the element's content).
+- (NSArray *)textPartsOfChild:(NSString *)name
+{
+    XFXMLElement *el = [XFXML childElementWithLocalName:name
+                                          namespaceURI:XFXFormsNamespaceURI
+                                             ofElement:self.element];
+    if (el == nil || [el attributeForName:@"ref"] || [el attributeForName:@"value"]) {
+        return nil;
+    }
+    return [XFMarkupParts textPartsOfElement:el];
+}
+
+/// The markup parts of a support child, or nil when it is bound (a hint
+/// with ref/value is its node's string value — text, never markup) or
+/// holds no formatting.
+- (NSArray *)markupPartsOfChild:(NSString *)name
+{
+    XFXMLElement *el = [XFXML childElementWithLocalName:name
+                                          namespaceURI:XFXFormsNamespaceURI
+                                             ofElement:self.element];
+    if (el == nil || [el attributeForName:@"ref"] || [el attributeForName:@"value"]) {
+        return nil;
+    }
+    return [XFMarkupParts partsOfElement:el];
+}
+
+- (void)refreshSupportTextAndMarkupInContext:(XFExprContext *)ctx
+{
+    // a bound hint/help/alert wins: refreshSupportInContext: sets those
+    if (self.hintBinding == nil) {
+        self.hint = [self joined:self.hintTextParts context:ctx];
+    }
+    if (self.helpBinding == nil) {
+        self.help = [self joined:self.helpTextParts context:ctx];
+    }
+    if (self.alertBinding == nil) {
+        self.alert = [self joined:self.alertTextParts context:ctx];
+    }
+    self.hintMarkup = [XFMarkupParts markupFromParts:self.hintMarkupParts context:ctx];
+    self.helpMarkup = [XFMarkupParts markupFromParts:self.helpMarkupParts context:ctx];
+    self.alertMarkup = [XFMarkupParts markupFromParts:self.alertMarkupParts context:ctx];
+}
+
+/// Empty reads as absent, the way the flattening it replaced had it: hosts
+/// test `hint.length` and an empty xf:hint must not make a badge.
+- (NSString *)joined:(NSArray *)parts context:(XFExprContext *)ctx
+{
+    NSString *s = [XFMarkupParts textFromParts:parts context:ctx];
+    return s.length ? s : nil;
 }
 
 - (void)refreshSupportInContext:(XFExprContext *)context
@@ -246,6 +310,9 @@
     }
     if (self.alertBinding) {
         self.alert = [self.alertBinding stringValueInContext:ctx error:NULL];
+    }
+    if (self.supportIsDynamic) {
+        [self refreshSupportTextAndMarkupInContext:ctx];
     }
 }
 

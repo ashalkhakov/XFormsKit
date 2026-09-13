@@ -1,4 +1,7 @@
 #import "XFDXPathField.h"
+#import "XFDXPathTextStorage.h"
+#import "XFDExpressionField.h"
+#import <XFormsKit/XFXMLTypes.h>
 
 #pragma mark - Location-path step model
 
@@ -13,103 +16,13 @@ static NSArray *XFDKnownAxes(void)
 }
 
 #pragma mark - Syntax highlighting
-
-/// Semantic color, cross-SDK: try the named system color (keeps contrast
-/// in dark themes where it exists), fall back to a fixed calibrated one.
-static NSColor *XFDSystemColor(NSString *selectorName, CGFloat r, CGFloat g, CGFloat b)
-{
-    SEL sel = NSSelectorFromString(selectorName);
-    if ([NSColor respondsToSelector:sel]) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-        NSColor *color = [NSColor performSelector:sel];
-#pragma clang diagnostic pop
-        if (color != nil) {
-            return color;
-        }
-    }
-    return [NSColor colorWithCalibratedRed:r green:g blue:b alpha:1];
-}
-
-static NSColor *XFDTokenColor(NSString *kind)
-{
-    if ([kind isEqualToString:@"string"]) {
-        return XFDSystemColor(@"systemRedColor", 0.77, 0.10, 0.09);
-    }
-    if ([kind isEqualToString:@"number"]) {
-        return XFDSystemColor(@"systemBlueColor", 0.11, 0.00, 0.81);
-    }
-    if ([kind isEqualToString:@"function"]) {
-        return XFDSystemColor(@"systemPurpleColor", 0.42, 0.13, 0.66);
-    }
-    if ([kind isEqualToString:@"axis"]) {
-        return XFDSystemColor(@"systemBrownColor", 0.42, 0.30, 0.16);
-    }
-    if ([kind isEqualToString:@"variable"]) {
-        return XFDSystemColor(@"systemTealColor", 0.00, 0.46, 0.54);
-    }
-    if ([kind isEqualToString:@"operator"]) {
-        return XFDSystemColor(@"systemOrangeColor", 0.64, 0.35, 0.00);
-    }
-    if ([kind isEqualToString:@"punct"]) {
-        return [NSColor disabledControlTextColor];
-    }
-    return [NSColor controlTextColor];   // name
-}
-
-/// The expression, colored by the ENGINE's lexer (token spans from
-/// +highlightTokensForString: — no second tokenizer). `invalid` paints
-/// everything red instead, keeping the existing does-not-compile signal.
-static NSAttributedString *XFDHighlightedXPath(NSString *expression,
-                                               NSFont *font, BOOL invalid)
-{
-    NSString *text = expression ?: @"";
-    NSMutableDictionary *base = [NSMutableDictionary dictionary];
-    if (font != nil) {
-        base[NSFontAttributeName] = font;
-    }
-    base[NSForegroundColorAttributeName] =
-        invalid ? [NSColor redColor] : [NSColor controlTextColor];
-    NSMutableAttributedString *out =
-        [[NSMutableAttributedString alloc] initWithString:text attributes:base];
-    if (!invalid) {
-        for (NSDictionary *token in [XFXPath highlightTokensForString:text]) {
-            NSRange range = [token[@"range"] rangeValue];
-            if (NSMaxRange(range) <= text.length) {
-                [out addAttribute:NSForegroundColorAttributeName
-                            value:XFDTokenColor(token[@"kind"])
-                            range:range];
-            }
-        }
-    }
-    return out;
-}
-
-/// Restyle a text field in place: while it is being edited, recolor the
-/// FIELD EDITOR's storage (attributes only — content and selection stay,
-/// and attribute edits post no textDidChange); otherwise set the
-/// attributed value.
-static void XFDApplyXPathHighlight(NSTextField *field, BOOL invalid)
-{
-    NSAttributedString *styled = XFDHighlightedXPath([field stringValue],
-                                                     [field font], invalid);
-    NSTextView *editor = (NSTextView *)[field currentEditor];
-    if ([editor isKindOfClass:[NSTextView class]]
-        && [[[editor textStorage] string] isEqualToString:[styled string]]) {
-        NSTextStorage *storage = [editor textStorage];
-        [storage beginEditing];
-        NSUInteger i = 0;
-        while (i < styled.length) {
-            NSRange run;
-            NSDictionary *attrs = [styled attributesAtIndex:i effectiveRange:&run];
-            [storage setAttributes:attrs range:run];
-            i = NSMaxRange(run);
-        }
-        [storage endEditing];
-    } else {
-        [field setAttributedStringValue:styled];
-    }
-}
+//
+// Lives in XFDExpressionField: an NSTextView backed by
+// XFDXPathTextStorage, which recolours itself on every change. One path,
+// always on, like a code editor. What used to be here -- an attributed
+// value for an idle field and a pass over the window's shared field
+// editor for an edited one -- AppKit could overwrite at any moment, and
+// did, which is why expressions stopped looking highlighted.
 
 /// Unwraps a structure node for "instance('id')" — the quoted single
 /// string argument — or nil.
@@ -229,12 +142,12 @@ NSString *XFDJoinLocationPath(NSDictionary *path)
 
 #pragma mark - Predicate sub-editing
 
-static NSString *XFDDisplayPathOfNode(NSXMLNode *node);
+static NSString *XFDDisplayPathOfNode(XFXMLNode *node);
 
 NSDictionary *XFDPredicatePreview(NSString *baseExpression,
                                   NSString *predicates,
-                                  NSXMLElement *hostElement,
-                                  NSXMLNode *contextNode,
+                                  XFXMLElement *hostElement,
+                                  XFXMLNode *contextNode,
                                   XFModel *model)
 {
     NSString *trimmed = [predicates ?: @"" stringByTrimmingCharactersInSet:
@@ -279,7 +192,7 @@ NSDictionary *XFDPredicatePreview(NSString *baseExpression,
     NSMutableArray *rows = [NSMutableArray array];
     NSUInteger cap = MIN(candidates.count, (NSUInteger)200);
     for (NSUInteger i = 0; i < cap; i++) {
-        NSXMLNode *node = candidates[i];
+        XFXMLNode *node = candidates[i];
         NSString *text = [node stringValue] ?: @"";
         if (text.length > 80) {
             text = [[text substringToIndex:79] stringByAppendingString:@"\u2026"];
@@ -305,13 +218,13 @@ NSDictionary *XFDPredicatePreview(NSString *baseExpression,
 @interface XFDPredicateEditor : NSObject <NSTextFieldDelegate, NSTableViewDataSource, NSTableViewDelegate>
 {
     NSPanel *_panel;
-    NSTextField *_field;
+    XFDExpressionField *_field;
     NSTextField *_statusField;
     NSTableView *_table;
     NSButton *_okButton;
     NSString *_baseExpression;
-    NSXMLElement *_hostElement;
-    NSXMLNode *_contextNode;
+    XFXMLElement *_hostElement;
+    XFXMLNode *_contextNode;
     XFModel *_model;
     NSArray *_rows;
     NSString *_normalized;
@@ -320,8 +233,8 @@ NSDictionary *XFDPredicatePreview(NSString *baseExpression,
 }
 + (NSString *)runWithBaseExpression:(NSString *)base
                          predicates:(NSString *)predicates
-                        hostElement:(NSXMLElement *)hostElement
-                        contextNode:(NSXMLNode *)contextNode
+                        hostElement:(XFXMLElement *)hostElement
+                        contextNode:(XFXMLNode *)contextNode
                               model:(XFModel *)model;
 @end
 
@@ -354,9 +267,9 @@ NSDictionary *XFDPredicatePreview(NSString *baseExpression,
         NSMakeRect(12, H - 48, W - 24, 32));
 
     label(@"Predicates:", NSMakeRect(12, H - 74, 80, 17));
-    _field = [[NSTextField alloc] initWithFrame:NSMakeRect(96, H - 78, W - 108, 22)];
+    _field = [[XFDExpressionField alloc] initWithFrame:NSMakeRect(96, H - 78, W - 108, 22)];
     [_field setFont:[NSFont userFixedPitchFontOfSize:11]];
-    [[_field cell] setPlaceholderString:@"[price > 10]  \u2014 or a bare expression"];
+    [_field setPlaceholderString:@"[price > 10]  \u2014 or a bare expression"];
     [_field setDelegate:self];
     [content addSubview:_field];
 
@@ -412,7 +325,7 @@ NSDictionary *XFDPredicatePreview(NSString *baseExpression,
     _rows = p[@"rows"] ?: @[];
     [_table reloadData];
     [_okButton setEnabled:_valid];
-    XFDApplyXPathHighlight(_field, !_valid);
+    [_field setInvalid:!_valid];
     if (!_valid) {
         [_statusField setStringValue:[@"\u2717 " stringByAppendingString:p[@"error"] ?: @""]];
         [_statusField setTextColor:[NSColor redColor]];
@@ -493,8 +406,8 @@ NSDictionary *XFDPredicatePreview(NSString *baseExpression,
 
 + (NSString *)runWithBaseExpression:(NSString *)base
                          predicates:(NSString *)predicates
-                        hostElement:(NSXMLElement *)hostElement
-                        contextNode:(NSXMLNode *)contextNode
+                        hostElement:(XFXMLElement *)hostElement
+                        contextNode:(XFXMLNode *)contextNode
                               model:(XFModel *)model
 {
     XFDPredicateEditor *editor = [[XFDPredicateEditor alloc] init];
@@ -522,7 +435,7 @@ NSDictionary *XFDPredicatePreview(NSString *baseExpression,
 
 #pragma mark - Schema suggestions & function knowledge
 
-static void XFDCollectSchemaPaths(NSXMLElement *element, NSString *prefix,
+static void XFDCollectSchemaPaths(XFXMLElement *element, NSString *prefix,
                                   NSUInteger depth, NSMutableArray *out,
                                   NSUInteger cap)
 {
@@ -531,14 +444,14 @@ static void XFDCollectSchemaPaths(NSXMLElement *element, NSString *prefix,
     }
     // schema UNION: one entry per child NAME, however many clones exist
     NSMutableArray *names = [NSMutableArray array];
-    for (NSXMLNode *attribute in [element attributes]) {
+    for (XFXMLNode *attribute in [element attributes]) {
         NSString *path = [NSString stringWithFormat:@"%@@%@", prefix, [attribute name]];
         if (out.count < cap && ![out containsObject:path]) {
             [out addObject:path];
         }
     }
-    for (NSXMLNode *child in [element children]) {
-        if ([child kind] != NSXMLElementKind) {
+    for (XFXMLNode *child in [element children]) {
+        if ([child kind] != XFXMLElementKind) {
             continue;
         }
         NSString *name = [child name] ?: @"*";
@@ -550,7 +463,7 @@ static void XFDCollectSchemaPaths(NSXMLElement *element, NSString *prefix,
         if (out.count < cap && ![out containsObject:path]) {
             [out addObject:path];
         }
-        XFDCollectSchemaPaths((NSXMLElement *)child,
+        XFDCollectSchemaPaths((XFXMLElement *)child,
                               [path stringByAppendingString:@"/"],
                               depth + 1, out, cap);
     }
@@ -559,19 +472,19 @@ static void XFDCollectSchemaPaths(NSXMLElement *element, NSString *prefix,
 /// Refs suggested from the data's implied schema, relative to `context`:
 /// descendant name-paths (positional clones collapsed — the schema XForms
 /// infers implicitly) plus the parent level as ../name.
-NSArray *XFDSchemaPathsFromNode(NSXMLNode *context, NSUInteger cap)
+NSArray *XFDSchemaPathsFromNode(XFXMLNode *context, NSUInteger cap)
 {
     NSMutableArray *out = [NSMutableArray array];
-    if ([context kind] != NSXMLElementKind) {
+    if ([context kind] != XFXMLElementKind) {
         return out;
     }
-    XFDCollectSchemaPaths((NSXMLElement *)context, @"", 0, out, cap);
-    NSXMLNode *parent = [context parent];
-    if ([parent kind] == NSXMLElementKind && out.count < cap) {
+    XFDCollectSchemaPaths((XFXMLElement *)context, @"", 0, out, cap);
+    XFXMLNode *parent = [context parent];
+    if ([parent kind] == XFXMLElementKind && out.count < cap) {
         [out addObject:@".."];
         NSMutableArray *names = [NSMutableArray array];
-        for (NSXMLNode *sibling in [parent children]) {
-            if ([sibling kind] != NSXMLElementKind || sibling == context) {
+        for (XFXMLNode *sibling in [parent children]) {
+            if ([sibling kind] != XFXMLElementKind || sibling == context) {
                 continue;
             }
             NSString *name = [sibling name] ?: @"*";
@@ -636,13 +549,13 @@ NSArray *XFDEventContextProperties(NSString *eventName)
     NSTableView *_stepsTable;
     NSSegmentedControl *_stepsControl;
     NSTextField *_stepsStatusField;
-    NSTextField *_pathField;
+    XFDExpressionField *_pathField;
     NSTextField *_statusField;
     NSTableView *_resultTable;
     NSButton *_okButton;
     XFProcessor *_processor;
-    NSXMLNode *_contextNode;
-    NSXMLElement *_hostElement;
+    XFXMLNode *_contextNode;
+    XFXMLElement *_hostElement;
     XFDXPathExpectation _expectation;
     NSString *_result;
     NSMutableArray *_steps;         /* step dicts; nil = not a simple path */
@@ -659,8 +572,8 @@ NSArray *XFDEventContextProperties(NSString *eventName)
     BOOL _syncing;
 }
 + (NSString *)runForProcessor:(XFProcessor *)processor
-                  contextNode:(NSXMLNode *)contextNode
-                  hostElement:(NSXMLElement *)hostElement
+                  contextNode:(XFXMLNode *)contextNode
+                  hostElement:(XFXMLElement *)hostElement
                         title:(NSString *)title
                       initial:(NSString *)initial
                   expectation:(XFDXPathExpectation)expectation;
@@ -714,9 +627,9 @@ static void XFDFlattenStructure(NSDictionary *node, NSArray *path,
     return (i >= 0 && (NSUInteger)i < all.count) ? all[(NSUInteger)i] : nil;
 }
 
-- (XFInstance *)instanceContainingNode:(NSXMLNode *)node
+- (XFInstance *)instanceContainingNode:(XFXMLNode *)node
 {
-    NSXMLDocument *doc = [node rootDocument];
+    XFXMLDocument *doc = [node rootDocument];
     for (XFInstance *instance in [self instances]) {
         if (instance.document == doc) {
             return instance;
@@ -725,14 +638,14 @@ static void XFDFlattenStructure(NSDictionary *node, NSArray *path,
     return nil;
 }
 
-static NSString *XFDDisplayPathOfNode(NSXMLNode *node)
+static NSString *XFDDisplayPathOfNode(XFXMLNode *node)
 {
     if (node == nil) {
         return @"?";
     }
     NSString *tail = [XFHostEdit stepsBelowRootToNode:node];
-    NSXMLNode *walk = node;
-    while ([walk parent] != nil && [[walk parent] kind] != NSXMLDocumentKind) {
+    XFXMLNode *walk = node;
+    while ([walk parent] != nil && [[walk parent] kind] != XFXMLDocumentKind) {
         walk = [walk parent];
     }
     NSString *rootName = [walk name] ?: @"*";
@@ -916,9 +829,8 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
 
     // the expression itself — always editable
     [self makeLabel:@"Expression:" frame:NSMakeRect(12, H - 412, 90, 17) in:content];
-    _pathField = [[NSTextField alloc] initWithFrame:NSMakeRect(12, H - 436, W - 24, 22)];
+    _pathField = [[XFDExpressionField alloc] initWithFrame:NSMakeRect(12, H - 436, W - 24, 22)];
     [_pathField setFont:[NSFont userFixedPitchFontOfSize:11]];
-    [[_pathField cell] setSendsActionOnEndEditing:YES];
     [_pathField setTarget:self];
     [_pathField setAction:@selector(expressionEdited:)];
     [_pathField setDelegate:(id)self];
@@ -986,7 +898,7 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
         [item setTarget:self];
         [item setRepresentedObject:expression];
     };
-    NSXMLNode *context = _contextNode
+    XFXMLNode *context = _contextNode
         ?: [[_processor defaultInstance] documentElement];
     NSArray *paths = XFDSchemaPathsFromNode(context, 80);
     for (NSString *path in paths) {
@@ -1241,7 +1153,7 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
 
 - (XFExprContext *)pickerContext
 {
-    NSXMLNode *node = _contextNode
+    XFXMLNode *node = _contextNode
         ?: [[_processor defaultInstance] documentElement];
     XFExprContext *ctx = [[XFExprContext alloc] initWithNode:node];
     ctx.model = _processor.model;
@@ -1251,9 +1163,8 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
 - (void)evaluate
 {
     NSString *expr = [self expression];
-    XFDApplyXPathHighlight(_pathField,
-        expr.length != 0
-        && [XFXPath xpathWithString:expr element:_hostElement error:NULL] == nil);
+    [_pathField setInvalid:(expr.length != 0
+        && [XFXPath xpathWithString:expr element:_hostElement error:NULL] == nil)];
     if (expr.length == 0) {
         _resultRows = @[];
         [_resultTable reloadData];
@@ -1294,7 +1205,7 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
                    (unsigned long)nodes.count, nodes.count == 1 ? "" : "s"];
         NSUInteger cap = MIN(nodes.count, (NSUInteger)200);
         for (NSUInteger i = 0; i < cap; i++) {
-            NSXMLNode *node = nodes[i];
+            XFXMLNode *node = nodes[i];
             NSString *text = [node stringValue] ?: @"";
             if (text.length > 80) {
                 text = [[text substringToIndex:79] stringByAppendingString:@"…"];
@@ -1427,16 +1338,16 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
 
 #pragma mark data tree (base-path gesture)
 
-- (NSArray *)childrenOfNode:(NSXMLNode *)node
+- (NSArray *)childrenOfNode:(XFXMLNode *)node
 {
     NSMutableArray *out = [NSMutableArray array];
-    if ([node kind] == NSXMLElementKind) {
-        for (NSXMLNode *attribute in [(NSXMLElement *)node attributes]) {
+    if ([node kind] == XFXMLElementKind) {
+        for (XFXMLNode *attribute in [(XFXMLElement *)node attributes]) {
             [out addObject:attribute];
         }
     }
-    for (NSXMLNode *child in [node children]) {
-        if ([child kind] == NSXMLElementKind) {
+    for (XFXMLNode *child in [node children]) {
+        if ([child kind] == XFXMLElementKind) {
             [out addObject:child];
         }
     }
@@ -1471,8 +1382,8 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
 {
     (void)ov;
     (void)column;
-    NSXMLNode *node = item;
-    if ([node kind] == NSXMLAttributeKind) {
+    XFXMLNode *node = item;
+    if ([node kind] == XFXMLAttributeKind) {
         return [NSString stringWithFormat:@"@%@ = ‘%@’", [node name], [node stringValue] ?: @""];
     }
     BOOL leaf = [self childrenOfNode:node].count == 0;
@@ -1485,7 +1396,7 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
 {
     (void)note;
     NSInteger row = [_tree selectedRow];
-    NSXMLNode *target = row >= 0 ? [_tree itemAtRow:row] : nil;
+    XFXMLNode *target = row >= 0 ? [_tree itemAtRow:row] : nil;
     if (target == nil) {
         return;
     }
@@ -1550,8 +1461,8 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
                         stringByAppendingString:node[@"label"]];
         }
         if ([ident isEqualToString:@"test"]) {
-            return XFDHighlightedXPath(node[@"source"],
-                [NSFont systemFontOfSize:[NSFont smallSystemFontSize]], NO);
+            return XFDXPathAttributedString(node[@"source"],
+                [NSFont systemFontOfSize:[NSFont smallSystemFontSize]]);
         }
         return @"";
     }
@@ -1738,8 +1649,8 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
 #pragma mark run
 
 + (NSString *)runForProcessor:(XFProcessor *)processor
-                  contextNode:(NSXMLNode *)contextNode
-                  hostElement:(NSXMLElement *)hostElement
+                  contextNode:(XFXMLNode *)contextNode
+                  hostElement:(XFXMLElement *)hostElement
                         title:(NSString *)title
                       initial:(NSString *)initial
                   expectation:(XFDXPathExpectation)expectation
@@ -1770,7 +1681,7 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
 #pragma mark - The field component
 
 @interface XFDXPathField () <NSTextFieldDelegate>
-@property (nonatomic, strong) NSTextField *field;
+@property (nonatomic, strong) XFDExpressionField *field;
 @property (nonatomic, strong) NSButton *pickButton;
 @property (nonatomic, assign, readwrite, getter=isValid) BOOL valid;
 @end
@@ -1803,13 +1714,10 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
     _valid = YES;
     NSRect bounds = [self bounds];
     CGFloat buttonWidth = 22;
-    self.field = [[NSTextField alloc] initWithFrame:
+    self.field = [[XFDExpressionField alloc] initWithFrame:
         NSMakeRect(0, 0, NSWidth(bounds) - buttonWidth - 4, NSHeight(bounds))];
     [self.field setAutoresizingMask:NSViewWidthSizable];
-    [[self.field cell] setControlSize:NSSmallControlSize];
     [self.field setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-    [[self.field cell] setScrollable:YES];
-    [[self.field cell] setSendsActionOnEndEditing:YES];
     [self.field setTarget:self];
     [self.field setAction:@selector(fieldEdited:)];
     [self.field setDelegate:self];   // live re-validate + highlight
@@ -1849,11 +1757,11 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
 - (void)validate
 {
     NSString *expression = [self.field stringValue];
-    NSXMLElement *host = [self.provider hostElementForXPathField:self];
+    XFXMLElement *host = [self.provider hostElementForXPathField:self];
     if (expression.length == 0 || host == nil) {
         self.valid = YES;
         [self.field setToolTip:nil];
-        XFDApplyXPathHighlight(self.field, NO);
+        [self.field setInvalid:NO];
         return;
     }
     NSError *error = nil;
@@ -1864,7 +1772,7 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
     } else {
         [self.field setToolTip:nil];
     }
-    XFDApplyXPathHighlight(self.field, compiled == nil);
+    [self.field setInvalid:compiled == nil];
 }
 
 - (void)controlTextDidChange:(NSNotification *)note
@@ -1894,8 +1802,8 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
 #pragma mark picker
 
 + (NSString *)runPickerForProcessor:(XFProcessor *)processor
-                        contextNode:(NSXMLNode *)contextNode
-                        hostElement:(NSXMLElement *)hostElement
+                        contextNode:(XFXMLNode *)contextNode
+                        hostElement:(XFXMLElement *)hostElement
                               title:(NSString *)title
 {
     return [XFDXPathPicker runForProcessor:processor
@@ -1907,8 +1815,8 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
 }
 
 + (NSString *)runPickerForProcessor:(XFProcessor *)processor
-                        contextNode:(NSXMLNode *)contextNode
-                        hostElement:(NSXMLElement *)hostElement
+                        contextNode:(XFXMLNode *)contextNode
+                        hostElement:(XFXMLElement *)hostElement
                               title:(NSString *)title
                             initial:(NSString *)initial
                         expectation:(XFDXPathExpectation)expectation
@@ -1925,7 +1833,7 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
 {
     (void)sender;
     XFProcessor *processor = [self.provider processorForXPathField:self];
-    NSXMLElement *host = [self.provider hostElementForXPathField:self];
+    XFXMLElement *host = [self.provider hostElementForXPathField:self];
     if (processor == nil || host == nil) {
         XFDBeep();
         return;

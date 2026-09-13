@@ -12,6 +12,8 @@
 #import <XFormsKit/XFNamespaces.h>
 #import <XFormsKit/XFErrors.h>
 #import <XFormsKit/XFXML.h>
+#import <XFormsKit/XFMarkupParts.h>
+#import <XFormsKit/XFDateDisplay.h>
 #import <XFormsKit/XFInstance.h>
 #import <XFormsKit/XFModel.h>
 #import <XFormsKit/XFBind.h>

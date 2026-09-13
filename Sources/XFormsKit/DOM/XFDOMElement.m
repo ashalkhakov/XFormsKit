@@ -222,22 +222,66 @@
 
 #pragma mark Serialisation
 
-- (void)appendXMLStringWithOptions:(XFDOMNodeOptions)options into:(NSMutableString *)out
+/// Can this element's children be put on separate lines?
+///
+/// Only when every one of them is an element (or a comment or PI): the
+/// moment there is text, the content is MIXED and inserting indentation
+/// would change what the document says. NSXML's pretty printer draws the
+/// same line, which is why `<name>Ada</name>` stays on one.
+- (BOOL)prettyPrintsChildrenOnOwnLines
+{
+    BOOL sawStructure = NO;
+    for (XFDOMNode *child in self.mutableChildren) {
+        switch (child.kind) {
+            case XFDOMElementKind:
+            case XFDOMCommentKind:
+            case XFDOMProcessingInstructionKind:
+                sawStructure = YES;
+                break;
+            case XFDOMTextKind:
+                return NO;
+            default:
+                break;
+        }
+    }
+    return sawStructure;
+}
+
+- (void)appendXMLStringWithOptions:(XFDOMNodeOptions)options
+                             depth:(NSUInteger)depth
+                              into:(NSMutableString *)out
 {
     NSString *name = self.name ?: @"";
     [out appendFormat:@"<%@", name];
     for (XFDOMNode *namespaceNode in _mutableNamespaces) {
         [out appendString:@" "];
-        [namespaceNode appendXMLStringWithOptions:options into:out];
+        [namespaceNode appendXMLStringWithOptions:options depth:depth into:out];
     }
     for (XFDOMNode *attribute in _mutableAttributes) {
         [out appendString:@" "];
-        [attribute appendXMLStringWithOptions:options into:out];
+        [attribute appendXMLStringWithOptions:options depth:depth into:out];
     }
     // NSXML always writes the long form, even for an empty element
     [out appendString:@">"];
+    BOOL pretty = (options & XFDOMNodePrettyPrint)
+                && [self prettyPrintsChildrenOnOwnLines];
     for (XFDOMNode *child in self.mutableChildren) {
-        [child appendXMLStringWithOptions:options into:out];
+        if (pretty) {
+            if (child.kind == XFDOMTextKind) {
+                continue;   // whitespace between elements: the layout replaces it
+            }
+            [out appendString:@"\n"];
+            for (NSUInteger i = 0; i <= depth; i++) {
+                [out appendString:@"  "];
+            }
+        }
+        [child appendXMLStringWithOptions:options depth:depth + 1 into:out];
+    }
+    if (pretty) {
+        [out appendString:@"\n"];
+        for (NSUInteger i = 0; i < depth; i++) {
+            [out appendString:@"  "];
+        }
     }
     [out appendFormat:@"</%@>", name];
 }

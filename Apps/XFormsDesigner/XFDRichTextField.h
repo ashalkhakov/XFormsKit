@@ -28,9 +28,9 @@
 /// Without a provider the rich editor still works — it just cannot insert
 /// outputs.
 @protocol XFDRichTextFieldProvider <NSObject>
-- (NSXMLElement *)hostElementForRichTextField:(XFDRichTextField *)field;
+- (XFXMLElement *)hostElementForRichTextField:(XFDRichTextField *)field;
 - (XFProcessor *)processorForRichTextField:(XFDRichTextField *)field;
-- (NSXMLNode *)contextNodeForRichTextField:(XFDRichTextField *)field;
+- (XFXMLNode *)contextNodeForRichTextField:(XFDRichTextField *)field;
 @end
 
 /// Fragment ↔ rich-view transforms (exposed for the selftest): a simple

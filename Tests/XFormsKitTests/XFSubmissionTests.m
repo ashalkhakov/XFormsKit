@@ -500,7 +500,15 @@
     XFSubmission *sub = p.model.defaultSubmission;
     XCTAssertTrue(sub.asynchronous);
     [self send:p identifier:@"go"];
-    XCTAssertTrue([sub waitUntilFinished:2.0], @"async submission did not finish");
+    // Generous on purpose. This asserts that the asynchronous path
+    // COMPLETES, not how quickly: the work is an in-memory transport,
+    // but it runs on a thread from -performSelectorInBackground: and
+    // lands back through the run loop, and a loaded CI simulator can
+    // take seconds just to schedule that thread (the same runs show
+    // sub-second local tests taking ten). A broken mechanism never
+    // finishes, so the deadline only changes how long the failure
+    // takes to report.
+    XCTAssertTrue([sub waitUntilFinished:30.0], @"async submission did not finish");
     XFXMLNode *n = [[[p.model defaultInstance] documentElement] elementsForName:@"n"].firstObject;
     XCTAssertEqualObjects([XFXML stringValueOfNode:n], @"Async");
 }

@@ -1,5 +1,5 @@
 /* Editing view-models for the designer inspector — one per selection
-   kind (the ModelBuilder pattern). Each wraps (host NSXMLElement +
+   kind (the ModelBuilder pattern). Each wraps (host XFXMLElement +
    XFDDocument) and exposes plain KVC properties whose setters write host
    XML through XFHostEdit: every set is undoable and notifies the
    processor in place. The window controller copies control values in and
@@ -12,14 +12,15 @@
    Copyright (c) 2026 the XFormsKit contributors. LGPL 2.1. */
 #pragma once
 #import <Foundation/Foundation.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFDDocument;
 
 @interface XFDElementEditor : NSObject
 
-+ (instancetype)editorForElement:(NSXMLElement *)element document:(XFDDocument *)document;
++ (instancetype)editorForElement:(XFXMLElement *)element document:(XFDDocument *)document;
 
-@property (nonatomic, strong, readonly) NSXMLElement *element;
+@property (nonatomic, strong, readonly) XFXMLElement *element;
 @property (nonatomic, strong, readonly) XFDDocument *document;
 
 /// "xf:input — input-3" (the inspector's title line).

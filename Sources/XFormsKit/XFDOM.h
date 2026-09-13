@@ -39,6 +39,15 @@ typedef NS_OPTIONS(NSUInteger, XFDOMNodeOptions) {
     XFDOMNodePreserveWhitespace = 1 << 0,
     /// Serialise this text node as a CDATA section.
     XFDOMNodeIsCDATA = 1 << 1,
+    /// Indent the serialisation for a person to read, the way
+    /// NSXMLNodePrettyPrint does: one element per line, two spaces per
+    /// level. What the source views and the instance editor show.
+    ///
+    /// Only an element whose children are ALL elements is broken across
+    /// lines. Anything with text in it — mixed content — is written
+    /// exactly as it stands, because inserting whitespace there would
+    /// change the values the document carries.
+    XFDOMNodePrettyPrint = 1 << 2,
 };
 
 FOUNDATION_EXPORT NSString *const XFDOMErrorDomain;

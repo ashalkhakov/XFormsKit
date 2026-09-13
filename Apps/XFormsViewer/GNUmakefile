@@ -36,6 +36,7 @@ XFormsViewer_RESOURCE_FILES = \
 	../../Samples/counties.xml \
 	../../Samples/date.xhtml \
 	../../Samples/deep-copy.xhtml \
+	../../Samples/dialog.xhtml \
 	../../Samples/first-field.xhtml \
 	../../Samples/flag.svg \
 	../../Samples/flags.xhtml \

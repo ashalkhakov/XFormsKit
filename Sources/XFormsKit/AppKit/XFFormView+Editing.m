@@ -20,6 +20,7 @@ void XFAppKitHasEditingFile(void) {}
 
 - (void)tableAdapter:(XFTableAdapter *)adapter didActivateTrigger:(XFTriggerControl *)trigger
 {
+    [self endEditingInProgress];
     (void)adapter;
     [trigger activate];
     [self.processor refreshControls];
@@ -55,6 +56,38 @@ void XFAppKitHasEditingFile(void) {}
     [self reloadFromProcessor];
 }
 
+
+/// Ends an edit that is still in progress, so whatever runs next sees
+/// what was typed.
+///
+/// Clicking a button, a checkbox or a popup does not move the first
+/// responder on AppKit: the textarea — or the field editor a text field
+/// is being typed into — keeps it, nothing ends the editing, and the
+/// action goes ahead against the previous value. `Samples/dialog.xhtml`
+/// shows it: type a note, click "Done", and the dialog closes with the
+/// note lost. Tab escaped this only because the Tab handler drops the
+/// first responder itself.
+///
+/// Two rules for callers. Look the sender's control up FIRST: committing
+/// can rebuild the widgets, and the control object outlives that while
+/// its view does not. And call this from an action, never from the focus
+/// path — a text field reports the start of its own editing through
+/// `widgetDidFocus:`, so ending the edit there takes the focus straight
+/// back off the field just clicked into and nothing can be typed at all.
+- (void)endEditingInProgress
+{
+    NSWindow *window = [self window];
+    NSResponder *responder = [window firstResponder];
+    if (![responder isKindOfClass:[NSTextView class]]) {
+        return;
+    }
+    NSTextView *editor = (NSTextView *)responder;
+    if ([editor isFieldEditor]) {
+        [window endEditingFor:nil];          // controlTextDidEndEditing: commits
+    } else if ([self widgetForTextView:editor] != nil) {
+        [window makeFirstResponder:nil];     // textDidEndEditing: commits
+    }
+}
 
 - (void)controlTextDidBeginEditing:(NSNotification *)note
 {
@@ -324,6 +357,7 @@ void XFAppKitHasEditingFile(void) {}
 - (void)buttonClicked:(NSButton *)sender
 {
     XFControl *control = [self controlForSender:sender];
+    [self endEditingInProgress];
     [self widgetDidFocus:sender];
     if ([control isKindOfClass:[XFTriggerControl class]]) {
         [(XFTriggerControl *)control activate];
@@ -336,6 +370,7 @@ void XFAppKitHasEditingFile(void) {}
 - (void)sliderChanged:(NSSlider *)sender
 {
     XFControl *control = [self controlForSender:sender];
+    [self endEditingInProgress];
     [self widgetDidFocus:sender];
     if ([control isKindOfClass:[XFRangeControl class]]) {
         if ([(XFRangeControl *)control commitNumericValue:[sender doubleValue] error:NULL]) {
@@ -348,6 +383,7 @@ void XFAppKitHasEditingFile(void) {}
 - (void)popupChanged:(NSPopUpButton *)sender
 {
     XFControl *control = [self controlForSender:sender];
+    [self endEditingInProgress];
     [self widgetDidFocus:sender];
     if ([control isKindOfClass:[XFSelectControl class]]) {
         NSString *value = [[sender selectedItem] representedObject];
@@ -361,6 +397,7 @@ void XFAppKitHasEditingFile(void) {}
 - (void)checkClicked:(NSButton *)sender
 {
     XFControl *control = [self controlForSender:sender];
+    [self endEditingInProgress];
     [self widgetDidFocus:sender];
     if ([control isKindOfClass:[XFSelectControl class]]) {
         if ([(XFSelectControl *)control toggleValue:[sender toolTip] ?: [sender title]]) {
@@ -373,6 +410,7 @@ void XFAppKitHasEditingFile(void) {}
 - (void)boolClicked:(NSButton *)sender
 {
     XFControl *control = [self controlForSender:sender];
+    [self endEditingInProgress];
     [self widgetDidFocus:sender];
     if (control) {
         // XSLTForms: a checkbox click is a value change + DOMActivate (G-42)
@@ -387,6 +425,7 @@ void XFAppKitHasEditingFile(void) {}
 - (void)dateChanged:(NSDatePicker *)sender
 {
     XFControl *control = [self controlForSender:sender];
+    [self endEditingInProgress];
     [self widgetDidFocus:sender];
     if ([control isKindOfClass:[XFInputControl class]]) {
         if ([(XFInputControl *)control commitDateValue:[sender dateValue] error:NULL]) {

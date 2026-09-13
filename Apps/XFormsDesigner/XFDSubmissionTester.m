@@ -1,5 +1,6 @@
 /* Copyright (c) 2026 the XFormsKit contributors. LGPL 2.1. */
 #import "XFDSubmissionTester.h"
+#import <XFormsKit/XFXMLTypes.h>
 #import "XFDXPathField.h"   // XFDBeep
 #import <XFormsKit/XFSubmission.h>
 #import <XFormsKit/XFSubmissionTransport.h>
@@ -100,11 +101,11 @@ static NSString *XFDPrettyXML(NSString *text)
     if (text.length == 0) {
         return text ?: @"";
     }
-    NSXMLDocument *doc = [[NSXMLDocument alloc] initWithXMLString:text options:0 error:NULL];
+    XFXMLDocument *doc = [[XFXMLDocument alloc] initWithXMLString:text options:0 error:NULL];
     if (doc == nil) {
         return text;
     }
-    return [doc XMLStringWithOptions:NSXMLNodePrettyPrint] ?: text;
+    return [doc XMLStringWithOptions:XFXMLNodePrettyPrint] ?: text;
 }
 
 /// Header names whose values never reach the history (the security rule

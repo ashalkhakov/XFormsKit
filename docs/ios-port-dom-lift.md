@@ -131,6 +131,33 @@ text nodes *natively*, which is exactly what the `<!--xf:ws-->` marker
 hack was invented to work around. Once the portable DOM is the only DOM,
 that workaround can be deleted — a cleanup, not part of this port.
 
+## What the two NSXML implementations disagree about
+
+Running the differential suite under GNUstep turned up five questions
+where Apple's NSXML and GNUstep's give different answers — so there was
+never a single "NSXML behaviour" to port to, and for these XFDOM has to
+pick. It picks once, for every platform, which is a large part of what
+having our own DOM buys.
+
+| Question | Apple | GNUstep | XFDOM |
+| --- | --- | --- | --- |
+| `attributeForName:@"k"` against an `h:k` attribute | nil | finds it | nil — lookup is by qualified name |
+| URI of `xml:id` with no declaration | the XML namespace | none | the XML namespace (XML Namespaces reserves `xml:`) |
+| `stringValue` of an element containing a comment | includes the comment text | excludes it | excludes it — XPath 1.0 string-value |
+| Re-serialising a parsed CDATA section | escaped text | a CDATA section | escaped text |
+| Empty element | `<empty></empty>` | `<empty/>` | `<empty></empty>` |
+
+A sixth is not a disagreement but a defect: GNUstep's
+`-[NSXMLNode setStringValue:]` runs the string through libxml2's entity
+parser, so a bare `&` produces "unterminated entity reference" instead of
+an escaped document.
+
+Tests that touch any of these assert XFDOM's answer literally and record
+the platform's answer in the log rather than asserting on it. Everything
+the two agree about — structure, whitespace handling, node kinds, names,
+the namespaces/attributes split, attribute values, deep copy, parse
+failure — is still asserted as agreement.
+
 ## Work items
 
 | # | Item | Size |

@@ -33,6 +33,8 @@ XFormsDesigner_OBJC_FILES = \
 	XFDSubmissionTester.m \
 	XFDEventsConsole.m \
 	XFDXPathField.m \
+	XFDXPathTextStorage.m \
+	XFDExpressionField.m \
 	XFDRichTextField.m \
 	XFDIDRefField.m \
 	XFDDesignOverlay.m \

@@ -69,6 +69,48 @@
     return [uri isEqualToString:namespaceURI];
 }
 
++ (NSString *)innerMarkupOfElement:(XFXMLElement *)element
+{
+    if (element == nil) {
+        return nil;
+    }
+    BOOL rich = NO;
+    for (XFXMLNode *child in [element children]) {
+        if ([child kind] == XFXMLElementKind) {
+            rich = YES;
+            break;
+        }
+    }
+    if (!rich) {
+        return nil;   // plain text: the caller already has it
+    }
+    NSMutableString *out = [NSMutableString string];
+    for (XFXMLNode *child in [element children]) {
+        [out appendString:[child XMLString] ?: @""];
+    }
+    return out.length ? out : nil;
+}
+
++ (NSString *)escapedText:(NSString *)text
+{
+    if (text.length == 0) {
+        return @"";
+    }
+    NSMutableString *out = [text mutableCopy];
+    NSRange all = NSMakeRange(0, out.length);
+    // ampersand first, or the escapes below get escaped again
+    [out replaceOccurrencesOfString:@"&" withString:@"&amp;" options:0 range:all];
+    struct { NSString *from, *to; } map[] = {
+        { @"<", @"&lt;" }, { @">", @"&gt;" },
+        { @"\"", @"&quot;" }, { @"'", @"&apos;" },
+    };
+    for (size_t i = 0; i < sizeof(map) / sizeof(map[0]); i++) {
+        [out replaceOccurrencesOfString:map[i].from withString:map[i].to
+                                options:0 range:NSMakeRange(0, out.length)];
+    }
+    return out;
+}
+
 + (NSString *)stringValueOfNode:(XFXMLNode *)node
 {
     if (node == nil) {

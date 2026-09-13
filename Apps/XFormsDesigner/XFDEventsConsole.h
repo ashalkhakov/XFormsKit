@@ -49,16 +49,16 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// The duplicate-id scan XSLTForms runs when the console opens
 /// ("WARNING: Duplicate ids: …"): every id value used more than once.
-NSArray<NSString *> *XFDDuplicateIDsInDocument(NSXMLDocument *_Nullable document);
+NSArray<NSString *> *XFDDuplicateIDsInDocument(XFXMLDocument *_Nullable document);
 
 @interface XFDEventsConsole : NSObject <NSTableViewDataSource, NSTableViewDelegate>
 + (XFDEventsConsole *)sharedConsole;
 @property (nonatomic, assign, readonly, getter=isVisible) BOOL visible;
 /// Show (installing the log as trace sink) and run the duplicate-id scan
 /// over `hostDocument`; nil skips the scan.
-- (void)showWithHostDocument:(nullable NSXMLDocument *)hostDocument;
+- (void)showWithHostDocument:(nullable XFXMLDocument *)hostDocument;
 - (void)close;
-- (void)toggleWithHostDocument:(nullable NSXMLDocument *)hostDocument;
+- (void)toggleWithHostDocument:(nullable XFXMLDocument *)hostDocument;
 @end
 
 NS_ASSUME_NONNULL_END

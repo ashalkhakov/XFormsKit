@@ -2,27 +2,24 @@
 
 /// The XML types the engine is written against.
 ///
-/// Every engine source speaks one XML API, spelled XFXML*. Which
-/// implementation stands behind it is a build switch:
+/// Every engine source speaks one XML API, spelled XFXML*, and XFDOM —
+/// the portable tree in Sources/XFormsKit/DOM — is what stands behind it
+/// everywhere: macOS, GNUstep and iOS alike.
 ///
-///   default           NSXML — Apple Foundation or GNUstep base. The
-///                     shipping macOS product and the two apps are
-///                     unaffected: XFXMLElement *is* NSXMLElement, so
-///                     app code that names NSXML types directly keeps
-///                     compiling and behaviour is bit-for-bit unchanged.
-///   XF_PORTABLE_DOM   XFDOM, the portable tree in Sources/XFormsKit/DOM.
-///                     Mandatory on iOS, where NSXMLDocument /
-///                     NSXMLElement / NSXMLNode do not exist.
+/// It used to be a build switch, defaulting to NSXML and selecting XFDOM
+/// with XF_PORTABLE_DOM (mandatory on iOS, which has no NSXMLDocument).
+/// Now that XFDOM passes every suite on all three platforms there is no
+/// reason to keep a second tree alive: one implementation means one set
+/// of behaviours to know, and it retires a gnustep-base NSXML bug the
+/// engine used to have to work around.
 ///
 /// These are @compatibility_alias declarations, not typedefs or macros:
 /// the alias is a true class name, usable as a message receiver, in
 /// [XFXMLElement class], and as a type, with no conversion at the seam.
 ///
 /// The DOM's own sources and XFDOMTests never import this header — they
-/// name XFDOM* directly, so the differential tests keep comparing the two
-/// implementations in either configuration.
-
-#if XF_PORTABLE_DOM
+/// name XFDOM* directly. XFDOMTests still compares against the platform's
+/// NSXML where there is one, as a reference for what a mature DOM does.
 
 #import <XFormsKit/XFDOM.h>
 
@@ -43,25 +40,6 @@ typedef XFDOMNodeOptions XFXMLNodeOptions;
 #define XFXMLTextKind XFDOMTextKind
 #define XFXMLNodePreserveWhitespace XFDOMNodePreserveWhitespace
 #define XFXMLNodeIsCDATA XFDOMNodeIsCDATA
+#define XFXMLNodePrettyPrint XFDOMNodePrettyPrint
 
-#else
 
-@compatibility_alias XFXMLNode NSXMLNode;
-@compatibility_alias XFXMLElement NSXMLElement;
-@compatibility_alias XFXMLDocument NSXMLDocument;
-
-typedef NSXMLNodeKind XFXMLNodeKind;
-typedef NSUInteger XFXMLNodeOptions;
-
-#define XFXMLInvalidKind NSXMLInvalidKind
-#define XFXMLDocumentKind NSXMLDocumentKind
-#define XFXMLElementKind NSXMLElementKind
-#define XFXMLAttributeKind NSXMLAttributeKind
-#define XFXMLNamespaceKind NSXMLNamespaceKind
-#define XFXMLProcessingInstructionKind NSXMLProcessingInstructionKind
-#define XFXMLCommentKind NSXMLCommentKind
-#define XFXMLTextKind NSXMLTextKind
-#define XFXMLNodePreserveWhitespace NSXMLNodePreserveWhitespace
-#define XFXMLNodeIsCDATA NSXMLNodeIsCDATA
-
-#endif

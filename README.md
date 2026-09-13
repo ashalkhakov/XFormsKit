@@ -60,7 +60,13 @@ First vertical slice:
   `is-card-number`, `digest`/`hmac`
 - Multiple `xf:model` elements; `xf:instance/@src` against the host URL
 - `xf:select`/`select1` itemset, choices, copy; `xf:upload` + multipart submit
-- `xf:hint` / `help` / `alert`; MIP events after `xforms-ready`
+- `xf:hint` / `help` / `alert`; MIP events after `xforms-ready`. All of
+  them, and `xf:message`, take inline XHTML and `xf:output` (XForms 1.1
+  §9.3.1): the markup reaches the host alongside the plain text, and
+  both backends render it — a read-only `NSTextView` on AppKit, an
+  attributed label or sheet on iOS
+- UIKit form layer (`XFFormViewController`) and an iOS host app
+  (`Apps/XFormsMobile`)
 
 XSLTForms JS ↔ XFormsKit class map: `docs/XSLTForms-mapping.md`.
 
@@ -94,18 +100,70 @@ XFormsViewer is a small document-based editor, not only a previewer.
     xcodebuild -project XFormsKit.xcodeproj -scheme XFormsKit -configuration Debug build
     xcodebuild -project XFormsKit.xcodeproj -scheme XFormsKit -configuration Debug test
 
-### The portable DOM
+### The DOM
 
 The engine speaks one XML API, `XFXML*`, declared in
-`Sources/XFormsKit/XFXMLTypes.h`. It is bound to NSXML by default and to
-XFDOM — the project's own portable tree, in `Sources/XFormsKit/DOM/` —
-when `XF_PORTABLE_DOM` is defined. Both configurations are expected to
-pass every suite:
+`Sources/XFormsKit/XFXMLTypes.h`, and one tree stands behind it on every
+platform: **XFDOM**, the project's own portable implementation in
+`Sources/XFormsKit/DOM/`. There is nothing to configure.
 
-    xcodebuild -project XFormsKit.xcodeproj -scheme XFormsKit test \
-      GCC_PREPROCESSOR_DEFINITIONS='$(inherited) XF_PORTABLE_DOM=1'
-    make check XF_PORTABLE_DOM=1
-    make w3ccheck XF_PORTABLE_DOM=1
+It was a build switch for a while — NSXML by default, XFDOM under
+`XF_PORTABLE_DOM`, which iOS required because Foundation there has no
+`NSXMLDocument`. Once XFDOM passed every suite on macOS, GNUstep and iOS,
+the second tree was retired: one implementation means one set of
+behaviours to know, the apps stopped needing a configuration of their
+own, and a gnustep-base NSXML bug the engine used to trip over
+(`patches/gnustep/`) stopped mattering to it.
+
+`XFDOMTests` still compares against the platform's NSXML wherever there
+is one. That is deliberate: NSXML is a mature DOM and a useful reference
+for what the behaviour ought to be, so the suite asserts XFDOM literally
+and logs NSXML's answer beside it. Five documented divergences are
+recorded there.
+
+### iOS
+
+The framework target is multiplatform. On an iPhone SDK it excludes the
+AppKit view layer and builds the engine, the XPath layer and XFDOM
+against Foundation alone:
+
+    xcodebuild -project XFormsKit.xcodeproj -target XFormsKit \
+      -sdk iphonesimulator -configuration Debug build
+
+It is tested there, not merely built: 277 unit tests and all 458 W3C
+conformance cases run in the simulator.
+
+    xcodebuild -project XFormsKit.xcodeproj -scheme XFormsKit \
+      -destination 'platform=iOS Simulator,name=iPhone 17' test
+
+There is a UIKit form layer too (`XFFormViewController`): a grouped table
+view, one control per row, scrolling vertically only. The AppKit layout
+is a fixed-width two-column form on a canvas at least 620pt wide, which
+on a phone means sideways scrolling from the first row, so the iOS form
+is built from a portable row model (`XFFormRows`) shown in the iOS
+idiom — stock cells, a switch for a boolean, a picker pushed as the next
+screen, hints and alerts as footnote rows, swipe to delete a repeat item,
+a prev/next bar above the keyboard. A host `<table>` is drawn as a grid
+(scrolling sideways inside its own row when it must), and prose with
+controls in it flows as a line rather than one row per control. See `docs/ios-port-plan.md`.
+
+### The iOS app
+
+`Apps/XFormsMobile` is the host: pick a form document, fill it in.
+
+    xcodebuild -project XFormsKit.xcodeproj -target XFormsMobile \
+      -sdk iphonesimulator -configuration Debug build
+
+The first screen lists the bundled `Samples/` forms — the same set the
+macOS viewer offers under File ▸ Open Sample — and a folder button opens
+any other form through the document picker.
+
+Deliberately that and no more — XForms is a client for a form *server*,
+and there is none to point it at yet, so opening a document from the
+file system is the useful thing a host can do today. Forms also open
+from Files and from other apps' share sheets, and the app's own
+Documents folder appears in Files, so a form dragged onto the Simulator
+window can be picked.
 
 ### GNUstep
 
@@ -134,13 +192,18 @@ File ▸ Open Sample lists the ported XSLTForms forms.
 
 - **macOS (Xcode)** — builds the framework, the viewer and the designer,
   then runs the unit suite and the W3C suite against *both* XML back ends.
-  It also compiles the DOM against the iOS SDK, which is what keeps the
-  portable half portable: iOS Foundation has no NSXML, so a stray
-  dependency on it fails there and nowhere else.
+  On the portable leg it also builds the framework for both iPhone SDKs
+  and the iOS app for the simulator, and runs both suites in the
+  simulator. That is what keeps the portable half portable: iOS
+  Foundation has no NSXML, so a stray dependency on it fails there and
+  nowhere else.
 - **Ubuntu (GNUstep, clang, gnustep-2.0)** — builds the whole GNUstep
-  stack from source into a cached prefix (`.github/scripts/dependencies.sh`,
-  including the NSXML patch in `patches/gnustep/`), then builds and runs
-  both suites in both configurations under `xvfb`.
+  stack from source into a cached prefix
+  (`.github/scripts/dependencies.sh`), then builds and runs both suites in
+  both configurations under `xvfb`. One patch is applied to gnustep-base
+  (`patches/gnustep/`, an `-[NSXMLElement addAttribute:]` use-after-free
+  that the NSXML configuration hits); see `patches/gnustep/README.md` for
+  it and for what else a Linux setup should know.
 
 ## License
 

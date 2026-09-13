@@ -88,11 +88,23 @@ typedef NS_ENUM(NSInteger, XFBadgeKind) {
 @property (nonatomic, assign) XFBadgeKind kind;
 /// The hint / alert message the info box shows.
 @property (nonatomic, copy) NSString *text;
+/// The same content as host markup, when the form wrote any (an xf:hint
+/// holding <b> or a heading). The info box draws this instead of `text`.
+@property (nonatomic, copy) NSString *markup;
 + (instancetype)badgeWithKind:(XFBadgeKind)kind text:(NSString *)text;
 /// Re-adds the mouse tracking rect. Apple converts tracking rects to
 /// window coordinates when they are added, so the form view calls this on
 /// every scroll of its clip view (GNUstep converts at event time).
 - (void)refreshTracking;
+@end
+
+/// A filled, 1px-bordered rectangle to host a view in — what
+/// `NSTextField bordered:YES` gave the plain hint box, for a box whose
+/// content is a text view instead. NSBox is the obvious alternative, but
+/// its custom-fill styling is not dependable across GNUstep themes and
+/// this is twelve lines.
+@interface XFInfoBoxView : NSView
+@property (nonatomic, strong) NSColor *fillColor;
 @end
 
 @interface XFWidget : NSObject
@@ -194,7 +206,9 @@ FOUNDATION_EXPORT NSColor *XFInvalidTextColor(void);
 /// Re-applies visibility (validity, relevance) and the badge texts.
 - (void)updateBadgesForWidget:(XFWidget *)w;
 /// The floating info box under a hovered / clicked badge (one at a time).
-@property (nonatomic, strong) NSTextField *badgePopup;
+/// Either the plain wrapped NSTextField or, for a badge carrying
+/// markup, the bordered box around a read-only rich text view.
+@property (nonatomic, strong) NSView *badgePopup;
 @property (nonatomic, weak) XFBadgeView *badgePopupBadge;
 - (void)showBadgeInfo:(XFBadgeView *)badge;
 - (void)hideBadgeInfo;
@@ -249,6 +263,7 @@ FOUNDATION_EXPORT NSColor *XFInvalidTextColor(void);
 
 /// Commits, incremental editing, control actions (XFFormView+Editing.m).
 @interface XFFormView (XFEditing)
+- (void)endEditingInProgress;
 - (void)tableAdapter:(XFTableAdapter *)adapter didCommitControl:(XFControl *)control value:(NSString *)value;
 - (void)tableAdapter:(XFTableAdapter *)adapter didActivateTrigger:(XFTriggerControl *)trigger;
 - (void)reloadAfterTrigger;

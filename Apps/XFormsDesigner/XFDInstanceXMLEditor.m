@@ -1,5 +1,6 @@
 /* Copyright (c) 2026 the XFormsKit contributors. LGPL 2.1. */
 #import "XFDInstanceXMLEditor.h"
+#import <XFormsKit/XFXMLTypes.h>
 #import "XFDXPathField.h"
 
 #pragma mark - Instance XML editor panel
@@ -74,15 +75,15 @@
     [content addSubview:_okButton];
 }
 
-- (NSXMLDocument *)parsedDocument:(NSError **)error
+- (XFXMLDocument *)parsedDocument:(NSError **)error
 {
-    return [[NSXMLDocument alloc] initWithXMLString:[_text string] options:0 error:error];
+    return [[XFXMLDocument alloc] initWithXMLString:[_text string] options:0 error:error];
 }
 
 - (void)validateNow
 {
     NSError *error = nil;
-    NSXMLDocument *doc = [self parsedDocument:&error];
+    XFXMLDocument *doc = [self parsedDocument:&error];
     if (doc != nil) {
         [_statusField setStringValue:@"✓ well-formed"];
         [_statusField setTextColor:[NSColor disabledControlTextColor]];
@@ -103,16 +104,16 @@
 
 /// Clear every leaf element's text and every attribute value, keeping the
 /// structure — imported real data becomes the form's default data.
-static void XFDBlankify(NSXMLElement *element)
+static void XFDBlankify(XFXMLElement *element)
 {
-    for (NSXMLNode *attribute in [element attributes]) {
+    for (XFXMLNode *attribute in [element attributes]) {
         [attribute setStringValue:@""];
     }
     BOOL hasElementChildren = NO;
-    for (NSXMLNode *child in [element children]) {
-        if ([child kind] == NSXMLElementKind) {
+    for (XFXMLNode *child in [element children]) {
+        if ([child kind] == XFXMLElementKind) {
             hasElementChildren = YES;
-            XFDBlankify((NSXMLElement *)child);
+            XFDBlankify((XFXMLElement *)child);
         }
     }
     if (!hasElementChildren) {
@@ -124,13 +125,13 @@ static void XFDBlankify(NSXMLElement *element)
 {
     (void)sender;
     NSError *error = nil;
-    NSXMLDocument *doc = [self parsedDocument:&error];
+    XFXMLDocument *doc = [self parsedDocument:&error];
     if (doc == nil) {
         XFDBeep();
         return;
     }
     XFDBlankify([doc rootElement]);
-    [_text setString:[[doc rootElement] XMLStringWithOptions:NSXMLNodePrettyPrint] ?: @""];
+    [_text setString:[[doc rootElement] XMLStringWithOptions:XFXMLNodePrettyPrint] ?: @""];
     [self validateNow];
 }
 

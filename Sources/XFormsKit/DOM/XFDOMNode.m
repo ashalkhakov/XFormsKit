@@ -384,6 +384,14 @@ NSString *XFDOMEscapedAttributeValue(NSString *value)
 
 - (void)appendXMLStringWithOptions:(XFDOMNodeOptions)options into:(NSMutableString *)out
 {
+    [self appendXMLStringWithOptions:options depth:0 into:out];
+}
+
+- (void)appendXMLStringWithOptions:(XFDOMNodeOptions)options
+                             depth:(NSUInteger)depth
+                              into:(NSMutableString *)out
+{
+    (void)depth;   // a leaf sits where its parent put it
     switch (self.kind) {
         case XFDOMTextKind:
             if (self.CDATA || (options & XFDOMNodeIsCDATA)) {

@@ -17,6 +17,7 @@
    Copyright (c) 2026 the XFormsKit contributors. LGPL 2.1. */
 #pragma once
 #import <AppKit/AppKit.h>
+#import <XFormsKit/XFXMLTypes.h>
 
 @class XFControl;
 @class XFFormView;
@@ -25,18 +26,18 @@
 /// The form view to hit-test and highlight against (nil disables).
 - (XFFormView *)formViewForOverlay:(id)overlay;
 /// The current inspector selection (the overlay borders its frame).
-- (NSXMLElement *)selectedElementForOverlay:(id)overlay;
+- (XFXMLElement *)selectedElementForOverlay:(id)overlay;
 /// A click picked this host element — select it.
-- (void)overlay:(id)overlay pickedElement:(NSXMLElement *)element;
+- (void)overlay:(id)overlay pickedElement:(XFXMLElement *)element;
 /// The drop slot for dragging `element` over this form-view point, nil
 /// when nothing may drop there (invalid zone, inside its own subtree).
-/// Keys: parent (NSXMLElement), index (NSNumber, child-node index into
+/// Keys: parent (XFXMLElement), index (NSNumber, child-node index into
 /// the pre-move tree, -1 appends), line (NSValue — the insertion
 /// marker's rectangle in FORM-VIEW coordinates).
 - (NSDictionary *)overlay:(id)overlay dropSlotAtFormPoint:(NSPoint)point
-               forElement:(NSXMLElement *)element;
+               forElement:(XFXMLElement *)element;
 /// Perform the move a completed drag chose.
-- (void)overlay:(id)overlay dropElement:(NSXMLElement *)element
+- (void)overlay:(id)overlay dropElement:(XFXMLElement *)element
            slot:(NSDictionary *)slot;
 @end
 
@@ -49,7 +50,7 @@
 @property (nonatomic, weak) NSScrollView *scrollView;
 /// The host element under the pointer — widget controls' elements and
 /// SVG shapes alike (read by the selftest).
-@property (nonatomic, strong, readonly) NSXMLElement *hoverElement;
+@property (nonatomic, strong, readonly) XFXMLElement *hoverElement;
 
 /// Recompute the hover for the current pointer location and redraw.
 - (void)refreshHighlights;

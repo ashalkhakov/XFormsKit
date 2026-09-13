@@ -125,6 +125,7 @@
         @"colors.xhtml",
         @"date.xhtml",
         @"deep-copy.xhtml",
+        @"dialog.xhtml",
         @"first-field.xhtml",
         @"flags.xhtml",
         @"gantt.xhtml",

@@ -3,6 +3,16 @@
 Reference tables for [ios-port-plan.md](ios-port-plan.md). Measured
 from `master` at the time of writing.
 
+> **The iOS column is superseded.** It was written assuming iOS would get
+> a transliteration of the AppKit layout — a scrolling canvas of absolutely
+> placed widgets. It will not: the iOS form is a grouped `UITableView`, one
+> control per row, and the controls live inside cells. The cell inventory
+> that replaces this column is in
+> [ios-port-plan.md](ios-port-plan.md) under phase 5. What is still
+> accurate and still useful here is §2 (AppKit idiom → UIKit idiom), §3
+> (the upload API change), §4 (the XML DOM surface) and §5 (the file
+> dispositions).
+
 ## 1. Control → AppKit → UIKit
 
 Source of truth for the AppKit column:

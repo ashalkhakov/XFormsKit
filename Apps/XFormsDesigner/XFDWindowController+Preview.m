@@ -3,6 +3,7 @@
    mode (the devtools-style element picker â overlay delegate, pick,
    drag-reorder drop slots), and the XML source view. */
 #import "XFDWindowControllerPriv.h"
+#import <XFormsKit/XFXMLTypes.h>
 #import "XFDDocument.h"
 #import "XFDEventsConsole.h"
 
@@ -57,13 +58,13 @@
     return self.formView;
 }
 
-- (NSXMLElement *)selectedElementForOverlay:(id)overlay
+- (XFXMLElement *)selectedElementForOverlay:(id)overlay
 {
     (void)overlay;
     return self.selected;
 }
 
-- (void)overlay:(id)overlay pickedElement:(NSXMLElement *)element
+- (void)overlay:(id)overlay pickedElement:(XFXMLElement *)element
 {
     (void)overlay;
     // widget hits come through control.element (repeat-item and
@@ -74,18 +75,18 @@
     }
 }
 
-- (NSXMLElement *)bodyElement
+- (XFXMLElement *)bodyElement
 {
-    for (NSXMLNode *c in [[self rootElement] children]) {
-        if ([c kind] == NSXMLElementKind
-            && [[(NSXMLElement *)c localName] isEqualToString:@"body"]) {
-            return (NSXMLElement *)c;
+    for (XFXMLNode *c in [[self rootElement] children]) {
+        if ([c kind] == XFXMLElementKind
+            && [[(XFXMLElement *)c localName] isEqualToString:@"body"]) {
+            return (XFXMLElement *)c;
         }
     }
     return nil;
 }
 
-static NSDictionary *XFDDropSlot(NSXMLElement *parent, NSInteger index, NSRect line)
+static NSDictionary *XFDDropSlot(XFXMLElement *parent, NSInteger index, NSRect line)
 {
     return @{ @"parent": parent, @"index": @(index),
               @"line": [NSValue valueWithRect:line] };
@@ -96,7 +97,7 @@ static NSString * const XFDSVGNamespaceURI = @"http://www.w3.org/2000/svg";
 /// The zone gate the drop slots use: XForms elements follow XFHostEdit's
 /// insertion zones; SVG shapes reorder freely among SVG parents (the
 /// engine's moveElement applies the same rule).
-static BOOL XFDZoneAccepts(NSXMLElement *dragged, NSXMLElement *parent)
+static BOOL XFDZoneAccepts(XFXMLElement *dragged, XFXMLElement *parent)
 {
     if ([[dragged URI] isEqualToString:XFDSVGNamespaceURI]) {
         return [[parent URI] isEqualToString:XFDSVGNamespaceURI];
@@ -110,7 +111,7 @@ static BOOL XFDZoneAccepts(NSXMLElement *dragged, NSXMLElement *parent)
 /// hover below everything to land at the end of the body. nil = nothing
 /// may drop here.
 - (NSDictionary *)overlay:(id)overlay dropSlotAtFormPoint:(NSPoint)fp
-               forElement:(NSXMLElement *)dragged
+               forElement:(XFXMLElement *)dragged
 {
     (void)overlay;
     XFFormView *form = self.formView;
@@ -121,10 +122,10 @@ static BOOL XFDZoneAccepts(NSXMLElement *dragged, NSXMLElement *parent)
     NSString *local = [dragged localName];
     (void)local;
 
-    NSDictionary * (^siblingSlot)(NSXMLElement *, NSRect, BOOL) =
-        ^NSDictionary *(NSXMLElement *te, NSRect r, BOOL before) {
-        NSXMLElement *parent = (NSXMLElement *)[te parent];
-        if ([parent kind] != NSXMLElementKind || !XFDZoneAccepts(dragged, parent)) {
+    NSDictionary * (^siblingSlot)(XFXMLElement *, NSRect, BOOL) =
+        ^NSDictionary *(XFXMLElement *te, NSRect r, BOOL before) {
+        XFXMLElement *parent = (XFXMLElement *)[te parent];
+        if ([parent kind] != XFXMLElementKind || !XFDZoneAccepts(dragged, parent)) {
             return nil;
         }
         NSInteger index = (NSInteger)[te index] + (before ? 0 : 1);
@@ -139,7 +140,7 @@ static BOOL XFDZoneAccepts(NSXMLElement *dragged, NSXMLElement *parent)
                            NSMakeRect(NSMinX(r) - 4, y, NSWidth(r) + 8, 3));
     };
 
-    NSXMLElement *te = [form svgElementAtPoint:fp];
+    XFXMLElement *te = [form svgElementAtPoint:fp];
     NSRect targetRect = NSZeroRect;
     if (te != nil) {
         targetRect = [form layoutFrameOfSVGElement:te];
@@ -152,7 +153,7 @@ static BOOL XFDZoneAccepts(NSXMLElement *dragged, NSXMLElement *parent)
     }
     if (te != nil && te != dragged) {
         // never into (or beside a node inside) the dragged subtree
-        for (NSXMLNode *walk = te; walk != nil; walk = [walk parent]) {
+        for (XFXMLNode *walk = te; walk != nil; walk = [walk parent]) {
             if (walk == dragged) {
                 return nil;
             }
@@ -183,7 +184,7 @@ static BOOL XFDZoneAccepts(NSXMLElement *dragged, NSXMLElement *parent)
     }
 
     // over empty space below the last widget: append to the body
-    NSXMLElement *body = [self bodyElement];
+    XFXMLElement *body = [self bodyElement];
     if (body == nil || !XFDZoneAccepts(dragged, body)) {
         return nil;
     }
@@ -198,7 +199,7 @@ static BOOL XFDZoneAccepts(NSXMLElement *dragged, NSXMLElement *parent)
         return nil;
     }
     // a no-op when the dragged element already closes the body
-    NSXMLNode *lastChild = [body childCount] ? [body childAtIndex:[body childCount] - 1] : nil;
+    XFXMLNode *lastChild = [body childCount] ? [body childAtIndex:[body childCount] - 1] : nil;
     if (lastChild == dragged) {
         return nil;
     }
@@ -206,10 +207,10 @@ static BOOL XFDZoneAccepts(NSXMLElement *dragged, NSXMLElement *parent)
     return XFDDropSlot(body, -1, line);
 }
 
-- (void)overlay:(id)overlay dropElement:(NSXMLElement *)dragged slot:(NSDictionary *)slot
+- (void)overlay:(id)overlay dropElement:(XFXMLElement *)dragged slot:(NSDictionary *)slot
 {
     (void)overlay;
-    NSXMLElement *parent = slot[@"parent"];
+    XFXMLElement *parent = slot[@"parent"];
     if (dragged == nil || parent == nil) {
         return;
     }

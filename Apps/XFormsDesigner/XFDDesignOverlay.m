@@ -8,11 +8,11 @@
 #import <XFormsKit/XFFormView.h>
 
 @interface XFDDesignOverlay ()
-@property (nonatomic, strong, readwrite) NSXMLElement *hoverElement;
+@property (nonatomic, strong, readwrite) XFXMLElement *hoverElement;
 /* Drag-reorder state: a press remembers its element; crossing the drag
    threshold turns the gesture into a move (insertion marker follows the
    pointer), releasing without it is the click that picks. */
-@property (nonatomic, strong) NSXMLElement *pressElement;
+@property (nonatomic, strong) XFXMLElement *pressElement;
 @property (nonatomic, assign) NSPoint pressPoint;
 @property (nonatomic, assign) BOOL dragging;
 @property (nonatomic, copy) NSDictionary *dropSlot;
@@ -127,14 +127,14 @@ static NSColor *XFDOverlayAccent(void)
 
 /// The host element painted or laid out at an overlay point: SVG shapes
 /// first, then widgets.
-- (NSXMLElement *)elementAtOverlayPoint:(NSPoint)point
+- (XFXMLElement *)elementAtOverlayPoint:(NSPoint)point
 {
     XFFormView *form = [self formView];
     if (form == nil || [form window] != [self window]) {
         return nil;
     }
     NSPoint fp = [form convertPoint:[self convertPoint:point toView:nil] fromView:nil];
-    NSXMLElement *svg = [form svgElementAtPoint:fp];
+    XFXMLElement *svg = [form svgElementAtPoint:fp];
     if (svg != nil) {
         return svg;
     }
@@ -143,7 +143,7 @@ static NSColor *XFDOverlayAccent(void)
 
 /// The rectangle an element occupies in form coordinates: its widget's
 /// layout frame when it is a control, its painted SVG frame otherwise.
-- (NSRect)formFrameOfElement:(NSXMLElement *)element
+- (NSRect)formFrameOfElement:(XFXMLElement *)element
 {
     XFFormView *form = [self formView];
     if (form == nil || element == nil) {
@@ -197,7 +197,7 @@ static NSColor *XFDOverlayAccent(void)
 - (void)mouseUp:(NSEvent *)event
 {
     (void)event;
-    NSXMLElement *element = self.pressElement;
+    XFXMLElement *element = self.pressElement;
     BOOL dragged = self.dragging;
     NSDictionary *slot = self.dropSlot;
     self.pressElement = nil;
@@ -222,7 +222,7 @@ static NSColor *XFDOverlayAccent(void)
 - (void)mouseMoved:(NSEvent *)event
 {
     NSPoint p = [self convertPoint:[event locationInWindow] fromView:nil];
-    NSXMLElement *element = NSPointInRect(p, [self bounds])
+    XFXMLElement *element = NSPointInRect(p, [self bounds])
         ? [self elementAtOverlayPoint:p] : nil;
     if (element != self.hoverElement) {
         self.hoverElement = element;
@@ -306,7 +306,7 @@ static NSColor *XFDOverlayAccent(void)
     }
 
     // hover: filled wash + tag badge, the devtools inspect look
-    NSXMLElement *hover = self.hoverElement;
+    XFXMLElement *hover = self.hoverElement;
     if (hover != nil) {
         NSRect r = [self overlayRectOfFormRect:[self formFrameOfElement:hover]];
         if (!NSIsEmptyRect(r)) {
@@ -321,7 +321,7 @@ static NSColor *XFDOverlayAccent(void)
     }
 
     // selection: a firm border around the inspector's current element
-    NSXMLElement *selected = [self.delegate selectedElementForOverlay:self];
+    XFXMLElement *selected = [self.delegate selectedElementForOverlay:self];
     if (selected != nil && selected != hover) {
         NSRect r = [self overlayRectOfFormRect:[self formFrameOfElement:selected]];
         if (!NSIsEmptyRect(r)) {
@@ -333,7 +333,7 @@ static NSColor *XFDOverlayAccent(void)
     }
 }
 
-- (NSString *)tagForElement:(NSXMLElement *)e
+- (NSString *)tagForElement:(XFXMLElement *)e
 {
     NSString *name = [e name] ?: [e localName] ?: @"?";
     NSString *ref = [[e attributeForName:@"ref"] stringValue]

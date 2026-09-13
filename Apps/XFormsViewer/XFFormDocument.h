@@ -20,10 +20,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)commitHostTree:(NSError **)error;
 - (void)markHostEdited;
 
-- (nullable NSXMLElement *)hostRoot;
-- (nullable NSXMLElement *)modelElement;
-- (nullable NSXMLElement *)bodyElement;
-- (nullable NSXMLElement *)elementWithID:(NSString *)identifier;
+- (nullable XFXMLElement *)hostRoot;
+- (nullable XFXMLElement *)modelElement;
+- (nullable XFXMLElement *)bodyElement;
+- (nullable XFXMLElement *)elementWithID:(NSString *)identifier;
 - (NSString *)uniqueIdentifierWithPrefix:(NSString *)prefix;
 
 - (NSString *)instanceXMLString;

@@ -16,6 +16,19 @@ const CGFloat kWrapWidth = 620.0;
 @implementation XFLayoutAtom
 @end
 
+@implementation XFInfoBoxView
+
+- (void)drawRect:(NSRect)dirty
+{
+    (void)dirty;
+    [(self.fillColor ?: [NSColor controlBackgroundColor]) set];
+    NSRectFill([self bounds]);
+    [[NSColor grayColor] set];
+    NSFrameRect([self bounds]);
+}
+
+@end
+
 @implementation XFWidget
 @end
 
@@ -295,6 +308,7 @@ NSView *XFKeyViewOf(NSView *view)
     CGFloat y = [view frame].origin.y + (rowH - kBadgeSize) / 2;
     if (control.hint.length && !control.hintMinimal) {
         w.hintBadge = [XFBadgeView badgeWithKind:XFBadgeHint text:control.hint];
+        w.hintBadge.markup = control.hintMarkup;
         [w.hintBadge setFrameOrigin:NSMakePoint(x, y)];
         [self addSubview:w.hintBadge];
         x += kBadgeSize + 2;
@@ -308,6 +322,7 @@ NSView *XFKeyViewOf(NSView *view)
         // its badge at the rebuild that follows a commit
         // (.xforms-invalid span.xforms-alert { display: inline }).
         w.alertBadge = [XFBadgeView badgeWithKind:XFBadgeAlert text:control.alert];
+        w.alertBadge.markup = control.alertMarkup;
         [w.alertBadge setFrameOrigin:NSMakePoint(x, y)];
         [self addSubview:w.alertBadge];
         x += kBadgeSize + 2;
@@ -322,15 +337,66 @@ NSView *XFKeyViewOf(NSView *view)
     if (w.hintBadge) {
         [w.hintBadge setHidden:!control.relevant];
         w.hintBadge.text = control.hint ?: @"";
+        w.hintBadge.markup = control.hintMarkup;   // an xf:output in it may have changed
     }
     if (w.alertBadge) {
         [w.alertBadge setHidden:control.valid || !control.relevant];
         w.alertBadge.text = control.alert ?: @"";
+        w.alertBadge.markup = control.alertMarkup;
     }
     XFBadgeView *shown = self.badgePopupBadge;
     if (shown != nil && (shown == w.hintBadge || shown == w.alertBadge) && [shown isHidden]) {
         [self hideBadgeInfo];
     }
+}
+
++ (NSColor *)badgeInfoBackground:(XFBadgeKind)kind
+{
+    // XSLTForms' pale yellow / pink boxes in light themes; their dark
+    // counterparts otherwise — with an explicit text colour either way, so
+    // the theme's default text never lands on the wrong background.
+    if (XFDarkTheme()) {
+        return kind == XFBadgeAlert
+            ? [NSColor colorWithCalibratedRed:0.33 green:0.16 blue:0.16 alpha:1.0]
+            : [NSColor colorWithCalibratedRed:0.27 green:0.26 blue:0.16 alpha:1.0];
+    }
+    return kind == XFBadgeAlert
+        ? [NSColor colorWithCalibratedRed:1.0 green:0.93 blue:0.93 alpha:1.0]
+        : [NSColor colorWithCalibratedRed:1.0 green:1.0 blue:0.93 alpha:1.0];
+}
+
++ (NSColor *)badgeInfoTextColor
+{
+    return XFDarkTheme() ? [NSColor colorWithCalibratedWhite:0.93 alpha:1.0]
+                         : [NSColor colorWithCalibratedWhite:0.10 alpha:1.0];
+}
+
+/// The same box, drawn by a read-only NSTextView so the hint's own bold,
+/// italics and headings survive. Only the content differs from the plain
+/// path above: same colours, same placement, same dismissal.
+- (void)showRichBadgeInfo:(XFBadgeView *)badge
+                     font:(NSFont *)font
+                 maxWidth:(CGFloat)maxWidth
+                      pad:(CGFloat)pad
+{
+    NSTextView *text = [XFRichText displayViewWithMarkup:badge.markup
+                                                    font:font
+                                                maxWidth:maxWidth
+                                               textColor:[[self class] badgeInfoTextColor]];
+    if (text == nil) {
+        return;
+    }
+    CGFloat w = NSWidth([text frame]) + 2 * pad;
+    CGFloat h = NSHeight([text frame]) + 2 * pad;
+    CGFloat x = MAX(4, MIN(badge.frame.origin.x - 16, NSWidth([self bounds]) - w - 4));
+    XFInfoBoxView *box =
+        [[XFInfoBoxView alloc] initWithFrame:NSMakeRect(x, NSMaxY(badge.frame) + 3, w, h)];
+    box.fillColor = [[self class] badgeInfoBackground:badge.kind];
+    [text setFrameOrigin:NSMakePoint(pad, pad)];
+    [box addSubview:text];
+    [self addSubview:box];   // added last — draws above every widget
+    self.badgePopup = box;
+    self.badgePopupBadge = badge;
 }
 
 - (void)showBadgeInfo:(XFBadgeView *)badge
@@ -346,6 +412,10 @@ NSView *XFKeyViewOf(NSView *view)
     NSFont *font = [NSFont systemFontOfSize:11];
     const CGFloat maxTextWidth = 220;
     const CGFloat pad = 5;
+    if (badge.markup.length) {
+        [self showRichBadgeInfo:badge font:font maxWidth:maxTextWidth pad:pad];
+        return;
+    }
     NSMutableArray<NSString *> *lines = [NSMutableArray array];
     CGFloat widest = 0;
     for (NSString *para in [text componentsSeparatedByString:@"\n"]) {
@@ -379,17 +449,8 @@ NSView *XFKeyViewOf(NSView *view)
     // XSLTForms' pale yellow / pink boxes in light themes; their dark
     // counterparts otherwise — with an explicit text color either way, so
     // the theme's default text never lands on the wrong background
-    if (XFDarkTheme()) {
-        [box setBackgroundColor:badge.kind == XFBadgeAlert
-            ? [NSColor colorWithCalibratedRed:0.33 green:0.16 blue:0.16 alpha:1.0]
-            : [NSColor colorWithCalibratedRed:0.27 green:0.26 blue:0.16 alpha:1.0]];
-        [box setTextColor:[NSColor colorWithCalibratedWhite:0.93 alpha:1.0]];
-    } else {
-        [box setBackgroundColor:badge.kind == XFBadgeAlert
-            ? [NSColor colorWithCalibratedRed:1.0 green:0.93 blue:0.93 alpha:1.0]
-            : [NSColor colorWithCalibratedRed:1.0 green:1.0 blue:0.93 alpha:1.0]];
-        [box setTextColor:[NSColor colorWithCalibratedWhite:0.10 alpha:1.0]];
-    }
+    [box setBackgroundColor:[[self class] badgeInfoBackground:badge.kind]];
+    [box setTextColor:[[self class] badgeInfoTextColor]];
     [box setFont:font];
     [[box cell] setWraps:YES];
     [box setStringValue:text];
@@ -579,6 +640,22 @@ NSView *XFKeyViewOf(NSView *view)
     }
     if ([window respondsToSelector:@selector(setAutorecalculatesKeyViewLoop:)]) {
         [window setAutorecalculatesKeyViewLoop:NO];
+    }
+    // A focus the form asked for before this view existed wins over the
+    // first key view.
+    //
+    // `xf:setfocus` in an `xforms-ready` handler runs during model
+    // construction — before the form view is built and its
+    // focusRequestHandler installed — so the request was dropped and the
+    // first-field sample never positioned its cursor. The engine did
+    // record it in `focusedControl`, so it is applied here, once there is
+    // a window to focus in.
+    XFControl *wanted = self.processor.focusedControl;
+    NSView *wantedView = wanted ? XFKeyViewOf([self widgetForControl:wanted].view) : nil;
+    if (wantedView && [wantedView acceptsFirstResponder]) {
+        [window setInitialFirstResponder:wantedView];
+        [window makeFirstResponder:wantedView];
+        return;
     }
     if (self.firstKeyView) {
         [window setInitialFirstResponder:self.firstKeyView];
@@ -860,6 +937,43 @@ static NSRect XFWidgetRect(XFWidget *w)
         }
     }
     return nil;
+}
+
+/// `accesskey` on a control that is not a trigger.
+///
+/// A trigger's accesskey is the button's own key equivalent (⌘ and the
+/// letter, set in the widget factory), and AppKit answers that for us —
+/// super gets first refusal here so it still does. Everything else has
+/// no such mechanism, and XForms 1.1 asks accesskey to give the control
+/// focus, which is what this does. The iOS form does the same through
+/// UIKeyCommand, with the same modifier.
+- (BOOL)performKeyEquivalent:(NSEvent *)event
+{
+    if ([super performKeyEquivalent:event]) {
+        return YES;   // a trigger's button took it
+    }
+    if (([event modifierFlags] & NSCommandKeyMask) == 0) {
+        return NO;
+    }
+    NSString *pressed = [[event charactersIgnoringModifiers] lowercaseString];
+    if (pressed.length != 1) {
+        return NO;
+    }
+    for (XFWidget *w in self.widgets) {
+        XFControl *control = w.control;
+        NSString *key = control.accesskey;
+        if (key.length == 0 || !control.relevant || control.readonly) {
+            continue;
+        }
+        if (![[[key substringToIndex:1] lowercaseString] isEqualToString:pressed]) {
+            continue;
+        }
+        // through the engine, so the focus events fire and the focus
+        // request comes back to -makeControlFirstResponder:
+        [self.processor focusControl:control fromUI:NO];
+        return YES;
+    }
+    return NO;
 }
 
 - (void)makeControlFirstResponder:(XFControl *)control

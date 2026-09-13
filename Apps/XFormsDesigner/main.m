@@ -85,10 +85,10 @@ static int XFDRunSelfTest(NSString *path)
         NSLog(@"SELFTEST outline shows %ld rows", (long)[outline numberOfRows]);
         return 1;
     }
-    NSXMLElement *body = nil;
-    for (NSXMLNode *c in [[doc.processor.hostDocument rootElement] children]) {
-        if ([c kind] == NSXMLElementKind && [[(NSXMLElement *)c localName] isEqualToString:@"body"]) {
-            body = (NSXMLElement *)c;
+    XFXMLElement *body = nil;
+    for (XFXMLNode *c in [[doc.processor.hostDocument rootElement] children]) {
+        if ([c kind] == XFXMLElementKind && [[(XFXMLElement *)c localName] isEqualToString:@"body"]) {
+            body = (XFXMLElement *)c;
         }
     }
     NSUInteger before = doc.processor.controls.count;
@@ -98,7 +98,7 @@ static int XFDRunSelfTest(NSString *path)
     // groups only (the unit tests disable this the same way)
     [undo setGroupsByEvent:NO];
     [undo beginUndoGrouping];
-    NSXMLElement *input = [doc.hostEdit insertElementNamed:@"input" underParent:body atIndex:-1 error:&error];
+    XFXMLElement *input = [doc.hostEdit insertElementNamed:@"input" underParent:body atIndex:-1 error:&error];
     [undo endUndoGrouping];
     if (input == nil || doc.processor.controls.count != before + 1) {
         NSLog(@"SELFTEST insert failed: %@", error);
@@ -187,8 +187,8 @@ static int XFDRunSelfTest(NSString *path)
     }
     // an xf:output computing @value is bound — to an expression — so the
     // outline must not flag it; strip the attribute and the flag returns
-    NSXMLElement *computed = [NSXMLElement elementWithName:@"xf:output"];
-    [computed addAttribute:[NSXMLNode attributeWithName:@"value"
+    XFXMLElement *computed = [XFXMLElement elementWithName:@"xf:output"];
+    [computed addAttribute:[XFXMLNode attributeWithName:@"value"
                                             stringValue:@"event('xforms-insert')/position"]];
     NSString *computedTitle = [(id)wc outlineView:nil objectValueForTableColumn:nil byItem:computed];
     if ([computedTitle containsString:@"unbound"]) {
@@ -212,9 +212,9 @@ static int XFDRunSelfTest(NSString *path)
     }
     // idref combo: a fresh bind's id shows up as a live id, a picked id
     // lands as @bind, a dangling id flags invalid
-    NSXMLElement *modelEl = (NSXMLElement *)doc.processor.model.element;
+    XFXMLElement *modelEl = (XFXMLElement *)doc.processor.model.element;
     [undo beginUndoGrouping];
-    NSXMLElement *bindEl = [doc.hostEdit insertElementNamed:@"bind" underParent:modelEl atIndex:-1 error:&error];
+    XFXMLElement *bindEl = [doc.hostEdit insertElementNamed:@"bind" underParent:modelEl atIndex:-1 error:&error];
     [undo endUndoGrouping];
     if (bindEl == nil) {
         NSLog(@"SELFTEST bind insert failed: %@", error);
@@ -250,8 +250,8 @@ static int XFDRunSelfTest(NSString *path)
     // action authoring: setvalue under a trigger gets its ev:event
     // starter, routes to the data-driven Action page, and a row applies
     [undo beginUndoGrouping];
-    NSXMLElement *trigger2 = [doc.hostEdit insertElementNamed:@"trigger" underParent:body atIndex:-1 error:&error];
-    NSXMLElement *setvalue = trigger2
+    XFXMLElement *trigger2 = [doc.hostEdit insertElementNamed:@"trigger" underParent:body atIndex:-1 error:&error];
+    XFXMLElement *setvalue = trigger2
         ? [doc.hostEdit insertElementNamed:@"setvalue" underParent:trigger2 atIndex:-1 error:&error] : nil;
     [undo endUndoGrouping];
     if (setvalue == nil) {
@@ -354,7 +354,7 @@ static int XFDRunSelfTest(NSString *path)
     }
     // dispatch carries the §10.9 bubbles/cancelable rows, popup-applied
     [undo beginUndoGrouping];
-    NSXMLElement *dispatchEl = [doc.hostEdit insertElementNamed:@"dispatch"
+    XFXMLElement *dispatchEl = [doc.hostEdit insertElementNamed:@"dispatch"
                                                     underParent:trigger2 atIndex:-1 error:&error];
     [undo endUndoGrouping];
     if (dispatchEl == nil) {
@@ -462,10 +462,10 @@ static int XFDRunSelfTest(NSString *path)
         }
     }
     if (hasSVG) {
-        NSXMLElement *painted = nil;
+        XFXMLElement *painted = nil;
         NSRect paintedRect = NSZeroRect;
         for (NSString *shapeName in @[ @"path", @"rect" ]) {
-            for (NSXMLElement *e in [XFXML elementsWithLocalName:shapeName
+            for (XFXMLElement *e in [XFXML elementsWithLocalName:shapeName
                                                     namespaceURI:@"http://www.w3.org/2000/svg"
                                                           inNode:doc.processor.hostDocument]) {
                 NSRect r = [formView layoutFrameOfSVGElement:e];
@@ -483,7 +483,7 @@ static int XFDRunSelfTest(NSString *path)
             NSLog(@"SELFTEST svg present but no shape painted a frame");
             return 1;
         }
-        NSXMLElement *svgHit = [formView svgElementAtPoint:
+        XFXMLElement *svgHit = [formView svgElementAtPoint:
             NSMakePoint(NSMidX(paintedRect), NSMidY(paintedRect))];
         if (svgHit == nil) {
             NSLog(@"SELFTEST svg hit test found nothing at a painted center");
@@ -505,8 +505,8 @@ static int XFDRunSelfTest(NSString *path)
     // item / itemset inspectors: itemset starter compiles, routes to its
     // page, and the Label Ref row writes the child's @ref
     [undo beginUndoGrouping];
-    NSXMLElement *select1 = [doc.hostEdit insertElementNamed:@"select1" underParent:body atIndex:-1 error:&error];
-    NSXMLElement *itemset = select1
+    XFXMLElement *select1 = [doc.hostEdit insertElementNamed:@"select1" underParent:body atIndex:-1 error:&error];
+    XFXMLElement *itemset = select1
         ? [doc.hostEdit insertElementNamed:@"itemset" underParent:select1 atIndex:-1 error:&error] : nil;
     [undo endUndoGrouping];
     if (itemset == nil) {
@@ -529,7 +529,7 @@ static int XFDRunSelfTest(NSString *path)
         return 1;
     }
     // item page routes too
-    NSXMLElement *item = nil;
+    XFXMLElement *item = nil;
     [undo beginUndoGrouping];
     item = [doc.hostEdit insertElementNamed:@"item" underParent:select1 atIndex:-1 error:&error];
     [undo endUndoGrouping];
@@ -599,7 +599,7 @@ static int XFDRunSelfTest(NSString *path)
 
     // workflow shortcuts: ref promotes to a named bind in one gesture
     [undo beginUndoGrouping];
-    NSXMLElement *input2 = [doc.hostEdit insertElementNamed:@"input" underParent:body atIndex:-1 error:&error];
+    XFXMLElement *input2 = [doc.hostEdit insertElementNamed:@"input" underParent:body atIndex:-1 error:&error];
     [doc.hostEdit setAttribute:@"ref" value:@"name" onElement:input2];
     [undo endUndoGrouping];
     [wc performSelector:@selector(selectElement:) withObject:input2];
@@ -611,8 +611,8 @@ static int XFDRunSelfTest(NSString *path)
         NSLog(@"SELFTEST create-bind-from-ref failed");
         return 1;
     }
-    NSXMLElement *createdBind = nil;
-    for (NSXMLElement *b in [XFXML elementsWithLocalName:@"bind"
+    XFXMLElement *createdBind = nil;
+    for (XFXMLElement *b in [XFXML elementsWithLocalName:@"bind"
                                             namespaceURI:XFXFormsNamespaceURI
                                                   inNode:modelEl]) {
         if ([[[b attributeForName:@"id"] stringValue] isEqualToString:newBindID]) {
@@ -624,19 +624,19 @@ static int XFDRunSelfTest(NSString *path)
         return 1;
     }
     // …and a control can be built straight from an instance data node
-    NSXMLElement *instanceHost = [XFXML childElementWithLocalName:@"instance"
+    XFXMLElement *instanceHost = [XFXML childElementWithLocalName:@"instance"
                                                      namespaceURI:XFXFormsNamespaceURI
                                                         ofElement:modelEl];
-    NSXMLElement *dataRoot = nil;
-    NSXMLElement *dataNode = nil;
-    for (NSXMLNode *c in [instanceHost children]) {
-        if ([c kind] == NSXMLElementKind) {
-            dataRoot = (NSXMLElement *)c;
+    XFXMLElement *dataRoot = nil;
+    XFXMLElement *dataNode = nil;
+    for (XFXMLNode *c in [instanceHost children]) {
+        if ([c kind] == XFXMLElementKind) {
+            dataRoot = (XFXMLElement *)c;
         }
     }
-    for (NSXMLNode *c in [dataRoot children]) {
-        if ([c kind] == NSXMLElementKind) {
-            dataNode = (NSXMLElement *)c;
+    for (XFXMLNode *c in [dataRoot children]) {
+        if ([c kind] == XFXMLElementKind) {
+            dataNode = (XFXMLElement *)c;
             break;
         }
     }
@@ -652,7 +652,7 @@ static int XFDRunSelfTest(NSString *path)
         }
     }
     // schema suggestions + spec knowledge helpers
-    NSXMLElement *schemaRoot = [[doc.processor defaultInstance] documentElement];
+    XFXMLElement *schemaRoot = [[doc.processor defaultInstance] documentElement];
     NSArray *schemaPaths = XFDSchemaPathsFromNode(schemaRoot, 40);
     if (dataNode != nil && ![schemaPaths containsObject:[dataNode name]]) {
         NSLog(@"SELFTEST schema paths missing '%@': %@", [dataNode name], schemaPaths);
@@ -710,7 +710,7 @@ static int XFDRunSelfTest(NSString *path)
             NSLog(@"SELFTEST predicate probe form failed: %@", pperr);
             return 1;
         }
-        NSXMLNode *ppRoot = [[pp defaultInstance] documentElement];
+        XFXMLNode *ppRoot = [[pp defaultInstance] documentElement];
         NSDictionary *pre = XFDPredicatePreview(@"item", @"@n > 1", nil, ppRoot, pp.model);
         if (![pre[@"ok"] boolValue]
             || ![pre[@"normalized"] isEqualToString:@"[@n > 1]"]

@@ -42,6 +42,57 @@
     return nil;
 }
 
+- (void)testAccessKeyFocusesANonTriggerControl
+{
+    [NSApplication sharedApplication];   // AppKit headless bring-up
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><n>Ada</n></data></xf:instance>"
+                      extra:
+                      @"<xf:input ref=\"n\" accesskey=\"n\"><xf:label>Name</xf:label></xf:input>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *view = [[XFFormView alloc] initWithProcessor:p];
+    NSEvent *event = [NSEvent keyEventWithType:NSKeyDown
+                                      location:NSZeroPoint
+                                 modifierFlags:NSCommandKeyMask
+                                     timestamp:0
+                                  windowNumber:0
+                                       context:nil
+                                    characters:@"n"
+                   charactersIgnoringModifiers:@"n"
+                                     isARepeat:NO
+                                       keyCode:45];
+    XCTAssertTrue([view performKeyEquivalent:event]);
+    // a button's key equivalent covers triggers; this is the other half,
+    // and XForms says accesskey gives the control focus
+    XCTAssertEqual(p.focusedControl, [self firstControlOfClass:[XFInputControl class] in:p]);
+}
+
+- (void)testAccessKeyIgnoresAnUnrelatedKey
+{
+    [NSApplication sharedApplication];   // AppKit headless bring-up
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><n>Ada</n></data></xf:instance>"
+                      extra:
+                      @"<xf:input ref=\"n\" accesskey=\"n\"><xf:label>Name</xf:label></xf:input>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *view = [[XFFormView alloc] initWithProcessor:p];
+    NSEvent *event = [NSEvent keyEventWithType:NSKeyDown
+                                      location:NSZeroPoint
+                                 modifierFlags:NSCommandKeyMask
+                                     timestamp:0
+                                  windowNumber:0
+                                       context:nil
+                                    characters:@"z"
+                   charactersIgnoringModifiers:@"z"
+                                     isARepeat:NO
+                                       keyCode:6];
+    XCTAssertFalse([view performKeyEquivalent:event]);
+}
+
 - (void)testSecretAndTextarea
 {
     NSError *error = nil;
@@ -58,6 +109,159 @@
     XCTAssertEqualObjects(area.stringValue, @"hi");
     XCTAssertTrue([p setValue:@"long text" ofControl:area error:&error]);
     XCTAssertEqualObjects(area.stringValue, @"long text");
+}
+
+/// A click is not a focus change on AppKit: NSButton, NSPopUpButton and
+/// the checkboxes do not take the first responder, so an edit in progress
+/// used to stay in the widget while the action ran on the old value.
+/// Samples/dialog.xhtml lost its note that way — type, click "Done", and
+/// the dialog closes. Tab always worked, because the Tab handler drops
+/// the first responder itself.
+- (XFProcessor *)formWithANoteAndADoneButtonError:(NSError **)error
+{
+    return [self form:
+            @"<xf:instance><data xmlns=\"\"><note>hi</note><done/></data></xf:instance>"
+             extra:
+            @"<xf:textarea ref=\"note\"><xf:label>Note</xf:label></xf:textarea>"
+            @"<xf:input ref=\"note\"><xf:label>Same note</xf:label></xf:input>"
+            @"<xf:trigger id=\"done\"><xf:label>Done</xf:label>"
+            @"  <xf:setvalue ev:event=\"DOMActivate\" ref=\"done\" value=\"'yes'\"/>"
+            @"</xf:trigger>"
+              error:error];
+}
+
+- (NSWindow *)windowShowing:(XFFormView *)view
+{
+    NSWindow *window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 700, 600)
+                                                   styleMask:NSTitledWindowMask
+                                                     backing:NSBackingStoreBuffered
+                                                       defer:NO];
+    [window setContentView:view];
+    return window;
+}
+
+- (id)firstViewOfClass:(Class)cls under:(NSView *)root matching:(BOOL (^)(NSView *))test
+{
+    NSMutableArray *stack = [NSMutableArray arrayWithObject:root];
+    while (stack.count) {
+        NSView *view = stack.lastObject;
+        [stack removeLastObject];
+        if ([view isKindOfClass:cls] && (test == nil || test(view))) {
+            return view;
+        }
+        [stack addObjectsFromArray:view.subviews];
+    }
+    return nil;
+}
+
+- (void)testATextareaCommitsWhenAButtonIsClicked
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self formWithANoteAndADoneButtonError:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *view = [[XFFormView alloc] initWithProcessor:p];
+    NSWindow *window = [self windowShowing:view];
+
+    NSScrollView *scroll = [self firstViewOfClass:[NSScrollView class] under:view
+                                         matching:^BOOL(NSView *v) {
+        return [[(NSScrollView *)v documentView] isKindOfClass:[NSTextView class]];
+    }];
+    NSTextView *area = [scroll documentView];
+    NSButton *done = [self firstViewOfClass:[NSButton class] under:view
+                                   matching:^BOOL(NSView *v) {
+        return [[(NSButton *)v title] isEqualToString:@"Done"];
+    }];
+    XCTAssertNotNil(area);
+    XCTAssertNotNil(done);
+
+    XCTAssertTrue([window makeFirstResponder:area]);
+    [area setString:@"edited"];
+    [done performClick:nil];
+
+    XFTextareaControl *note = [self firstControlOfClass:[XFTextareaControl class] in:p];
+    XCTAssertEqualObjects(note.stringValue, @"edited",
+                          @"the typed note should reach the instance before the trigger runs");
+    XFXMLNode *done_ = [[[p.model defaultInstance] documentElement] elementsForName:@"done"].firstObject;
+    XCTAssertEqualObjects([XFXML stringValueOfNode:done_], @"yes", @"and the trigger still ran");
+}
+
+/// The same click with a text field being edited. This half already
+/// worked on macOS — ending a field editor is AppKit's own business, and
+/// a click does it — so this pins that rather than the fix; the flush
+/// covers it too, which matters where the field editor behaves
+/// differently (GNUstep).
+- (void)testATextFieldCommitsWhenAButtonIsClicked
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self formWithANoteAndADoneButtonError:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *view = [[XFFormView alloc] initWithProcessor:p];
+    NSWindow *window = [self windowShowing:view];
+
+    NSTextField *field = [self firstViewOfClass:[NSTextField class] under:view
+                                       matching:^BOOL(NSView *v) {
+        return [(NSTextField *)v isEditable];
+    }];
+    NSButton *done = [self firstViewOfClass:[NSButton class] under:view
+                                   matching:^BOOL(NSView *v) {
+        return [[(NSButton *)v title] isEqualToString:@"Done"];
+    }];
+    XCTAssertNotNil(field);
+    XCTAssertNotNil(done);
+
+    XCTAssertTrue([window makeFirstResponder:field]);
+    if ([field currentEditor] == nil) {
+        // no field editor without a real key window on some backends;
+        // there is nothing in progress to end, so nothing to assert
+        NSLog(@"[XFUIControlTests] this backend gave the field no editor; skipping");
+        return;
+    }
+    [[field currentEditor] setString:@"typed"];
+    [done performClick:nil];
+
+    XFInputControl *input = [self firstControlOfClass:[XFInputControl class] in:p];
+    XCTAssertEqualObjects(input.stringValue, @"typed",
+                          @"the field editor's text should reach the instance");
+}
+
+/// Clicking into a field leaves it editable. The flush above must not run
+/// on the focus path: a field reports the start of editing through
+/// widgetDidFocus:, and ending the edit there took the focus back off the
+/// field as soon as it was clicked — input.xhtml could not be typed into
+/// at all.
+- (void)testClickingIntoAFieldKeepsTheEditor
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self formWithANoteAndADoneButtonError:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *view = [[XFFormView alloc] initWithProcessor:p];
+    NSWindow *window = [self windowShowing:view];
+    NSTextField *field = [self firstViewOfClass:[NSTextField class] under:view
+                                       matching:^BOOL(NSView *v) {
+        return [(NSTextField *)v isEditable];
+    }];
+    XCTAssertNotNil(field);
+
+    XCTAssertTrue([window makeFirstResponder:field]);
+    if ([field currentEditor] == nil) {
+        NSLog(@"[XFUIControlTests] this backend gave the field no editor; skipping");
+        return;
+    }
+    // Stands in for AppKit's own notification, which a headless window
+    // does not post until a real keystroke arrives. Sent dynamically:
+    // GNUstep declares this delegate method on an informal protocol, so a
+    // typed send would not compile there.
+    SEL began = @selector(controlTextDidBeginEditing:);
+    XCTAssertTrue([view respondsToSelector:began], @"the form view is the field's delegate");
+    [view performSelector:began withObject:
+        [NSNotification notificationWithName:NSControlTextDidBeginEditingNotification
+                                      object:field]];
+    // the field editor, not the window: the field is still being edited
+    XCTAssertEqualObjects([field currentEditor], [window firstResponder],
+                          @"the field lost its editor as editing began");
 }
 
 - (void)testTriggerActivatesAction
@@ -589,7 +793,7 @@
         @"",
     ];
     for (NSString *html in stable) {
-        NSAttributedString *rich = [XFRichText attributedStringFromHTML:html baseFont:nil];
+        NSAttributedString *rich = [XFRichText attributedStringFromHTML:html];
         XCTAssertEqualObjects([XFRichText htmlFromAttributedString:rich], html);
     }
     // canonicalisation: b→strong, i→em, div→p, bare fragments wrapped
@@ -599,23 +803,37 @@
         @"just text": @"<p>just text</p>",
     };
     for (NSString *html in canonical) {
-        NSAttributedString *rich = [XFRichText attributedStringFromHTML:html baseFont:nil];
+        NSAttributedString *rich = [XFRichText attributedStringFromHTML:html];
         XCTAssertEqualObjects([XFRichText htmlFromAttributedString:rich], canonical[html]);
     }
     // not well-formed → plain text, fully escaped on the way back
-    NSAttributedString *broken = [XFRichText attributedStringFromHTML:@"<p>broken <em>markup</p>" baseFont:nil];
+    NSAttributedString *broken = [XFRichText attributedStringFromHTML:@"<p>broken <em>markup</p>"];
     XCTAssertEqualObjects([broken string], @"<p>broken <em>markup</p>");
     XCTAssertEqualObjects([XFRichText htmlFromAttributedString:broken],
                           @"<p>&lt;p&gt;broken &lt;em&gt;markup&lt;/p&gt;</p>");
     // display text: bullets / numbering / line separator
-    NSAttributedString *list = [XFRichText attributedStringFromHTML:@"<ol><li>a</li><li>b</li></ol>" baseFont:nil];
+    NSAttributedString *list = [XFRichText attributedStringFromHTML:@"<ol><li>a</li><li>b</li></ol>"];
     XCTAssertEqualObjects([list string], @"1. a\n2. b");
-    NSAttributedString *br = [XFRichText attributedStringFromHTML:@"<p>a<br/>b</p>" baseFont:nil];
+    NSAttributedString *br = [XFRichText attributedStringFromHTML:@"<p>a<br/>b</p>"];
     XCTAssertEqualObjects([br string], ([NSString stringWithFormat:@"a%Cb", (unichar)0x2028]));
     // markers drive the serialisation (font-independent)
     NSRange r;
-    NSAttributedString *bold = [XFRichText attributedStringFromHTML:@"<p><strong>x</strong></p>" baseFont:nil];
+    NSAttributedString *bold = [XFRichText attributedStringFromHTML:@"<p><strong>x</strong></p>"];
     XCTAssertTrue([[bold attribute:XFRichBoldAttributeName atIndex:0 effectiveRange:&r] boolValue]);
+    XCTAssertNil([bold attribute:NSFontAttributeName atIndex:0 effectiveRange:&r],
+                 @"the converter emits markers only — no presentation");
+
+    // and the AppKit half turns those markers into something a view shows
+    NSAttributedString *shown = [XFRichText decoratedString:bold baseFont:nil];
+    NSFont *font = [shown attribute:NSFontAttributeName atIndex:0 effectiveRange:&r];
+    XCTAssertNotNil(font);
+    XCTAssertTrue(([[NSFontManager sharedFontManager] traitsOfFont:font] & NSBoldFontMask) != 0
+                  || [[font fontName] rangeOfString:@"Bold"].location != NSNotFound,
+                  @"bold marker becomes a bold font: %@", [font fontName]);
+    NSAttributedString *underlined = [XFRichText decoratedString:
+        [XFRichText attributedStringFromHTML:@"<p><u>x</u></p>"] baseFont:nil];
+    XCTAssertEqualObjects([underlined attribute:NSUnderlineStyleAttributeName atIndex:0 effectiveRange:&r],
+                          @(NSUnderlineStyleSingle));
 }
 
 // xf:output mediatype="image/*" renders an image at natural size; a tiny
@@ -760,40 +978,53 @@
 {
     [NSApplication sharedApplication];
     // a unit square, closed
-    NSBezierPath *square = [XFSVGDocument bezierPathWithSVGPathData:@"M 0 0 L 10 0 L 10 10 L 0 10 Z"];
-    XCTAssertNotNil(square);
-    NSRect b = [square bounds];
-    XCTAssertEqualWithAccuracy(NSWidth(b), 10.0, 0.001);
-    XCTAssertEqualWithAccuracy(NSHeight(b), 10.0, 0.001);
+    CGPathRef square = [XFSVGDocument createPathWithSVGPathData:@"M 0 0 L 10 0 L 10 10 L 0 10 Z"];
+    XCTAssertTrue(square != NULL);
+    CGRect b = CGPathGetBoundingBox(square);
+    XCTAssertEqualWithAccuracy(CGRectGetWidth(b), 10.0, 0.001);
+    XCTAssertEqualWithAccuracy(CGRectGetHeight(b), 10.0, 0.001);
+    CGPathRelease(square);
 
     // quarter-circle arc from (100,0) to (0,100) sweeping through (~70.7,~70.7)
-    NSBezierPath *arc = [XFSVGDocument bezierPathWithSVGPathData:@"M 100 0 A 100 100 0 0 1 0 100"];
-    NSRect ab = [arc bounds];
-    XCTAssertTrue(NSMaxX(ab) > 99 && NSMaxY(ab) > 99, @"%@", NSStringFromRect(ab));
-    XCTAssertEqualWithAccuracy([arc currentPoint].x, 0.0, 0.01);
-    XCTAssertEqualWithAccuracy([arc currentPoint].y, 100.0, 0.01);
+    CGPathRef arc = [XFSVGDocument createPathWithSVGPathData:@"M 100 0 A 100 100 0 0 1 0 100"];
+    CGRect ab = CGPathGetBoundingBox(arc);
+    XCTAssertTrue(CGRectGetMaxX(ab) > 99 && CGRectGetMaxY(ab) > 99);
+    CGPoint end = CGPathGetCurrentPoint(arc);
+    XCTAssertEqualWithAccuracy(end.x, 0.0, 0.01);
+    XCTAssertEqualWithAccuracy(end.y, 100.0, 0.01);
+    CGPathRelease(arc);
 
     // relative commands and implicit linetos after moveto
-    NSBezierPath *rel = [XFSVGDocument bezierPathWithSVGPathData:@"m 5 5 10 0 l 0 10"];
-    XCTAssertEqualWithAccuracy([rel currentPoint].x, 15.0, 0.001);
-    XCTAssertEqualWithAccuracy([rel currentPoint].y, 15.0, 0.001);
+    CGPathRef rel = [XFSVGDocument createPathWithSVGPathData:@"m 5 5 10 0 l 0 10"];
+    CGPoint relEnd = CGPathGetCurrentPoint(rel);
+    XCTAssertEqualWithAccuracy(relEnd.x, 15.0, 0.001);
+    XCTAssertEqualWithAccuracy(relEnd.y, 15.0, 0.001);
+    CGPathRelease(rel);
 
     // transform lists apply left to right with the rightmost hitting the
     // point first: translate(10,0) rotate(90) maps (1,0) to (10,1)
-    NSAffineTransform *t = [XFSVGDocument transformWithSVGString:@"translate(10,0) rotate(90)"];
-    NSPoint p = [t transformPoint:NSMakePoint(1, 0)];
+    CGAffineTransform t = [XFSVGDocument transformWithSVGString:@"translate(10,0) rotate(90)"];
+    CGPoint p = CGPointApplyAffineTransform(CGPointMake(1, 0), t);
     XCTAssertEqualWithAccuracy(p.x, 10.0, 0.001);
     XCTAssertEqualWithAccuracy(p.y, 1.0, 0.001);
 
-    NSColor *hex = [[XFSVGDocument colorWithSVGString:@"#0685C6"]
-        colorUsingColorSpaceName:NSCalibratedRGBColorSpace];
-    XCTAssertEqualWithAccuracy([hex redComponent], 0x06 / 255.0, 0.005);
-    XCTAssertEqualWithAccuracy([hex blueComponent], 0xC6 / 255.0, 0.005);
-    XCTAssertNotNil([XFSVGDocument colorWithSVGString:@"#ab0"]);
-    XCTAssertNotNil([XFSVGDocument colorWithSVGString:@"black"]);
-    XCTAssertNil([XFSVGDocument colorWithSVGString:@"none"]);
-    XCTAssertNotNil([XFSVGDocument colorWithSVGString:@"url(#pattern)"],
-                    @"paint servers degrade to a neutral wash, not to nothing");
+    CGColorRef hex = [XFSVGDocument createColorWithSVGString:@"#0685C6"];
+    XCTAssertTrue(hex != NULL);
+    const CGFloat *rgba = CGColorGetComponents(hex);
+    XCTAssertEqualWithAccuracy(rgba[0], 0x06 / 255.0, 0.005);
+    XCTAssertEqualWithAccuracy(rgba[2], 0xC6 / 255.0, 0.005);
+    CGColorRelease(hex);
+
+    CGColorRef shorthand = [XFSVGDocument createColorWithSVGString:@"#ab0"];
+    XCTAssertTrue(shorthand != NULL);
+    CGColorRelease(shorthand);
+    CGColorRef named = [XFSVGDocument createColorWithSVGString:@"black"];
+    XCTAssertTrue(named != NULL);
+    CGColorRelease(named);
+    XCTAssertTrue([XFSVGDocument createColorWithSVGString:@"none"] == NULL);
+    CGColorRef wash = [XFSVGDocument createColorWithSVGString:@"url(#pattern)"];
+    XCTAssertTrue(wash != NULL, @"paint servers degrade to a neutral wash, not to nothing");
+    CGColorRelease(wash);
 
     NSDictionary *style = [XFSVGDocument declarationsWithSVGStyle:
         @"fill:{#404040}; stroke : black ;stroke-width:1;"];
@@ -946,11 +1177,18 @@
     XCTAssertEqual([fv svgElementAtPoint:inForm], byID(@"gr"));
     XCTAssertFalse(NSIsEmptyRect([fv layoutFrameOfSVGElement:byID(@"gr")]));
 
-    // the draw paths run headless (gradient, pattern tiling, use)
-    NSImage *image = [[NSImage alloc] initWithSize:doc.size];
-    [image lockFocus];
-    [doc drawInRect:NSMakeRect(0, 0, doc.size.width, doc.size.height)];
-    [image unlockFocus];
+    // the draw paths run headless (gradient, pattern tiling, use, text).
+    // Into a bitmap context rather than a locked-focus NSImage: the
+    // renderer draws through CoreGraphics now, and a bitmap context is the
+    // one way to get one that needs no window server.
+    CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
+    CGContextRef bitmap = CGBitmapContextCreate(NULL,
+        (size_t)MAX(doc.size.width, 1), (size_t)MAX(doc.size.height, 1),
+        8, 0, space, (CGBitmapInfo)kCGImageAlphaPremultipliedLast);
+    CGColorSpaceRelease(space);
+    XCTAssertTrue(bitmap != NULL);
+    [doc drawInContext:bitmap rect:CGRectMake(0, 0, doc.size.width, doc.size.height)];
+    CGContextRelease(bitmap);
 
     // SVG shapes reorder among SVG parents (paint order), but an xf
     // control never moves INTO svg markup through the zone bypass

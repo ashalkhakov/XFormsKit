@@ -1,6 +1,9 @@
 #import <Foundation/Foundation.h>
 #import <XFormsKit/XFXMLTypes.h>
+#import <CoreGraphics/CoreGraphics.h>
+#if __has_include(<AppKit/AppKit.h>)
 #import <AppKit/AppKit.h>
+#endif
 
 @class XFHostNode;
 @class XFProcessor;
@@ -63,11 +66,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) XFSVGNode *root;
 /// The viewport in points: width/height attributes (units converted),
 /// else the viewBox size, else the SVG default 300×150.
-@property (nonatomic, assign, readonly) NSSize size;
+@property (nonatomic, assign, readonly) CGSize size;
 
-/// Draws into the current (flipped) graphics context. `rect`'s size
-/// scales the viewport; content outside is clipped.
-- (void)drawInRect:(NSRect)rect;
+/// Draws into `ctx`, which must use SVG's own orientation: y growing
+/// downwards, as a flipped NSView or a UIView gives. `rect`'s size scales
+/// the viewport; content outside is clipped.
+- (void)drawInContext:(CGContextRef)ctx rect:(CGRect)rect;
 
 /// The node registered under this id (defs content, paint servers, any
 /// element with an id) — what url(#…) and use href resolve to.
@@ -76,21 +80,27 @@ NS_ASSUME_NONNULL_BEGIN
 /// The topmost painted shape or text at `point` (document coordinates —
 /// the box `size` spans). Content reached through <use> reports the use
 /// node. nil over empty space.
-- (nullable XFSVGNode *)nodeAtPoint:(NSPoint)point;
+- (nullable XFSVGNode *)nodeAtPoint:(CGPoint)point;
 
 /// The union of the painted rectangles of every render node whose host
 /// element is `element` (a repeat template element matches once per
-/// item), in document coordinates. NSZeroRect when it paints nothing.
-- (NSRect)frameOfElement:(XFXMLElement *)element;
+/// item), in document coordinates. CGRectZero when it paints nothing.
+- (CGRect)frameOfElement:(XFXMLElement *)element;
 
-/* Parsing utilities (exposed for tests). */
-+ (nullable NSBezierPath *)bezierPathWithSVGPathData:(NSString *)d;
-+ (NSAffineTransform *)transformWithSVGString:(nullable NSString *)s;
-+ (nullable NSColor *)colorWithSVGString:(nullable NSString *)s;
+/* Parsing utilities (exposed for tests).
+
+   The two that answer CoreFoundation objects return them OWNED: the
+   caller releases. CFAutorelease would be simpler, but CoreFoundation is
+   optional where GNUstep draws through Opal. */
++ (nullable CGPathRef)createPathWithSVGPathData:(NSString *)d CF_RETURNS_RETAINED;
++ (CGAffineTransform)transformWithSVGString:(nullable NSString *)s;
++ (nullable CGColorRef)createColorWithSVGString:(nullable NSString *)s CF_RETURNS_RETAINED;
 + (NSDictionary<NSString *, NSString *> *)declarationsWithSVGStyle:(nullable NSString *)css;
 + (CGFloat)lengthWithSVGString:(nullable NSString *)s fallback:(CGFloat)fallback;
 
 @end
+
+#if __has_include(<AppKit/AppKit.h>)
 
 /// The widget XFFormView places for a XFHostNodeKindSVG node. `rebuild`
 /// re-resolves the render tree (fresh AVT and output values) and resizes
@@ -107,9 +117,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 /* Design-support hit testing (the designer's overlay): both take and
    return the view's own coordinates. */
-- (nullable XFXMLElement *)hostElementAtPoint:(NSPoint)point;
-- (NSRect)frameOfHostElement:(XFXMLElement *)element;
+- (nullable XFXMLElement *)hostElementAtPoint:(CGPoint)point;
+- (CGRect)frameOfHostElement:(XFXMLElement *)element;
 
 @end
+
+#endif
 
 NS_ASSUME_NONNULL_END

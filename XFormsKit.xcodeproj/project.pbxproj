@@ -7,16 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AA00000100000000000000210 /* XFXMLTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000210 /* XFXMLTypes.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA00000100000000000000200 /* XFDOMNode.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000200 /* XFDOMNode.m */; };
-		AA00000100000000000000201 /* XFDOMElement.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000201 /* XFDOMElement.m */; };
-		AA00000100000000000000202 /* XFDOMDocument.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000202 /* XFDOMDocument.m */; };
-		AA00000100000000000000203 /* XFDOMParser.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000203 /* XFDOMParser.m */; };
-		AA00000100000000000000204 /* XFDOM.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000204 /* XFDOM.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA00000100000000000000205 /* XFDOMNode.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000205 /* XFDOMNode.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA00000100000000000000206 /* XFDOMElement.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000206 /* XFDOMElement.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA00000100000000000000207 /* XFDOMDocument.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000207 /* XFDOMDocument.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA00000100000000000000209 /* XFDOMTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000209 /* XFDOMTests.m */; };
+		MN0000010000000000000064 /* XFDExpressionField.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000064 /* XFDExpressionField.m */; };
+		MN0000010000000000000062 /* XFDXPathHighlightTests.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000062 /* XFDXPathHighlightTests.m */; };
+		MN0000010000000000000063 /* XFDXPathTextStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000060 /* XFDXPathTextStorage.m */; };
+		MN0000010000000000000060 /* XFDXPathTextStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000060 /* XFDXPathTextStorage.m */; };
+		MN0000010000000000000052 /* XFDateDisplayTests.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000052 /* XFDateDisplayTests.m */; };
+		MN0000010000000000000050 /* XFDateDisplay.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000050 /* XFDateDisplay.m */; };
+		MN0000010000000000000051 /* XFDateDisplay.h in Headers */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000051 /* XFDateDisplay.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		MN0000010000000000000090 /* XFSVGRenderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000090 /* XFSVGRenderTests.m */; };
+		MN0000010000000000000040 /* Samples in Resources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000040 /* Samples */; };
 		AA0000010000000000000001 /* XFNamespaces.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000001 /* XFNamespaces.m */; };
 		AA0000010000000000000002 /* XFErrors.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000002 /* XFErrors.m */; };
 		AA0000010000000000000003 /* XFXML.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000003 /* XFXML.m */; };
@@ -31,11 +30,6 @@
 		AA000001000000000000000C /* XFOutputControl.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000000C /* XFOutputControl.m */; };
 		AA000001000000000000000D /* XFProcessor.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000000D /* XFProcessor.m */; };
 		AA000001000000000000000E /* XFFormView.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000000E /* XFFormView.m */; };
-		AA00000100000000000011C /* XFFormView+Widgets.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000011C /* XFFormView+Widgets.m */; };
-		AA00000100000000000011D /* XFFormView+Layout.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000011D /* XFFormView+Layout.m */; };
-		AA00000100000000000011E /* XFFormView+Editing.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000011E /* XFFormView+Editing.m */; };
-		AA00000100000000000011F /* XFTableAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000011F /* XFTableAdapter.m */; };
-		AA000001000000000000120 /* XFRichTextEditor.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000120 /* XFRichTextEditor.m */; };
 		AA0000010000000000000010 /* XFormsKit.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000010 /* XFormsKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0000010000000000000011 /* XFNamespaces.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000011 /* XFNamespaces.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0000010000000000000012 /* XFErrors.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000012 /* XFErrors.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -52,38 +46,41 @@
 		AA000001000000000000001D /* XFProcessor.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000001000000000000001D /* XFProcessor.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA000001000000000000001E /* XFFormView.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000001000000000000001E /* XFFormView.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0000010000000000000020 /* XFXPathTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000020 /* XFXPathTests.m */; };
+		AA00000100000000000000200 /* XFDOMNode.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000200 /* XFDOMNode.m */; };
+		AA00000100000000000000201 /* XFDOMElement.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000201 /* XFDOMElement.m */; };
+		AA00000100000000000000202 /* XFDOMDocument.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000202 /* XFDOMDocument.m */; };
+		AA00000100000000000000203 /* XFDOMParser.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000203 /* XFDOMParser.m */; };
+		AA00000100000000000000204 /* XFDOM.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000204 /* XFDOM.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA00000100000000000000205 /* XFDOMNode.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000205 /* XFDOMNode.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA00000100000000000000206 /* XFDOMElement.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000206 /* XFDOMElement.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA00000100000000000000207 /* XFDOMDocument.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000207 /* XFDOMDocument.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA00000100000000000000209 /* XFDOMTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000209 /* XFDOMTests.m */; };
 		AA0000010000000000000021 /* XFInstanceTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000021 /* XFInstanceTests.m */; };
+		AA00000100000000000000210 /* XFXMLTypes.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000210 /* XFXMLTypes.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0000010000000000000022 /* XFHelloFormTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000022 /* XFHelloFormTests.m */; };
 		AA0000010000000000000023 /* hello.xhtml in Resources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000023 /* hello.xhtml */; };
 		AA0000010000000000000024 /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; };
-		AA0000030000000000000001 /* XFW3CTestCase.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000002 /* XFW3CTestCase.m */; };
-		AA0000030000000000000002 /* XFW3CChapter03Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000003 /* XFW3CChapter03Tests.m */; };
-		AA0000030000000000000003 /* XFW3CChapter04Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000004 /* XFW3CChapter04Tests.m */; };
-		AA0000030000000000000004 /* XFW3CChapter05Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000005 /* XFW3CChapter05Tests.m */; };
-		AA0000030000000000000005 /* XFW3CChapter06Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000006 /* XFW3CChapter06Tests.m */; };
-		AA0000030000000000000007 /* XFW3CChapter07Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000011 /* XFW3CChapter07Tests.m */; };
-		AA0000030000000000000008 /* XFW3CChapter08Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000012 /* XFW3CChapter08Tests.m */; };
-		AA0000030000000000000009 /* XFW3CChapter09Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000013 /* XFW3CChapter09Tests.m */; };
-		AA000003000000000000000A /* XFW3CChapter10Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000014 /* XFW3CChapter10Tests.m */; };
-		AA000003000000000000000B /* XFW3CChapter11Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000015 /* XFW3CChapter11Tests.m */; };
-		AA000003000000000000000C /* XFW3CChapter02Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000016 /* XFW3CChapter02Tests.m */; };
-		AA000003000000000000000D /* XFW3CAppendixBTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000017 /* XFW3CAppendixBTests.m */; };
-		AA000003000000000000000E /* XFW3CAppendixGTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000018 /* XFW3CAppendixGTests.m */; };
-		AA000003000000000000000F /* XFW3CAppendixHTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000019 /* XFW3CAppendixHTests.m */; };
-		AA0000030000000000000006 /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100; };
 		AA0000010000000000000030 /* XFXPathLexer.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000030 /* XFXPathLexer.m */; };
+		AA00000100000000000000300 /* XFSVGDocument.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000300 /* XFSVGDocument.m */; };
 		AA0000010000000000000031 /* XFXPathParser.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000031 /* XFXPathParser.m */; };
 		AA0000010000000000000040 /* XFExprs.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000040 /* XFExprs.m */; };
+		AA00000100000000000000400 /* XFRichText.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000400 /* XFRichText.m */; };
 		AA0000010000000000000041 /* XFNodeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000041 /* XFNodeTests.m */; };
 		AA0000010000000000000042 /* XFLocationExpr.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000042 /* XFLocationExpr.m */; };
 		AA0000010000000000000043 /* XFStepExpr.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000043 /* XFStepExpr.m */; };
 		AA0000010000000000000044 /* XFPathExpr.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000044 /* XFPathExpr.m */; };
 		AA0000010000000000000045 /* XFBinaryExpr.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000045 /* XFBinaryExpr.m */; };
-		AA0000010000000000000125 /* XFExprSource.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000125 /* XFExprSource.m */; };
 		AA0000010000000000000046 /* XFXPathFunction.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000046 /* XFXPathFunction.m */; };
 		AA0000010000000000000047 /* XFXPathCoreFunctions.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000047 /* XFXPathCoreFunctions.m */; };
 		AA0000010000000000000048 /* XFFunctionCallExpr.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000048 /* XFFunctionCallExpr.m */; };
 		AA0000010000000000000050 /* XFEvent.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000051 /* XFEvent.m */; };
+		AA00000100000000000000500 /* XFFormRows.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000500 /* XFFormRows.m */; };
+		AA00000100000000000000501 /* XFFormRows.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000501 /* XFFormRows.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA00000100000000000000502 /* XFFormRowsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000502 /* XFFormRowsTests.m */; };
+		AA00000100000000000000503 /* XFFormViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000503 /* XFFormViewController.m */; };
+		AA00000100000000000000504 /* XFFormViewController.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000504 /* XFFormViewController.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA00000100000000000000505 /* XFFormViewControllerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000505 /* XFFormViewControllerTests.m */; };
+		AA00000100000000000000506 /* XFRichTextUIKit.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000506 /* XFRichTextUIKit.m */; };
 		AA0000010000000000000052 /* XFListener.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000053 /* XFListener.m */; };
 		AA0000010000000000000054 /* XFXMLEvents.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000055 /* XFXMLEvents.m */; };
 		AA0000010000000000000056 /* XFEvent.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000050 /* XFEvent.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -91,6 +88,9 @@
 		AA0000010000000000000058 /* XFXMLEvents.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000054 /* XFXMLEvents.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0000010000000000000059 /* XFXMLEventsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000056 /* XFXMLEventsTests.m */; };
 		AA0000010000000000000060 /* XFAction.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000061 /* XFAction.m */; };
+		AA00000100000000000000601 /* XFMarkupParts.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000601 /* XFMarkupParts.m */; };
+		AA00000100000000000000602 /* XFMarkupParts.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000602 /* XFMarkupParts.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA00000100000000000000603 /* XFRichSupportTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000603 /* XFRichSupportTests.m */; };
 		AA0000010000000000000062 /* XFAction.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000060 /* XFAction.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA0000010000000000000070 /* XFNodeState.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000071 /* XFNodeState.m */; };
 		AA0000010000000000000072 /* XFNodeState.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000070 /* XFNodeState.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -122,23 +122,6 @@
 		AA00000100000000000000B7 /* XFLoadAction.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000B6 /* XFLoadAction.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA00000100000000000000B8 /* XFSubmissionTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000B8 /* XFSubmissionTests.m */; };
 		AA00000100000000000000C0 /* XFGroup.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000C1 /* XFGroup.m */; };
-		AA0000010000000000000110 /* XFHostNode.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000111 /* XFHostNode.m */; };
-		AA0000010000000000000112 /* XFTableModel.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000113 /* XFTableModel.m */; };
-		AA0000010000000000000122 /* XFHostEdit.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000122; settings = {ATTRIBUTES = (Public, ); }; };
-		AA0000010000000000000124 /* XFRichTextEditor.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000124 /* XFRichTextEditor.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA0000010000000000000123 /* XFHostEdit.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000123; };
-		AA0000010000000000000126 /* XFAVT.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000126 /* XFAVT.m */; };
-		AA0000010000000000000129 /* XFSVGView.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000129 /* XFSVGView.m */; };
-		AA0000010000000000000113 /* XFTableModel.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000112 /* XFTableModel.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA0000010000000000000115 /* XFVarControl.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000115 /* XFVarControl.m */; };
-		AA0000010000000000000114 /* XFVarControl.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000114 /* XFVarControl.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA0000010000000000000117 /* XFDialog.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000117 /* XFDialog.m */; };
-		AA0000010000000000000116 /* XFDialog.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000116 /* XFDialog.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA0000010000000000000119 /* XFSubform.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000119 /* XFSubform.m */; };
-		AA0000010000000000000118 /* XFSubform.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000118 /* XFSubform.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA000001000000000000011B /* XFRichText.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000011B /* XFRichText.m */; };
-		AA000001000000000000011A /* XFRichText.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000001000000000000011A /* XFRichText.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		AA0000010000000000000111 /* XFHostNode.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000110 /* XFHostNode.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA00000100000000000000C1 /* XFGroup.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000C0 /* XFGroup.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA00000100000000000000C2 /* XFRepeat.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000C3 /* XFRepeat.m */; };
 		AA00000100000000000000C3 /* XFRepeat.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000C2 /* XFRepeat.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -180,16 +163,46 @@
 		AA00000100000000000000FA /* XFTypeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000FA /* XFTypeTests.m */; };
 		AA00000100000000000000FB /* XFUploadControl.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000FB /* XFUploadControl.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		AA00000100000000000000FC /* XFUploadControl.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000FC /* XFUploadControl.m */; };
-		CEA77CCE3044722B006750A1 /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; };
-		CEA77CD23044734A006750A1 /* XFXPathExtraFunctions.m in Sources */ = {isa = PBXBuildFile; fileRef = CEA77CD13044734A006750A1 /* XFXPathExtraFunctions.m */; };
-		AA0000020000000000000001 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000001; };
-		AA0000020000000000000002 /* XFDDocument.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000002; };
-		AA0000020000000000000003 /* XFDEditors.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000003; };
-		AA0000020000000000000004 /* XFDWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000004; };
-		AA000002000000000000000B /* XFDXPathField.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000000B; };
+		AA0000010000000000000110 /* XFHostNode.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000111 /* XFHostNode.m */; };
+		AA0000010000000000000111 /* XFHostNode.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000110 /* XFHostNode.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000112 /* XFTableModel.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000113 /* XFTableModel.m */; };
+		AA0000010000000000000113 /* XFTableModel.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000112 /* XFTableModel.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000114 /* XFVarControl.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000114 /* XFVarControl.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000115 /* XFVarControl.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000115 /* XFVarControl.m */; };
+		AA0000010000000000000116 /* XFDialog.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000116 /* XFDialog.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000117 /* XFDialog.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000117 /* XFDialog.m */; };
+		AA0000010000000000000118 /* XFSubform.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000118 /* XFSubform.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000119 /* XFSubform.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000119 /* XFSubform.m */; };
+		AA000001000000000000011A /* XFRichText.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000001000000000000011A /* XFRichText.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA000001000000000000011B /* XFRichTextPresentation.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000011B /* XFRichTextPresentation.m */; };
+		AA0000010000000000000122 /* XFHostEdit.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000122 /* XFHostEdit.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000123 /* XFHostEdit.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000123 /* XFHostEdit.m */; };
+		AA0000010000000000000124 /* XFRichTextEditor.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000124 /* XFRichTextEditor.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		AA0000010000000000000125 /* XFExprSource.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000125 /* XFExprSource.m */; };
+		AA0000010000000000000126 /* XFAVT.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000126 /* XFAVT.m */; };
+		AA0000010000000000000129 /* XFSVGView.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000129 /* XFSVGView.m */; };
+		AA00000100000000000011C /* XFFormView+Widgets.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000011C /* XFFormView+Widgets.m */; };
+		AA00000100000000000011D /* XFFormView+Layout.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000011D /* XFFormView+Layout.m */; };
+		AA00000100000000000011E /* XFFormView+Editing.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000011E /* XFFormView+Editing.m */; };
+		AA00000100000000000011F /* XFTableAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = BB00000100000000000011F /* XFTableAdapter.m */; };
+		AA000001000000000000120 /* XFRichTextEditor.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000120 /* XFRichTextEditor.m */; };
+		AA0000020000000000000001 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000001 /* main.m */; };
+		AA0000020000000000000002 /* XFDDocument.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000002 /* XFDDocument.m */; };
+		AA0000020000000000000003 /* XFDEditors.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000003 /* XFDEditors.m */; };
+		AA0000020000000000000004 /* XFDWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000004 /* XFDWindowController.m */; };
+		AA0000020000000000000005 /* DMTabBar.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000005 /* DMTabBar.m */; };
+		AA0000020000000000000006 /* DMTabBarItem.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000006 /* DMTabBarItem.m */; };
+		AA0000020000000000000007 /* JUInspectorBaseView.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000007 /* JUInspectorBaseView.m */; };
+		AA0000020000000000000008 /* JUInspectorView.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000008 /* JUInspectorView.m */; };
+		AA0000020000000000000009 /* JUInspectorViewContainer.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000009 /* JUInspectorViewContainer.m */; };
+		AA000002000000000000000A /* JUInspectorViewHeader.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000000A /* JUInspectorViewHeader.m */; };
+		AA000002000000000000000B /* XFDXPathField.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000000B /* XFDXPathField.m */; };
 		AA000002000000000000000C /* XFDRichTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000000C /* XFDRichTextField.m */; };
 		AA000002000000000000000D /* XFDIDRefField.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000000D /* XFDIDRefField.m */; };
 		AA000002000000000000000E /* XFDDesignOverlay.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000000E /* XFDDesignOverlay.m */; };
+		AA0000020000000000000021 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000021 /* MainMenu.xib */; };
+		AA0000020000000000000022 /* XFDDocumentWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000022 /* XFDDocumentWindow.xib */; };
+		AA0000020000000000000040 /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; };
 		AA0000020000000000000050 /* XFDWindowController+Outline.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000050 /* XFDWindowController+Outline.m */; };
 		AA0000020000000000000051 /* XFDWindowController+Inspector.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000051 /* XFDWindowController+Inspector.m */; };
 		AA0000020000000000000052 /* XFDWindowController+Preview.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000052 /* XFDWindowController+Preview.m */; };
@@ -200,15 +213,32 @@
 		AA0000020000000000000057 /* XFDActionRowsPane.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000057 /* XFDActionRowsPane.m */; };
 		AA0000020000000000000058 /* XFDSubmissionTester.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000058 /* XFDSubmissionTester.m */; };
 		AA0000020000000000000059 /* XFDEventsConsole.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000059 /* XFDEventsConsole.m */; };
-		AA0000020000000000000005 /* DMTabBar.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000005; };
-		AA0000020000000000000006 /* DMTabBarItem.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000006; };
-		AA0000020000000000000007 /* JUInspectorBaseView.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000007; };
-		AA0000020000000000000008 /* JUInspectorView.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000008; };
-		AA0000020000000000000009 /* JUInspectorViewContainer.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000009; };
-		AA000002000000000000000A /* JUInspectorViewHeader.m in Sources */ = {isa = PBXBuildFile; fileRef = BB000002000000000000000A; };
-		AA0000020000000000000021 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000021; };
-		AA0000020000000000000022 /* XFDDocumentWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000022; };
-		AA0000020000000000000040 /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100; };
+		AA0000030000000000000001 /* XFW3CTestCase.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000002 /* XFW3CTestCase.m */; };
+		AA0000030000000000000002 /* XFW3CChapter03Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000003 /* XFW3CChapter03Tests.m */; };
+		AA0000030000000000000003 /* XFW3CChapter04Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000004 /* XFW3CChapter04Tests.m */; };
+		AA0000030000000000000004 /* XFW3CChapter05Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000005 /* XFW3CChapter05Tests.m */; };
+		AA0000030000000000000005 /* XFW3CChapter06Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000006 /* XFW3CChapter06Tests.m */; };
+		AA0000030000000000000006 /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; };
+		AA0000030000000000000007 /* XFW3CChapter07Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000011 /* XFW3CChapter07Tests.m */; };
+		AA0000030000000000000008 /* XFW3CChapter08Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000012 /* XFW3CChapter08Tests.m */; };
+		AA0000030000000000000009 /* XFW3CChapter09Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000013 /* XFW3CChapter09Tests.m */; };
+		AA000003000000000000000A /* XFW3CChapter10Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000014 /* XFW3CChapter10Tests.m */; };
+		AA000003000000000000000B /* XFW3CChapter11Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000015 /* XFW3CChapter11Tests.m */; };
+		AA000003000000000000000C /* XFW3CChapter02Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000016 /* XFW3CChapter02Tests.m */; };
+		AA000003000000000000000D /* XFW3CAppendixBTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000017 /* XFW3CAppendixBTests.m */; };
+		AA000003000000000000000E /* XFW3CAppendixGTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000018 /* XFW3CAppendixGTests.m */; };
+		AA000003000000000000000F /* XFW3CAppendixHTests.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000019 /* XFW3CAppendixHTests.m */; };
+		CEA77CCE3044722B006750A1 /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; };
+		CEA77CD23044734A006750A1 /* XFXPathExtraFunctions.m in Sources */ = {isa = PBXBuildFile; fileRef = CEA77CD13044734A006750A1 /* XFXPathExtraFunctions.m */; };
+		MN0000010000000000000001 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000001 /* main.m */; };
+		MN0000010000000000000002 /* XFMobileAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000002 /* XFMobileAppDelegate.m */; };
+		MN0000010000000000000003 /* XFFormBrowserViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000003 /* XFFormBrowserViewController.m */; };
+		MN0000010000000000000004 /* XFMobileForm.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000004 /* XFMobileForm.m */; };
+		MN0000010000000000000010 /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; };
+		MN0000010000000000000011 /* XFormsKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		MN0000010000000000000030 /* XFMobileAppTests.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000030 /* XFMobileAppTests.m */; };
+		MN0000010000000000000031 /* XFMobileForm.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000004 /* XFMobileForm.m */; };
+		MN0000010000000000000032 /* XFFormBrowserViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000003 /* XFFormBrowserViewController.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -240,20 +270,40 @@
 			remoteGlobalIDString = EE0000010000000000000001;
 			remoteInfo = XFormsKit;
 		};
+		CC0000040000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DD0000010000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE0000010000000000000001;
+			remoteInfo = XFormsKit;
+		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		ME0000010000000000000001 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				MN0000010000000000000011 /* XFormsKit.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
-		BB00000100000000000000210 /* XFXMLTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFXMLTypes.h; sourceTree = "<group>"; };
-		BB00000100000000000000200 /* XFDOMNode.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMNode.m; sourceTree = "<group>"; };
-		BB00000100000000000000201 /* XFDOMElement.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMElement.m; sourceTree = "<group>"; };
-		BB00000100000000000000202 /* XFDOMDocument.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMDocument.m; sourceTree = "<group>"; };
-		BB00000100000000000000203 /* XFDOMParser.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMParser.m; sourceTree = "<group>"; };
-		BB00000100000000000000204 /* XFDOM.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDOM.h; sourceTree = "<group>"; };
-		BB00000100000000000000205 /* XFDOMNode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDOMNode.h; sourceTree = "<group>"; };
-		BB00000100000000000000206 /* XFDOMElement.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDOMElement.h; sourceTree = "<group>"; };
-		BB00000100000000000000207 /* XFDOMDocument.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDOMDocument.h; sourceTree = "<group>"; };
-		BB00000100000000000000208 /* XFDOMPriv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDOMPriv.h; sourceTree = "<group>"; };
-		BB00000100000000000000209 /* XFDOMTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMTests.m; sourceTree = "<group>"; };
+		MM0000010000000000000064 /* XFDExpressionField.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDExpressionField.m; sourceTree = "<group>"; };
+		MM0000010000000000000065 /* XFDExpressionField.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDExpressionField.h; sourceTree = "<group>"; };
+		MM0000010000000000000062 /* XFDXPathHighlightTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDXPathHighlightTests.m; sourceTree = "<group>"; };
+		MM0000010000000000000060 /* XFDXPathTextStorage.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDXPathTextStorage.m; sourceTree = "<group>"; };
+		MM0000010000000000000061 /* XFDXPathTextStorage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDXPathTextStorage.h; sourceTree = "<group>"; };
+		MM0000010000000000000052 /* XFDateDisplayTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDateDisplayTests.m; sourceTree = "<group>"; };
+		MM0000010000000000000050 /* XFDateDisplay.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDateDisplay.m; sourceTree = "<group>"; };
+		MM0000010000000000000051 /* XFDateDisplay.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDateDisplay.h; sourceTree = "<group>"; };
+		MM0000010000000000000090 /* XFSVGRenderTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFSVGRenderTests.m; sourceTree = "<group>"; };
+		MM0000010000000000000040 /* Samples */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Samples; path = Samples; sourceTree = SOURCE_ROOT; };
 		BB0000010000000000000001 /* XFNamespaces.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFNamespaces.m; sourceTree = "<group>"; };
 		BB0000010000000000000002 /* XFErrors.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFErrors.m; sourceTree = "<group>"; };
 		BB0000010000000000000003 /* XFXML.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXML.m; sourceTree = "<group>"; };
@@ -268,12 +318,6 @@
 		BB000001000000000000000C /* XFOutputControl.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFOutputControl.m; sourceTree = "<group>"; };
 		BB000001000000000000000D /* XFProcessor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFProcessor.m; sourceTree = "<group>"; };
 		BB000001000000000000000E /* XFFormView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFFormView.m; sourceTree = "<group>"; };
-		BB00000100000000000011C /* XFFormView+Widgets.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFFormView+Widgets.m"; sourceTree = "<group>"; };
-		BB00000100000000000011D /* XFFormView+Layout.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFFormView+Layout.m"; sourceTree = "<group>"; };
-		BB00000100000000000011E /* XFFormView+Editing.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFFormView+Editing.m"; sourceTree = "<group>"; };
-		BB00000100000000000011F /* XFTableAdapter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFTableAdapter.m"; sourceTree = "<group>"; };
-		BB000001000000000000120 /* XFRichTextEditor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFRichTextEditor.m"; sourceTree = "<group>"; };
-		BB0000010000000000000121 /* XFAppKitPriv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFAppKitPriv.h; sourceTree = "<group>"; };
 		BB0000010000000000000010 /* XFormsKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFormsKit.h; sourceTree = "<group>"; };
 		BB0000010000000000000011 /* XFNamespaces.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFNamespaces.h; sourceTree = "<group>"; };
 		BB0000010000000000000012 /* XFErrors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFErrors.h; sourceTree = "<group>"; };
@@ -290,23 +334,44 @@
 		BB000001000000000000001D /* XFProcessor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFProcessor.h; sourceTree = "<group>"; };
 		BB000001000000000000001E /* XFFormView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFFormView.h; sourceTree = "<group>"; };
 		BB0000010000000000000020 /* XFXPathTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXPathTests.m; sourceTree = "<group>"; };
+		BB00000100000000000000200 /* XFDOMNode.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMNode.m; sourceTree = "<group>"; };
+		BB00000100000000000000201 /* XFDOMElement.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMElement.m; sourceTree = "<group>"; };
+		BB00000100000000000000202 /* XFDOMDocument.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMDocument.m; sourceTree = "<group>"; };
+		BB00000100000000000000203 /* XFDOMParser.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMParser.m; sourceTree = "<group>"; };
+		BB00000100000000000000204 /* XFDOM.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDOM.h; sourceTree = "<group>"; };
+		BB00000100000000000000205 /* XFDOMNode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDOMNode.h; sourceTree = "<group>"; };
+		BB00000100000000000000206 /* XFDOMElement.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDOMElement.h; sourceTree = "<group>"; };
+		BB00000100000000000000207 /* XFDOMDocument.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDOMDocument.h; sourceTree = "<group>"; };
+		BB00000100000000000000208 /* XFDOMPriv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDOMPriv.h; sourceTree = "<group>"; };
+		BB00000100000000000000209 /* XFDOMTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOMTests.m; sourceTree = "<group>"; };
 		BB0000010000000000000021 /* XFInstanceTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFInstanceTests.m; sourceTree = "<group>"; };
+		BB00000100000000000000210 /* XFXMLTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFXMLTypes.h; sourceTree = "<group>"; };
 		BB0000010000000000000022 /* XFHelloFormTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFHelloFormTests.m; sourceTree = "<group>"; };
 		BB0000010000000000000023 /* hello.xhtml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = hello.xhtml; sourceTree = "<group>"; };
 		BB0000010000000000000030 /* XFXPathLexer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXPathLexer.m; sourceTree = "<group>"; };
+		BB00000100000000000000300 /* XFSVGDocument.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFSVGDocument.m; sourceTree = "<group>"; };
+		BB00000100000000000000301 /* XFSVGPriv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFSVGPriv.h; sourceTree = "<group>"; };
 		BB0000010000000000000031 /* XFXPathParser.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXPathParser.m; sourceTree = "<group>"; };
 		BB0000010000000000000032 /* XFXPathPriv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFXPathPriv.h; sourceTree = "<group>"; };
 		BB0000010000000000000040 /* XFExprs.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFExprs.m; sourceTree = "<group>"; };
+		BB00000100000000000000400 /* XFRichText.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFRichText.m; sourceTree = "<group>"; };
+		BB00000100000000000000401 /* XFRichTextPriv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFRichTextPriv.h; sourceTree = "<group>"; };
 		BB0000010000000000000041 /* XFNodeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFNodeTests.m; sourceTree = "<group>"; };
 		BB0000010000000000000042 /* XFLocationExpr.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFLocationExpr.m; sourceTree = "<group>"; };
 		BB0000010000000000000043 /* XFStepExpr.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFStepExpr.m; sourceTree = "<group>"; };
 		BB0000010000000000000044 /* XFPathExpr.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFPathExpr.m; sourceTree = "<group>"; };
 		BB0000010000000000000045 /* XFBinaryExpr.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFBinaryExpr.m; sourceTree = "<group>"; };
-		BB0000010000000000000125 /* XFExprSource.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFExprSource.m; sourceTree = "<group>"; };
 		BB0000010000000000000046 /* XFXPathFunction.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXPathFunction.m; sourceTree = "<group>"; };
 		BB0000010000000000000047 /* XFXPathCoreFunctions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXPathCoreFunctions.m; sourceTree = "<group>"; };
 		BB0000010000000000000048 /* XFFunctionCallExpr.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFFunctionCallExpr.m; sourceTree = "<group>"; };
 		BB0000010000000000000050 /* XFEvent.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFEvent.h; sourceTree = "<group>"; };
+		BB00000100000000000000500 /* XFFormRows.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFFormRows.m; sourceTree = "<group>"; };
+		BB00000100000000000000501 /* XFFormRows.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFFormRows.h; sourceTree = "<group>"; };
+		BB00000100000000000000502 /* XFFormRowsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFFormRowsTests.m; sourceTree = "<group>"; };
+		BB00000100000000000000503 /* XFFormViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFFormViewController.m; sourceTree = "<group>"; };
+		BB00000100000000000000504 /* XFFormViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFFormViewController.h; sourceTree = "<group>"; };
+		BB00000100000000000000505 /* XFFormViewControllerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFFormViewControllerTests.m; sourceTree = "<group>"; };
+		BB00000100000000000000506 /* XFRichTextUIKit.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFRichTextUIKit.m; sourceTree = "<group>"; };
 		BB0000010000000000000051 /* XFEvent.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFEvent.m; sourceTree = "<group>"; };
 		BB0000010000000000000052 /* XFListener.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFListener.h; sourceTree = "<group>"; };
 		BB0000010000000000000053 /* XFListener.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFListener.m; sourceTree = "<group>"; };
@@ -314,6 +379,9 @@
 		BB0000010000000000000055 /* XFXMLEvents.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXMLEvents.m; sourceTree = "<group>"; };
 		BB0000010000000000000056 /* XFXMLEventsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXMLEventsTests.m; sourceTree = "<group>"; };
 		BB0000010000000000000060 /* XFAction.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFAction.h; sourceTree = "<group>"; };
+		BB00000100000000000000601 /* XFMarkupParts.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFMarkupParts.m; sourceTree = "<group>"; };
+		BB00000100000000000000602 /* XFMarkupParts.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFMarkupParts.h; sourceTree = "<group>"; };
+		BB00000100000000000000603 /* XFRichSupportTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFRichSupportTests.m; sourceTree = "<group>"; };
 		BB0000010000000000000061 /* XFAction.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFAction.m; sourceTree = "<group>"; };
 		BB0000010000000000000070 /* XFNodeState.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFNodeState.h; sourceTree = "<group>"; };
 		BB0000010000000000000071 /* XFNodeState.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFNodeState.m; sourceTree = "<group>"; };
@@ -346,25 +414,6 @@
 		BB00000100000000000000B8 /* XFSubmissionTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFSubmissionTests.m; sourceTree = "<group>"; };
 		BB00000100000000000000C0 /* XFGroup.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFGroup.h; sourceTree = "<group>"; };
 		BB00000100000000000000C1 /* XFGroup.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFGroup.m; sourceTree = "<group>"; };
-		BB0000010000000000000110 /* XFHostNode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFHostNode.h; sourceTree = "<group>"; };
-		BB0000010000000000000111 /* XFHostNode.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFHostNode.m; sourceTree = "<group>"; };
-		BB0000010000000000000112 /* XFTableModel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFTableModel.h; sourceTree = "<group>"; };
-		BB0000010000000000000113 /* XFTableModel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFTableModel.m; sourceTree = "<group>"; };
-		BB0000010000000000000122 /* XFHostEdit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFHostEdit.h; sourceTree = "<group>"; };
-		BB0000010000000000000126 /* XFAVT.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFAVT.m; sourceTree = "<group>"; };
-		BB0000010000000000000127 /* XFAVT.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFAVT.h; sourceTree = "<group>"; };
-		BB0000010000000000000128 /* XFSVG.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFSVG.h; sourceTree = "<group>"; };
-		BB0000010000000000000129 /* XFSVGView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFSVGView.m; sourceTree = "<group>"; };
-		BB0000010000000000000124 /* XFRichTextEditor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFRichTextEditor.h; sourceTree = "<group>"; };
-		BB0000010000000000000123 /* XFHostEdit.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFHostEdit.m; sourceTree = "<group>"; };
-		BB0000010000000000000114 /* XFVarControl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFVarControl.h; sourceTree = "<group>"; };
-		BB0000010000000000000115 /* XFVarControl.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFVarControl.m; sourceTree = "<group>"; };
-		BB0000010000000000000116 /* XFDialog.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDialog.h; sourceTree = "<group>"; };
-		BB0000010000000000000117 /* XFDialog.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDialog.m; sourceTree = "<group>"; };
-		BB0000010000000000000118 /* XFSubform.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFSubform.h; sourceTree = "<group>"; };
-		BB0000010000000000000119 /* XFSubform.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFSubform.m; sourceTree = "<group>"; };
-		BB000001000000000000011A /* XFRichText.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFRichText.h; sourceTree = "<group>"; };
-		BB000001000000000000011B /* XFRichText.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFRichText.m; sourceTree = "<group>"; };
 		BB00000100000000000000C2 /* XFRepeat.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFRepeat.h; sourceTree = "<group>"; };
 		BB00000100000000000000C3 /* XFRepeat.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFRepeat.m; sourceTree = "<group>"; };
 		BB00000100000000000000C4 /* XFSetindexAction.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFSetindexAction.h; sourceTree = "<group>"; };
@@ -415,43 +464,46 @@
 		BB0000010000000000000103 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		BB0000010000000000000104 /* GNUmakefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = GNUmakefile; sourceTree = "<group>"; };
 		BB0000010000000000000105 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
-		CEA77CD13044734A006750A1 /* XFXPathExtraFunctions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXPathExtraFunctions.m; sourceTree = "<group>"; };
+		BB0000010000000000000110 /* XFHostNode.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFHostNode.h; sourceTree = "<group>"; };
+		BB0000010000000000000111 /* XFHostNode.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFHostNode.m; sourceTree = "<group>"; };
+		BB0000010000000000000112 /* XFTableModel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFTableModel.h; sourceTree = "<group>"; };
+		BB0000010000000000000113 /* XFTableModel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFTableModel.m; sourceTree = "<group>"; };
+		BB0000010000000000000114 /* XFVarControl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFVarControl.h; sourceTree = "<group>"; };
+		BB0000010000000000000115 /* XFVarControl.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFVarControl.m; sourceTree = "<group>"; };
+		BB0000010000000000000116 /* XFDialog.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDialog.h; sourceTree = "<group>"; };
+		BB0000010000000000000117 /* XFDialog.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDialog.m; sourceTree = "<group>"; };
+		BB0000010000000000000118 /* XFSubform.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFSubform.h; sourceTree = "<group>"; };
+		BB0000010000000000000119 /* XFSubform.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFSubform.m; sourceTree = "<group>"; };
+		BB000001000000000000011A /* XFRichText.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFRichText.h; sourceTree = "<group>"; };
+		BB000001000000000000011B /* XFRichTextPresentation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFRichTextPresentation.m; sourceTree = "<group>"; };
+		BB0000010000000000000121 /* XFAppKitPriv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFAppKitPriv.h; sourceTree = "<group>"; };
+		BB0000010000000000000122 /* XFHostEdit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFHostEdit.h; sourceTree = "<group>"; };
+		BB0000010000000000000123 /* XFHostEdit.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFHostEdit.m; sourceTree = "<group>"; };
+		BB0000010000000000000124 /* XFRichTextEditor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFRichTextEditor.h; sourceTree = "<group>"; };
+		BB0000010000000000000125 /* XFExprSource.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFExprSource.m; sourceTree = "<group>"; };
+		BB0000010000000000000126 /* XFAVT.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFAVT.m; sourceTree = "<group>"; };
+		BB0000010000000000000127 /* XFAVT.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFAVT.h; sourceTree = "<group>"; };
+		BB0000010000000000000128 /* XFSVG.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFSVG.h; sourceTree = "<group>"; };
+		BB0000010000000000000129 /* XFSVGView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFSVGView.m; sourceTree = "<group>"; };
+		BB00000100000000000011C /* XFFormView+Widgets.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFFormView+Widgets.m"; sourceTree = "<group>"; };
+		BB00000100000000000011D /* XFFormView+Layout.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFFormView+Layout.m"; sourceTree = "<group>"; };
+		BB00000100000000000011E /* XFFormView+Editing.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFFormView+Editing.m"; sourceTree = "<group>"; };
+		BB00000100000000000011F /* XFTableAdapter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFTableAdapter.m; sourceTree = "<group>"; };
+		BB000001000000000000120 /* XFRichTextEditor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFRichTextEditor.m; sourceTree = "<group>"; };
 		BB0000020000000000000001 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		BB0000020000000000000002 /* XFDDocument.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDDocument.m; sourceTree = "<group>"; };
 		BB0000020000000000000003 /* XFDEditors.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDEditors.m; sourceTree = "<group>"; };
 		BB0000020000000000000004 /* XFDWindowController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDWindowController.m; sourceTree = "<group>"; };
-		BB000002000000000000000B /* XFDXPathField.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDXPathField.m; sourceTree = "<group>"; };
-		BB000002000000000000001B /* XFDXPathField.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDXPathField.h; sourceTree = "<group>"; };
-		BB000002000000000000000C /* XFDRichTextField.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDRichTextField.m; sourceTree = "<group>"; };
-		BB000002000000000000001C /* XFDRichTextField.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDRichTextField.h; sourceTree = "<group>"; };
-		BB000002000000000000000D /* XFDIDRefField.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDIDRefField.m; sourceTree = "<group>"; };
-		BB000002000000000000001D /* XFDIDRefField.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDIDRefField.h; sourceTree = "<group>"; };
-		BB000002000000000000000E /* XFDDesignOverlay.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDDesignOverlay.m; sourceTree = "<group>"; };
-		BB000002000000000000001E /* XFDDesignOverlay.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDDesignOverlay.h; sourceTree = "<group>"; };
-		BB0000020000000000000050 /* XFDWindowController+Outline.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFDWindowController+Outline.m"; sourceTree = "<group>"; };
-		BB0000020000000000000051 /* XFDWindowController+Inspector.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFDWindowController+Inspector.m"; sourceTree = "<group>"; };
-		BB0000020000000000000052 /* XFDWindowController+Preview.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFDWindowController+Preview.m"; sourceTree = "<group>"; };
-		BB0000020000000000000053 /* XFDInspectorSpecs.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDInspectorSpecs.m; sourceTree = "<group>"; };
-		BB0000020000000000000063 /* XFDInspectorSpecs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDInspectorSpecs.h; sourceTree = "<group>"; };
-		BB0000020000000000000054 /* XFDPalettePanel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDPalettePanel.m; sourceTree = "<group>"; };
-		BB0000020000000000000064 /* XFDPalettePanel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDPalettePanel.h; sourceTree = "<group>"; };
-		BB0000020000000000000055 /* XFDInstanceXMLEditor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDInstanceXMLEditor.m; sourceTree = "<group>"; };
-		BB0000020000000000000065 /* XFDInstanceXMLEditor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDInstanceXMLEditor.h; sourceTree = "<group>"; };
-		BB0000020000000000000056 /* XFDEventsPane.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDEventsPane.m; sourceTree = "<group>"; };
-		BB0000020000000000000066 /* XFDEventsPane.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDEventsPane.h; sourceTree = "<group>"; };
-		BB0000020000000000000057 /* XFDActionRowsPane.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDActionRowsPane.m; sourceTree = "<group>"; };
-		BB0000020000000000000067 /* XFDActionRowsPane.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDActionRowsPane.h; sourceTree = "<group>"; };
-		BB0000020000000000000058 /* XFDSubmissionTester.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDSubmissionTester.m; sourceTree = "<group>"; };
-		BB0000020000000000000069 /* XFDSubmissionTester.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDSubmissionTester.h; sourceTree = "<group>"; };
-		BB0000020000000000000059 /* XFDEventsConsole.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDEventsConsole.m; sourceTree = "<group>"; };
-		BB000002000000000000006A /* XFDEventsConsole.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDEventsConsole.h; sourceTree = "<group>"; };
-		BB0000020000000000000068 /* XFDWindowControllerPriv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDWindowControllerPriv.h; sourceTree = "<group>"; };
 		BB0000020000000000000005 /* DMTabBar.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DMTabBar.m; sourceTree = "<group>"; };
 		BB0000020000000000000006 /* DMTabBarItem.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DMTabBarItem.m; sourceTree = "<group>"; };
 		BB0000020000000000000007 /* JUInspectorBaseView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JUInspectorBaseView.m; sourceTree = "<group>"; };
 		BB0000020000000000000008 /* JUInspectorView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JUInspectorView.m; sourceTree = "<group>"; };
 		BB0000020000000000000009 /* JUInspectorViewContainer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JUInspectorViewContainer.m; sourceTree = "<group>"; };
 		BB000002000000000000000A /* JUInspectorViewHeader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = JUInspectorViewHeader.m; sourceTree = "<group>"; };
+		BB000002000000000000000B /* XFDXPathField.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDXPathField.m; sourceTree = "<group>"; };
+		BB000002000000000000000C /* XFDRichTextField.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDRichTextField.m; sourceTree = "<group>"; };
+		BB000002000000000000000D /* XFDIDRefField.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDIDRefField.m; sourceTree = "<group>"; };
+		BB000002000000000000000E /* XFDDesignOverlay.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDDesignOverlay.m; sourceTree = "<group>"; };
 		BB0000020000000000000011 /* XFDDocument.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDDocument.h; sourceTree = "<group>"; };
 		BB0000020000000000000012 /* XFDEditors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDEditors.h; sourceTree = "<group>"; };
 		BB0000020000000000000013 /* XFDWindowController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDWindowController.h; sourceTree = "<group>"; };
@@ -461,16 +513,39 @@
 		BB0000020000000000000018 /* JUInspectorView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JUInspectorView.h; sourceTree = "<group>"; };
 		BB0000020000000000000019 /* JUInspectorViewContainer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JUInspectorViewContainer.h; sourceTree = "<group>"; };
 		BB000002000000000000001A /* JUInspectorViewHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JUInspectorViewHeader.h; sourceTree = "<group>"; };
+		BB000002000000000000001B /* XFDXPathField.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDXPathField.h; sourceTree = "<group>"; };
+		BB000002000000000000001C /* XFDRichTextField.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDRichTextField.h; sourceTree = "<group>"; };
+		BB000002000000000000001D /* XFDIDRefField.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDIDRefField.h; sourceTree = "<group>"; };
+		BB000002000000000000001E /* XFDDesignOverlay.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDDesignOverlay.h; sourceTree = "<group>"; };
 		BB0000020000000000000021 /* MainMenu.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = MainMenu.xib; sourceTree = "<group>"; };
 		BB0000020000000000000022 /* XFDDocumentWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDDocumentWindow.xib; sourceTree = "<group>"; };
 		BB0000020000000000000023 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BB0000020000000000000030 /* XFormsDesigner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = XFormsDesigner.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB0000020000000000000050 /* XFDWindowController+Outline.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFDWindowController+Outline.m"; sourceTree = "<group>"; };
+		BB0000020000000000000051 /* XFDWindowController+Inspector.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFDWindowController+Inspector.m"; sourceTree = "<group>"; };
+		BB0000020000000000000052 /* XFDWindowController+Preview.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFDWindowController+Preview.m"; sourceTree = "<group>"; };
+		BB0000020000000000000053 /* XFDInspectorSpecs.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDInspectorSpecs.m; sourceTree = "<group>"; };
+		BB0000020000000000000054 /* XFDPalettePanel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDPalettePanel.m; sourceTree = "<group>"; };
+		BB0000020000000000000055 /* XFDInstanceXMLEditor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDInstanceXMLEditor.m; sourceTree = "<group>"; };
+		BB0000020000000000000056 /* XFDEventsPane.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDEventsPane.m; sourceTree = "<group>"; };
+		BB0000020000000000000057 /* XFDActionRowsPane.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDActionRowsPane.m; sourceTree = "<group>"; };
+		BB0000020000000000000058 /* XFDSubmissionTester.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDSubmissionTester.m; sourceTree = "<group>"; };
+		BB0000020000000000000059 /* XFDEventsConsole.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDEventsConsole.m; sourceTree = "<group>"; };
+		BB0000020000000000000063 /* XFDInspectorSpecs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDInspectorSpecs.h; sourceTree = "<group>"; };
+		BB0000020000000000000064 /* XFDPalettePanel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDPalettePanel.h; sourceTree = "<group>"; };
+		BB0000020000000000000065 /* XFDInstanceXMLEditor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDInstanceXMLEditor.h; sourceTree = "<group>"; };
+		BB0000020000000000000066 /* XFDEventsPane.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDEventsPane.h; sourceTree = "<group>"; };
+		BB0000020000000000000067 /* XFDActionRowsPane.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDActionRowsPane.h; sourceTree = "<group>"; };
+		BB0000020000000000000068 /* XFDWindowControllerPriv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDWindowControllerPriv.h; sourceTree = "<group>"; };
+		BB0000020000000000000069 /* XFDSubmissionTester.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDSubmissionTester.h; sourceTree = "<group>"; };
+		BB000002000000000000006A /* XFDEventsConsole.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDEventsConsole.h; sourceTree = "<group>"; };
 		BB0000030000000000000001 /* XFW3CTestCase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFW3CTestCase.h; sourceTree = "<group>"; };
 		BB0000030000000000000002 /* XFW3CTestCase.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CTestCase.m; sourceTree = "<group>"; };
 		BB0000030000000000000003 /* XFW3CChapter03Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CChapter03Tests.m; sourceTree = "<group>"; };
 		BB0000030000000000000004 /* XFW3CChapter04Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CChapter04Tests.m; sourceTree = "<group>"; };
 		BB0000030000000000000005 /* XFW3CChapter05Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CChapter05Tests.m; sourceTree = "<group>"; };
 		BB0000030000000000000006 /* XFW3CChapter06Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CChapter06Tests.m; sourceTree = "<group>"; };
+		BB0000030000000000000010 /* XFW3CTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XFW3CTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB0000030000000000000011 /* XFW3CChapter07Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CChapter07Tests.m; sourceTree = "<group>"; };
 		BB0000030000000000000012 /* XFW3CChapter08Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CChapter08Tests.m; sourceTree = "<group>"; };
 		BB0000030000000000000013 /* XFW3CChapter09Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CChapter09Tests.m; sourceTree = "<group>"; };
@@ -480,7 +555,17 @@
 		BB0000030000000000000017 /* XFW3CAppendixBTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CAppendixBTests.m; sourceTree = "<group>"; };
 		BB0000030000000000000018 /* XFW3CAppendixGTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CAppendixGTests.m; sourceTree = "<group>"; };
 		BB0000030000000000000019 /* XFW3CAppendixHTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFW3CAppendixHTests.m; sourceTree = "<group>"; };
-		BB0000030000000000000010 /* XFW3CTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XFW3CTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CEA77CD13044734A006750A1 /* XFXPathExtraFunctions.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFXPathExtraFunctions.m; sourceTree = "<group>"; };
+		MM0000010000000000000001 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		MM0000010000000000000002 /* XFMobileAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFMobileAppDelegate.m; sourceTree = "<group>"; };
+		MM0000010000000000000003 /* XFFormBrowserViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFFormBrowserViewController.m; sourceTree = "<group>"; };
+		MM0000010000000000000004 /* XFMobileForm.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFMobileForm.m; sourceTree = "<group>"; };
+		MM0000010000000000000012 /* XFMobileAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFMobileAppDelegate.h; sourceTree = "<group>"; };
+		MM0000010000000000000013 /* XFFormBrowserViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFFormBrowserViewController.h; sourceTree = "<group>"; };
+		MM0000010000000000000014 /* XFMobileForm.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFMobileForm.h; sourceTree = "<group>"; };
+		MM0000010000000000000020 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		MM0000010000000000000021 /* XFormsMobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = XFormsMobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		MM0000010000000000000030 /* XFMobileAppTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFMobileAppTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -520,6 +605,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0000030000000000000006 /* XFormsKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		MF0000010000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				MN0000010000000000000010 /* XFormsKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -566,6 +659,7 @@
 				BB0000010000000000000101 /* XFormsKitTests.xctest */,
 				BB0000030000000000000010 /* XFW3CTests.xctest */,
 				BB00000100000000000000F7 /* XFormsViewer.app */,
+				MM0000010000000000000021 /* XFormsMobile.app */,
 				BB0000020000000000000030 /* XFormsDesigner.app */,
 			);
 			name = Products;
@@ -581,6 +675,10 @@
 				BB0000010000000000000002 /* XFErrors.m */,
 				BB0000010000000000000013 /* XFXML.h */,
 				BB0000010000000000000003 /* XFXML.m */,
+				BB00000100000000000000601 /* XFMarkupParts.m */,
+				MM0000010000000000000050 /* XFDateDisplay.m */,
+				MM0000010000000000000051 /* XFDateDisplay.h */,
+				BB00000100000000000000602 /* XFMarkupParts.h */,
 				BB0000010000000000000014 /* XFInstance.h */,
 				BB0000010000000000000004 /* XFInstance.m */,
 				BB0000010000000000000015 /* XFModel.h */,
@@ -685,7 +783,12 @@
 				BB0000010000000000000055 /* XFXMLEvents.m */,
 				BB000001000000000000001E /* XFFormView.h */,
 				GG0000010000000000000200 /* DOM */,
+				GG00000100000000000000300 /* SVG */,
+				GG00000100000000000000400 /* RichText */,
+				GG00000100000000000000500 /* UIKit */,
 				BB00000100000000000000204 /* XFDOM.h */,
+				BB00000100000000000000501 /* XFFormRows.h */,
+				BB00000100000000000000504 /* XFFormViewController.h */,
 				BB00000100000000000000210 /* XFXMLTypes.h */,
 				BB00000100000000000000205 /* XFDOMNode.h */,
 				BB00000100000000000000206 /* XFDOMElement.h */,
@@ -700,6 +803,8 @@
 			isa = PBXGroup;
 			children = (
 				BB00000100000000000000209 /* XFDOMTests.m */,
+				BB00000100000000000000502 /* XFFormRowsTests.m */,
+				BB00000100000000000000505 /* XFFormViewControllerTests.m */,
 				BB0000010000000000000020 /* XFXPathTests.m */,
 				BB0000010000000000000021 /* XFInstanceTests.m */,
 				BB0000010000000000000022 /* XFHelloFormTests.m */,
@@ -710,6 +815,11 @@
 				BB00000100000000000000C6 /* XFRepeatGroupTests.m */,
 				BB00000100000000000000DA /* XFInsertDeleteTests.m */,
 				BB00000100000000000000EC /* XFUIControlTests.m */,
+				MM0000010000000000000062 /* XFDXPathHighlightTests.m */,
+				MM0000010000000000000052 /* XFDateDisplayTests.m */,
+				MM0000010000000000000090 /* XFSVGRenderTests.m */,
+				MM0000010000000000000030 /* XFMobileAppTests.m */,
+				BB00000100000000000000603 /* XFRichSupportTests.m */,
 				BB00000100000000000000FA /* XFTypeTests.m */,
 			);
 			path = XFormsKitTests;
@@ -721,18 +831,6 @@
 				BB0000010000000000000023 /* hello.xhtml */,
 			);
 			path = Fixtures;
-			sourceTree = "<group>";
-		};
-		GG0000010000000000000200 /* DOM */ = {
-			isa = PBXGroup;
-			children = (
-				BB00000100000000000000200 /* XFDOMNode.m */,
-				BB00000100000000000000201 /* XFDOMElement.m */,
-				BB00000100000000000000202 /* XFDOMDocument.m */,
-				BB00000100000000000000203 /* XFDOMParser.m */,
-				BB00000100000000000000208 /* XFDOMPriv.h */,
-			);
-			path = DOM;
 			sourceTree = "<group>";
 		};
 		GG0000010000000000000008 /* XPath */ = {
@@ -769,7 +867,7 @@
 				BB00000100000000000011E /* XFFormView+Editing.m */,
 				BB00000100000000000011F /* XFTableAdapter.m */,
 				BB000001000000000000120 /* XFRichTextEditor.m */,
-				BB000001000000000000011B /* XFRichText.m */,
+				BB000001000000000000011B /* XFRichTextPresentation.m */,
 				BB0000010000000000000129 /* XFSVGView.m */,
 			);
 			path = AppKit;
@@ -780,6 +878,7 @@
 			children = (
 				GG000001000000000000000B /* XFormsViewer */,
 				GG0000020000000000000001 /* XFormsDesigner */,
+				MG0000010000000000000001 /* XFormsMobile */,
 			);
 			path = Apps;
 			sourceTree = "<group>";
@@ -797,6 +896,46 @@
 			path = XFormsViewer;
 			sourceTree = "<group>";
 		};
+		GG00000100000000000000300 /* SVG */ = {
+			isa = PBXGroup;
+			children = (
+				BB00000100000000000000300 /* XFSVGDocument.m */,
+				BB00000100000000000000301 /* XFSVGPriv.h */,
+			);
+			path = SVG;
+			sourceTree = "<group>";
+		};
+		GG00000100000000000000400 /* RichText */ = {
+			isa = PBXGroup;
+			children = (
+				BB00000100000000000000400 /* XFRichText.m */,
+				BB00000100000000000000401 /* XFRichTextPriv.h */,
+			);
+			path = RichText;
+			sourceTree = "<group>";
+		};
+		GG00000100000000000000500 /* UIKit */ = {
+			isa = PBXGroup;
+			children = (
+				BB00000100000000000000500 /* XFFormRows.m */,
+				BB00000100000000000000503 /* XFFormViewController.m */,
+				BB00000100000000000000506 /* XFRichTextUIKit.m */,
+			);
+			path = UIKit;
+			sourceTree = "<group>";
+		};
+		GG0000010000000000000200 /* DOM */ = {
+			isa = PBXGroup;
+			children = (
+				BB00000100000000000000200 /* XFDOMNode.m */,
+				BB00000100000000000000201 /* XFDOMElement.m */,
+				BB00000100000000000000202 /* XFDOMDocument.m */,
+				BB00000100000000000000203 /* XFDOMParser.m */,
+				BB00000100000000000000208 /* XFDOMPriv.h */,
+			);
+			path = DOM;
+			sourceTree = "<group>";
+		};
 		GG0000020000000000000001 /* XFormsDesigner */ = {
 			isa = PBXGroup;
 			children = (
@@ -809,6 +948,10 @@
 				BB0000020000000000000004 /* XFDWindowController.m */,
 				BB000002000000000000001B /* XFDXPathField.h */,
 				BB000002000000000000000B /* XFDXPathField.m */,
+				MM0000010000000000000060 /* XFDXPathTextStorage.m */,
+				MM0000010000000000000064 /* XFDExpressionField.m */,
+				MM0000010000000000000065 /* XFDExpressionField.h */,
+				MM0000010000000000000061 /* XFDXPathTextStorage.h */,
 				BB000002000000000000001C /* XFDRichTextField.h */,
 				BB000002000000000000000C /* XFDRichTextField.m */,
 				BB000002000000000000001D /* XFDIDRefField.h */,
@@ -836,13 +979,13 @@
 				BB0000020000000000000021 /* MainMenu.xib */,
 				BB0000020000000000000022 /* XFDDocumentWindow.xib */,
 				BB0000020000000000000023 /* Info.plist */,
-				GG0000020000000000000002 /* DMTabBar */,
-				GG0000020000000000000003 /* JUInspectorView */,
+				GG0000020000000000000002 /* ThirdParty/DMTabBar */,
+				GG0000020000000000000003 /* ThirdParty/JUInspectorView */,
 			);
 			path = XFormsDesigner;
 			sourceTree = "<group>";
 		};
-		GG0000020000000000000002 /* DMTabBar */ = {
+		GG0000020000000000000002 /* ThirdParty/DMTabBar */ = {
 			isa = PBXGroup;
 			children = (
 				BB0000020000000000000015 /* DMTabBar.h */,
@@ -853,7 +996,7 @@
 			path = ThirdParty/DMTabBar;
 			sourceTree = "<group>";
 		};
-		GG0000020000000000000003 /* JUInspectorView */ = {
+		GG0000020000000000000003 /* ThirdParty/JUInspectorView */ = {
 			isa = PBXGroup;
 			children = (
 				BB0000020000000000000017 /* JUInspectorBaseView.h */,
@@ -890,6 +1033,22 @@
 			path = W3CTests;
 			sourceTree = "<group>";
 		};
+		MG0000010000000000000001 /* XFormsMobile */ = {
+			isa = PBXGroup;
+			children = (
+				MM0000010000000000000001 /* main.m */,
+				MM0000010000000000000012 /* XFMobileAppDelegate.h */,
+				MM0000010000000000000002 /* XFMobileAppDelegate.m */,
+				MM0000010000000000000013 /* XFFormBrowserViewController.h */,
+				MM0000010000000000000003 /* XFFormBrowserViewController.m */,
+				MM0000010000000000000014 /* XFMobileForm.h */,
+				MM0000010000000000000004 /* XFMobileForm.m */,
+				MM0000010000000000000020 /* Info.plist */,
+				MM0000010000000000000040 /* Samples */,
+			);
+			path = XFormsMobile;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -901,11 +1060,15 @@
 				AA0000010000000000000011 /* XFNamespaces.h in Headers */,
 				AA0000010000000000000012 /* XFErrors.h in Headers */,
 				AA0000010000000000000013 /* XFXML.h in Headers */,
+				AA00000100000000000000602 /* XFMarkupParts.h in Headers */,
+				MN0000010000000000000051 /* XFDateDisplay.h in Headers */,
 				AA0000010000000000000014 /* XFInstance.h in Headers */,
 				AA0000010000000000000015 /* XFModel.h in Headers */,
 				AA0000010000000000000016 /* XFExprContext.h in Headers */,
 				AA0000010000000000000017 /* XFXPathValue.h in Headers */,
 				AA00000100000000000000204 /* XFDOM.h in Headers */,
+				AA00000100000000000000501 /* XFFormRows.h in Headers */,
+				AA00000100000000000000504 /* XFFormViewController.h in Headers */,
 				AA00000100000000000000210 /* XFXMLTypes.h in Headers */,
 				AA00000100000000000000205 /* XFDOMNode.h in Headers */,
 				AA00000100000000000000206 /* XFDOMElement.h in Headers */,
@@ -1053,6 +1216,25 @@
 			productReference = BB0000030000000000000010 /* XFW3CTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		EE0000040000000000000001 /* XFormsMobile */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = LL0000040000000000000001 /* Build configuration list for PBXNativeTarget "XFormsMobile" */;
+			buildPhases = (
+				MS0000010000000000000001 /* Sources */,
+				MF0000010000000000000001 /* Frameworks */,
+				MR0000010000000000000001 /* Resources */,
+				ME0000010000000000000001 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DP0000040000000000000001 /* PBXTargetDependency */,
+			);
+			name = XFormsMobile;
+			productName = XFormsMobile;
+			productReference = MM0000010000000000000021 /* XFormsMobile.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1088,11 +1270,20 @@
 				EE0000010000000000000003 /* XFormsViewer */,
 				EE0000020000000000000001 /* XFormsDesigner */,
 				EE0000030000000000000001 /* XFW3CTests */,
+				EE0000040000000000000001 /* XFormsMobile */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		MR0000010000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				MN0000010000000000000040 /* Samples in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		RR0000010000000000000001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1121,6 +1312,17 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		MS0000010000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				MN0000010000000000000001 /* main.m in Sources */,
+				MN0000010000000000000002 /* XFMobileAppDelegate.m in Sources */,
+				MN0000010000000000000003 /* XFFormBrowserViewController.m in Sources */,
+				MN0000010000000000000004 /* XFMobileForm.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		SS0000010000000000000001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1128,10 +1330,17 @@
 				AA0000010000000000000001 /* XFNamespaces.m in Sources */,
 				AA0000010000000000000002 /* XFErrors.m in Sources */,
 				AA00000100000000000000200 /* XFDOMNode.m in Sources */,
+				AA00000100000000000000300 /* XFSVGDocument.m in Sources */,
+				AA00000100000000000000400 /* XFRichText.m in Sources */,
+				AA00000100000000000000500 /* XFFormRows.m in Sources */,
+				AA00000100000000000000503 /* XFFormViewController.m in Sources */,
+				AA00000100000000000000506 /* XFRichTextUIKit.m in Sources */,
 				AA00000100000000000000201 /* XFDOMElement.m in Sources */,
 				AA00000100000000000000202 /* XFDOMDocument.m in Sources */,
 				AA00000100000000000000203 /* XFDOMParser.m in Sources */,
 				AA0000010000000000000003 /* XFXML.m in Sources */,
+				AA00000100000000000000601 /* XFMarkupParts.m in Sources */,
+				MN0000010000000000000050 /* XFDateDisplay.m in Sources */,
 				AA0000010000000000000004 /* XFInstance.m in Sources */,
 				AA0000010000000000000005 /* XFModel.m in Sources */,
 				AA0000010000000000000006 /* XFExprContext.m in Sources */,
@@ -1201,7 +1410,7 @@
 				AA00000100000000000011E /* XFFormView+Editing.m in Sources */,
 				AA00000100000000000011F /* XFTableAdapter.m in Sources */,
 				AA000001000000000000120 /* XFRichTextEditor.m in Sources */,
-				AA000001000000000000011B /* XFRichText.m in Sources */,
+				AA000001000000000000011B /* XFRichTextPresentation.m in Sources */,
 				AA0000010000000000000050 /* XFEvent.m in Sources */,
 				AA0000010000000000000052 /* XFListener.m in Sources */,
 				AA0000010000000000000054 /* XFXMLEvents.m in Sources */,
@@ -1213,6 +1422,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA00000100000000000000209 /* XFDOMTests.m in Sources */,
+				AA00000100000000000000502 /* XFFormRowsTests.m in Sources */,
+				AA00000100000000000000505 /* XFFormViewControllerTests.m in Sources */,
 				AA0000010000000000000020 /* XFXPathTests.m in Sources */,
 				AA0000010000000000000021 /* XFInstanceTests.m in Sources */,
 				AA0000010000000000000022 /* XFHelloFormTests.m in Sources */,
@@ -1223,6 +1434,14 @@
 				AA00000100000000000000C6 /* XFRepeatGroupTests.m in Sources */,
 				AA00000100000000000000DA /* XFInsertDeleteTests.m in Sources */,
 				AA00000100000000000000EC /* XFUIControlTests.m in Sources */,
+				MN0000010000000000000062 /* XFDXPathHighlightTests.m in Sources */,
+				MN0000010000000000000063 /* XFDXPathTextStorage.m in Sources */,
+				MN0000010000000000000052 /* XFDateDisplayTests.m in Sources */,
+				MN0000010000000000000090 /* XFSVGRenderTests.m in Sources */,
+				MN0000010000000000000030 /* XFMobileAppTests.m in Sources */,
+				MN0000010000000000000031 /* XFMobileForm.m in Sources */,
+				MN0000010000000000000032 /* XFFormBrowserViewController.m in Sources */,
+				AA00000100000000000000603 /* XFRichSupportTests.m in Sources */,
 				AA00000100000000000000FA /* XFTypeTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1246,6 +1465,8 @@
 				AA0000020000000000000003 /* XFDEditors.m in Sources */,
 				AA0000020000000000000004 /* XFDWindowController.m in Sources */,
 				AA000002000000000000000B /* XFDXPathField.m in Sources */,
+				MN0000010000000000000060 /* XFDXPathTextStorage.m in Sources */,
+				MN0000010000000000000064 /* XFDExpressionField.m in Sources */,
 				AA000002000000000000000C /* XFDRichTextField.m in Sources */,
 				AA000002000000000000000D /* XFDIDRefField.m in Sources */,
 				AA000002000000000000000E /* XFDDesignOverlay.m in Sources */,
@@ -1312,6 +1533,11 @@
 			target = EE0000010000000000000001 /* XFormsKit */;
 			targetProxy = CC0000030000000000000001 /* PBXContainerItemProxy */;
 		};
+		DP0000040000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE0000010000000000000001 /* XFormsKit */;
+			targetProxy = CC0000040000000000000001 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -1367,12 +1593,26 @@
 		XC0000010000000000000003 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				"CODE_SIGN_STYLE[sdk=iphone*]" = Automatic;
+				"DEVELOPMENT_TEAM[sdk=iphone*]" = H5GRGUR75L;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphone*]" = (
+					XFFormView.m,
+					"XFFormView+Widgets.m",
+					"XFFormView+Layout.m",
+					"XFFormView+Editing.m",
+					XFTableAdapter.m,
+					XFRichTextEditor.m,
+					XFRichTextPresentation.m,
+					XFSVGView.m,
+					XFFormView.h,
+					XFRichTextEditor.h,
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/Sources",
@@ -1381,23 +1621,41 @@
 				);
 				INFOPLIST_KEY_NSHumanReadableCopyright = "LGPL-2.1";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsKit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				PUBLIC_HEADERS_FOLDER_PATH = Headers;
+				SDKROOT = auto;
 				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
 		XC0000010000000000000004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				"CODE_SIGN_STYLE[sdk=iphone*]" = Automatic;
+				"DEVELOPMENT_TEAM[sdk=iphone*]" = H5GRGUR75L;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphone*]" = (
+					XFFormView.m,
+					"XFFormView+Widgets.m",
+					"XFFormView+Layout.m",
+					"XFFormView+Editing.m",
+					XFTableAdapter.m,
+					XFRichTextEditor.m,
+					XFRichTextPresentation.m,
+					XFSVGView.m,
+					XFFormView.h,
+					XFRichTextEditor.h,
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/Sources",
@@ -1406,11 +1664,15 @@
 				);
 				INFOPLIST_KEY_NSHumanReadableCopyright = "LGPL-2.1";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsKit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				PUBLIC_HEADERS_FOLDER_PATH = Headers;
+				SDKROOT = auto;
 				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -1418,12 +1680,22 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COMBINE_HIDPI_IMAGES = YES;
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphone*]" = (
+					XFUIControlTests.m,
+					XFDOMTests.m,
+					XFDXPathHighlightTests.m,
+					XFDXPathTextStorage.m,
+				);
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=macosx*]" = XFFormBrowserViewController.m;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/Sources",
 					"$(SRCROOT)/Sources/XFormsKit",
 					"$(SRCROOT)/Sources/XFormsKit/XPath",
+					"$(SRCROOT)/Apps/XFormsMobile",
+					"$(SRCROOT)/Apps/XFormsDesigner",
 				);
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1432,6 +1704,9 @@
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsKitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -1439,12 +1714,22 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COMBINE_HIDPI_IMAGES = YES;
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=iphone*]" = (
+					XFUIControlTests.m,
+					XFDOMTests.m,
+					XFDXPathHighlightTests.m,
+					XFDXPathTextStorage.m,
+				);
+				"EXCLUDED_SOURCE_FILE_NAMES[sdk=macosx*]" = XFFormBrowserViewController.m;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/Sources",
 					"$(SRCROOT)/Sources/XFormsKit",
 					"$(SRCROOT)/Sources/XFormsKit/XPath",
+					"$(SRCROOT)/Apps/XFormsMobile",
+					"$(SRCROOT)/Apps/XFormsDesigner",
 				);
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1453,6 +1738,9 @@
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsKitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -1505,6 +1793,13 @@
 			buildSettings = {
 				COMBINE_HIDPI_IMAGES = YES;
 				GENERATE_INFOPLIST_FILE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Sources",
+					"$(SRCROOT)/Sources/XFormsKit",
+					"$(SRCROOT)/Apps/XFormsDesigner",
+					"$(SRCROOT)/Apps/XFormsDesigner/ThirdParty/DMTabBar",
+					"$(SRCROOT)/Apps/XFormsDesigner/ThirdParty/JUInspectorView",
+				);
 				INFOPLIST_FILE = Apps/XFormsDesigner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1513,13 +1808,6 @@
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.gnustep.XFormsDesigner;
 				PRODUCT_NAME = XFormsDesigner;
-				HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/Sources",
-					"$(SRCROOT)/Sources/XFormsKit",
-					"$(SRCROOT)/Apps/XFormsDesigner",
-					"$(SRCROOT)/Apps/XFormsDesigner/ThirdParty/DMTabBar",
-					"$(SRCROOT)/Apps/XFormsDesigner/ThirdParty/JUInspectorView",
-				);
 			};
 			name = Debug;
 		};
@@ -1528,6 +1816,13 @@
 			buildSettings = {
 				COMBINE_HIDPI_IMAGES = YES;
 				GENERATE_INFOPLIST_FILE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Sources",
+					"$(SRCROOT)/Sources/XFormsKit",
+					"$(SRCROOT)/Apps/XFormsDesigner",
+					"$(SRCROOT)/Apps/XFormsDesigner/ThirdParty/DMTabBar",
+					"$(SRCROOT)/Apps/XFormsDesigner/ThirdParty/JUInspectorView",
+				);
 				INFOPLIST_FILE = Apps/XFormsDesigner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1536,13 +1831,6 @@
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.gnustep.XFormsDesigner;
 				PRODUCT_NAME = XFormsDesigner;
-				HEADER_SEARCH_PATHS = (
-					"$(SRCROOT)/Sources",
-					"$(SRCROOT)/Sources/XFormsKit",
-					"$(SRCROOT)/Apps/XFormsDesigner",
-					"$(SRCROOT)/Apps/XFormsDesigner/ThirdParty/DMTabBar",
-					"$(SRCROOT)/Apps/XFormsDesigner/ThirdParty/JUInspectorView",
-				);
 			};
 			name = Release;
 		};
@@ -1559,7 +1847,10 @@
 					"$(SRCROOT)/Sources",
 					"$(SRCROOT)/Sources/XFormsKit",
 					"$(SRCROOT)/Sources/XFormsKit/XPath",
+					"$(SRCROOT)/Apps/XFormsMobile",
+					"$(SRCROOT)/Apps/XFormsDesigner",
 				);
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1568,6 +1859,9 @@
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFW3CTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -1584,7 +1878,10 @@
 					"$(SRCROOT)/Sources",
 					"$(SRCROOT)/Sources/XFormsKit",
 					"$(SRCROOT)/Sources/XFormsKit/XPath",
+					"$(SRCROOT)/Apps/XFormsMobile",
+					"$(SRCROOT)/Apps/XFormsDesigner",
 				);
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1593,6 +1890,65 @@
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFW3CTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		XC0000040000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = H5GRGUR75L;
+				GENERATE_INFOPLIST_FILE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Sources",
+					"$(SRCROOT)/Apps/XFormsMobile",
+					"$(SRCROOT)/Apps/XFormsDesigner",
+				);
+				INFOPLIST_FILE = Apps/XFormsMobile/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsMobile;
+				PRODUCT_NAME = XFormsMobile;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		XC0000040000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = H5GRGUR75L;
+				GENERATE_INFOPLIST_FILE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Sources",
+					"$(SRCROOT)/Apps/XFormsMobile",
+					"$(SRCROOT)/Apps/XFormsDesigner",
+				);
+				INFOPLIST_FILE = Apps/XFormsMobile/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsMobile;
+				PRODUCT_NAME = XFormsMobile;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -1649,6 +2005,15 @@
 			buildConfigurations = (
 				XC0000030000000000000001 /* Debug */,
 				XC0000030000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		LL0000040000000000000001 /* Build configuration list for PBXNativeTarget "XFormsMobile" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				XC0000040000000000000001 /* Debug */,
+				XC0000040000000000000002 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

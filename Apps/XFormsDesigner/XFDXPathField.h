@@ -45,13 +45,13 @@ FOUNDATION_EXPORT NSString *XFDJoinLocationPath(NSDictionary *path);
 /// the predicate keeps and what it drops.
 FOUNDATION_EXPORT NSDictionary *XFDPredicatePreview(NSString *baseExpression,
                                                     NSString *predicates,
-                                                    NSXMLElement *_Nullable hostElement,
-                                                    NSXMLNode *_Nullable contextNode,
+                                                    XFXMLElement *_Nullable hostElement,
+                                                    XFXMLNode *_Nullable contextNode,
                                                     XFModel *_Nullable model);
 
 /// Refs suggested from the data's implied schema, relative to `context`
 /// (positional clones collapse to one entry — the schema XForms infers).
-FOUNDATION_EXPORT NSArray *XFDSchemaPathsFromNode(NSXMLNode *context, NSUInteger cap);
+FOUNDATION_EXPORT NSArray *XFDSchemaPathsFromNode(XFXMLNode *context, NSUInteger cap);
 /// The context properties event() exposes for `eventName` (XForms 1.1
 /// §4). nil = unknown event; empty = known to carry none.
 FOUNDATION_EXPORT NSArray *XFDEventContextProperties(NSString *eventName);
@@ -69,11 +69,11 @@ static inline void XFDBeep(void)
 @protocol XFDXPathFieldProvider <NSObject>
 /// The host element the expression belongs to (namespace prefixes resolve
 /// against it). nil disables validation and the picker.
-- (NSXMLElement *)hostElementForXPathField:(XFDXPathField *)field;
+- (XFXMLElement *)hostElementForXPathField:(XFDXPathField *)field;
 /// The processor whose instances the picker shows.
 - (XFProcessor *)processorForXPathField:(XFDXPathField *)field;
 /// The node relative picker paths start from (nil = no Relative style).
-- (NSXMLNode *)contextNodeForXPathField:(XFDXPathField *)field;
+- (XFXMLNode *)contextNodeForXPathField:(XFDXPathField *)field;
 @end
 
 @interface XFDXPathField : NSView
@@ -98,12 +98,12 @@ static inline void XFDBeep(void)
 /// chosen the same way (the rich text field's Insert Output). Returns the
 /// chosen expression, nil on cancel.
 + (NSString *)runPickerForProcessor:(XFProcessor *)processor
-                        contextNode:(NSXMLNode *)contextNode
-                        hostElement:(NSXMLElement *)hostElement
+                        contextNode:(XFXMLNode *)contextNode
+                        hostElement:(XFXMLElement *)hostElement
                               title:(NSString *)title;
 + (NSString *)runPickerForProcessor:(XFProcessor *)processor
-                        contextNode:(NSXMLNode *)contextNode
-                        hostElement:(NSXMLElement *)hostElement
+                        contextNode:(XFXMLNode *)contextNode
+                        hostElement:(XFXMLElement *)hostElement
                               title:(NSString *)title
                             initial:(NSString *)initial
                         expectation:(XFDXPathExpectation)expectation;

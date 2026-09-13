@@ -24,8 +24,8 @@
 # Expects: CC, CXX, LIBRARY_COMBO, RUNTIME_VERSION, DEPS_PATH, INSTALL_PATH.
 set -ex
 
-# Captured before anything cds away: the patch below is named relative to the
-# checkout.
+# Captured before anything cds away: the patches below are named relative
+# to the checkout.
 WORKSPACE_DIR=$(pwd)
 
 mkdir -p "$DEPS_PATH"
@@ -102,16 +102,19 @@ install_libs_base() {
     . "$GNUSTEP_SH"
     git clone -q -b ${LIBS_BASE_BRANCH:-master} https://github.com/gnustep/libs-base.git
     cd libs-base
-    # Required for this project: setTreeDoc() in Source/NSXMLNode.m has no
-    # XML_ATTRIBUTE_NODE branch, so a detached attribute keeps its name
-    # interned in the old document's libxml2 dictionary and xmlFreeProp later
-    # frees an interior pointer of it. The designer's host-XML editing hits
-    # this reliably. See patches/gnustep/README.md, which also carries a
-    # standalone reproduction.
+    # Required for this project: -[NSXMLElement addAttribute:] frees the
+    # private document of a prefixed attribute while the attribute's value
+    # nodes still point at it, and the next -detach reads freed memory. With
+    # the libxml2 2.9.x Ubuntu ships that is a segfault in the designer's
+    # host-XML editing (testActionAuthoring); a libs-base built against
+    # libxml2 2.12+ repairs the pointer by accident, which is why the crash
+    # is invisible on a workstation. See patches/gnustep/README.md, which
+    # also carries a standalone reproduction. (The earlier detached-attribute
+    # patch this project carried has been upstreamed and is not applied.)
     #
     # Only the default (NSXML) configuration depends on this. Built against
     # XFDOM the engine never touches gnustep-base's NSXML at all.
-    patch -p1 < "$WORKSPACE_DIR/patches/gnustep/gnustep-base-nsxmlnode-detached-attribute-dict-strings.patch"
+    patch -p1 < "$WORKSPACE_DIR/patches/gnustep/gnustep-base-nsxmlelement-addattribute-value-doc.patch"
     # The reference recipe names $PREFIX/etc/GNUstep.conf here. This
     # gnustep-make writes it to $PREFIX/etc/GNUstep/GNUstep.conf instead, and
     # when the named file does not exist libs-base falls back to the built-in
@@ -166,6 +169,62 @@ install_libs_back() {
     echo "::endgroup::"
 }
 
+# CoreGraphics and CoreText for GNUstep. The SVG renderer draws through
+# both, and they are the one drawing API present on all three targets --
+# see docs/ios-port-plan.md phase 2. Built after libs-back so it can pick
+# up the same cairo the backend uses.
+#
+# libs-corebase first: Opal falls back to stub CF types without it, and
+# the renderer wants real CFStringRef for font names.
+install_libs_corebase() {
+    echo "::group::GNUstep CoreBase"
+    cd "$DEPS_PATH"
+    . "$GNUSTEP_SH"
+    git clone -q https://github.com/gnustep/libs-corebase.git
+    cd libs-corebase
+    # corebase's toll-free bridge probe is AC_CHECK_HEADERS(objc/runtime.h)
+    # followed by AC_SEARCH_LIBS(objc_getClass, [objc objc2]). The runtime
+    # built in the first step lives in this prefix, and neither probe looks
+    # there on its own -- C_INCLUDE_PATH covers the header but the link test
+    # needs a -L, and LD_LIBRARY_PATH is a RUNTIME path, not a link one.
+    # Without these it fails with "Objective-C library not found!".
+    ./configure --prefix="$INSTALL_PATH" \
+                CPPFLAGS="-I$INSTALL_PATH/include" \
+                LDFLAGS="-L$INSTALL_PATH/lib -Wl,-rpath,$INSTALL_PATH/lib" \
+                || cat config.log
+    make
+    make install
+    echo "::endgroup::"
+}
+
+install_libs_opal() {
+    echo "::group::Opal (CoreGraphics + CoreText)"
+    cd "$DEPS_PATH"
+    . "$GNUSTEP_SH"
+    git clone -q https://github.com/gnustep/libs-opal.git
+    cd libs-opal
+    # No configure script: Opal is a plain gnustep-make project. Only the
+    # Source subproject is built -- the aggregate also builds Tests, which
+    # is a set of example tools this build has no use for and would only
+    # add ways to fail.
+    # CGRectUnion stores the union's far edges as its SIZE instead of
+    # subtracting the origin it just chose, so any union away from the
+    # origin comes out far too large. See patches/gnustep/README.md.
+    patch -p1 < "$WORKSPACE_DIR/patches/gnustep/opal-cgrectunion-size.patch"
+    make -C Source
+    # OpalGraphics/GNUmakefile.postamble finishes the install by copying the
+    # ImageIO headers into GNUSTEP_SYSTEM_HEADERS with a bare `cp -r`: no
+    # mkdir, and regardless of the installation domain, which here is LOCAL
+    # (Opal's own headers land in Local/Library/Headers/CoreGraphics). The
+    # System headers directory does not exist in this prefix, so the copy
+    # fails and takes the install down with it. Creating the directory it
+    # assumes is cheaper than carrying a patch for headers nothing here
+    # uses -- XFormsKit imports CoreGraphics and CoreText, not ImageIO.
+    mkdir -p "$(gnustep-config --variable=GNUSTEP_SYSTEM_HEADERS)"
+    make -C Source install
+    echo "::endgroup::"
+}
+
 install_tools_xctest() {
     echo "::group::tools-xctest"
     cd "$DEPS_PATH"
@@ -186,6 +245,8 @@ install_tools_make
 install_libs_base
 install_libs_gui
 install_libs_back
+install_libs_corebase
+install_libs_opal
 install_tools_xctest
 
 echo "=== the prefix ==="
