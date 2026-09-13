@@ -2177,6 +2177,7 @@ static const CGFloat kXFGridMinRowHeight = 36;
                 continue;
             }
             if (row.kind == XFFormRowKindButton) {
+                [self endEditingInProgressBefore:row.control];
                 [self.processor activateControl:(XFTriggerControl *)row.control];
                 [self reloadFromProcessor];
             } else {
@@ -2802,11 +2803,33 @@ static const CGFloat kXFGridMinRowHeight = 36;
 /// A value the user typed or toggled. Recalculation can change relevance
 /// anywhere, so the rows are rebuilt afterwards rather than the one cell
 /// refreshed.
+/// Ends an edit that is still in progress, so whatever runs next sees
+/// what was typed.
+///
+/// Tapping a row, a switch or a segment does not resign the keyboard, so
+/// the field being edited keeps it: the action runs against the previous
+/// value, and the pending edit lands afterwards — or, if the reload
+/// replaced the row, against whatever the reused cell now holds. The
+/// AppKit twin of this is `-[XFFormView endEditingInProgress]`, and
+/// `Samples/dialog.xhtml` is where it shows: type a note, tap "Done",
+/// and the dialog closes without the note.
+///
+/// `control` is what is about to act; an edit in the same control is
+/// left alone, since ending it would only take the keyboard away from
+/// the field the user is in.
+- (void)endEditingInProgressBefore:(XFControl *)control
+{
+    if (self.editingControl != nil && self.editingControl != control) {
+        [self.view endEditing:YES];
+    }
+}
+
 - (void)commitControl:(XFControl *)control value:(NSString *)value
 {
     if (control == nil) {
         return;
     }
+    [self endEditingInProgressBefore:control];
     NSError *error = nil;
     [self.processor setValue:value ofControl:control error:&error];
     [self reloadFromProcessor];
@@ -2814,6 +2837,7 @@ static const CGFloat kXFGridMinRowHeight = 36;
 
 - (void)commitDate:(NSDate *)date ofInput:(XFInputControl *)input
 {
+    [self endEditingInProgressBefore:input];
     if ([input commitDateValue:date error:NULL]) {
         [self.processor controlDidChangeValue:input];
     }
@@ -2822,6 +2846,7 @@ static const CGFloat kXFGridMinRowHeight = 36;
 
 - (void)commitNumber:(double)value ofRange:(XFRangeControl *)range
 {
+    [self endEditingInProgressBefore:range];
     if ([range commitNumericValue:value error:NULL]) {
         [self.processor controlDidChangeValue:range];
     }
@@ -2830,6 +2855,7 @@ static const CGFloat kXFGridMinRowHeight = 36;
 
 - (void)selectValue:(NSString *)value ofSelect:(XFSelectControl *)select
 {
+    [self endEditingInProgressBefore:select];
     if ([select selectValue:value]) {
         [self.processor controlDidChangeValue:select];
     }
@@ -2838,6 +2864,7 @@ static const CGFloat kXFGridMinRowHeight = 36;
 
 - (void)toggleValue:(NSString *)value ofSelect:(XFSelectControl *)select
 {
+    [self endEditingInProgressBefore:select];
     if ([select toggleValue:value]) {
         [self.processor controlDidChangeValue:select];
     }
@@ -2997,6 +3024,7 @@ static const CGFloat kXFGridMinRowHeight = 36;
 /// rows are rebuilt from the controls anyway.
 - (void)addItemToRepeat:(XFRepeat *)repeat
 {
+    [self endEditingInProgressBefore:nil];
     if ([repeat insertItemAfterPosition:repeat.items.count]) {
         [self reloadFromProcessor];
     }
@@ -3004,6 +3032,7 @@ static const CGFloat kXFGridMinRowHeight = 36;
 
 - (void)removeItem:(NSUInteger)position ofRepeat:(XFRepeat *)repeat
 {
+    [self endEditingInProgressBefore:nil];
     if ([repeat deleteItemAtPosition:position]) {
         [self reloadFromProcessor];
     }
@@ -3013,6 +3042,7 @@ static const CGFloat kXFGridMinRowHeight = 36;
 {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     XFFormRow *row = [self rowAtIndexPath:indexPath];
+    [self endEditingInProgressBefore:row.control];
     if (row.kind == XFFormRowKindRepeatAdd) {
         [self addItemToRepeat:row.repeat];
         return;

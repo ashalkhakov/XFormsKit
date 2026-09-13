@@ -191,6 +191,24 @@ jobs:
           grep -q "NSXMLDocument" Tests/XFormsKitTests/XFDOMTests.m \
             || { echo "::error::XFDOMTests no longer references NSXML; it is no longer differential"; exit 1; }
 
+      # The viewer's Samples menu is a hand-written list, and the GNUstep
+      # build copies the same files in by name, so a sample added to
+      # Samples/ is invisible in both until someone remembers two more
+      # places. dialog.xhtml sat there unlisted from the day xf:dialog
+      # landed. Apple's app bundles the folder itself and needs no list.
+      - name: Every sample is offered by the viewer
+        run: |
+          missing=0
+          for f in Samples/*.xhtml; do
+            name=$(basename "$f")
+            grep -q "\"$name\"" Apps/XFormsViewer/main.m \
+              || { echo "::error file=Apps/XFormsViewer/main.m::$name is not in the Samples menu"; missing=1; }
+            grep -q "Samples/$name" Apps/XFormsViewer/GNUmakefile \
+              || { echo "::error file=Apps/XFormsViewer/GNUmakefile::$name is not copied into the GNUstep bundle"; missing=1; }
+          done
+          [ "$missing" -eq 0 ] || exit 1
+          echo "all listed"
+
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: failure()

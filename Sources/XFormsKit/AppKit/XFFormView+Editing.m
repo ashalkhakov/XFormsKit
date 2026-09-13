@@ -20,6 +20,7 @@ void XFAppKitHasEditingFile(void) {}
 
 - (void)tableAdapter:(XFTableAdapter *)adapter didActivateTrigger:(XFTriggerControl *)trigger
 {
+    [self endEditingInProgress];
     (void)adapter;
     [trigger activate];
     [self.processor refreshControls];
@@ -55,6 +56,31 @@ void XFAppKitHasEditingFile(void) {}
     [self reloadFromProcessor];
 }
 
+
+/// Ends an edit that is still in progress, so whatever runs next sees
+/// what was typed.
+///
+/// Clicking a button, a checkbox or a popup does not move the first
+/// responder on AppKit: the textarea — or the field editor a text field
+/// is being typed into — keeps it, nothing ends the editing, and the
+/// action goes ahead against the previous value. `Samples/dialog.xhtml`
+/// shows it: type a note, click "Done", and the dialog closes with the
+/// note lost. Tab escaped this only because the Tab handler drops the
+/// first responder itself.
+- (void)endEditingInProgress
+{
+    NSWindow *window = [self window];
+    NSResponder *responder = [window firstResponder];
+    if (![responder isKindOfClass:[NSTextView class]]) {
+        return;
+    }
+    NSTextView *editor = (NSTextView *)responder;
+    if ([editor isFieldEditor]) {
+        [window endEditingFor:nil];          // controlTextDidEndEditing: commits
+    } else if ([self widgetForTextView:editor] != nil) {
+        [window makeFirstResponder:nil];     // textDidEndEditing: commits
+    }
+}
 
 - (void)controlTextDidBeginEditing:(NSNotification *)note
 {

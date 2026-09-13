@@ -263,6 +263,7 @@ FOUNDATION_EXPORT NSColor *XFInvalidTextColor(void);
 
 /// Commits, incremental editing, control actions (XFFormView+Editing.m).
 @interface XFFormView (XFEditing)
+- (void)endEditingInProgress;
 - (void)tableAdapter:(XFTableAdapter *)adapter didCommitControl:(XFControl *)control value:(NSString *)value;
 - (void)tableAdapter:(XFTableAdapter *)adapter didActivateTrigger:(XFTriggerControl *)trigger;
 - (void)reloadAfterTrigger;

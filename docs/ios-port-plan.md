@@ -1,8 +1,11 @@
 # Porting XFormsKit to iOS
 
-Status: proposal, not started. Nothing in this document has been
-implemented. Figures are measured from the tree at the time of writing
-(`master`, after the select1 label fix).
+Status: **all seven phases are done.** One engine, one DOM and one SVG
+renderer now build and run on macOS, iOS and GNUstep; the iOS host app
+ships; CI covers all three. The survey figures below are as measured when
+this was written (`master`, after the select1 label fix) and are left
+alone — each phase carries a note on what actually happened, including
+where that differed from the plan.
 
 ## The short answer
 
@@ -247,7 +250,14 @@ exist already: no engine source imports AppKit, and
 [XFormsKit.h](../Sources/XFormsKit/XFormsKit.h) guards its five view
 headers behind `#if __has_include(<AppKit/AppKit.h>)`.
 
-### Phase 1 — The portable DOM (≈2–3.5 weeks, critical path)
+### Phase 1 — The portable DOM — **DONE**
+
+The dual-configuration period this section plans for is over: NSXML is
+gone and XFDOM is the only tree on all three platforms (see the
+superseded note above). `XFDOMTests` still parses the same documents with
+the platform's NSXML wherever there is one, as a reference oracle rather
+than as a second supported back end.
+
 
 Write `XFDOM*` against the inventory in
 [ios-port-widget-map.md](ios-port-widget-map.md), pinning each behaviour
@@ -264,7 +274,7 @@ and whitespace handling are where a hand-written DOM bleeds. The lift
 helps least exactly here — it hands over a good tree, not a good
 serializer.
 
-### Phase 2 — Portable SVG — **DONE (macOS and iOS; GNUstep pending CI)**
+### Phase 2 — Portable SVG — **DONE (macOS, iOS and GNUstep)**
 
 The plan here said "retarget to Core Graphics, one implementation for both
 platforms". A first attempt found that GNUstep has no Core Graphics —
@@ -300,14 +310,37 @@ CoreGraphics and CoreText; CI asserts that, and that no view class comes
 with them. `.github/scripts/dependencies.sh` builds libs-corebase and Opal
 into the GNUstep prefix, and the GNUmakefile links `-lopal`.
 
-What is unverified is GNUstep itself: whether Opal builds cleanly in CI,
-whether its CoreText covers `CTFontDrawGlyphs` well enough for SVG text,
-and whether `-[NSGraphicsContext CGContext]` answers a usable context
-under the cairo backend (if it does not, the form view's SVG widget needs
-libs-back built with `--enable-graphics=opal`, or an offscreen bitmap
-context to draw into). Issues found there are for patching upstream.
+GNUstep has since been exercised, and Opal answered each of the questions
+that were open here:
 
-### Phase 3 — Portable text and layout extraction — **text done, layout next**
+- **It builds, and the context is usable.** Opal compiles in CI with the
+  one patch in `patches/gnustep/` (`CGRectUnion` on an empty rect), and
+  `-[NSGraphicsContext CGContext]` hands back a context the renderer draws
+  into; no offscreen-bitmap detour was needed.
+- **`CTFontCreateUIFontForLanguage` cannot be asked for a UI font.** Opal
+  ignores the font type entirely and wraps the language in an array
+  without checking it, so the `NULL` language every Apple caller passes
+  raises `NSInvalidArgumentException` — on every `<text>` in every
+  drawing. The renderer names a face there instead (`Helvetica`,
+  `Helvetica-Bold`), which is all Opal would have done with the type.
+- **`CTFontDrawGlyphs` is an empty stub.** Opal's glyph painting lives in
+  CoreGraphics: `CGContextSetFont` + `CGContextSetFontSize` +
+  `CGContextShowGlyphsAtPositions`, taking the face as a `CGFontRef`. Both
+  halves are built from the same family name, so the glyph ids the CTFont
+  measured are the ones the CGFont paints. The placement tests pass
+  unchanged, which also says cairo's text matrix ends up agreeing with the
+  one Apple applies.
+- **corebase must be linked explicitly.** `CFRelease` is not in Opal, so
+  `-lgnustep-corebase` joins `-lopal` in the GNUmakefile; without it the
+  framework loads and then dies at the first font it releases. The engine
+  uses no other CoreFoundation entry point.
+
+Measurement needed nothing: `CTFontGetGlyphsForCharacters`,
+`CTFontGetAdvancesForGlyphs`, `CTFontGetAscent` and `CTFontGetDescent`
+behave as on Apple. `XFSVGRenderTests`, which reads ink bounds out of a
+bitmap context, runs on all three platforms.
+
+### Phase 3 — Portable text and layout extraction — **done**
 
 **Rich text: done.** `XFRichText` was one class doing two jobs — converting
 between the instance's XHTML subset and an attributed string, and deciding
@@ -337,6 +370,8 @@ presentation, and that decorating adds it back.
 `XFRichText` is in the iOS framework, which still links no UI framework.
 
 **Layout extraction: deferred deliberately, and smaller than it looked.**
+*(The deferral has since ended — see "What shipped instead" at the end
+of this section. It did not end by doing the extraction.)*
 
 It does not block phase 5; phase 5 shipped without it. Measuring what the
 iOS form actually loses, of the three cases only one needs it:
@@ -366,6 +401,25 @@ nodes plus a width, answering positioned fragments, control frames and a
 height; AppKit places NSViews from it, the markup cell places labels and
 control views from the same answer, and both get exact heights instead of
 Auto Layout estimates.
+
+**What shipped instead: shared runs, separate geometry.** The extraction
+was not done, and option B in "The view layer" above was in effect
+declined once both layouts existed. What is portable is the *decision* of
+where a line of prose with controls in it begins and ends: `XFFormRows`
+gathers maximal inline runs (`isInlineRunMaterial:`, `flushInlineRun:`)
+and emits one `XFFormRowKindInlineFlow` row for each, so both backends
+agree on what belongs on a line together. The arithmetic stays per
+platform — `collectAtomsFrom:` / `layoutAtoms:` / `placeInlineControl:` in
+`XFFormView+Layout.m` on AppKit, `XFInlineFlowView` (word-level flow,
+measured with `systemLayoutSizeFittingSize:`) on iOS.
+
+That is option A for those ~250 lines, deliberately: the two layouts are
+not the same layout. AppKit flows into a fixed 620pt canvas with an
+absolute two-column grid, iOS into a self-sizing cell as wide as the
+device. Sharing the arithmetic would have meant parameterising every
+constant for two designs that differ on purpose — and the
+bug-fixed-twice risk the extraction was meant to remove sits mostly in
+the run splitting, which *is* shared.
 
 ### Phase 4 — iOS Core lands — **DONE**
 
@@ -400,7 +454,7 @@ shape on every run rather than trusting the exclusion lists, and runs both
 suites in the simulator on a device it resolves by UDID (naming a model
 would pin the job to an Xcode version).
 
-### Phase 5 — The UIKit form (≈2–3 weeks) — **design decided**
+### Phase 5 — The UIKit form — **done**
 
 Not a transliteration of the AppKit layout. That layout is a fixed-width
 two-column form — `kWrapWidth` 620, a 110pt label column beside a 280pt
@@ -793,27 +847,20 @@ A useful earlier milestone: phases 0, 1, 4 and a cut-down phase 5
 (text fields, buttons, checkboxes, radios, popups — no SVG, no rich text,
 no tables) gives a working iOS form renderer in roughly 5–7 weeks.
 
-## Decisions needed before starting
+## Decisions taken
 
-1. **Layout: option A or B.** Recommendation: B. Costs about a week more
-   and removes a permanent double-maintenance tax.
-2. **DOM implementation.** Largely settled: lift the previous project's
-   DOM ([ios-port-dom-lift.md](ios-port-dom-lift.md)), which is a pure
-   Objective-C tree over `NSXMLParser` and therefore satisfies the
-   node-identity constraint. What remains open is whether the rewritten
-   serializer uses libxml2's `xmlTextWriter` (as the old one did — ships
-   on iOS, but a second dependency) or is written directly in
-   Objective-C. Recommendation: plain Objective-C, to keep one code path
-   across Apple and GNUstep and to make NSXML output parity easier to
-   control.
-3. **Minimum iOS version.** `UIButton` menus (the `NSPopUpButton`
-   replacement) and the compact `UIDatePicker` styles want iOS 14+.
-   Below that, popups need a `UIPickerView` input view.
-4. **iPad-first or phone-first.** The layout is a fixed-width two-column
-   form (`kLabelWidth + kFieldWidth`, absolute frames). That lands well on
-   an iPad and badly on a phone in portrait. A phone-first target means a
-   responsive single-column mode, which is design work beyond porting and
-   is *not* in the estimate above.
+1. **Layout: option A or B.** Neither as posed. B was the recommendation
+   and was declined once both layouts existed; what the two backends
+   share is the row model and the inline-run splitting, not the geometry.
+   See phase 3.
+2. **DOM implementation.** Clean-room `XFDOM*` over `NSXMLParser`, with
+   the serializer written directly in Objective-C — no libxml2, one code
+   path on Apple and GNUstep. Lifting the previous project's DOM was
+   assessed and declined ([ios-port-dom-lift.md](ios-port-dom-lift.md)).
+3. **Minimum iOS version.** 15.
+4. **iPad-first or phone-first.** Phone-first: a grouped `UITableView`,
+   one control per row, vertical scrolling only — which lands well on an
+   iPad too. The fixed two-column AppKit layout was not carried over.
 
 ## Out of scope
 
@@ -821,8 +868,10 @@ no tables) gives a working iOS form renderer in roughly 5–7 weeks.
   app built on `NSOutlineView`, inspectors, panels and xibs. Not a port,
   a rewrite. `XFHostEdit`, the editing engine it drives, is already
   portable and would come along for free.
-- **GNUstep.** Unaffected. Every phase either leaves `AppKit/` alone or
-  changes it identically for both Apple and GNUstep; phase 1's DOM would
-  give GNUstep a way to drop its NSXML dependency, but that is a bonus,
-  not a goal.
+- **GNUstep.** Unaffected as a target, and it gained from the port
+  anyway. Every phase either left `AppKit/` alone or changed it
+  identically for both Apple and GNUstep, and the bonus phase 1 offered
+  was taken: GNUstep runs on XFDOM like everything else, so gnustep-base's
+  NSXML is now only the oracle in `XFDOMTests`. Phase 2 additionally put
+  CoreGraphics and CoreText under it, through Opal.
 - **Responsive phone layout** — see decision 4.

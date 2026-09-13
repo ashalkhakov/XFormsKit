@@ -223,6 +223,52 @@
                   @"the xforms-ready setfocus should have been applied");
 }
 
+/// Tapping a row does not resign the keyboard, so an edit in progress has
+/// to be ended before the row's action runs. Samples/dialog.xhtml is the
+/// case: type a note, tap "Done", and the dialog closes — with the note,
+/// not without it.
+- (void)testATextViewEditCommitsWhenAButtonRowIsTapped
+{
+    NSString *xml =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
+        @"      xmlns:xf=\"http://www.w3.org/2002/xforms\""
+        @"      xmlns:ev=\"http://www.w3.org/2001/xml-events\">"
+        @"  <head><xf:model><xf:instance><data xmlns=\"\"><note>hi</note><done/></data>"
+        @"  </xf:instance></xf:model></head>"
+        @"  <body>"
+        @"    <xf:textarea ref=\"note\"><xf:label>Note</xf:label></xf:textarea>"
+        @"    <xf:trigger><xf:label>Done</xf:label>"
+        @"      <xf:setvalue ev:event=\"DOMActivate\" ref=\"done\" value=\"'yes'\"/>"
+        @"    </xf:trigger>"
+        @"  </body></html>";
+    NSError *error = nil;
+    XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormViewController *vc = [[XFFormViewController alloc] initWithProcessor:p];
+    UIWindow *window = [[UIWindow alloc] initWithFrame:CGRectMake(0, 0, 390, 800)];
+    window.rootViewController = vc;
+    [window makeKeyAndVisible];
+    [vc.tableView layoutIfNeeded];
+
+    NSIndexPath *notePath = [NSIndexPath indexPathForRow:0 inSection:0];
+    NSIndexPath *donePath = [NSIndexPath indexPathForRow:1 inSection:0];
+    UITableViewCell *noteCell = [vc.tableView cellForRowAtIndexPath:notePath];
+    UITextView *editor = (UITextView *)
+        [self viewsUnder:noteCell.contentView ofClass:[UITextView class]].firstObject;
+    XCTAssertNotNil(editor);
+    XCTAssertTrue([editor becomeFirstResponder], @"the text view takes the keyboard");
+    editor.text = @"edited";
+
+    [vc tableView:vc.tableView didSelectRowAtIndexPath:donePath];
+
+    XFControl *note = [vc.sections.firstObject.rows.firstObject control];
+    XCTAssertEqualObjects(note.stringValue, @"edited",
+                          @"the typed note should reach the instance before the trigger runs");
+    XFXMLNode *done = [[[p.model defaultInstance] documentElement]
+        elementsForName:@"done"].firstObject;
+    XCTAssertEqualObjects([XFXML stringValueOfNode:done], @"yes", @"and the trigger still ran");
+}
+
 #pragma mark - prose with controls in it
 
 - (XFFormViewController *)sentenceController

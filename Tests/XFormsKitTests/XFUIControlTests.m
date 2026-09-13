@@ -111,6 +111,115 @@
     XCTAssertEqualObjects(area.stringValue, @"long text");
 }
 
+/// A click is not a focus change on AppKit: NSButton, NSPopUpButton and
+/// the checkboxes do not take the first responder, so an edit in progress
+/// used to stay in the widget while the action ran on the old value.
+/// Samples/dialog.xhtml lost its note that way — type, click "Done", and
+/// the dialog closes. Tab always worked, because the Tab handler drops
+/// the first responder itself.
+- (XFProcessor *)formWithANoteAndADoneButtonError:(NSError **)error
+{
+    return [self form:
+            @"<xf:instance><data xmlns=\"\"><note>hi</note><done/></data></xf:instance>"
+             extra:
+            @"<xf:textarea ref=\"note\"><xf:label>Note</xf:label></xf:textarea>"
+            @"<xf:input ref=\"note\"><xf:label>Same note</xf:label></xf:input>"
+            @"<xf:trigger id=\"done\"><xf:label>Done</xf:label>"
+            @"  <xf:setvalue ev:event=\"DOMActivate\" ref=\"done\" value=\"'yes'\"/>"
+            @"</xf:trigger>"
+              error:error];
+}
+
+- (NSWindow *)windowShowing:(XFFormView *)view
+{
+    NSWindow *window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 700, 600)
+                                                   styleMask:NSTitledWindowMask
+                                                     backing:NSBackingStoreBuffered
+                                                       defer:NO];
+    [window setContentView:view];
+    return window;
+}
+
+- (id)firstViewOfClass:(Class)cls under:(NSView *)root matching:(BOOL (^)(NSView *))test
+{
+    NSMutableArray *stack = [NSMutableArray arrayWithObject:root];
+    while (stack.count) {
+        NSView *view = stack.lastObject;
+        [stack removeLastObject];
+        if ([view isKindOfClass:cls] && (test == nil || test(view))) {
+            return view;
+        }
+        [stack addObjectsFromArray:view.subviews];
+    }
+    return nil;
+}
+
+- (void)testATextareaCommitsWhenAButtonIsClicked
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self formWithANoteAndADoneButtonError:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *view = [[XFFormView alloc] initWithProcessor:p];
+    NSWindow *window = [self windowShowing:view];
+
+    NSScrollView *scroll = [self firstViewOfClass:[NSScrollView class] under:view
+                                         matching:^BOOL(NSView *v) {
+        return [[(NSScrollView *)v documentView] isKindOfClass:[NSTextView class]];
+    }];
+    NSTextView *area = [scroll documentView];
+    NSButton *done = [self firstViewOfClass:[NSButton class] under:view
+                                   matching:^BOOL(NSView *v) {
+        return [[(NSButton *)v title] isEqualToString:@"Done"];
+    }];
+    XCTAssertNotNil(area);
+    XCTAssertNotNil(done);
+
+    XCTAssertTrue([window makeFirstResponder:area]);
+    [area setString:@"edited"];
+    [done performClick:nil];
+
+    XFTextareaControl *note = [self firstControlOfClass:[XFTextareaControl class] in:p];
+    XCTAssertEqualObjects(note.stringValue, @"edited",
+                          @"the typed note should reach the instance before the trigger runs");
+    XFXMLNode *done_ = [[[p.model defaultInstance] documentElement] elementsForName:@"done"].firstObject;
+    XCTAssertEqualObjects([XFXML stringValueOfNode:done_], @"yes", @"and the trigger still ran");
+}
+
+/// The same click with a text field being edited. This half already
+/// worked on macOS — ending a field editor is AppKit's own business, and
+/// a click does it — so this pins that rather than the fix; the flush
+/// covers it too, which matters where the field editor behaves
+/// differently (GNUstep).
+- (void)testATextFieldCommitsWhenAButtonIsClicked
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self formWithANoteAndADoneButtonError:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *view = [[XFFormView alloc] initWithProcessor:p];
+    NSWindow *window = [self windowShowing:view];
+
+    NSTextField *field = [self firstViewOfClass:[NSTextField class] under:view
+                                       matching:^BOOL(NSView *v) {
+        return [(NSTextField *)v isEditable];
+    }];
+    NSButton *done = [self firstViewOfClass:[NSButton class] under:view
+                                   matching:^BOOL(NSView *v) {
+        return [[(NSButton *)v title] isEqualToString:@"Done"];
+    }];
+    XCTAssertNotNil(field);
+    XCTAssertNotNil(done);
+
+    XCTAssertTrue([window makeFirstResponder:field]);
+    [[field currentEditor] setString:@"typed"];
+    [done performClick:nil];
+
+    XFInputControl *input = [self firstControlOfClass:[XFInputControl class] in:p];
+    XCTAssertEqualObjects(input.stringValue, @"typed",
+                          @"the field editor's text should reach the instance");
+}
+
 - (void)testTriggerActivatesAction
 {
     NSError *error = nil;
