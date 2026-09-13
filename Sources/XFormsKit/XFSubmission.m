@@ -21,7 +21,6 @@
 @interface XFSubmission ()
 @property (nonatomic, strong, readwrite) XFXMLElement *element;
 @property (nonatomic, copy) NSArray<NSDictionary *> *headers;
-@property (nonatomic, strong) NSMutableArray<NSString *> *cdataTexts;
 @end
 
 @implementation XFSubmission
@@ -439,22 +438,11 @@ static BOOL XFBoolAttr(XFXMLElement *el, NSString *name, BOOL fallback)
     if ([node kind] == XFXMLElementKind
         && (self.relevant || self.cdataSectionElements.count
             || [self hasUndeclaredUsedPrefix:(XFXMLElement *)node])) {
-        self.cdataTexts = [NSMutableArray array];
         XFXMLElement *copy = [self relevantCopy:(XFXMLElement *)node];
         if (copy) {
             [self declareUsedNamespacesOn:copy fromSource:(XFXMLElement *)node];
         }
-        NSString *xml = copy ? [copy XMLString] : @"";
-        NSUInteger i = 0;
-        for (NSString *text in self.cdataTexts) {
-            NSString *section = [NSString stringWithFormat:@"<![CDATA[%@]]>",
-                                 [text stringByReplacingOccurrencesOfString:@"]]>" withString:@"]]]]><![CDATA[>"]];
-            xml = [xml stringByReplacingOccurrencesOfString:[NSString stringWithFormat:@"XFCDATASECTION%lu", (unsigned long)i]
-                                                 withString:section];
-            i++;
-        }
-        self.cdataTexts = nil;
-        return [self prependXMLDeclaration:xml];
+        return [self prependXMLDeclaration:copy ? [copy XMLString] : @""];
     }
     if ([node isKindOfClass:[XFXMLElement class]]) {
         return [self prependXMLDeclaration:[(XFXMLElement *)node XMLString]];
@@ -603,12 +591,9 @@ static void XFCollectUsedPrefixes(XFXMLElement *element,
             }
         } else if ([child kind] == XFXMLTextKind) {
             if (cdata) {
-                // @cdata-section-elements (G-58): GNUstep ignores
-                // NSXMLNodeIsCDATA, so the text is swapped for a token that
-                // serializeNode: replaces with a CDATA section
-                NSString *token = [NSString stringWithFormat:@"XFCDATASECTION%lu", (unsigned long)self.cdataTexts.count];
-                [self.cdataTexts addObject:[child stringValue] ?: @""];
-                [copy addChild:[XFXMLNode textWithStringValue:token]];
+                // @cdata-section-elements (G-58): the same text, written
+                // as a section
+                [copy addChild:[XFXMLNode CDATAWithStringValue:[child stringValue] ?: @""]];
             } else {
                 [copy addChild:[child copy]];
             }

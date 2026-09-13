@@ -1559,7 +1559,7 @@
     XCTAssertTrue([hintXML containsString:@"Age in <strong>years</strong>: "], @"%@", hintXML);
     XCTAssertTrue([hintXML containsString:@"output"], @"%@", hintXML);
     XCTAssertFalse([hintXML containsString:@"xmlns"], @"%@", hintXML);
-    XCTAssertTrue([XFHostXMLString(p.hostDocument, 0) containsString:@"<strong>years</strong>"]);
+    XCTAssertTrue([[p.hostDocument XMLString] containsString:@"<strong>years</strong>"]);
     [undo undo];
     XCTAssertEqualObjects([edit supportChildText:@"hint" onElement:input], @"Years");
     XCTAssertEqualObjects([edit supportChildXML:@"hint" onElement:input], @"Years");
@@ -1598,7 +1598,7 @@
     [edit setAttribute:@"nodeset" value:@"age" onElement:bind];
     [edit setAttribute:@"required" value:@"true()" onElement:bind];
     [undo endUndoGrouping];
-    XCTAssertTrue([XFHostXMLString(p.hostDocument, 0) containsString:@"required=\"true()\""]);
+    XCTAssertTrue([[p.hostDocument XMLString] containsString:@"required=\"true()\""]);
 
     // instance-data replacement re-adopts the instance; undo restores it
     XFXMLElement *instanceEl = [XFXML childElementWithLocalName:@"instance"
@@ -1740,7 +1740,7 @@
     [edit setSupportChildAttribute:@"ref" child:@"value" value:@"." onElement:itemset];
     [edit setSupportChildAttribute:@"ref" child:@"label" value:@"." onElement:itemset];
     [undo endUndoGrouping];
-    XCTAssertTrue([XFHostXMLString(p.hostDocument, 0) containsString:@"nodeset=\"../option\""]);
+    XCTAssertTrue([[p.hostDocument XMLString] containsString:@"nodeset=\"../option\""]);
     // the select's items now include the two option nodes
     XFSelectControl *sc = (XFSelectControl *)[p controlForElement:select];
     XCTAssertGreaterThanOrEqual((NSInteger)sc.items.count, 3);

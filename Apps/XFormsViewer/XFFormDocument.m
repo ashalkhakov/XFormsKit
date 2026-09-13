@@ -139,7 +139,7 @@
 {
     XFXMLDocument *host = self.processor.hostDocument;
     if (host) {
-        NSString *xml = XFHostXMLString(host, XFXMLNodePrettyPrint);
+        NSString *xml = [host XMLStringWithOptions:XFXMLNodePrettyPrint];
         if (xml.length) {
             self.sourceXML = xml;
         }
@@ -153,7 +153,7 @@
     if (host == nil) {
         return [self reloadProcessor:error];
     }
-    NSString *xml = XFHostXMLString(host, XFXMLNodePrettyPrint);
+    NSString *xml = [host XMLStringWithOptions:XFXMLNodePrettyPrint];
     return [self replaceHostWithXMLString:xml error:error];
 }
 
@@ -216,7 +216,7 @@
 - (NSString *)hostXMLString
 {
     if (self.processor.hostDocument) {
-        NSString *xml = XFHostXMLString(self.processor.hostDocument, XFXMLNodePrettyPrint);
+        NSString *xml = [self.processor.hostDocument XMLStringWithOptions:XFXMLNodePrettyPrint];
         return xml.length ? xml : self.sourceXML;
     }
     return self.sourceXML ?: @"";

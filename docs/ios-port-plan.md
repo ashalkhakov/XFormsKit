@@ -135,7 +135,12 @@ implementation's test specification, are in
 > instance editor, which was the last thing NSXML was still doing for the
 > apps. `XFDOMTests` keeps comparing against the platform's NSXML as a
 > reference oracle. The "still to do" list at the end of this section is
-> therefore done, except the two workarounds it names.
+> done, the two workarounds included: the `<!--xf:ws-->` pre-pass is gone
+> (the host document is parsed with whitespace preserved, and XFDOM keeps
+> the text nodes NSXML hid), and so is the CDATA token substitution
+> (`+[XFDOMNode CDATAWithStringValue:]` marks the text node and the
+> serialiser writes the section, splitting around a `]]>` in the value the
+> way the token hack did by hand).
 
 **Status: the engine runs on it.** `Sources/XFormsKit/DOM/` holds
 `XFDOMNode`, `XFDOMElement`, `XFDOMDocument` and the `NSXMLParser`-based

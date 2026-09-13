@@ -18,13 +18,6 @@
 
 @class XFHostNode;
 
-/// Serialise the host document without the whitespace marker comments the
-/// parser pre-pass adds inside <body> (see XFProcessor documentFromData:).
-FOUNDATION_EXPORT NSString *XFHostXMLString(XFXMLDocument *document, NSUInteger options);
-/// The marker comment / its text (`<!--xf:ws-->`).
-FOUNDATION_EXPORT NSString * const XFWhitespaceMarkerComment;
-FOUNDATION_EXPORT NSString * const XFWhitespaceMarkerText;
-
 NS_ASSUME_NONNULL_BEGIN
 
 @class XFHTTPSubmissionTransport;

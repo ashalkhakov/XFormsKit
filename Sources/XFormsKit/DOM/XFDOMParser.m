@@ -53,11 +53,12 @@
 
 #pragma mark Text
 
-/// Whitespace-only text between elements is dropped, which is what both
-/// Apple's and GNUstep's NSXML expose through `children` (Apple keeps it
-/// internally and still serialises it; GNUstep discards it at parse
-/// time). The engine relies on this — it re-inserts the gaps it actually
-/// needs in host markup through the <!--xf:ws--> marker in XFProcessor.
+/// Whitespace-only text between elements is dropped unless the caller
+/// asked to preserve it, which is what both Apple's and GNUstep's NSXML
+/// exposed through `children`. The engine relies on both halves: instance
+/// data is parsed without preservation, so indentation never becomes
+/// content, and the host document is parsed WITH it, so "<b>is</b>
+/// <xf:output/>" keeps the space the host tree needs (G-20).
 - (void)flushText
 {
     if (self.pendingText.length == 0) {

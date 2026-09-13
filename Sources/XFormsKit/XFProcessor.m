@@ -50,98 +50,11 @@
 
 @implementation XFProcessor
 
-NSString * const XFWhitespaceMarkerComment = @"<!--xf:ws-->";
-NSString * const XFWhitespaceMarkerText = @"xf:ws";
-
-NSString *XFHostXMLString(XFXMLDocument *document, NSUInteger options)
-{
-    NSString *xml = [document XMLStringWithOptions:options] ?: [document XMLString] ?: @"";
-    return [xml stringByReplacingOccurrencesOfString:XFWhitespaceMarkerComment withString:@""];
-}
-
-/// libxml2-based NSXMLDocument implementations drop whitespace-only text
-/// nodes in element-only content: GNUstep at parse time, Apple even hides
-/// them from `children` while still serialising them, whatever the
-/// options. The host tree needs them: "<b>is</b> <xf:output/>" must keep
-/// its space like the browser DOM XSLTForms works on (G-20). Inside <body>,
-/// every whitespace-only gap between two tags gets a marker comment
-/// appended (`<!--xf:ws-->`), which every parser keeps; XFHostNode turns
-/// the marker into the missing text node and XFHostXMLString() strips it
-/// again when the document is serialised. CDATA sections, comments and
-/// processing instructions are left alone.
-static NSData *XFPreserveBodyWhitespace(NSData *data)
-{
-    NSString *text = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-    if (text == nil) {
-        return data;
-    }
-    NSRange bodyStart = [text rangeOfString:@"<body" options:NSCaseInsensitiveSearch];
-    if (bodyStart.location == NSNotFound) {
-        return data;
-    }
-    NSRange bodyEnd = [text rangeOfString:@"</body" options:NSCaseInsensitiveSearch | NSBackwardsSearch];
-    NSUInteger end = bodyEnd.location == NSNotFound ? text.length : bodyEnd.location;
-    NSMutableString *out = [NSMutableString stringWithCapacity:text.length + 256];
-    [out appendString:[text substringToIndex:bodyStart.location]];
-    NSUInteger i = bodyStart.location;
-    NSUInteger n = text.length;
-    BOOL changed = NO;
-    while (i < end) {
-        unichar c = [text characterAtIndex:i];
-        if (c == '<') {
-            // skip comments, CDATA sections and processing instructions whole
-            NSString *closer = nil;
-            if ([text compare:@"<!--" options:0 range:NSMakeRange(i, MIN(4, n - i))] == NSOrderedSame) {
-                closer = @"-->";
-            } else if ([text compare:@"<![CDATA[" options:0 range:NSMakeRange(i, MIN(9, n - i))] == NSOrderedSame) {
-                closer = @"]]>";
-            } else if (i + 1 < n && [text characterAtIndex:i + 1] == '?') {
-                closer = @"?>";
-            }
-            if (closer) {
-                NSRange r = [text rangeOfString:closer options:0 range:NSMakeRange(i, n - i)];
-                NSUInteger stop = r.location == NSNotFound ? n : NSMaxRange(r);
-                [out appendString:[text substringWithRange:NSMakeRange(i, stop - i)]];
-                i = stop;
-                continue;
-            }
-        }
-        if (c == '>') {
-            // a run of ASCII whitespace right after a tag and right before
-            // the next one is a whitespace-only text node
-            NSUInteger j = i + 1;
-            while (j < end) {
-                unichar w = [text characterAtIndex:j];
-                if (w != ' ' && w != '\t' && w != '\r' && w != '\n') {
-                    break;
-                }
-                j++;
-            }
-            if (j > i + 1 && j < n && [text characterAtIndex:j] == '<'
-                && [text compare:XFWhitespaceMarkerComment options:0
-                           range:NSMakeRange(j, MIN(XFWhitespaceMarkerComment.length, n - j))] != NSOrderedSame) {
-                [out appendString:[text substringWithRange:NSMakeRange(i, j - i)]];
-                [out appendString:XFWhitespaceMarkerComment];
-                changed = YES;
-                i = j;
-                continue;
-            }
-        }
-        [out appendFormat:@"%C", c];
-        i++;
-    }
-    if (!changed) {
-        return data;
-    }
-    [out appendString:[text substringFromIndex:MIN(i, n)]];
-    return [out dataUsingEncoding:NSUTF8StringEncoding] ?: data;
-}
-
 + (XFXMLDocument *)documentFromData:(NSData *)data error:(NSError **)error
 {
     NSError *inner = nil;
     XFXMLDocument *doc =
-        [[XFXMLDocument alloc] initWithData:XFPreserveBodyWhitespace(data)
+        [[XFXMLDocument alloc] initWithData:data
                                     options:XFXMLNodePreserveWhitespace
                                       error:&inner];
     if (doc == nil) {
