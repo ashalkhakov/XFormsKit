@@ -158,6 +158,14 @@ install_libs_gui() {
     # AppImage's gnustep-gui that regenerates a control in its own action
     # does. See patches/gnustep/README.md section 3.
     patch -p1 < "$WORKSPACE_DIR/patches/gnustep/gnustep-gui-action-sender-lifetime.patch"
+    # -[NSWindow _checkTrackingRectangles:forEvent:] walks unretained
+    # snapshots of a view's tracking rects and subviews while calling the
+    # owners' mouseEntered: / mouseExited:; a handler that takes a hover
+    # box down frees a view the walk still has to visit. XFFormView keeps
+    # its own hint box alive past the event, so the viewer is safe either
+    # way; anything else drawn by this gui that does the same is not. See
+    # patches/gnustep/README.md section 3c.
+    patch -p1 < "$WORKSPACE_DIR/patches/gnustep/gnustep-gui-tracking-walk-retains-subviews.patch"
     ./configure --prefix="$INSTALL_PATH" || cat config.log
     make install
     echo "::endgroup::"

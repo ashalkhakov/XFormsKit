@@ -474,9 +474,21 @@ NSView *XFKeyViewOf(NSView *view)
 
 - (void)hideBadgeInfo
 {
-    [self.badgePopup removeFromSuperview];
+    NSView *popup = self.badgePopup;
+    if (popup == nil) {
+        return;
+    }
+    [popup removeFromSuperview];
     self.badgePopup = nil;
     self.badgePopupBadge = nil;
+    // This runs from a badge's mouseEntered: / mouseExited:, i.e. from
+    // inside GNUstep's -[NSWindow _checkTrackingRectangles:forEvent:],
+    // which is walking an unretained snapshot of this view's subviews --
+    // the box included. Freed now, it is messaged a few iterations later
+    // (input.xhtml: pointer from one hint's badge to the other's). So the
+    // box outlives the event, the way retired widgets do; see the
+    // gnustep-gui patch in patches/gnustep for the walk itself.
+    [self performSelector:@selector(releaseRetiredViews:) withObject:@[ popup ] afterDelay:0];
 }
 
 - (XFWidget *)addWidget:(XFControl *)control view:(NSView *)view height:(CGFloat)height

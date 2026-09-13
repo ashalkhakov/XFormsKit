@@ -2099,4 +2099,42 @@
     XCTAssertNil([initial[1] superview]);
 }
 
+
+/// The hint / alert info box is taken down from a badge's mouseExited: /
+/// mouseEntered:, i.e. from inside GNUstep's tracking-rect walk, which
+/// holds an unretained snapshot of the form view's subviews -- the box
+/// among them. So the box must outlive the event that hides it (it was
+/// the -[NSWindow _checkTrackingRectangles:forEvent:] crash on
+/// input.xhtml when the pointer went from one hint's badge to the other's).
+- (void)testHidingTheBadgeInfoBoxKeepsItAliveUntilTheEventIsOver
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+        @"<xf:instance><d xmlns=\"\"><a/></d></xf:instance>"
+                          extra:
+        @"<xf:input ref=\"a\"><xf:label>A</xf:label><xf:hint>Also known as given name.</xf:hint></xf:input>"
+                          error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *view = [[XFFormView alloc] initWithProcessor:p];
+    (void)[self windowShowing:view];
+    XFBadgeView *badge = [self firstViewOfClass:[XFBadgeView class] under:view matching:^BOOL(NSView *v) {
+        return [(XFBadgeView *)v kind] == XFBadgeHint;
+    }];
+    XCTAssertNotNil(badge);
+
+    [view showBadgeInfo:badge];
+    __weak NSView *box = view.badgePopup;
+    XCTAssertNotNil(box);
+    XCTAssertEqual([box superview], view);
+
+    [view hideBadgeInfo];
+    XCTAssertNil(view.badgePopup);
+    XCTAssertNil([box superview], @"the box should have left the view");
+    XCTAssertNotNil(box, @"the box was freed inside the event that hid it");
+
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
+    XCTAssertNil(box, @"the box should be released once the event is over");
+}
+
 @end

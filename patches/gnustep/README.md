@@ -5,9 +5,9 @@ places: heavy NSXML mutation, run-loop-driven asynchrony, and — since the
 SVG renderer moved to CoreGraphics — Opal. The notes below are what a
 fresh Linux setup needs to know.
 
-This directory carries four patches, all applied by
+This directory carries five patches, all applied by
 `.github/scripts/dependencies.sh`: one to gnustep-base (section 1), one
-to Opal (section 2) and two to gnustep-gui (section 3). A fifth, older
+to Opal (section 2) and three to gnustep-gui (section 3). A sixth, older
 one is now upstream (section 4).
 
 ## 1. gnustep-base: the NSXML addAttribute: use-after-free (patch applied)
@@ -169,6 +169,42 @@ is done — which also makes any other AppKit code that touches a sender
 after its action safe, patched gui or not. All 47 samples pass the
 harness's open / hover / type-into-every-field / maximize / shrink run
 with either.
+
+### 3c. The mouse-tracking walk visits a view its own handler freed
+
+**Patch:** `gnustep-gui-tracking-walk-retains-subviews.patch`
+**Reproduction:** `nswindow-tracking-walk-freed-subview.m`
+
+Found from the AppImage's own crash report (`XFCrashReporter.h`), which
+is what the viewer prints on a fatal signal:
+
+```
+objc_msgSend_fpret
+-[NSWindow _checkTrackingRectangles:forEvent:]    x7, one per view level
+-[NSWindow sendEvent:]
+```
+
+input.xhtml died every time the pointer went from the second input's
+hint badge to the first's. For each view, `_checkTrackingRectangles:`
+copies the tracking rects and then the subviews into C arrays with
+`getObjects:` — no references held — and calls the rect owners'
+`mouseEntered:` / `mouseExited:` from inside the loop. XFFormView's
+badges put a hover box up on entering and take it down on leaving; the
+box was a subview later in the same list, the form view was its only
+owner, and the walk reached it after the handler had freed it:
+`[subs[i] isHidden]` on freed memory. Whether that dies depends on the
+allocator, which is why the harness here never saw it. An owner that
+removes its own tracking rect from a handler is the same bug one loop
+earlier.
+
+Two fixes, either sufficient. gnustep-gui: retain the entries of both
+snapshots for the loop (a removed view is harmless to visit, a freed one
+is not). XFormsKit: `-[XFFormView hideBadgeInfo]` keeps the box alive
+until the event is over, the way retired widgets are — so the viewer
+survives an unpatched gui too. The reproduction is AppKit-only: two
+views with tracking rects and a third view their `mouseEntered:`
+replaces; valgrind reports the invalid read at the `isHidden`, freed by
+`removeFromSuperview`, and with the patch it prints "survived".
 
 ## 4. gnustep-base: the NSXML detached-attribute bug (fixed upstream — nothing to do)
 
