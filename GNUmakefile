@@ -268,6 +268,11 @@ check:: all
 viewer: all
 	$(MAKE) -C Apps/XFormsViewer
 
+designer: all
+	$(MAKE) -C Apps/XFormsDesigner
+
+apps: viewer designer
+
 # The W3C suite as XCTest assertions (spec-true: engine gaps stay red).
 w3ccheck: all
 	@if command -v xctest >/dev/null 2>&1; then \

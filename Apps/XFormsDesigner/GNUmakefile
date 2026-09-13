@@ -46,9 +46,9 @@ XFormsDesigner_OBJC_FILES = \
 	ThirdParty/JUInspectorView/JUInspectorViewHeader.m
 
 XFormsDesigner_RESOURCE_FILES = \
+	XFormsDesigner.png \
 	MainMenu.xib \
-	XFDDocumentWindow.xib \
-	Info-gnustep.plist
+	XFDDocumentWindow.xib
 
 XFormsDesigner_MAIN_MODEL_FILE = MainMenu.xib
 
@@ -70,4 +70,4 @@ include $(GNUSTEP_MAKEFILES)/application.make
 after-all::
 	@dst="./$(APP_NAME).app/Resources"; \
 	mkdir -p "$$dst"; \
-	cp -f MainMenu.xib XFDDocumentWindow.xib Info-gnustep.plist "$$dst/"
+	cp -f MainMenu.xib XFDDocumentWindow.xib "$$dst/"

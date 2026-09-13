@@ -21,6 +21,7 @@ XFormsViewer_OBJC_FILES = \
 	XFDocumentWindowController.m
 
 XFormsViewer_RESOURCE_FILES = \
+	XFormsViewer.png \
 	../../Samples/XMLSchemaTypeCode.xml \
 	../../Samples/address.xhtml \
 	../../Samples/balance-table.xhtml \

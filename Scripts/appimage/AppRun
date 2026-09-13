@@ -1,0 +1,111 @@
+#!/bin/sh
+# Ported from RDLKit's Scripts/appimage/AppRun, which came from UDQuakeTools.
+# The difference here is the dispatch at the end: this image carries two apps
+# rather than an app and a command line tool.
+set -eu
+
+HERE="$(dirname "$(readlink -f "$0")")"
+
+# Write runtime GNUstep config to a private temp file. The paths are not known
+# until the image is mounted, which is why they cannot be baked in.
+export GNUSTEP_CONFIG_FILE="/tmp/GNUstep-XFormsKit-$$.conf"
+cat << IN_EOF > "$GNUSTEP_CONFIG_FILE"
+GNUSTEP_USER_CONFIG_FILE=.GNUstep.conf
+GNUSTEP_USER_DEFAULTS_DIR=GNUstep/Defaults
+GNUSTEP_SYSTEM_USERS_DIR=/home
+GNUSTEP_NETWORK_USERS_DIR=/home
+GNUSTEP_LOCAL_USERS_DIR=/home
+GNUSTEP_SYSTEM_ROOT=$HERE/usr/System
+GNUSTEP_SYSTEM_LIBRARIES=$HERE/usr/System/Library
+GNUSTEP_SYSTEM_LIBRARY=$HERE/usr/System/Library
+GNUSTEP_SYSTEM_TOOLS=$HERE/usr/System/Tools
+GNUSTEP_SYSTEM_APPS=$HERE/usr/System/Applications
+GNUSTEP_LOCAL_ROOT=$HERE/usr/Local
+GNUSTEP_LOCAL_LIBRARY=$HERE/usr/Local/Library
+GNUSTEP_LOCAL_TOOLS=$HERE/usr/Local/Tools
+GNUSTEP_LOCAL_APPS=$HERE/usr/Local/Applications
+IN_EOF
+chmod 600 "$GNUSTEP_CONFIG_FILE"
+
+export GNUSTEP_SYSTEM_ROOT="$HERE/usr/System"
+export GNUSTEP_SYSTEM_LIBRARY="$HERE/usr/System/Library"
+export GNUSTEP_SYSTEM_TOOLS="$HERE/usr/System/Tools"
+export GNUSTEP_SYSTEM_APPS="$HERE/usr/System/Applications"
+
+export GNUSTEP_LOCAL_ROOT="$HERE/usr/Local"
+export GNUSTEP_LOCAL_LIBRARY="$HERE/usr/Local/Library"
+export GNUSTEP_LOCAL_TOOLS="$HERE/usr/Local/Tools"
+export GNUSTEP_LOCAL_APPS="$HERE/usr/Local/Applications"
+
+# Saved before they are pointed at the image: Scripts/appimage/open puts these
+# back before handing a URL to the host's browser, which cannot run against the
+# libraries this image carries.
+export XF_HOST_LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
+export XF_HOST_PATH="$PATH"
+
+export LD_LIBRARY_PATH="$HERE/usr/lib:${LD_LIBRARY_PATH:-}"
+export PATH="$HERE/usr/local/bin:$HERE/usr/bin:$PATH"
+
+export FONTCONFIG_FILE="$HERE/usr/etc/fonts/fonts.conf"
+export XDG_CACHE_HOME="/tmp/fc-cache-xformskit-$$"
+mkdir -p "$XDG_CACHE_HOME"
+
+trap 'rm -rf "$XDG_CACHE_HOME" "$GNUSTEP_CONFIG_FILE"' EXIT
+
+# Both apps get the same treatment, in their own defaults domains. Each is
+# written under the application name and under the bundle identifier, because
+# which of the two NSUserDefaults answers to depends on what the bundle's
+# Info.plist carries, and both apps carry a CFBundleIdentifier.
+DEFAULTS_TOOL=$(find "$HERE" -name defaults -type f -perm -111 | head -n 1)
+if [ -n "$DEFAULTS_TOOL" ]; then
+    for domain in XFormsViewer org.xformskit.XFormsViewer \
+                  XFormsDesigner org.gnustep.XFormsDesigner; do
+        "$DEFAULTS_TOOL" write "$domain" GSTheme Eau
+        "$DEFAULTS_TOOL" write "$domain" NSFont LiberationSans
+        "$DEFAULTS_TOOL" write "$domain" NSBoldFont LiberationSans-Bold
+        "$DEFAULTS_TOOL" write "$domain" NSUserFont LiberationSans
+        "$DEFAULTS_TOOL" write "$domain" NSUserFixedPitchFont LiberationMono
+        # What NSWorkspace runs for a URL or a file it has no application for.
+        # Ours, in the bundle's Tools directory, which is where
+        # [NSTask launchPathForTool:] looks first.
+        "$DEFAULTS_TOOL" write "$domain" GSUnknownFileTool open
+
+        # Ctrl, not Alt. GNUstep's default modifier map is NeXT's -- Alt_L is
+        # COMMAND and both Control keys are CONTROL -- so on a Linux desktop
+        # these apps would answer Alt+C where every other window answers
+        # Ctrl+C. The keys are X keysym names, read once at startup, and
+        # documented in gnustep-gui's KeyboardSetup. NoSymbol disables one.
+        #
+        # The left Control becomes COMMAND, which is what a menu key equivalent
+        # fires on, and stops being CONTROL as well: one key acting as both
+        # fires a menu item and a text-view binding from the same press, which
+        # the same document warns about. The right Control stays a real
+        # CONTROL, so the emacs-style text bindings are still reachable, and
+        # Alt -- freed from being COMMAND -- goes back to being ALTERNATE.
+        "$DEFAULTS_TOOL" write "$domain" GSFirstCommandKey Control_L
+        "$DEFAULTS_TOOL" write "$domain" GSFirstControlKey NoSymbol
+        "$DEFAULTS_TOOL" write "$domain" GSSecondControlKey Control_R
+        "$DEFAULTS_TOOL" write "$domain" GSFirstAlternateKey Alt_L
+        "$DEFAULTS_TOOL" write "$domain" GSSecondAlternateKey Alt_R
+    done
+fi
+
+# Which app to start. The symlink the image was invoked through wins (so
+# `ln -s XFormsKit-Linux.AppImage xformsdesigner` works), otherwise the first
+# argument names one, otherwise it is the viewer -- what opening a form means.
+APP=XFormsViewer
+case "$(basename "${ARGV0:-$0}")" in
+  *[Dd]esigner*) APP=XFormsDesigner ;;
+esac
+case "${1:-}" in
+  designer|XFormsDesigner) APP=XFormsDesigner; shift ;;
+  viewer|XFormsViewer) APP=XFormsViewer; shift ;;
+esac
+
+REAL_BIN=$(find "$HERE" -type f -name "$APP" -perm -111 -exec file {} \; 2>/dev/null \
+             | awk -F: '/ELF/{print $1; exit}')
+if [ -z "$REAL_BIN" ]; then
+    REAL_BIN="$HERE/usr/System/Applications/$APP.app/$APP"
+fi
+
+exec "$REAL_BIN" "$@"

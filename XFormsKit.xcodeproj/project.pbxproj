@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		EF0000020000000000000001 /* XFormsKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		EF00000100000000000000F7 /* XFormsKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		ICB0000200000000000000F6 /* XFormsDesigner.icns in Resources */ = {isa = PBXBuildFile; fileRef = IC00000200000000000000F6 /* XFormsDesigner.icns */; };
+		ICB0000100000000000000F6 /* XFormsViewer.icns in Resources */ = {isa = PBXBuildFile; fileRef = IC00000100000000000000F6 /* XFormsViewer.icns */; };
 		MN0000010000000000000064 /* XFDExpressionField.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000064 /* XFDExpressionField.m */; };
 		MN0000010000000000000062 /* XFDXPathHighlightTests.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000062 /* XFDXPathHighlightTests.m */; };
 		MN0000010000000000000063 /* XFDXPathTextStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000060 /* XFDXPathTextStorage.m */; };
@@ -280,6 +284,28 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		EB00000100000000000000F7 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				EF00000100000000000000F7 /* XFormsKit.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EB0000020000000000000001 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				EF0000020000000000000001 /* XFormsKit.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		ME0000010000000000000001 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -451,7 +477,8 @@
 		BB00000100000000000000F3 /* XFFormDocument.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFFormDocument.m; sourceTree = "<group>"; };
 		BB00000100000000000000F4 /* XFDocumentWindowController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDocumentWindowController.h; sourceTree = "<group>"; };
 		BB00000100000000000000F5 /* XFDocumentWindowController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDocumentWindowController.m; sourceTree = "<group>"; };
-		BB00000100000000000000F6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BB00000100000000000000F6 /* XFormsViewer-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "XFormsViewer-Info.plist"; sourceTree = "<group>"; };
+		IC00000100000000000000F6 /* XFormsViewer.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = XFormsViewer.icns; sourceTree = "<group>"; };
 		BB00000100000000000000F7 /* XFormsViewer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = XFormsViewer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB00000100000000000000F8 /* XFType.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFType.h; sourceTree = "<group>"; };
 		BB00000100000000000000F9 /* XFType.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFType.m; sourceTree = "<group>"; };
@@ -519,7 +546,8 @@
 		BB000002000000000000001E /* XFDDesignOverlay.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDDesignOverlay.h; sourceTree = "<group>"; };
 		BB0000020000000000000021 /* MainMenu.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = MainMenu.xib; sourceTree = "<group>"; };
 		BB0000020000000000000022 /* XFDDocumentWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDDocumentWindow.xib; sourceTree = "<group>"; };
-		BB0000020000000000000023 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BB0000020000000000000023 /* XFormsDesigner-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "XFormsDesigner-Info.plist"; sourceTree = "<group>"; };
+		IC00000200000000000000F6 /* XFormsDesigner.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = XFormsDesigner.icns; sourceTree = "<group>"; };
 		BB0000020000000000000030 /* XFormsDesigner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = XFormsDesigner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB0000020000000000000050 /* XFDWindowController+Outline.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFDWindowController+Outline.m"; sourceTree = "<group>"; };
 		BB0000020000000000000051 /* XFDWindowController+Inspector.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFDWindowController+Inspector.m"; sourceTree = "<group>"; };
@@ -891,7 +919,8 @@
 				BB00000100000000000000F3 /* XFFormDocument.m */,
 				BB00000100000000000000F4 /* XFDocumentWindowController.h */,
 				BB00000100000000000000F5 /* XFDocumentWindowController.m */,
-				BB00000100000000000000F6 /* Info.plist */,
+				BB00000100000000000000F6 /* XFormsViewer-Info.plist */,
+				IC00000100000000000000F6 /* XFormsViewer.icns */,
 			);
 			path = XFormsViewer;
 			sourceTree = "<group>";
@@ -978,7 +1007,8 @@
 				BB0000020000000000000068 /* XFDWindowControllerPriv.h */,
 				BB0000020000000000000021 /* MainMenu.xib */,
 				BB0000020000000000000022 /* XFDDocumentWindow.xib */,
-				BB0000020000000000000023 /* Info.plist */,
+				BB0000020000000000000023 /* XFormsDesigner-Info.plist */,
+				IC00000200000000000000F6 /* XFormsDesigner.icns */,
 				GG0000020000000000000002 /* ThirdParty/DMTabBar */,
 				GG0000020000000000000003 /* ThirdParty/JUInspectorView */,
 			);
@@ -1170,6 +1200,7 @@
 				SS0000010000000000000003 /* Sources */,
 				FF0000010000000000000003 /* Frameworks */,
 				RR0000010000000000000002 /* Resources */,
+				EB00000100000000000000F7 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -1188,6 +1219,7 @@
 				SS0000020000000000000001 /* Sources */,
 				FF0000020000000000000001 /* Frameworks */,
 				RR0000020000000000000001 /* Resources */,
+				EB0000020000000000000001 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -1296,6 +1328,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ICB0000100000000000000F6 /* XFormsViewer.icns in Resources */,
 				AA00000100000000000000F0 /* Samples in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1304,6 +1337,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ICB0000200000000000000F6 /* XFormsDesigner.icns in Resources */,
 				AA0000020000000000000021 /* MainMenu.xib in Resources */,
 				AA0000020000000000000022 /* XFDDocumentWindow.xib in Resources */,
 			);
@@ -1596,7 +1630,7 @@
 				"CODE_SIGN_STYLE[sdk=iphone*]" = Automatic;
 				"DEVELOPMENT_TEAM[sdk=iphone*]" = H5GRGUR75L;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 0.0.0;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
@@ -1622,7 +1656,7 @@
 				INFOPLIST_KEY_NSHumanReadableCopyright = "LGPL-2.1";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsKit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				PUBLIC_HEADERS_FOLDER_PATH = Headers;
@@ -1639,7 +1673,7 @@
 				"CODE_SIGN_STYLE[sdk=iphone*]" = Automatic;
 				"DEVELOPMENT_TEAM[sdk=iphone*]" = H5GRGUR75L;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 0.0.0;
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
@@ -1665,7 +1699,7 @@
 				INFOPLIST_KEY_NSHumanReadableCopyright = "LGPL-2.1";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsKit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				PUBLIC_HEADERS_FOLDER_PATH = Headers;
@@ -1755,7 +1789,7 @@
 					"$(SRCROOT)/Sources/XFormsKit/XPath",
 					"$(SRCROOT)/Apps/XFormsViewer",
 				);
-				INFOPLIST_FILE = Apps/XFormsViewer/Info.plist;
+				INFOPLIST_FILE = "Apps/XFormsViewer/XFormsViewer-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1777,7 +1811,7 @@
 					"$(SRCROOT)/Sources/XFormsKit/XPath",
 					"$(SRCROOT)/Apps/XFormsViewer",
 				);
-				INFOPLIST_FILE = Apps/XFormsViewer/Info.plist;
+				INFOPLIST_FILE = "Apps/XFormsViewer/XFormsViewer-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1800,7 +1834,7 @@
 					"$(SRCROOT)/Apps/XFormsDesigner/ThirdParty/DMTabBar",
 					"$(SRCROOT)/Apps/XFormsDesigner/ThirdParty/JUInspectorView",
 				);
-				INFOPLIST_FILE = Apps/XFormsDesigner/Info.plist;
+				INFOPLIST_FILE = "Apps/XFormsDesigner/XFormsDesigner-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1823,7 +1857,7 @@
 					"$(SRCROOT)/Apps/XFormsDesigner/ThirdParty/DMTabBar",
 					"$(SRCROOT)/Apps/XFormsDesigner/ThirdParty/JUInspectorView",
 				);
-				INFOPLIST_FILE = Apps/XFormsDesigner/Info.plist;
+				INFOPLIST_FILE = "Apps/XFormsDesigner/XFormsDesigner-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1900,7 +1934,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 0.0.0;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = H5GRGUR75L;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -1915,7 +1949,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsMobile;
 				PRODUCT_NAME = XFormsMobile;
 				SDKROOT = iphoneos;
@@ -1929,7 +1963,7 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 0.0.0;
 				DEVELOPMENT_TEAM = H5GRGUR75L;
 				GENERATE_INFOPLIST_FILE = NO;
 				HEADER_SEARCH_PATHS = (
@@ -1943,7 +1977,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsMobile;
 				PRODUCT_NAME = XFormsMobile;
 				SDKROOT = iphoneos;
