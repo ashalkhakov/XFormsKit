@@ -2123,15 +2123,20 @@
     }];
     XCTAssertNotNil(badge);
 
-    [view showBadgeInfo:badge];
-    __weak NSView *box = view.badgePopup;
-    XCTAssertNotNil(box);
-    XCTAssertEqual([box superview], view);
-
-    [view hideBadgeInfo];
-    XCTAssertNil(view.badgePopup);
-    XCTAssertNil([box superview], @"the box should have left the view");
+    __weak NSView *box = nil;
+    @autoreleasepool {
+        // Reading the property can leave an autoreleased reference behind
+        // (Cocoa does, GNUstep may not): drain it here, so that what keeps
+        // the box alive below is the deferred release and nothing else.
+        [view showBadgeInfo:badge];
+        box = view.badgePopup;
+        XCTAssertNotNil(box);
+        XCTAssertEqual([box superview], view);
+        [view hideBadgeInfo];
+        XCTAssertNil(view.badgePopup);
+    }
     XCTAssertNotNil(box, @"the box was freed inside the event that hid it");
+    XCTAssertNil([box superview], @"the box should have left the view");
 
     [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
     XCTAssertNil(box, @"the box should be released once the event is over");
