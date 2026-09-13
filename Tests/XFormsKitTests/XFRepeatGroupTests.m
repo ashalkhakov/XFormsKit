@@ -441,10 +441,12 @@
 
 - (void)testHostDocumentKeepsWhitespaceOnlyTextNodes
 {
-    // libxml2-based NSXMLDocuments (Apple and GNUstep) drop whitespace-only
-    // text nodes in element-only content whatever the options; the host
-    // tree needs "<b>x</b> <i>y</i>" to keep its space (marker comments
-    // added by the parser pre-pass, stripped again on serialisation).
+    // The host tree needs "<b>x</b> <i>y</i>" to keep its space, like the
+    // browser DOM XSLTForms works on. libxml2-based NSXMLDocuments dropped
+    // whitespace-only text in element content whatever the options, which
+    // is why the parser used to be handed marker comments; XFDOM keeps the
+    // text nodes when asked to preserve whitespace, so the document that
+    // comes back is the document that went in.
     NSString *xml =
         @"<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:xf=\"http://www.w3.org/2002/xforms\">"
         @"<head><xf:model><xf:instance><d xmlns=\"\"><n>1</n></d></xf:instance></xf:model></head>"
@@ -452,9 +454,11 @@
     NSError *error = nil;
     XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
     XCTAssertNotNil(p, @"%@", error);
-    NSString *serialized = XFHostXMLString(p.hostDocument, 0);
-    XCTAssertEqual([serialized rangeOfString:XFWhitespaceMarkerComment].location, (NSUInteger)NSNotFound);
-    XCTAssertNotEqual([serialized rangeOfString:@"<b>x</b>"].location, (NSUInteger)NSNotFound, @"%@", serialized);
+    NSString *serialized = [p.hostDocument XMLString];
+    XCTAssertNotEqual([serialized rangeOfString:@"<b>x</b> <i>y</i>"].location,
+                      (NSUInteger)NSNotFound, @"the gap survives serialisation: %@", serialized);
+    XCTAssertEqual([serialized rangeOfString:@"xf:ws"].location, (NSUInteger)NSNotFound,
+                   @"and nothing was inserted to carry it");
     XCTAssertEqualObjects([p.hostNodes.firstObject treeDescription],
                           @"block:p\n  inline:b\n    text:\"x\"\n  text:\" \"\n  inline:i\n    text:\"y\"\n");
 }

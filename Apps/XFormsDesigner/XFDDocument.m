@@ -101,7 +101,7 @@
 
 - (NSString *)hostXMLString
 {
-    NSString *xml = XFHostXMLString(self.processor.hostDocument, 0);
+    NSString *xml = [self.processor.hostDocument XMLString];
     return [xml hasSuffix:@"\n"] ? xml : [xml stringByAppendingString:@"\n"];
 }
 

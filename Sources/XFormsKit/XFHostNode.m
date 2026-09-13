@@ -138,20 +138,6 @@ static XFXMLNode *XFCurrentRepeatItemNode = nil;
             [out addObject:t];
             continue;
         }
-        if (kind == XFXMLCommentKind && [[child stringValue] isEqualToString:XFWhitespaceMarkerText]) {
-            // the parser pre-pass marks a whitespace-only gap between two
-            // tags; recreate the text node unless the parser kept it
-            XFHostNode *last = out.lastObject;
-            BOOL kept = last && last.kind == XFHostNodeKindText
-                && [[last.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]] length] == 0;
-            if (!kept) {
-                XFHostNode *t = [self nodeWithKind:XFHostNodeKindText tag:@"#text"];
-                t.text = pre ? @"\n" : @" ";
-                t.preformatted = pre;
-                [out addObject:t];
-            }
-            continue;
-        }
         if (kind != XFXMLElementKind) {
             continue;
         }

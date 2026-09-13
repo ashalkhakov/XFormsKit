@@ -244,6 +244,28 @@ static void XFNoteReference(NSString *what, id value)
                           @"<r><![CDATA[c & d]]></r>");
 }
 
+/// A single text node can be marked as a section, which is how
+/// xf:submission serialises @cdata-section-elements. It used to write a
+/// token into the tree and patch the serialised string afterwards,
+/// because GNUstep's NSXML ignored NSXMLNodeIsCDATA.
+- (void)testATextNodeCanBeAskedToSerialiseAsASection
+{
+    XFDOMElement *root = [XFDOMElement elementWithName:@"r"];
+    [root addChild:[XFDOMNode CDATAWithStringValue:@"c & d"]];
+    [root addChild:[XFDOMNode textWithStringValue:@" e & f"]];
+    // the section is not escaped, the ordinary text beside it still is
+    XCTAssertEqualObjects([root XMLString], @"<r><![CDATA[c & d]]> e &amp; f</r>");
+    // and the value reads back as the text it stands for
+    XCTAssertEqualObjects([root stringValue], @"c & d e & f");
+
+    // "]]>" cannot appear inside a section: it closes and reopens around
+    // it, which a parser reads back as one run
+    XFDOMElement *tricky = [XFDOMElement elementWithName:@"r"];
+    [tricky addChild:[XFDOMNode CDATAWithStringValue:@"a ]]> b"]];
+    XCTAssertEqualObjects([tricky XMLString], @"<r><![CDATA[a ]]]]><![CDATA[> b]]></r>");
+    XCTAssertEqualObjects([[[self parse:[tricky XMLString]] rootElement] stringValue], @"a ]]> b");
+}
+
 #pragma mark - Serialisation
 
 /// The exact bytes XFDOM writes for a parsed document. Pinned literally

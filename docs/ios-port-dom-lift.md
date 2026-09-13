@@ -119,17 +119,18 @@ compatibility layer has to absorb.
 | Concern | Lifted DOM | NSXML (what the engine expects) |
 | --- | --- | --- |
 | Namespace declarations | ordinary attributes in the `xmlns` namespace — `attributeCount` on a root with `xmlns` + `xmlns:xf` is **2** | separate: `attributes` = 0, `namespaces` = 2. `XFSubmission` and `XFHostEdit` depend on the split |
-| Whitespace-only text | **preserved** — `<data>\n <a>1</a>\n</data>` has 5 children | hidden — 2 children. The engine compensates with `<!--xf:ws-->` markers ([XFProcessor.m:73](../Sources/XFormsKit/XFProcessor.m#L73)); the facade must strip by default or that hack double-counts |
+| Whitespace-only text | **preserved** — `<data>\n <a>1</a>\n</data>` has 5 children | hidden — 2 children. The engine compensated with `<!--xf:ws-->` markers, retired once XFDOM landed: XFDOM keeps whitespace-only text when asked to preserve it, which is what the host document asks for |
 | Node kind constants | W3C (`ELEMENT_NODE` = 1, `TEXT_NODE` = 3) | `NSXMLElementKind` = 2, `NSXMLTextKind` = 7 — mechanical mapping |
 | Processing instructions | not implemented (no class, no parser callback) | `NSXMLProcessingInstructionKind`, used twice in the engine |
 | Document children | `childCount` counts only the root element; comments outside the root are appended but not counted | document children include comments and PIs |
 | Position | no `index` / `level` | both used, incl. by XPath document order |
 | Detach | `removeChild:error:` on the parent | `detach` on the node itself, used 42 times |
 
-The good news on the whitespace row: the lifted DOM keeps whitespace-only
-text nodes *natively*, which is exactly what the `<!--xf:ws-->` marker
-hack was invented to work around. Once the portable DOM is the only DOM,
-that workaround can be deleted — a cleanup, not part of this port.
+The good news on the whitespace row: a pure Objective-C DOM can keep
+whitespace-only text nodes *natively*, which is exactly what the
+`<!--xf:ws-->` marker hack was invented to work around. That is how it
+turned out — XFDOM keeps them when the parse asks for preservation, and
+the marker pre-pass was deleted once XFDOM was the only tree.
 
 ## What the two NSXML implementations disagree about
 

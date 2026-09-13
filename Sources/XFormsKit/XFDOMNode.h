@@ -17,6 +17,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// declaration. `stringValue` is the URI.
 + (XFDOMNode *)namespaceWithName:(NSString *)name stringValue:(NSString *)stringValue;
 + (XFDOMNode *)textWithStringValue:(NSString *)stringValue;
+/// A text node that serialises as `<![CDATA[...]]>`.
+///
+/// The content is the same text either way — CDATA is a choice about
+/// how to write it, not a kind of node, which is why this answers a
+/// text node and why a parsed section comes back as one. `xf:submission`
+/// asks for it by name through @cdata-section-elements (XForms 1.1
+/// 11.1, via xsl:output).
++ (XFDOMNode *)CDATAWithStringValue:(NSString *)stringValue;
 + (XFDOMNode *)commentWithStringValue:(NSString *)stringValue;
 + (XFDOMNode *)processingInstructionWithName:(NSString *)name stringValue:(NSString *)stringValue;
 

@@ -104,6 +104,13 @@ NSString *XFDOMEscapedAttributeValue(NSString *value)
     return [self nodeOfKind:XFDOMTextKind name:nil value:stringValue];
 }
 
++ (XFDOMNode *)CDATAWithStringValue:(NSString *)stringValue
+{
+    XFDOMNode *node = [self nodeOfKind:XFDOMTextKind name:nil value:stringValue];
+    node.CDATA = YES;
+    return node;
+}
+
 + (XFDOMNode *)commentWithStringValue:(NSString *)stringValue
 {
     return [self nodeOfKind:XFDOMCommentKind name:nil value:stringValue];
@@ -395,7 +402,13 @@ NSString *XFDOMEscapedAttributeValue(NSString *value)
     switch (self.kind) {
         case XFDOMTextKind:
             if (self.CDATA || (options & XFDOMNodeIsCDATA)) {
-                [out appendFormat:@"<![CDATA[%@]]>", self.leafValue ?: @""];
+                // "]]>" cannot appear inside a section, so the section is
+                // closed and reopened around it -- the text is unchanged,
+                // a parser reading it back sees one run again
+                NSString *value = [self.leafValue ?: @""
+                    stringByReplacingOccurrencesOfString:@"]]>"
+                                              withString:@"]]]]><![CDATA[>"];
+                [out appendFormat:@"<![CDATA[%@]]>", value];
             } else {
                 [out appendString:XFDOMEscapedText(self.leafValue ?: @"")];
             }
