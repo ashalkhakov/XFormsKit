@@ -190,12 +190,17 @@ jobs:
           security list-keychain -d user -s "$keychain" login.keychain-db
           rm -f "$RUNNER_TEMP/cert.p12"
 
-          # --options runtime is what notarization requires. Both apps embed
-          # the framework, and each copy is signed inside the app that carries
-          # it -- signing an app after its framework, or the outer signature
-          # is stale.
+          # --options runtime is what notarization requires. Signed
+          # inside out, the way RDLKit does it: each app embeds its own copy
+          # of the framework, and signing the app first would leave the outer
+          # signature stale the moment the inner one is written. --deep would
+          # do it in one call, but Apple deprecates it and it is the usual
+          # reason notarization rejects a nested framework.
           for app in XFormsViewer XFormsDesigner; do
-            codesign --force --timestamp --options runtime --deep \
+            codesign --force --timestamp --options runtime \
+                     --sign "$IDENTITY" \
+                     "$built/$app.app/Contents/Frameworks/XFormsKit.framework"
+            codesign --force --timestamp --options runtime \
                      --sign "$IDENTITY" "$built/$app.app"
             codesign --verify --strict --verbose=2 "$built/$app.app"
           done
