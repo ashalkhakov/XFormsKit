@@ -184,17 +184,10 @@ void XFAppKitHasWidgetsFile(void) {}
             CGFloat w = 96, h = 72;   // the empty slot (the bezel shows it)
             if (picture != nil) {
                 NSSize natural = [picture size];
-                w = MAX(natural.width, 1);
-                h = MAX(natural.height, 1);
-                if (w < 24 && h < 24) {
-                    CGFloat up = 48 / MAX(w, h);
-                    w *= up;
-                    h *= up;
-                }
-                if (w > 320) { h *= 320 / w; w = 320; }
-                if (h > 240) { w *= 240 / h; h = 240; }
-                w = ceil(w);
-                h = ceil(h);
+                CGSize shown = [XFOutputControl displaySizeForImageOfNaturalSize:
+                    CGSizeMake(natural.width, natural.height)];
+                w = shown.width;
+                h = shown.height;
             }
             NSImageView *img = [[NSImageView alloc] initWithFrame:NSMakeRect(0, 0, w, h)];
             [img setEditable:NO];

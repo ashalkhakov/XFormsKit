@@ -38,6 +38,9 @@
 - (void)selectValue:(nullable NSString *)value ofSelect:(XFSelectControl *)select;
 /// Turn one item on or off (appearance full, and every multiple select).
 - (void)toggleValue:(nullable NSString *)value ofSelect:(XFSelectControl *)select;
+/// The list of items, for a select that shows only its chosen value: the
+/// select1 row, and a select inside a table cell or a sentence.
+- (void)presentOptionsForSelect:(XFSelectControl *)select;
 /// The shared prev / next / Done bar every editable field puts above the
 /// keyboard; the rich variant carries bold / italic / underline too.
 - (UIToolbar *)keyboardAccessoryView;
@@ -58,6 +61,7 @@
 @property (nonatomic, strong, nullable) XFFormRow *row;
 @property (nonatomic, weak, nullable) XFFormViewController *formController;
 - (void)bindRow:(XFFormRow *)row;
+- (void)keepContentHeightOpenAround:(UIView *)widget;
 @end
 
 @implementation XFFormCell
@@ -76,6 +80,35 @@
     self.userInteractionEnabled = control == nil || !control.readonly;
 }
 
+/// Makes the content view's height solvable for a widget that is only
+/// centred in it.
+///
+/// These cells keep the stock `textLabel` for the control's label, and
+/// that label is not laid out with Auto Layout — so the widget beside it
+/// cannot be pinned top AND bottom to the margins without dictating the
+/// row height for the label too. Left with a centre, a width and a
+/// trailing edge, the content view's height solves to zero, which a
+/// self-sizing table view reports before falling back: "constraints
+/// ambiguously suggest a height of zero for a table view cell's content
+/// view ... using standard height instead". Keeping the widget inside the
+/// margins and giving the content view a floor one standard row high
+/// makes the height determinate, and still lets a taller widget open the
+/// row further.
+- (void)keepContentHeightOpenAround:(UIView *)widget
+{
+    UILayoutGuide *margins = self.contentView.layoutMarginsGuide;
+    NSLayoutConstraint *floor =
+        [self.contentView.heightAnchor constraintGreaterThanOrEqualToConstant:44];
+    // below required so it never fights UIKit's own cell constraints, far
+    // above the fitting-size priority the table view measures with
+    floor.priority = UILayoutPriorityRequired - 1;
+    [NSLayoutConstraint activateConstraints:@[
+        [widget.topAnchor constraintGreaterThanOrEqualToAnchor:margins.topAnchor],
+        [margins.bottomAnchor constraintGreaterThanOrEqualToAnchor:widget.bottomAnchor],
+        floor,
+    ]];
+}
+
 @end
 
 #pragma mark - Widgets for inline controls
@@ -87,11 +120,26 @@
 /// Keep the control this view stands for, for the actions to look up.
 - (void)rememberControl:(XFControl *)control forView:(UIView *)view;
 - (void)inlineTriggerFired:(UIButton *)sender;
+- (void)inlineSelectTapped:(UIButton *)sender;
 - (void)inlineSwitchChanged:(UISwitch *)sender;
 - (void)inlineFieldDidBegin:(UITextField *)sender;
 - (void)inlineFieldDidEnd:(UITextField *)sender;
 - (void)inlineFieldChanged:(UITextField *)sender;
 @end
+
+/// What a select shows when it is not opened: the labels of the chosen
+/// items, or the raw value when an item carries none. Empty when nothing
+/// is chosen, which the caller turns into a prompt.
+static NSString *XFSelectedLabel(XFSelectControl *select)
+{
+    NSMutableArray<NSString *> *chosen = [NSMutableArray array];
+    for (XFItem *item in select.items) {
+        if (item.selected) {
+            [chosen addObject:item.label.length ? item.label : (item.value ?: @"")];
+        }
+    }
+    return [chosen componentsJoinedByString:@", "];
+}
 
 /// The widget for one INLINE control — a control that sits on a line
 /// rather than owning a block.
@@ -128,6 +176,30 @@ static UIView *XFInlineWidgetForControl(XFControl *control, id<XFInlineWidgetHos
          forControlEvents:UIControlEventValueChanged];
         [host rememberControl:control forView:toggle];
         return toggle;
+    }
+
+    // A select is a value control, so without this it would fall through
+    // to the text field below and show the raw value — balance-table's
+    // Withdraw/Deposit column read "true"/"false" and was typeable.
+    // AppKit puts a popup button there; the phone equivalent is a button
+    // that opens the same options list the select1 ROW opens, which also
+    // covers a full-appearance select in a cell too narrow for radios.
+    if ([control isKindOfClass:[XFSelectControl class]]) {
+        XFSelectControl *select = (XFSelectControl *)control;
+        UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
+        NSString *chosen = XFSelectedLabel(select);
+        [button setTitle:chosen.length ? chosen : @"—" forState:UIControlStateNormal];
+        button.titleLabel.font = body;
+        button.titleLabel.lineBreakMode = NSLineBreakByTruncatingTail;
+        button.enabled = control.relevant && !control.readonly;
+        button.contentEdgeInsets = UIEdgeInsetsMake(2, 8, 2, 8);
+        button.layer.cornerRadius = 6;
+        button.layer.borderWidth = 1;
+        button.layer.borderColor = [UIColor separatorColor].CGColor;
+        [button addTarget:host action:@selector(inlineSelectTapped:)
+         forControlEvents:UIControlEventTouchUpInside];
+        [host rememberControl:control forView:button];
+        return button;
     }
 
     if ([control isValueControl] && ![control isKindOfClass:[XFOutputControl class]]) {
@@ -194,6 +266,7 @@ static UIView *XFInlineWidgetForControl(XFControl *control, id<XFInlineWidgetHos
             [_textField.centerYAnchor constraintEqualToAnchor:self.contentView.centerYAnchor],
             [_textField.widthAnchor constraintEqualToAnchor:self.contentView.widthAnchor multiplier:0.55],
         ]];
+        [self keepContentHeightOpenAround:_textField];
     }
     return self;
 }
@@ -580,8 +653,8 @@ static UIView *XFInlineWidgetForControl(XFControl *control, id<XFInlineWidgetHos
         [NSLayoutConstraint activateConstraints:@[
             [_segments.trailingAnchor constraintEqualToAnchor:margins.trailingAnchor],
             [_segments.centerYAnchor constraintEqualToAnchor:self.contentView.centerYAnchor],
-            [_segments.topAnchor constraintGreaterThanOrEqualToAnchor:margins.topAnchor],
         ]];
+        [self keepContentHeightOpenAround:_segments];
         self.selectionStyle = UITableViewCellSelectionStyleNone;
     }
     return self;
@@ -729,6 +802,7 @@ static UIView *XFInlineWidgetForControl(XFControl *control, id<XFInlineWidgetHos
             [_slider.centerYAnchor constraintEqualToAnchor:self.contentView.centerYAnchor],
             [_slider.widthAnchor constraintEqualToAnchor:self.contentView.widthAnchor multiplier:0.45],
         ]];
+        [self keepContentHeightOpenAround:_slider];
         self.selectionStyle = UITableViewCellSelectionStyleNone;
     }
     return self;
@@ -1077,7 +1151,12 @@ static const CGFloat kXFFlowLineGap = 6;
         } else if ([item isKindOfClass:[UIButton class]]) {
             UIButton *button = (UIButton *)item;
             button.enabled = control.relevant && !control.readonly;
-            [button setTitle:control.label ?: @" " forState:UIControlStateNormal];
+            if ([control isKindOfClass:[XFSelectControl class]]) {
+                NSString *chosen = XFSelectedLabel((XFSelectControl *)control);
+                [button setTitle:chosen.length ? chosen : @"—" forState:UIControlStateNormal];
+            } else {
+                [button setTitle:control.label ?: @" " forState:UIControlStateNormal];
+            }
         } else if ([item isKindOfClass:[UILabel class]]) {
             ((UILabel *)item).text = [XFDateDisplay localizedStringForControl:control]
                 ?: (control.stringValue ?: @"");
@@ -1093,6 +1172,14 @@ static const CGFloat kXFFlowLineGap = 6;
     if ([control isKindOfClass:[XFTriggerControl class]]) {
         [self.formController.processor activateControl:(XFTriggerControl *)control];
         [self.formController reloadFromProcessor];
+    }
+}
+
+- (void)inlineSelectTapped:(UIButton *)sender
+{
+    XFControl *control = [_controlsByView objectForKey:sender];
+    if ([control isKindOfClass:[XFSelectControl class]]) {
+        [self.formController presentOptionsForSelect:(XFSelectControl *)control];
     }
 }
 
@@ -1289,7 +1376,10 @@ static const CGFloat kXFFlowLineGap = 6;
 @property (nonatomic, strong) UIImageView *picture;
 @end
 
-@implementation XFImageFormCell
+@implementation XFImageFormCell {
+    NSLayoutConstraint *_width;
+    NSLayoutConstraint *_height;
+}
 
 - (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)identifier
 {
@@ -1300,13 +1390,27 @@ static const CGFloat kXFFlowLineGap = 6;
         _picture.contentMode = UIViewContentModeScaleAspectFit;
         [self.contentView addSubview:_picture];
         UILayoutGuide *margins = self.contentView.layoutMarginsGuide;
+        // The size is set at bind time, from the picture itself: a
+        // UIImageView's intrinsic size is the image's own, and
+        // Samples/output-image.xhtml carries a REAL 1x1 pixel, which
+        // showed as nothing at all. XFOutputControl decides what that
+        // should become, so a Mac and a phone show the same square.
+        _width = [_picture.widthAnchor constraintEqualToConstant:0];
+        _height = [_picture.heightAnchor constraintEqualToConstant:0];
+        // the bottom pin is what makes the ROW as tall as the picture, so
+        // it yields to a cell whose height is decided elsewhere rather
+        // than stretching the picture to fill it
+        NSLayoutConstraint *bottom =
+            [_picture.bottomAnchor constraintEqualToAnchor:margins.bottomAnchor];
+        bottom.priority = UILayoutPriorityRequired - 1;
         [NSLayoutConstraint activateConstraints:@[
             [_picture.leadingAnchor constraintEqualToAnchor:margins.leadingAnchor],
             [_picture.trailingAnchor constraintLessThanOrEqualToAnchor:margins.trailingAnchor],
             [_picture.topAnchor constraintEqualToAnchor:margins.topAnchor],
-            [_picture.bottomAnchor constraintEqualToAnchor:margins.bottomAnchor],
-            // tall pictures are capped rather than given the whole screen
-            [_picture.heightAnchor constraintLessThanOrEqualToConstant:240],
+            [margins.bottomAnchor constraintGreaterThanOrEqualToAnchor:_picture.bottomAnchor],
+            bottom,
+            _width,
+            _height,
         ]];
         self.selectionStyle = UITableViewCellSelectionStyleNone;
     }
@@ -1317,8 +1421,15 @@ static const CGFloat kXFFlowLineGap = 6;
 {
     [super bindRow:row];
     NSData *data = [(XFOutputControl *)row.control imageData];
-    self.picture.image = data.length ? [UIImage imageWithData:data] : nil;
-    self.textLabel.text = self.picture.image ? nil : row.label;
+    UIImage *picture = data.length ? [UIImage imageWithData:data] : nil;
+    self.picture.image = picture;
+    self.textLabel.text = picture ? nil : row.label;
+    // 96x72 is the empty slot, the same one the AppKit widget leaves
+    CGSize shown = picture
+        ? [XFOutputControl displaySizeForImageOfNaturalSize:picture.size]
+        : CGSizeMake(96, 72);
+    _width.constant = shown.width;
+    _height.constant = shown.height;
 }
 
 @end
@@ -1607,7 +1718,13 @@ static const CGFloat kXFGridMinRowHeight = 36;
                 ((UISwitch *)view).on = [value isEqualToString:@"true"]
                                      || [value isEqualToString:@"1"];
             } else if ([view isKindOfClass:[UIButton class]]) {
-                ((UIButton *)view).enabled = control.relevant && !control.readonly;
+                UIButton *button = (UIButton *)view;
+                button.enabled = control.relevant && !control.readonly;
+                if ([control isKindOfClass:[XFSelectControl class]]) {
+                    NSString *chosen = XFSelectedLabel((XFSelectControl *)control);
+                    [button setTitle:chosen.length ? chosen : @"—"
+                            forState:UIControlStateNormal];
+                }
             } else if ([view isKindOfClass:[UILabel class]]) {
                 NSString *value = cell.text.length ? cell.text : (control.stringValue ?: @"");
                 ((UILabel *)view).text = control.label.length
@@ -1630,6 +1747,14 @@ static const CGFloat kXFGridMinRowHeight = 36;
     if ([control isKindOfClass:[XFTriggerControl class]]) {
         [self.formController.processor activateControl:(XFTriggerControl *)control];
         [self.formController reloadFromProcessor];
+    }
+}
+
+- (void)inlineSelectTapped:(UIButton *)sender
+{
+    XFControl *control = [_controlsByView objectForKey:sender];
+    if ([control isKindOfClass:[XFSelectControl class]]) {
+        [self.formController presentOptionsForSelect:(XFSelectControl *)control];
     }
 }
 

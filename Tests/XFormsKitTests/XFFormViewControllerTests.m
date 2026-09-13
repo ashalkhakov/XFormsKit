@@ -269,6 +269,38 @@
     XCTAssertEqualObjects([XFXML stringValueOfNode:done], @"yes", @"and the trigger still ran");
 }
 
+/// A cell whose widget is only centred in the content view still has a
+/// solvable height. With nothing tying the content view open, it solves
+/// to zero and UIKit logs "constraints ambiguously suggest a height of
+/// zero for a table view cell's content view" on the first such row, then
+/// silently uses a standard height.
+- (void)testCentredWidgetCellsHaveASolvableHeight
+{
+    XFFormViewController *vc = [self controllerForBody:
+        @"<xf:input ref=\"colour\"><xf:label>Colour</xf:label></xf:input>"
+        @"<xf:range ref=\"amount\" start=\"0\" end=\"10\" step=\"1\">"
+        @"  <xf:label>Amount</xf:label></xf:range>"
+        @"<xf:select1 ref=\"colour\" appearance=\"full\"><xf:label>Pick</xf:label>"
+        @"  <xf:item><xf:label>Red</xf:label><xf:value>red</xf:value></xf:item>"
+        @"  <xf:item><xf:label>Blue</xf:label><xf:value>blue</xf:value></xf:item>"
+        @"</xf:select1>"];
+    vc.tableView.frame = CGRectMake(0, 0, 390, 800);
+    [vc.tableView layoutIfNeeded];
+
+    NSInteger rows = [vc tableView:vc.tableView numberOfRowsInSection:0];
+    XCTAssertTrue(rows >= 3);
+    for (NSInteger i = 0; i < rows; i++) {
+        NSIndexPath *path = [NSIndexPath indexPathForRow:i inSection:0];
+        UITableViewCell *cell = [vc tableView:vc.tableView cellForRowAtIndexPath:path];
+        cell.frame = CGRectMake(0, 0, 390, 44);
+        [cell layoutIfNeeded];
+        CGSize fitted = [cell.contentView
+            systemLayoutSizeFittingSize:UILayoutFittingCompressedSize];
+        XCTAssertTrue(fitted.height >= 44,
+                      @"row %ld collapses to %g", (long)i, fitted.height);
+    }
+}
+
 #pragma mark - prose with controls in it
 
 - (XFFormViewController *)sentenceController
@@ -1240,6 +1272,46 @@
     UITextField *field = (UITextField *)fields.firstObject;
     XCTAssertTrue(field.enabled, @"and still editable");
     XCTAssertEqualObjects(field.text, @"0");
+}
+
+/// A select in a table cell is a select, not a text field. It is a value
+/// control, so it used to fall through to the inline text field and show
+/// the raw value: balance-table's Withdraw/Deposit column read "true" and
+/// "false" and could be typed over, where AppKit has a popup button.
+- (void)testGridShowsASelectAsAChooserNotAField
+{
+    XFFormViewController *vc = [self controllerForBody:
+        @"<table><tr><td>Type</td>"
+        @"<td><xf:select1 ref=\"colour\" appearance=\"minimal\">"
+        @"  <xf:label>Type</xf:label>"
+        @"  <xf:item><xf:label>Red</xf:label><xf:value>red</xf:value></xf:item>"
+        @"  <xf:item><xf:label>Blue</xf:label><xf:value>blue</xf:value></xf:item>"
+        @"</xf:select1></td></tr></table>"];
+    UITableViewCell *cell = [self onlyCellOf:vc];
+    XCTAssertEqual([self viewsUnder:cell.contentView ofClass:[UITextField class]].count,
+                   (NSUInteger)0, @"a select is not typed into");
+    NSArray<UIView *> *buttons = [self viewsUnder:cell.contentView ofClass:[UIButton class]];
+    XCTAssertEqual(buttons.count, (NSUInteger)1);
+    // the chosen item's LABEL, not the value behind it
+    XCTAssertEqualObjects([(UIButton *)buttons.firstObject currentTitle], @"Red");
+}
+
+/// A one-pixel picture is still meant to be seen. Samples/output-image.xhtml
+/// carries a real 1x1 data-URI PNG, and a UIImageView sized to its own
+/// image showed nothing at all; AppKit scales the same swatch up.
+- (void)testATinyPictureIsShownAtAVisibleSize
+{
+    XFFormViewController *vc = [self controllerForBody:
+        @"<xf:output ref=\"pic\" mediatype=\"image/png\"><xf:label>Pic</xf:label></xf:output>"];
+    UITableViewCell *cell = [self onlyCellOf:vc];
+    UIImageView *picture = (UIImageView *)
+        [self viewsUnder:cell.contentView ofClass:[UIImageView class]].firstObject;
+    XCTAssertNotNil(picture);
+    XCTAssertNotNil(picture.image, @"the data URI decodes");
+    XCTAssertEqualWithAccuracy(picture.image.size.width, 1.0, 0.01, @"it really is 1x1");
+    XCTAssertEqualWithAccuracy(CGRectGetWidth(picture.frame), 48.0, 1.0,
+                               @"scaled up to a visible square");
+    XCTAssertEqualWithAccuracy(CGRectGetHeight(picture.frame), 48.0, 1.0);
 }
 
 - (void)testGridTriggerActivatesItsControl

@@ -220,6 +220,37 @@
                           @"the field editor's text should reach the instance");
 }
 
+/// Clicking into a field leaves it editable. The flush above must not run
+/// on the focus path: a field reports the start of editing through
+/// widgetDidFocus:, and ending the edit there took the focus back off the
+/// field as soon as it was clicked — input.xhtml could not be typed into
+/// at all.
+- (void)testClickingIntoAFieldKeepsTheEditor
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self formWithANoteAndADoneButtonError:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *view = [[XFFormView alloc] initWithProcessor:p];
+    NSWindow *window = [self windowShowing:view];
+    NSTextField *field = [self firstViewOfClass:[NSTextField class] under:view
+                                       matching:^BOOL(NSView *v) {
+        return [(NSTextField *)v isEditable];
+    }];
+    XCTAssertNotNil(field);
+
+    XCTAssertTrue([window makeFirstResponder:field]);
+    XCTAssertNotNil([field currentEditor], @"the field has an editor to lose");
+    // stands in for AppKit's own notification, which a headless window
+    // does not post until a real keystroke arrives
+    [(id<NSTextFieldDelegate>)view controlTextDidBeginEditing:
+        [NSNotification notificationWithName:NSControlTextDidBeginEditingNotification
+                                      object:field]];
+    // the field editor, not the window: the field is still being edited
+    XCTAssertEqualObjects([field currentEditor], [window firstResponder],
+                          @"the field lost its editor as editing began");
+}
+
 - (void)testTriggerActivatesAction
 {
     NSError *error = nil;

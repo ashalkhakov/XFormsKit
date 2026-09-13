@@ -64,6 +64,20 @@
         || [mt isEqualToString:@"application/xml+xhtml"];
 }
 
++ (CGSize)displaySizeForImageOfNaturalSize:(CGSize)natural
+{
+    CGFloat w = MAX(natural.width, 1);
+    CGFloat h = MAX(natural.height, 1);
+    if (w < 24 && h < 24) {           // a swatch: up to a visible square
+        CGFloat up = 48 / MAX(w, h);
+        w *= up;
+        h *= up;
+    }
+    if (w > 320) { h *= 320 / w; w = 320; }
+    if (h > 240) { w *= 240 / h; h = 240; }
+    return CGSizeMake(ceil(w), ceil(h));
+}
+
 - (NSData *)imageData
 {
     NSString *value = self.stringValue ?: @"";

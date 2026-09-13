@@ -989,10 +989,7 @@ static NSRect XFWidgetRect(XFWidget *w)
 /// (XsltForms_control.focusHandler).
 - (void)widgetDidFocus:(id)sender
 {
-    // the control first: ending the edit below can rebuild the widgets,
-    // and the sender view would no longer be one of them
     XFControl *control = [self controlForSender:sender];
-    [self endEditingInProgress];
     if (control) {
         [self.processor focusControl:control fromUI:YES];
     }
