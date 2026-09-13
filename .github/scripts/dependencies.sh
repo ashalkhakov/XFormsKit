@@ -150,6 +150,14 @@ install_libs_gui() {
     # on this patch -- but anything drawn by gnustep-gui that does use
     # Auto Layout, and the AppImage's users, do.
     patch -p1 < "$WORKSPACE_DIR/patches/gnustep/gnustep-gui-gscstableau-removerow-use-after-free.patch"
+    # -[NSMenu performActionForItemAtIndex:] and -[NSTextField
+    # textDidEndEditing:] keep using the receiver after the action they sent
+    # has released it. XFFormView rebuilds every widget from inside that
+    # action and now keeps the old ones alive until the event ends, so the
+    # viewer no longer depends on this either; anything else on the
+    # AppImage's gnustep-gui that regenerates a control in its own action
+    # does. See patches/gnustep/README.md section 3.
+    patch -p1 < "$WORKSPACE_DIR/patches/gnustep/gnustep-gui-action-sender-lifetime.patch"
     ./configure --prefix="$INSTALL_PATH" || cat config.log
     make install
     echo "::endgroup::"

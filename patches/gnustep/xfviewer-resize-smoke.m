@@ -1,7 +1,8 @@
-/* Resize smoke test for XFormsViewer on GNUstep: open a sample the way the
- * viewer's Samples menu does, grow the window to the screen (what a maximize
- * does), shrink it, quit. Exit status is the app's; "== survived" on stderr
- * means all three steps ran.
+/* Smoke test for XFormsViewer on GNUstep: open a sample the way the
+ * viewer's Samples menu does, optionally sweep a real X pointer over the
+ * window and type into its fields, grow the window to the screen (what a
+ * maximize does), shrink it, quit. Exit status is the app's; "== survived"
+ * on stderr means every step ran.
  *
  * It links the viewer's own document and window controller, so build it
  * after `make viewer`, from Apps/XFormsViewer:
@@ -10,10 +11,11 @@
  *   clang -c -g -fobjc-arc -fobjc-runtime=gnustep-2.2 `gnustep-config --objc-flags` \
  *       -I. -I../../Sources -I../../Sources/XFormsKit \
  *       -o /tmp/smoke.o ../../patches/gnustep/xfviewer-resize-smoke.m
+ *   mkdir -p /tmp/Smoke.app/Resources
  *   clang -o /tmp/Smoke.app/Smoke /tmp/smoke.o $V/XFFormDocument.m.o \
  *       $V/XFDocumentWindowController.m.o -rdynamic -fobjc-arc \
  *       -L../../XFormsKit.framework/Versions/Current `gnustep-config --gui-libs` \
- *       -lXFormsKit -ldispatch
+ *       -lXFormsKit -ldispatch -lX11
  *   printf '{ NSExecutable = "Smoke"; NSPrincipalClass = "NSApplication"; }\n' \
  *       > /tmp/Smoke.app/Resources/Info-gnustep.plist
  *
@@ -22,18 +24,39 @@
  * resizes anything:
  *
  *   LD_LIBRARY_PATH=$PWD/../../XFormsKit.framework/Versions/Current \
- *   XF_FILE=$PWD/../../Samples/input.xhtml XF_DELAY=2 xvfb-run -a /tmp/Smoke.app/Smoke
+ *   XF_FILE=$PWD/../../Samples/validation.xhtml XF_DELAY=1 \
+ *   XF_TYPE="ab@c 17" XF_TYPE_ALL=1 XF_HOVER=0.05 MALLOC_PERTURB_=165 \
+ *   xvfb-run -a /tmp/Smoke.app/Smoke
  *
- * The file and delay come from the environment rather than argv because
- * GNUstep's NSApplication hands every argument to application:openFile:.
- * Running it over Samples/*.xhtml with MALLOC_PERTURB_ set is the quickest
- * way to see whether a gnustep-gui build has the GSCSTableau fix; see
- * README.md section 3.
+ * Environment (not argv: GNUstep's NSApplication hands every argument to
+ * application:openFile:):
+ *   XF_FILE      the sample to open
+ *   XF_DELAY     seconds to wait after the window is up
+ *   XF_TYPE      text to type (each character as a key event, then Return)
+ *   XF_TYPE_ALL  type into every editable text field, not only the first
+ *   XF_HOVER     sweep the pointer over the window before and after typing,
+ *                lingering this many seconds per stop (0.7 shows tool tips)
+ *
+ * Run over Samples/*.xhtml with MALLOC_PERTURB_ set, it is the quickest way
+ * to see whether a gnustep-gui build has the patches in README.md section 3.
  */
 #import <AppKit/AppKit.h>
 #import "XFFormDocument.h"
 #import "XFDocumentWindowController.h"
 #import <XFormsKit/XFormsKit.h>
+#include <X11/Xlib.h>
+
+/* Real pointer motion through the X server, so GNUstep's tracking rects and
+ * tool tips see MotionNotify / Enter / Leave the way they do under a person's
+ * mouse. Coordinates are screen pixels, origin top-left. */
+static void warp(int x, int y)
+{
+    static Display *d = NULL;
+    if (!d) d = XOpenDisplay(NULL);
+    if (!d) return;
+    XWarpPointer(d, None, DefaultRootWindow(d), 0, 0, 0, 0, x, y);
+    XFlush(d);
+}
 
 @interface Driver : NSObject
 @property (nonatomic, copy) NSString *path;
@@ -69,7 +92,101 @@
     self.doc = doc;
     fprintf(stderr, "== shown; frame %s\n",
         [NSStringFromRect([[[[doc windowControllers] firstObject] window] frame]) UTF8String]);
-    [self performSelector:@selector(maximize) withObject:nil afterDelay:self.delay];
+    [self performSelector:@selector(typeText) withObject:nil afterDelay:self.delay];
+}
+static void collectEditableFields(NSView *v, NSMutableArray *out)
+{
+    if ([v isKindOfClass:[NSTextField class]] && [(NSTextField *)v isEditable]) {
+        [out addObject:v];
+    }
+    for (NSView *sub in [v subviews]) {
+        collectEditableFields(sub, out);
+    }
+}
+static NSTextField *firstEditableField(NSView *v)
+{
+    NSMutableArray *all = [NSMutableArray array];
+    collectEditableFields(v, all);
+    return [all firstObject];
+}
+- (void)keyDown:(NSString *)chars inWindow:(NSWindow *)w
+{
+    NSEvent *down = [NSEvent keyEventWithType:NSKeyDown location:NSZeroPoint modifierFlags:0
+        timestamp:[NSDate timeIntervalSinceReferenceDate] windowNumber:[w windowNumber]
+        context:nil characters:chars charactersIgnoringModifiers:chars isARepeat:NO keyCode:0];
+    NSEvent *up = [NSEvent keyEventWithType:NSKeyUp location:NSZeroPoint modifierFlags:0
+        timestamp:[NSDate timeIntervalSinceReferenceDate] windowNumber:[w windowNumber]
+        context:nil characters:chars charactersIgnoringModifiers:chars isARepeat:NO keyCode:0];
+    [NSApp sendEvent:down];
+    [NSApp sendEvent:up];
+}
+/* Sweep the pointer over the window in a grid, lingering long enough at
+ * each stop for a tool tip to come up, then move on (which takes it down). */
+- (void)hoverOver:(NSWindow *)w linger:(double)linger
+{
+    NSRect f = [w frame];
+    CGFloat screenH = [[NSScreen mainScreen] frame].size.height;
+    int x0 = (int)NSMinX(f), y0 = (int)(screenH - NSMaxY(f)), wd = (int)NSWidth(f), ht = (int)NSHeight(f);
+    for (int gy = 1; gy < 12; gy++) {
+        for (int gx = 1; gx < 16; gx++) {
+            warp(x0 + wd * gx / 16, y0 + ht * gy / 12);
+            [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:linger]];
+        }
+    }
+}
+- (void)typeText
+{
+    if (getenv("XF_HOVER")) {
+        NSWindow *w = [[[self.doc windowControllers] firstObject] window];
+        fprintf(stderr, "== hovering\n");
+        [self hoverOver:w linger:atof(getenv("XF_HOVER"))];
+    }
+    const char *text = getenv("XF_TYPE");
+    if (!text) { [self maximize]; return; }
+    NSWindow *w = [[[self.doc windowControllers] firstObject] window];
+    NSMutableArray *fields = [NSMutableArray array];
+    collectEditableFields([w contentView], fields);
+    NSUInteger count = getenv("XF_TYPE_ALL") ? [fields count] : MIN(1u, [fields count]);
+    for (NSUInteger idx = 0; idx < count; idx++) {
+    // Re-collect every time: a commit rebuilds the form's widgets, and a
+    // field kept from before the rebuild is no longer in the window.
+    [fields removeAllObjects];
+    collectEditableFields([w contentView], fields);
+    if (idx >= [fields count]) break;
+    NSTextField *f = fields[idx];
+    [fields removeAllObjects];
+    fprintf(stderr, "== typing '%s' into %s\n", text, f ? [[f description] UTF8String] : "(no field)");
+    if (f) {
+        if (getenv("XF_HOVER")) {
+            NSRect r = [f convertRect:[f bounds] toView:nil];
+            NSPoint p = [w convertBaseToScreen:NSMakePoint(NSMidX(r), NSMidY(r))];
+            CGFloat screenH = [[NSScreen mainScreen] frame].size.height;
+            warp((int)p.x, (int)(screenH - p.y));
+            [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:1.2]];
+        }
+        [w makeFirstResponder:f];
+        NSString *str = [NSString stringWithUTF8String:text];
+        for (NSUInteger i = 0; i < [str length]; i++) {
+            NSString *ch = [str substringWithRange:NSMakeRange(i, 1)];
+            if ([ch isEqualToString:@"\t"]) { ch = @"\t"; }
+            [self keyDown:ch inWindow:w];
+            // let the run loop breathe between keys, as a person would
+            [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
+        }
+        // Return commits the value. Drop our own reference first: in the
+        // real viewer nothing but the form view retains the field, and the
+        // commit rebuilds the form.
+        f = nil;
+        [self keyDown:@"\r" inWindow:w];
+        [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.3]];
+        fprintf(stderr, "== typed\n");
+    }
+    }
+    if (getenv("XF_HOVER")) {
+        fprintf(stderr, "== hovering again\n");
+        [self hoverOver:w linger:atof(getenv("XF_HOVER"))];
+    }
+    [self maximize];
 }
 - (void)maximize
 {

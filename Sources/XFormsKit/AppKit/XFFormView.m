@@ -561,7 +561,16 @@ NSView *XFKeyViewOf(NSView *view)
 - (void)rebuild
 {
     [self hideBadgeInfo];
-    for (NSView *view in [[self subviews] copy]) {
+    // A rebuild is usually run from inside a widget's own action -- the
+    // popup that was just chosen, the field that just ended editing -- and
+    // AppKit code keeps using that sender after the action returns
+    // (GNUstep's -[NSMenu performActionForItemAtIndex:] posts
+    // NSMenuDidSendActionNotification with the menu; -[NSTextField
+    // textDidEndEditing:] asks its window for the first responder). So the
+    // old widgets must outlive this method: park them in the autorelease
+    // pool, which drains only when the event is over.
+    __autoreleasing NSArray *retired = [[self subviews] copy];
+    for (NSView *view in retired) {
         [view removeFromSuperview];
     }
     [self.widgets removeAllObjects];

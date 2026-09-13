@@ -5,9 +5,9 @@ places: heavy NSXML mutation, run-loop-driven asynchrony, and — since the
 SVG renderer moved to CoreGraphics — Opal. The notes below are what a
 fresh Linux setup needs to know.
 
-This directory carries three patches, all applied by
+This directory carries four patches, all applied by
 `.github/scripts/dependencies.sh`: one to gnustep-base (section 1), one
-to Opal (section 2) and one to gnustep-gui (section 3). A fourth, older
+to Opal (section 2) and two to gnustep-gui (section 3). A fifth, older
 one is now upstream (section 4).
 
 ## 1. gnustep-base: the NSXML addAttribute: use-after-free (patch applied)
@@ -132,6 +132,38 @@ from XIBs without constraints and were never affected.
 gnustep-gui's own NSLayoutConstraint, NSLayoutAnchor, NSLayoutGuide and
 NSCollectionViewFlowLayout suites pass with the patch, as does the rest
 of `Tests/gui` (4,675 tests). Not yet upstream.
+
+### 3b. An action that releases its sender
+
+`gnustep-gui-action-sender-lifetime.patch`, with
+`nsmenu-action-releases-sender.m` beside it. Found with the same smoke
+harness once it learned to type: `readonly.xhtml` died the moment a
+select1 popup's choice was committed —
+
+```
+objc_retain                                          <- freed NSMenu
+-[NSNotificationCenter postNotificationName:object:userInfo:]
+-[NSMenu performActionForItemAtIndex:]
+-[NSPopUpButton keyDown:]
+```
+
+`XFFormView` rebuilds every widget when a value changes, and it does so
+from inside the widget's own action: `popupChanged:` → `reloadFromProcessor`
+→ `rebuild`, which removes and releases the popup that sent the action.
+The popup owned its menu, and `-[NSMenu performActionForItemAtIndex:]`
+goes on to post `NSMenuDidSendActionNotification` naming that menu.
+`-[NSTextField textDidEndEditing:]` has the same shape (it asks `_window`
+for the first responder after the action). On Cocoa the sender of an
+action is kept alive by the event dispatch until the pool drains, which is
+why the pattern is harmless there.
+
+Two fixes, either sufficient. gnustep-gui: retain the receiver for the
+autorelease scope before sending the action, in both methods. XFormsKit:
+`-[XFFormView rebuild]` now parks the retired widgets in the autorelease
+pool (`__autoreleasing`) so they outlive the event that retired them —
+which also makes any other AppKit code that touches a sender after its
+action safe, patched gui or not. All 47 samples pass the harness's
+open / hover / type-into-every-field / maximize / shrink run with either.
 
 ## 4. gnustep-base: the NSXML detached-attribute bug (fixed upstream — nothing to do)
 
