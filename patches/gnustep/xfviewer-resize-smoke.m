@@ -36,6 +36,13 @@
  *   XF_TYPE_ALL  type into every editable text field, not only the first
  *   XF_HOVER     sweep the pointer over the window before and after typing,
  *                lingering this many seconds per stop (0.7 shows tool tips)
+ *   XF_NO_RETURN do not press Return after typing (incremental controls
+ *                commit on every key; this shows what they did without a
+ *                commit)
+ *   XF_DUMP      after typing, print every NSTextField in the window with
+ *                its address and value -- the same address after a commit
+ *                means the widget was reused, not rebuilt
+ *   XF_PAUSE     seconds to sit after typing (time for a screenshot)
  *
  * Run over Samples/*.xhtml with MALLOC_PERTURB_ set, it is the quickest way
  * to see whether a gnustep-gui build has the patches in README.md section 3.
@@ -102,6 +109,11 @@ static void collectEditableFields(NSView *v, NSMutableArray *out)
     for (NSView *sub in [v subviews]) {
         collectEditableFields(sub, out);
     }
+}
+static void collectAllFields(NSView *v, NSMutableArray *out)
+{
+    if ([v isKindOfClass:[NSTextField class]]) [out addObject:v];
+    for (NSView *sub in [v subviews]) collectAllFields(sub, out);
 }
 static NSTextField *firstEditableField(NSView *v)
 {
@@ -177,8 +189,18 @@ static NSTextField *firstEditableField(NSView *v)
         // real viewer nothing but the form view retains the field, and the
         // commit rebuilds the form.
         f = nil;
+        if (getenv("XF_DUMP")) {
+            NSMutableArray *all = [NSMutableArray array];
+            collectAllFields([w contentView], all);
+            for (NSTextField *t in all) fprintf(stderr, "   field %p %s editable=%d '%s'\n", t, [[t className] UTF8String], [t isEditable], [[t stringValue] UTF8String]);
+        }
+        if (getenv("XF_PAUSE")) {
+            [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:atof(getenv("XF_PAUSE"))]];
+        }
+        if (!getenv("XF_NO_RETURN")) {
         [self keyDown:@"\r" inWindow:w];
         [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.3]];
+        }
         fprintf(stderr, "== typed\n");
     }
     }

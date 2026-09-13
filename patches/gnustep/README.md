@@ -159,11 +159,16 @@ why the pattern is harmless there.
 
 Two fixes, either sufficient. gnustep-gui: retain the receiver for the
 autorelease scope before sending the action, in both methods. XFormsKit:
-`-[XFFormView rebuild]` now parks the retired widgets in the autorelease
-pool (`__autoreleasing`) so they outlive the event that retired them —
-which also makes any other AppKit code that touches a sender after its
-action safe, patched gui or not. All 47 samples pass the harness's
-open / hover / type-into-every-field / maximize / shrink run with either.
+`-[XFFormView rebuild]` no longer throws the widgets away at all — it
+reconciles the new layout against the old one by widget key (host
+element + bound node), so the popup that sent the action is the popup
+that is still there afterwards; the few views a pass does retire leave
+the hierarchy at once but are released only on the next run-loop turn
+(`performSelector:afterDelay:0`), after every AppKit user of the sender
+is done — which also makes any other AppKit code that touches a sender
+after its action safe, patched gui or not. All 47 samples pass the
+harness's open / hover / type-into-every-field / maximize / shrink run
+with either.
 
 ## 4. gnustep-base: the NSXML detached-attribute bug (fixed upstream — nothing to do)
 

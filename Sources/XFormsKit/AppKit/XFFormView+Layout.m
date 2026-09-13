@@ -41,64 +41,88 @@ void XFAppKitHasLayoutFile(void) {}
         if (select.multiple || [select.appearance isEqualToString:@"full"]) {
             CGFloat cursor = y;
             NSTextField *caption = nil;
-            if (control.label.length) {
-                NSString *text = control.required
-                    ? [NSString stringWithFormat:@"%@ *", control.label]
-                    : control.label;
-                caption = [self makeLabel:text];
-                if (!control.valid && [caption respondsToSelector:@selector(setTextColor:)]) {
-                    [caption setTextColor:XFInvalidTextColor()];
-                }
-                [caption setFrame:NSMakeRect(kMargin + indent, cursor, kLabelWidth + kFieldWidth, kRowHeight)];
-                [self addSubview:caption];
-                [self noteRight:NSMaxX([caption frame])];
-                cursor += kRowHeight + 4;
-            }
             NSString *lastGroup = nil;
+            BOOL first = YES;
             for (XFItem *item in select.items) {
                 if (item.groupLabel.length && ![item.groupLabel isEqualToString:lastGroup]) {
                     NSTextField *head = [self makeLabel:item.groupLabel];
                     [head setFrame:NSMakeRect(kMargin + indent, cursor, kLabelWidth + kFieldWidth, kRowHeight)];
-                    [self addSubview:head];
+                    [self keepView:head];
                     cursor += kRowHeight + 2;
                     lastGroup = item.groupLabel;
                 }
-                NSButton *box = [[NSButton alloc] initWithFrame:NSZeroRect];
-                [box setButtonType:select.multiple ? NSSwitchButton : NSRadioButton];
-                [box setTitle:item.label ?: item.value ?: @""];
-                [box setState:item.selected ? NSOnState : NSOffState];
-                [box setTarget:self];
-                [box setAction:@selector(checkClicked:)];
-                // caption:NO — the caption above the list already is the
-                // control label; a per-button one would repeat it per item
-                XFWidget *w = [self addWidget:control view:box height:kRowHeight
-                                         atY:cursor indent:indent caption:NO];
-                w.view.toolTip = item.value;
-                if (caption) {
-                    // the first button owns the caption, so a refresh keeps
-                    // hiding / recolouring it with the control
-                    w.labelField = caption;
-                    caption = nil;
+                // one button per item, keyed by the item value; a reused
+                // one keeps its state through -configureWidget:
+                XFWidget *w = [self takeWidgetForControl:control item:item.value ?: @"" variant:@"select-item"];
+                if (w == nil) {
+                    NSButton *box = [[NSButton alloc] initWithFrame:NSZeroRect];
+                    [box setButtonType:select.multiple ? NSSwitchButton : NSRadioButton];
+                    [box setTarget:self];
+                    [box setAction:@selector(checkClicked:)];
+                    w = [[XFWidget alloc] init];
+                    w.key = [self keyForControl:control item:item.value ?: @""];
+                    w.variant = @"select-item";
+                    w.control = control;
+                    w.view = box;
                 }
+                w.height = kRowHeight;
+                NSButton *box = (NSButton *)w.view;
+                [box setTitle:item.label ?: item.value ?: @""];
+                box.toolTip = item.value;
+                [box setState:item.selected ? NSOnState : NSOffState];
+                if (first && control.label.length) {
+                    // The caption above the list is the control label; the
+                    // first button owns it, so a refresh keeps hiding /
+                    // recolouring it with the control.
+                    NSString *text = control.required
+                        ? [NSString stringWithFormat:@"%@ *", control.label]
+                        : control.label;
+                    caption = w.labelField ?: [self makeLabel:text];
+                    if (![[caption stringValue] isEqualToString:text]) {
+                        [caption setStringValue:text];
+                    }
+                    if ([caption respondsToSelector:@selector(setTextColor:)]) {
+                        [caption setTextColor:control.valid ? [NSColor controlTextColor] : XFInvalidTextColor()];
+                    }
+                    [caption setFrame:NSMakeRect(kMargin + indent, cursor, kLabelWidth + kFieldWidth, kRowHeight)];
+                    [self keepView:caption];
+                    [self noteRight:NSMaxX([caption frame])];
+                    cursor += kRowHeight + 4;
+                }
+                // caption:NO — a per-button caption would repeat the label
+                [self placeWidget:w atY:cursor indent:indent caption:NO];
+                if (first) {
+                    w.labelField = caption;   // (placeWidget: cleared it)
+                }
+                first = NO;
                 cursor += kRowHeight + 4;
             }
             return cursor + kRowGap;
         }
     }
 
-    CGFloat height = kRowHeight;
-    NSView *view = [self makeViewForControl:control height:&height];
-    XFWidget *w = [self addWidget:control view:view height:height atY:y indent:indent];
-    if ([view isKindOfClass:[NSButton class]] && [control isKindOfClass:[XFInputControl class]]) {
+    XFWidget *w = [self widgetForControl:control item:nil];
+    if (w == nil) {
+        return y;
+    }
+    [self placeWidget:w atY:y indent:indent caption:YES];
+    if ([w.view isKindOfClass:[NSButton class]] && [control isKindOfClass:[XFInputControl class]]) {
         w.labelField = nil;
     }
-    return y + height + kRowGap;
+    return y + w.height + kRowGap;
 }
 
 - (CGFloat)layoutGroup:(XFGroup *)group atY:(CGFloat)y indent:(CGFloat)indent
 {
-    NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
-    [box setTitle:group.label ?: @""];
+    NSString *key = [self keyForControl:group item:@"box"];
+    NSBox *box = (NSBox *)[self takeContainerForKey:key];
+    if (![box isKindOfClass:[NSBox class]]) {
+        box = [[NSBox alloc] initWithFrame:NSZeroRect];
+    }
+    self.containers[key] = box;
+    if (![[box title] isEqualToString:group.label ?: @""]) {
+        [box setTitle:group.label ?: @""];
+    }
     [box setTitlePosition:group.label.length ? NSAtTop : NSNoTitle];
     CGFloat inner = y + (group.label.length ? 22 : 8);
     CGFloat start = inner;
@@ -124,10 +148,8 @@ void XFAppKitHasLayoutFile(void) {}
     // Children already added to the form; the box is a visual frame behind them.
     // The design-support introspection finds the group through its box.
     objc_setAssociatedObject(box, kXFBoundControlKey, group, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-    [self addSubview:box positioned:NSWindowBelow relativeTo:nil];
-    if (!group.relevant) {
-        [box setHidden:YES];
-    }
+    [self keepBoxView:box];
+    [box setHidden:!group.relevant];
     return inner + kRowGap;
 }
 
@@ -139,7 +161,7 @@ void XFAppKitHasLayoutFile(void) {}
         if (repeat.label.length && i == 0) {
             NSTextField *cap = [self makeLabel:repeat.label];
             [cap setFrame:NSMakeRect(kMargin + indent, cursor, kLabelWidth + kFieldWidth, kRowHeight)];
-            [self addSubview:cap];
+            [self keepView:cap];
             [self noteRight:NSMaxX([cap frame])];
             cursor += kRowHeight + 4;
         }
@@ -149,7 +171,13 @@ void XFAppKitHasLayoutFile(void) {}
         // is the in-scope context for any SVG (AVTs) inside it.
         XFXMLNode *outerContext = self.svgContextNode;
         self.svgContextNode = item.node;
+        // Widget keys inside the item carry the item's node: the same
+        // template element renders once per item, and a control that
+        // binds nothing (a trigger) would otherwise collide across items.
+        NSString *outerPrefix = self.keyPrefix;
+        self.keyPrefix = [NSString stringWithFormat:@"%@r/%p/", outerPrefix ?: @"", item.node];
         cursor = [self layoutNodes:item.hostNodes atY:cursor indent:indent + kIndent font:nil];
+        self.keyPrefix = outerPrefix;
         self.svgContextNode = outerContext;
         i++;
     }
@@ -278,18 +306,22 @@ void XFAppKitHasLayoutFile(void) {}
                    lineHeight:(CGFloat *)lineHeight
                        lineY:(CGFloat *)lineY
 {
-    CGFloat height = kRowHeight;
-    NSView *view = [self makeViewForControl:control height:&height];
-    if (view == nil) {
+    XFWidget *w = [self widgetForControl:control item:nil];
+    if (w == nil) {
         return y;
     }
+    NSView *view = w.view;
+    CGFloat height = w.height;
     NSTextField *caption = nil;
     CGFloat captionWidth = 0;
     if (control.label.length && ![self viewCarriesLabel:view control:control]) {
         NSString *text = control.required
             ? [NSString stringWithFormat:@"%@ *", control.label]
             : control.label;
-        caption = [self makeLabel:text];
+        caption = w.labelField ?: [self makeLabel:text];
+        if (![[caption stringValue] isEqualToString:text]) {
+            [caption setStringValue:text];
+        }
         captionWidth = [self widthOfText:text font:[caption font] ?: [self bodyFont]] + 6;
     }
     CGFloat width;
@@ -320,21 +352,18 @@ void XFAppKitHasLayoutFile(void) {}
         *lineHeight = 0;
         *x = left;
     }
-    XFWidget *w = [[XFWidget alloc] init];
-    w.control = control;
-    w.view = view;
-    w.height = height;
     if (caption) {
-        if (!control.valid && [caption respondsToSelector:@selector(setTextColor:)]) {
-            [caption setTextColor:XFInvalidTextColor()];
+        if ([caption respondsToSelector:@selector(setTextColor:)]) {
+            [caption setTextColor:control.valid ? [NSColor controlTextColor] : XFInvalidTextColor()];
         }
+        [caption setHidden:!control.relevant];
         [caption setFrame:NSMakeRect(*x, *lineY, captionWidth, kRowHeight)];
-        [self addSubview:caption];
-        w.labelField = caption;
+        [self keepView:caption];
         *x += captionWidth;
     }
+    w.labelField = caption;   // nil retires a caption the control lost
     [view setFrame:NSMakeRect(*x, *lineY, width, height)];
-    [self addSubview:view];
+    [self keepView:view];
     [self.widgets addObject:w];
     [self registerKeyView:XFKeyViewOf(view) control:control];
     objc_setAssociatedObject(view, kXFBoundControlKey, control, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
@@ -378,7 +407,7 @@ void XFAppKitHasLayoutFile(void) {}
             NSTextField *field = [self makeText:text font:segmentFont];
             CGFloat w = [self widthOfText:text font:segmentFont] + 4;
             [field setFrame:NSMakeRect(x, lineY, w, h)];
-            [self addSubview:field];
+            [self keepView:field];   // static text: made afresh each pass
             x += w;
             [self noteRight:x];
             lineHeight = MAX(lineHeight, h);
@@ -512,18 +541,26 @@ void XFAppKitHasLayoutFile(void) {}
             NSBox *rule = [[NSBox alloc] initWithFrame:NSMakeRect(kMargin + indent, y + 4, self.wrapRight - kMargin - indent, 2)];
             [rule setBoxType:NSBoxSeparator];
             [rule setTitlePosition:NSNoTitle];
-            [self addSubview:rule];
+            [self keepView:rule];
             return y + 10;
         }
 
         case XFHostNodeKindSVG: {
             // the SVG renderer (G-20 phase 3): AVTs and outputs resolved
             // against the in-scope context this layout pass carries
-            XFSVGView *svg = [[XFSVGView alloc] initWithHostNode:node
-                                                       processor:self.processor
-                                                     contextNode:self.svgContextNode];
+            NSString *key = [self keyForElement:node.element kind:@"svg"];
+            XFSVGView *svg = self.previousSVGs[key];
+            if (svg != nil) {
+                [self.previousSVGs removeObjectForKey:key];
+                [svg rebuildWithHostNode:node contextNode:self.svgContextNode];
+            } else {
+                svg = [[XFSVGView alloc] initWithHostNode:node
+                                                processor:self.processor
+                                              contextNode:self.svgContextNode];
+                objc_setAssociatedObject(svg, kXFReconcileKey, key, OBJC_ASSOCIATION_COPY_NONATOMIC);
+            }
             [svg setFrameOrigin:NSMakePoint(kMargin + indent, y)];
-            [self addSubview:svg];
+            [self keepView:svg];
             [self.svgViews addObject:svg];
             [self noteRight:NSMaxX([svg frame])];
             return y + NSHeight([svg frame]) + kLineGap;
@@ -550,8 +587,15 @@ void XFAppKitHasLayoutFile(void) {}
 
     NSString *tag = node.tag;
     if ([tag isEqualToString:@"fieldset"]) {
-        NSBox *box = [[NSBox alloc] initWithFrame:NSZeroRect];
-        [box setTitle:node.title ?: @""];
+        NSString *key = [self keyForElement:node.element kind:@"fieldset"];
+        NSBox *box = (NSBox *)[self takeContainerForKey:key];
+        if (![box isKindOfClass:[NSBox class]]) {
+            box = [[NSBox alloc] initWithFrame:NSZeroRect];
+        }
+        self.containers[key] = box;
+        if (![[box title] isEqualToString:node.title ?: @""]) {
+            [box setTitle:node.title ?: @""];
+        }
         [box setTitlePosition:node.title.length ? NSAtTop : NSNoTitle];
         CGFloat inner = y + (node.title.length ? 22 : 8);
         CGFloat start = inner;
@@ -566,7 +610,7 @@ void XFAppKitHasLayoutFile(void) {}
         CGFloat right = MAX(self.maxRight + kIndent, left + kIndent + kLabelWidth + 8 + kFieldWidth + kIndent);
         [box setFrame:NSMakeRect(left, y, right - left, MAX(h, 28))];
         self.maxRight = MAX(outerRight, right);
-        [self addSubview:box positioned:NSWindowBelow relativeTo:nil];
+        [self keepBoxView:box];
         return inner + kRowGap;
     }
     if (node.headingLevel > 0) {
@@ -582,7 +626,7 @@ void XFAppKitHasLayoutFile(void) {}
     if ([tag isEqualToString:@"li"]) {
         NSTextField *bullet = [self makeText:@"•" font:font ?: [self bodyFont]];
         [bullet setFrame:NSMakeRect(kMargin + indent, y, 14, kRowHeight)];
-        [self addSubview:bullet];
+        [self keepView:bullet];
         return [self layoutNodes:node.children atY:y indent:indent + 14 font:font];
     }
     if ([tag isEqualToString:@"ul"] || [tag isEqualToString:@"ol"] || [tag isEqualToString:@"blockquote"]
@@ -612,12 +656,24 @@ void XFAppKitHasLayoutFile(void) {}
     if (model.columnCount == 0) {
         return cursor;
     }
-    XFTableAdapter *adapter = [[XFTableAdapter alloc] initWithModel:model formView:self];
-    NSSize size = [adapter build];
+    // the same host <table> keeps its adapter, scroll view and (columns
+    // permitting) table view across passes: a cell being edited or a row
+    // selection survives the refresh its own commit triggers
+    NSString *key = [self keyForElement:node.element kind:@"table"];
+    XFTableAdapter *adapter = self.previousTables[key];
+    NSSize size;
+    if (adapter != nil) {
+        [self.previousTables removeObjectForKey:key];
+        size = [adapter rebuildWithModel:model];
+    } else {
+        adapter = [[XFTableAdapter alloc] initWithModel:model formView:self];
+        objc_setAssociatedObject(adapter, kXFReconcileKey, key, OBJC_ASSOCIATION_COPY_NONATOMIC);
+        size = [adapter build];
+    }
     CGFloat left = kMargin + indent;
     CGFloat width = MIN(size.width, MAX(self.wrapRight - left, 200));
     [adapter.scrollView setFrame:NSMakeRect(left, cursor, width, size.height)];
-    [self addSubview:adapter.scrollView];
+    [self keepView:adapter.scrollView];
     [self.tables addObject:adapter];
     if (adapter.tableView) {
         [self.keyViews addObject:adapter.tableView];

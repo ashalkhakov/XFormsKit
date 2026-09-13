@@ -70,31 +70,7 @@ void XFAppKitHasWidgetsFile(void) {}
         NSPopUpButton *popup = [[NSPopUpButton alloc] initWithFrame:NSZeroRect pullsDown:NO];
         [popup setTarget:self];
         [popup setAction:@selector(popupChanged:)];
-        NSInteger selected = -1;
-        NSInteger i = 0;
-        NSString *lastGroup = nil;
-        for (XFItem *item in select.items) {
-            if (item.groupLabel.length && ![item.groupLabel isEqualToString:lastGroup]) {
-                [popup addItemWithTitle:item.groupLabel];
-                [[popup lastItem] setEnabled:NO];
-                lastGroup = item.groupLabel;
-                i++;
-            }
-            [popup addItemWithTitle:item.label ?: item.value ?: @""];
-            [[popup lastItem] setRepresentedObject:item.value];
-            if (item.selected) {
-                selected = i;
-            }
-            i++;
-        }
-        if (selected >= 0) {
-            [popup selectItemAtIndex:selected];
-        } else {
-            // XsltForms_select.setValue: an empty / unknown value shows a
-            // blank first option instead of the first item (G-25)
-            [popup insertItemWithTitle:@"" atIndex:0];
-            [popup selectItemAtIndex:0];
-        }
+        [self populatePopup:popup forSelect:select];
         return popup;
     }
 
@@ -233,6 +209,262 @@ void XFAppKitHasWidgetsFile(void) {}
         }
     }
     return field;
+}
+
+#pragma mark - Reuse across layout passes
+
+- (NSString *)variantForControl:(XFControl *)control
+{
+    // The same decisions as -makeViewForControl:height:, in the same
+    // order, reduced to a name: two passes agree on the variant exactly
+    // when the factory would build the same kind of view.
+    if ([control isKindOfClass:[XFUploadControl class]]) return @"upload";
+    if ([control isKindOfClass:[XFTriggerControl class]]) return @"trigger";
+    if ([control isKindOfClass:[XFRangeControl class]]) return @"range";
+    if ([control isKindOfClass:[XFSelectControl class]]) {
+        XFSelectControl *select = (XFSelectControl *)control;
+        if ([select.appearance isEqualToString:@"compact"]
+            || (select.multiple && [select.appearance isEqualToString:@"minimal"])) {
+            return @"listbox";
+        }
+        if (select.multiple || [select.appearance isEqualToString:@"full"]) {
+            return @"select-item";
+        }
+        return @"popup";
+    }
+    if ([control isKindOfClass:[XFTextareaControl class]]) {
+        return [[control.mediatype lowercaseString] isEqualToString:@"application/xhtml+xml"]
+            ? @"richtext" : @"textarea";
+    }
+    if ([control isKindOfClass:[XFLabelControl class]]) return @"label";
+    if ([control isKindOfClass:[XFInputControl class]]) {
+        if ([self isBooleanControl:control]) return @"bool";
+        XFDateType dateType = [(XFInputControl *)control resolvedDateType];
+        if (dateType != XFDateTypeNone && [NSDatePicker class]) {
+            return [NSString stringWithFormat:@"date-%ld", (long)dateType];
+        }
+    }
+    if ([control isKindOfClass:[XFOutputControl class]]) {
+        XFOutputControl *output = (XFOutputControl *)control;
+        if (output.displaysImage) return @"image";
+        if (output.displaysHTML) return @"html";
+        return @"output";
+    }
+    if ([control isKindOfClass:[XFSecretControl class]]) return @"secret";
+    if ([control isKindOfClass:[XFInputControl class]]) return @"input";
+    return @"text";
+}
+
+- (CGFloat)heightForWidget:(XFWidget *)w
+{
+    XFControl *control = w.control;
+    NSString *variant = w.variant;
+    if ([variant isEqualToString:@"listbox"]) {
+        NSUInteger n = [(XFSelectControl *)control items].count;
+        return MIN(MAX((CGFloat)n, 3), 8) * 18 + 4;
+    }
+    if ([variant isEqualToString:@"richtext"]) {
+        return (control.rows > 0 ? control.rows * 16 + 8 : kTextareaHeight) + 26;
+    }
+    if ([variant isEqualToString:@"textarea"]) {
+        return control.rows > 0 ? control.rows * 16 + 8 : kTextareaHeight;
+    }
+    if ([variant isEqualToString:@"image"]) {
+        return [w.view frame].size.height;
+    }
+    return kRowHeight;
+}
+
+- (void)populatePopup:(NSPopUpButton *)popup forSelect:(XFSelectControl *)select
+{
+    // What the menu should hold: group headers (disabled) and items, in
+    // order; compared against what it holds so an unchanged item list --
+    // the usual case, and the case when the popup itself sent the action
+    // being handled -- keeps its NSMenuItems.
+    NSMutableArray<NSString *> *titles = [NSMutableArray array];
+    NSMutableArray<id> *values = [NSMutableArray array];
+    NSInteger selected = -1;
+    NSString *lastGroup = nil;
+    for (XFItem *item in select.items) {
+        if (item.groupLabel.length && ![item.groupLabel isEqualToString:lastGroup]) {
+            [titles addObject:item.groupLabel];
+            [values addObject:[NSNull null]];
+            lastGroup = item.groupLabel;
+        }
+        [titles addObject:item.label ?: item.value ?: @""];
+        [values addObject:item.value ?: [NSNull null]];
+        if (item.selected) {
+            selected = (NSInteger)titles.count - 1;
+        }
+    }
+    NSArray<NSMenuItem *> *have = [popup itemArray];
+    NSUInteger skip = 0;
+    if (have.count > titles.count && [[have[0] title] length] == 0 && [have[0] representedObject] == nil) {
+        skip = 1;   // the blank "no value" entry (G-25)
+    }
+    BOOL same = have.count == titles.count + skip;
+    for (NSUInteger i = 0; same && i < titles.count; i++) {
+        NSMenuItem *item = have[i + skip];
+        id value = values[i] == [NSNull null] ? nil : values[i];
+        same = [[item title] isEqualToString:titles[i]]
+            && (value == nil ? [item representedObject] == nil : [[item representedObject] isEqual:value])
+            && [item isEnabled] == (values[i] != [NSNull null]);
+    }
+    if (!same) {
+        [popup removeAllItems];
+        for (NSUInteger i = 0; i < titles.count; i++) {
+            [popup addItemWithTitle:titles[i]];
+            if (values[i] == [NSNull null]) {
+                [[popup lastItem] setEnabled:NO];
+            } else {
+                [[popup lastItem] setRepresentedObject:values[i]];
+            }
+        }
+        skip = 0;
+    }
+    if (selected >= 0) {
+        if (skip) {
+            [popup removeItemAtIndex:0];
+        }
+        [popup selectItemAtIndex:selected];
+    } else {
+        // XsltForms_select.setValue: an empty / unknown value shows a
+        // blank first option instead of the first item (G-25)
+        if (!skip) {
+            [popup insertItemWithTitle:@"" atIndex:0];
+        }
+        [popup selectItemAtIndex:0];
+    }
+}
+
+- (void)configureWidget:(XFWidget *)w
+{
+    XFControl *control = w.control;
+    NSView *view = w.view;
+    NSString *variant = w.variant;
+    BOOL editing = view != nil && view == self.reconcileEditingView;
+
+    if ([variant isEqualToString:@"popup"]) {
+        [self populatePopup:(NSPopUpButton *)view forSelect:(XFSelectControl *)control];
+    } else if ([variant isEqualToString:@"select-item"]) {
+        NSButton *box = (NSButton *)view;
+        NSString *value = [box toolTip];
+        BOOL on = value && [[(XFSelectControl *)control selectedValues] containsObject:value];
+        [box setState:on ? NSOnState : NSOffState];
+    } else if ([variant isEqualToString:@"listbox"]) {
+        NSTableView *table = [(NSScrollView *)view documentView];
+        XFListBoxAdapter *adapter = (XFListBoxAdapter *)[table dataSource];
+        if ([adapter isKindOfClass:[XFListBoxAdapter class]]) {
+            adapter.select = (XFSelectControl *)control;
+            if (![self.listBoxes containsObject:adapter]) {
+                [self.listBoxes addObject:adapter];
+            }
+            [table reloadData];
+            NSMutableIndexSet *selected = [NSMutableIndexSet indexSet];
+            NSUInteger i = 0;
+            for (XFItem *item in [(XFSelectControl *)control items]) {
+                if (item.selected) {
+                    [selected addIndex:i];
+                }
+                i++;
+            }
+            adapter.selecting = YES;
+            [table selectRowIndexes:selected byExtendingSelection:NO];
+            adapter.selecting = NO;
+        }
+    } else if ([variant isEqualToString:@"bool"]) {
+        NSButton *box = (NSButton *)view;
+        [box setTitle:control.label ?: @""];
+        BOOL on = [control.stringValue isEqualToString:@"true"] || [control.stringValue isEqualToString:@"1"];
+        [box setState:on ? NSOnState : NSOffState];
+    } else if ([variant isEqualToString:@"trigger"]) {
+        NSButton *button = (NSButton *)view;
+        [button setTitle:control.label ?: @"OK"];
+        [button setBordered:![control.appearance isEqualToString:@"minimal"]];
+        [button setKeyEquivalent:control.accesskey.length ? [control.accesskey lowercaseString] : @""];
+    } else if ([variant isEqualToString:@"upload"]) {
+        XFUploadControl *upload = (XFUploadControl *)control;
+        [(NSButton *)view setTitle:upload.fileName.length ? upload.fileName : @"Choose File…"];
+    } else if ([variant isEqualToString:@"range"]) {
+        XFRangeControl *range = (XFRangeControl *)control;
+        NSSlider *slider = (NSSlider *)view;
+        [slider setMinValue:range.start];
+        [slider setMaxValue:range.end];
+        [slider setAltIncrementValue:range.step];
+        [slider setContinuous:control.incremental];
+        if (!editing) {
+            [slider setDoubleValue:range.numericValue];
+        }
+    } else if ([variant hasPrefix:@"date-"]) {
+        NSDate *date = [(XFInputControl *)control dateValue];
+        if (date != nil && !editing
+            && [date timeIntervalSince1970] > -62135596800.0
+            && [date timeIntervalSince1970] < 253402300800.0) {
+            [(NSDatePicker *)view setDateValue:date];
+        }
+    } else if ([variant isEqualToString:@"richtext"]) {
+        XFRichTextEditor *editor = (XFRichTextEditor *)view;
+        [editor.textView setEditable:!control.readonly];
+        if (!editing && ![[editor HTML] isEqualToString:control.stringValue ?: @""]) {
+            [editor setHTML:control.stringValue ?: @""];
+        }
+    } else if ([variant isEqualToString:@"textarea"]) {
+        NSTextView *tv = [(NSScrollView *)view documentView];
+        [tv setEditable:!control.readonly];
+        if (!editing && ![[tv string] isEqualToString:control.stringValue ?: @""]) {
+            [tv setString:control.stringValue ?: @""];
+        }
+    } else if ([variant isEqualToString:@"image"]) {
+        NSImageView *img = (NSImageView *)view;
+        NSData *data = [(XFOutputControl *)control imageData];
+        NSImage *picture = data.length ? [[NSImage alloc] initWithData:data] : nil;
+        CGFloat wd = 96, ht = 72;
+        if (picture != nil) {
+            NSSize natural = [picture size];
+            CGSize shown = [XFOutputControl displaySizeForImageOfNaturalSize:
+                CGSizeMake(natural.width, natural.height)];
+            wd = shown.width;
+            ht = shown.height;
+        }
+        [img setImage:picture];
+        [img setImageFrameStyle:picture ? NSImageFrameNone : NSImageFrameGrayBezel];
+        [img setFrameSize:NSMakeSize(wd, ht)];
+    } else if ([variant isEqualToString:@"html"]) {
+        [(NSTextField *)view setAttributedStringValue:
+            [XFRichText decoratedString:
+                [XFRichText attributedStringFromHTML:control.stringValue ?: @""]
+                           baseFont:[self bodyFont]]];
+    } else if ([variant isEqualToString:@"label"]) {
+        NSTextField *field = (NSTextField *)view;
+        if (![[field stringValue] isEqualToString:control.stringValue ?: @""]) {
+            [field setStringValue:control.stringValue ?: @""];
+        }
+    } else if ([view isKindOfClass:[NSTextField class]]) {
+        // input, secret, output
+        NSTextField *field = (NSTextField *)view;
+        NSString *shown = [self displayValueOf:control];
+        if (!editing && ![[field stringValue] isEqualToString:shown]) {
+            [field setStringValue:shown];
+        }
+        if ([field isEditable]) {
+            // only when changed: on GNUstep every one of these setters
+            // aborts an editing session in progress
+            NSString *placeholder = control.placeholder.length ? control.placeholder
+                : (control.hintMinimal ? control.hint : nil);
+            NSTextFieldCell *cell = (NSTextFieldCell *)[field cell];
+            if ([cell respondsToSelector:@selector(setPlaceholderString:)]
+                && [cell respondsToSelector:@selector(placeholderString)]
+                && !(placeholder.length == 0 && [cell placeholderString].length == 0)
+                && ![[cell placeholderString] isEqualToString:placeholder]) {
+                [cell setPlaceholderString:placeholder.length ? placeholder : nil];
+            }
+            NSTextAlignment alignment = [self isNumericControl:control] ? NSRightTextAlignment : NSLeftTextAlignment;
+            if ([field alignment] != alignment && ([field alignment] != NSNaturalTextAlignment || alignment != NSLeftTextAlignment)) {
+                [field setAlignment:alignment];
+            }
+        }
+    }
+    [self applyEnabled:view control:control];
 }
 
 /// XSLTForms input mode "digits" / numeric types align right (G-41).

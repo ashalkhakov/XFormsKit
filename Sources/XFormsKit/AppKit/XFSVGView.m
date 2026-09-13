@@ -39,6 +39,13 @@
     return _svgDocument;
 }
 
+- (void)rebuildWithHostNode:(XFHostNode *)hostNode contextNode:(XFXMLNode *)contextNode
+{
+    _hostNode = hostNode;
+    _contextNode = contextNode;
+    [self rebuild];
+}
+
 - (void)rebuild
 {
     XFProcessor *processor = _processor;

@@ -216,6 +216,55 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     return NSMakeSize(width + 4, height);
 }
 
+- (NSSize)rebuildWithModel:(XFTableModel *)model
+{
+    NSTableView *table = self.tableView;
+    NSScrollView *scroll = self.scrollView;
+    BOOL sameColumns = table != nil && scroll != nil
+        && model.columnCount == self.model.columnCount
+        && (model.columnTitles != nil) == (self.model.columnTitles != nil);
+    self.model = model;
+    if (!sameColumns) {
+        // a different shape: a new table view, in the scroll view the
+        // form already holds (the old table is retired with the event)
+        if (table != nil) {
+            [table setDataSource:nil];
+            [table setDelegate:nil];
+        }
+        NSSize size = [self build];
+        if (scroll != nil) {
+            [scroll setDocumentView:self.tableView];
+            self.scrollView = scroll;
+        }
+        return size;
+    }
+    CGFloat width = 0;
+    NSMutableArray<NSNumber *> *widths = [NSMutableArray array];
+    NSArray<NSTableColumn *> *columns = [table tableColumns];
+    for (NSUInteger col = 0; col < columns.count; col++) {
+        NSTableColumn *column = columns[col];
+        NSString *title = col < model.columnTitles.count ? model.columnTitles[col] : @"";
+        [[column headerCell] setStringValue:title ?: @""];
+        CGFloat w = [self preferredWidthForColumn:col];
+        [column setWidth:w];
+        [widths addObject:@(w)];
+        width += w + [table intercellSpacing].width;
+    }
+    CGFloat rowHeight = [self preferredRowHeightWithColumnWidths:widths];
+    [table setRowHeight:rowHeight];
+    // the cell kind at a position may differ in the new model (a repeat
+    // row that came or went); the cache is per position
+    [self.cells removeAllObjects];
+    [table reloadData];
+    [self selectCurrentRow];
+    BOOL hasHeader = model.columnTitles != nil;
+    CGFloat rows = MAX((CGFloat)model.rows.count, 1);
+    CGFloat height = rows * (rowHeight + [table intercellSpacing].height)
+        + (hasHeader ? kTableHeaderHeight : 0) + 4;
+    [table setFrame:NSMakeRect(0, 0, width, height)];
+    return NSMakeSize(width + 4, height);
+}
+
 - (void)selectCurrentRow
 {
     XFTableRow *selected = [self.model selectedRow];

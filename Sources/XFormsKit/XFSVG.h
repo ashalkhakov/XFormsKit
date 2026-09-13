@@ -114,6 +114,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) XFSVGDocument *svgDocument;
 
 - (void)rebuild;
+/// Re-targets the view at the host node and context of a new layout pass
+/// (the same `<svg>` element, but a repeat item's host tree is rebuilt on
+/// every refresh) and re-resolves it.
+- (void)rebuildWithHostNode:(XFHostNode *)hostNode contextNode:(nullable XFXMLNode *)contextNode;
 
 /* Design-support hit testing (the designer's overlay): both take and
    return the view's own coordinates. */

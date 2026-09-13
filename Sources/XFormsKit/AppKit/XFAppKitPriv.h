@@ -40,6 +40,9 @@
 
 /// Associated-object key tying a cell view back to its XFControl.
 FOUNDATION_EXPORT const void *kXFBoundControlKey;
+/// Associated-object key holding the reconciliation key of a table adapter
+/// or SVG view (widgets carry theirs in XFWidget.key).
+FOUNDATION_EXPORT const void *kXFReconcileKey;
 
 /// Layout constants (defined in XFFormView.m).
 FOUNDATION_EXPORT const CGFloat kLabelWidth;
@@ -112,6 +115,16 @@ typedef NS_ENUM(NSInteger, XFBadgeKind) {
 @property (nonatomic, strong) NSView *view;
 @property (nonatomic, strong) NSTextField *labelField;
 @property (nonatomic, assign) CGFloat height;
+/// The widget's identity across layout passes: the control's host element
+/// and bound instance node (a repeat item's controls are recreated on every
+/// refresh, with the same element and the same node), the repeat items it
+/// sits in, and for a full-appearance select the item value. A widget whose
+/// key comes up again in the next pass is reused; see -[XFFormView rebuild].
+@property (nonatomic, copy) NSString *key;
+/// Which kind of view the factory chose for the control (popup, list box,
+/// date picker, checkbox ...). Same key with a different variant means the
+/// control needs a different view: the old one is retired.
+@property (nonatomic, copy) NSString *variant;
 /// ⓘ after the widget when the control has a non-minimal hint.
 @property (nonatomic, strong) XFBadgeView *hintBadge;
 /// Red ! after the widget, hidden unless the control is invalid.
@@ -133,6 +146,11 @@ typedef NS_ENUM(NSInteger, XFBadgeKind) {
 @property (nonatomic, assign) BOOL selecting;
 - (instancetype)initWithModel:(XFTableModel *)model formView:(XFFormView *)formView;
 - (NSSize)build;
+/// The same table for a freshly built model of the same host `<table>`
+/// (the next layout pass): the scroll view and, when the columns still
+/// match, the table view are kept and only reloaded. Returns the size
+/// like -build.
+- (NSSize)rebuildWithModel:(XFTableModel *)model;
 - (void)refreshInPlace;
 @end
 
@@ -195,7 +213,54 @@ FOUNDATION_EXPORT NSColor *XFInvalidTextColor(void);
 /// commit (XsltForms_input.keyUpActivate, G-42).
 @property (nonatomic, weak) XFControl *pendingActivate;
 
+/* Reconciliation state, live only during a layout pass (-rebuild). The
+   pass walks the host tree as before, but every view it wants is first
+   looked up by key in the previous generation; a hit is reused and
+   updated in place, a miss is created, and whatever the pass did not
+   claim is retired at the end. */
+/// Last generation's widgets by key; a widget is removed when claimed.
+@property (nonatomic, strong) NSMutableDictionary<NSString *, XFWidget *> *previousWidgets;
+/// Group / fieldset boxes by key, this generation and the last.
+@property (nonatomic, strong) NSMutableDictionary<NSString *, NSView *> *containers;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, NSView *> *previousContainers;
+/// Table adapters and SVG views by key, last generation.
+@property (nonatomic, strong) NSMutableDictionary<NSString *, XFTableAdapter *> *previousTables;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, XFSVGView *> *previousSVGs;
+/// Every subview the current pass created or claimed.
+@property (nonatomic, strong) NSMutableSet<NSView *> *liveViews;
+/// Key prefix naming the repeat items the walk is inside of, so the
+/// same control element in two items gets two keys.
+@property (nonatomic, copy) NSString *keyPrefix;
+/// The view being typed into during an incremental commit: its value is
+/// not pushed back while the user is editing it.
+@property (nonatomic, weak) NSView *reconcileEditingView;
+/// The current pass (0 before the first).
+@property (nonatomic, assign) NSUInteger generation;
+
 /// Methods implemented in XFFormView.m (core).
+/// The full pass: refresh every widget from the processor, reusing the
+/// views whose key comes up again. `editing` is excluded from value
+/// updates (the field being typed into).
+- (void)reconcileExcept:(NSView *)editing;
+- (NSString *)keyForControl:(XFControl *)control item:(NSString *)item;
+- (NSString *)keyForElement:(XFXMLElement *)element kind:(NSString *)kind;
+/// Adds `view` (if not yet a subview) and marks it live for this pass.
+- (void)keepView:(NSView *)view;
+/// Same, for a box that must draw behind the widgets.
+- (void)keepBoxView:(NSView *)view;
+/// The previous generation's widget for the control, if it exists and has
+/// the same variant; removed from the previous generation when returned.
+- (XFWidget *)takeWidgetForControl:(XFControl *)control item:(NSString *)item variant:(NSString *)variant;
+- (NSView *)takeContainerForKey:(NSString *)key;
+/// The widget for `control`: reused from the previous pass when its key
+/// and variant match, otherwise freshly made. Its state is brought up to
+/// date either way. nil when the control has no single view.
+- (XFWidget *)widgetForControl:(XFControl *)control item:(NSString *)item;
+/// Places a widget: caption, frames, key view, badges; adds it to `widgets`.
+- (void)placeWidget:(XFWidget *)w atY:(CGFloat)y indent:(CGFloat)indent caption:(BOOL)caption;
+/// YES if `view` (or the field editor working for it) is the window's
+/// first responder.
+- (BOOL)isViewFocused:(NSView *)view;
 - (void)registerKeyView:(NSView *)view control:(XFControl *)control;
 - (NSTextField *)makeLabel:(NSString *)text;
 - (BOOL)isBooleanControl:(XFControl *)control;
@@ -231,6 +296,17 @@ FOUNDATION_EXPORT NSColor *XFInvalidTextColor(void);
 /// Widget construction (XFFormView+Widgets.m).
 @interface XFFormView (XFWidgets)
 - (NSView *)makeViewForControl:(XFControl *)control height:(CGFloat *)height;
+/// Which view -makeViewForControl:height: would build for the control now.
+- (NSString *)variantForControl:(XFControl *)control;
+/// The row height of a widget of this variant (what the factory reports
+/// through `height`, recomputed for a reused view).
+- (CGFloat)heightForWidget:(XFWidget *)w;
+/// Pushes the control's current state into an existing view: value,
+/// items, title, placeholder, enabled/hidden, tooltip. The widget's
+/// `control` may be a new object with the same key (repeat items).
+- (void)configureWidget:(XFWidget *)w;
+/// (Re)fills a popup with the select's items and selects the current one.
+- (void)populatePopup:(NSPopUpButton *)popup forSelect:(XFSelectControl *)select;
 - (BOOL)isNumericControl:(XFControl *)control;
 - (NSString *)displayValueOf:(XFControl *)control;
 - (NSView *)makeListBoxForSelect:(XFSelectControl *)select;
@@ -279,6 +355,8 @@ FOUNDATION_EXPORT NSColor *XFInvalidTextColor(void);
 - (void)controlTextDidChange:(NSNotification *)note;
 - (BOOL)textView:(NSTextView *)textView doCommandBySelector:(SEL)commandSelector;
 - (void)textDidChange:(NSNotification *)note;
+/// Incremental typing: the same reconcile pass, with the field being typed
+/// into left alone.
 - (void)refreshWidgetsInPlaceExcept:(NSView *)editing;
 - (void)textDidEndEditing:(NSNotification *)note;
 - (void)notifyDocumentReplaceIfNeeded;
