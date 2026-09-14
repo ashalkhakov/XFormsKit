@@ -170,6 +170,18 @@ after its action safe, patched gui or not. All 47 samples pass the
 harness's open / hover / type-into-every-field / maximize / shrink run
 with either.
 
+The same shape existed in two places the harness never reached, and both
+now retire their views the same way: the viewer's inspector
+(`-[XFDocumentWindowController rebuildInspector]`, run from
+`applyInspector:`, the action of the inspector's own text fields and its
+Apply button) and the designer's Action page
+(`-[XFDActionRowsPane buildRowsIfNeededForElement:]`). The Apply button
+was the half the patch never covered: `-[NSControl mouseDown:]` goes on
+using its cell after the action, and nothing in gnustep-gui holds the
+control for it. No XFormsKit code depends on this patch any more; it
+stays applied as insurance for anything else on the AppImage's
+gnustep-gui that regenerates a control from its own action.
+
 ### 3c. The mouse-tracking walk visits a view its own handler freed
 
 **Patch:** `gnustep-gui-tracking-walk-retains-subviews.patch`

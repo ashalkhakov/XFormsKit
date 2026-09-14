@@ -944,10 +944,30 @@ static BOOL XFAlertTakeAccessoryView(NSAlert *alert, NSView *accessory)
     [el addAttribute:[XFXMLNode attributeWithName:name stringValue:value]];
 }
 
+/// Held by the perform request until the run loop turns; see rebuildInspector.
+- (void)releaseRetiredInspectorViews:(NSArray *)retired
+{
+    (void)retired;
+}
+
 - (void)rebuildInspector
 {
-    for (NSView *sub in [[self.inspectorPane subviews] copy]) {
+    // The old controls leave the pane now but stay alive until the event is
+    // over. This usually runs from inside one of them -- applyInspector: is
+    // the action of the inspector's own text fields and its Apply button --
+    // and AppKit goes on using the sender after the action returns: the
+    // button's -[NSControl mouseDown:] still has its cell to finish with, and
+    // GNUstep's -[NSTextField textDidEndEditing:] asks its window for the
+    // first responder. Freed on the spot, that is readonly.xhtml's crash in
+    // another place. The form view retires its widgets the same way.
+    NSArray *retired = [[self.inspectorPane subviews] copy];
+    for (NSView *sub in retired) {
         [sub removeFromSuperview];
+    }
+    if (retired.count) {
+        [self performSelector:@selector(releaseRetiredInspectorViews:)
+                   withObject:retired
+                   afterDelay:0];
     }
     [self.inspectorBindings removeAllObjects];
 

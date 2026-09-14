@@ -152,11 +152,12 @@ install_libs_gui() {
     patch -p1 < "$WORKSPACE_DIR/patches/gnustep/gnustep-gui-gscstableau-removerow-use-after-free.patch"
     # -[NSMenu performActionForItemAtIndex:] and -[NSTextField
     # textDidEndEditing:] keep using the receiver after the action they sent
-    # has released it. XFFormView rebuilds every widget from inside that
-    # action and now keeps the old ones alive until the event ends, so the
-    # viewer no longer depends on this either; anything else on the
-    # AppImage's gnustep-gui that regenerates a control in its own action
-    # does. See patches/gnustep/README.md section 3.
+    # has released it. XFFormView, the viewer's inspector and the designer's
+    # Action page all regenerate controls from inside those actions, and all
+    # three now keep the old controls alive until the event ends, so nothing
+    # of ours depends on this any more; it is insurance for anything else on
+    # the AppImage's gnustep-gui that regenerates a control in its own
+    # action. See patches/gnustep/README.md section 3b.
     patch -p1 < "$WORKSPACE_DIR/patches/gnustep/gnustep-gui-action-sender-lifetime.patch"
     # -[NSWindow _checkTrackingRectangles:forEvent:] walks unretained
     # snapshots of a view's tracking rects and subviews while calling the

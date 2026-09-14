@@ -24,16 +24,34 @@
     return self;
 }
 
+/// Held by the perform request until the run loop turns; see below.
+- (void)releaseRetiredRows:(NSArray *)retired
+{
+    (void)retired;
+}
+
 /// (Re)build the Action page's rows for the selected action element —
-/// only when the element actually changed: rebuilding under a component
-/// that is mid-action-send would free it.
+/// only when the element actually changed, which also keeps a row's
+/// editor and focus when nothing about the element's shape did.
 - (void)buildRowsIfNeededForElement:(XFXMLElement *)element
 {
     if (_element == element && _rows != nil) {
         return;
     }
-    for (NSView *sub in [[_host subviews] copy]) {
+    // The old rows leave the page now but stay alive until the event is
+    // over: a rebuild can run from inside a row's own action, and AppKit
+    // goes on using the sender after the action returns (a button's
+    // -[NSControl mouseDown:] still has its cell to finish with; GNUstep's
+    // -[NSTextField textDidEndEditing:] asks its window for the first
+    // responder). The form view retires its widgets the same way.
+    NSArray *retired = [[_host subviews] copy];
+    for (NSView *sub in retired) {
         [sub removeFromSuperview];
+    }
+    if (retired.count) {
+        [self performSelector:@selector(releaseRetiredRows:)
+                   withObject:retired
+                   afterDelay:0];
     }
     NSMutableArray *rows = [NSMutableArray array];
     NSArray *specs = XFDActionSpecs()[[element localName]] ?: @[];
