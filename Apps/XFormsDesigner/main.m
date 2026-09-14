@@ -8,6 +8,9 @@
 #import <XFormsKit/XFSubmission.h>
 #import <XFormsKit/XFSubmissionTransport.h>
 #import <XFormsKit/XFXML.h>
+#if defined(GNUSTEP)
+#import <XFormsKit/XFCrashReporter.h>   // not in the Xcode project: GNUstep-only
+#endif
 #import "XFDDocument.h"
 #import "XFDRichTextField.h"
 #import "XFDIDRefField.h"
@@ -896,6 +899,11 @@ static void XFRegisterSampleFunctions(void)
 
 int main(int argc, const char *argv[])
 {
+#if defined(GNUSTEP)
+    // A crash in the AppImage reports its own backtrace on stderr: gdb
+    // cannot be started against the image's libraries.
+    XFInstallCrashReporter();
+#endif
     XFRegisterSampleFunctions();
     (void)argc;
     (void)argv;

@@ -14,6 +14,7 @@
 #import <XFormsKit/XFNodeState.h>
 #import <XFormsKit/XFXML.h>
 #import <XFormsKit/XFDeferredUpdates.h>
+#import "XFAppKitPriv.h"
 
 @interface XFUIControlTests : XCTestCase
 @end
@@ -262,6 +263,48 @@
     // the field editor, not the window: the field is still being edited
     XCTAssertEqualObjects([field currentEditor], [window firstResponder],
                           @"the field lost its editor as editing began");
+}
+
+/// A trigger in a host <table> keeps its caption.
+///
+/// The table hands the cell an object value, and for a button that value is
+/// its STATE -- which Cocoa's NSButtonCell reads it as and GNUstep's takes for
+/// the cell's contents, drawing every button captioned "0". calculator.xhtml
+/// is a whole keypad of triggers in a table, and on GNUstep it came up blank
+/// but clickable.
+- (void)testATriggerInATableKeepsItsTitle
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+                      @"<xf:instance><data xmlns=\"\"><n>1</n></data></xf:instance>"
+                      extra:
+                      @"<table><tr><td>"
+                      @"<xf:trigger><xf:label>Clear</xf:label>"
+                      @"  <xf:setvalue ev:event=\"DOMActivate\" ref=\"n\" value=\"'0'\"/>"
+                      @"</xf:trigger></td></tr></table>"
+                        error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *view = [[XFFormView alloc] initWithProcessor:p];
+    XFTableAdapter *adapter = view.tables.firstObject;
+    XCTAssertNotNil(adapter, @"the table became a grid");
+    NSTableColumn *column = adapter.tableView.tableColumns.firstObject;
+
+    // through the COLUMN, which is what GNUstep's row drawing asks, rather
+    // than the delegate method Cocoa asks -- both must answer the same cell
+    NSCell *cell = [column dataCellForRow:0];
+    XCTAssertTrue([cell isKindOfClass:[NSButtonCell class]],
+                  @"the column answers the trigger's own cell");
+    XCTAssertEqual(cell, [adapter tableView:adapter.tableView
+                     dataCellForTableColumn:column row:0],
+                   @"and the same one the delegate does");
+    // what the table does before the cell is drawn
+    [cell setObjectValue:[adapter tableView:adapter.tableView
+                  objectValueForTableColumn:column row:0]];
+    [adapter tableView:adapter.tableView willDisplayCell:cell
+        forTableColumn:column row:0];
+    XCTAssertEqualObjects([(NSButtonCell *)cell title], @"Clear",
+                          @"the button lost its caption to the object value");
 }
 
 - (void)testTriggerActivatesAction
@@ -1888,6 +1931,215 @@
     // a node from another document has no relative path
     XFXMLDocument *other = [[XFXMLDocument alloc] initWithXMLString:@"<x/>" options:0 error:NULL];
     XCTAssertNil([XFHostEdit pathFromNode:order toNode:[other rootElement]]);
+}
+
+
+#pragma mark - Reconciliation (widgets survive a refresh)
+
+/// The form used to be torn down and rebuilt on every change; now the
+/// layout is reconciled against the last one by widget key, so a commit
+/// leaves every widget whose control is still there in place.
+- (XFProcessor *)formWithTwoInputsAndAnOutputError:(NSError **)error
+{
+    return [self form:
+            @"<xf:instance><d xmlns=\"\"><a/><b/></d></xf:instance>"
+                  extra:
+            @"<p>Sum: <xf:output value=\"concat(a, b)\"/></p>"
+            @"<xf:input ref=\"a\" incremental=\"true\"><xf:label>A</xf:label></xf:input>"
+            @"<xf:input ref=\"b\"><xf:label>B</xf:label></xf:input>"
+                  error:error];
+}
+
+- (void)testACommitKeepsTheWidgetsAndTheirLabels
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self formWithTwoInputsAndAnOutputError:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *view = [[XFFormView alloc] initWithProcessor:p];
+    (void)[self windowShowing:view];
+
+    NSMutableArray<NSTextField *> *before = [NSMutableArray array];
+    for (NSView *v in [view subviews]) {
+        if ([v isKindOfClass:[NSTextField class]] && [(NSTextField *)v isEditable]) {
+            [before addObject:(NSTextField *)v];
+        }
+    }
+    XCTAssertEqual(before.count, 2u);
+    NSTextField *labelA = [self firstViewOfClass:[NSTextField class] under:view matching:^BOOL(NSView *v) {
+        return [[(NSTextField *)v stringValue] isEqualToString:@"A"];
+    }];
+    XCTAssertNotNil(labelA);
+
+    XFInputControl *b = nil;
+    for (XFControl *c in p.controls) {
+        if ([c isKindOfClass:[XFInputControl class]] && [c.stringValue length] == 0) {
+            b = (XFInputControl *)c;   // a and b are both empty: take the last
+        }
+    }
+    XCTAssertNotNil(b);
+    [view commitControl:b value:@"xyz"];   // setValue + reloadFromProcessor
+
+    for (NSTextField *f in before) {
+        XCTAssertEqual([f superview], view, @"an editable field was recreated by the commit");
+    }
+    XCTAssertEqual([labelA superview], view, @"a caption was recreated by the commit");
+    XCTAssertEqualObjects([before.lastObject stringValue], @"xyz");
+    NSTextField *sum = [self firstViewOfClass:[NSTextField class] under:view matching:^BOOL(NSView *v) {
+        return ![(NSTextField *)v isEditable] && [[(NSTextField *)v stringValue] isEqualToString:@"xyz"];
+    }];
+    XCTAssertNotNil(sum, @"the output did not follow the model");
+}
+
+/// incremental="true": every keystroke refreshes the form, and an inline
+/// output sized to its text must grow with it -- incremental.xhtml showed
+/// the first letter of a name and clipped the rest until Return.
+- (void)testAnIncrementalRefreshResizesAnInlineOutputAndKeepsTheField
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self formWithTwoInputsAndAnOutputError:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *view = [[XFFormView alloc] initWithProcessor:p];
+    NSWindow *window = [self windowShowing:view];
+
+    NSTextField *fieldA = [self firstViewOfClass:[NSTextField class] under:view matching:^BOOL(NSView *v) {
+        return [(NSTextField *)v isEditable];
+    }];
+    XFInputControl *a = [self firstControlOfClass:[XFInputControl class] in:p];
+    XCTAssertNotNil(fieldA);
+    XCTAssertTrue(a.incremental);
+    NSTextField *sum = [self firstViewOfClass:[NSTextField class] under:view matching:^BOOL(NSView *v) {
+        return ![(NSTextField *)v isEditable] && [[(NSTextField *)v stringValue] length] == 0
+            && NSMinX([v frame]) > 20;   // the output after "Sum: "
+    }];
+    XCTAssertNotNil(sum);
+    CGFloat emptyWidth = NSWidth([sum frame]);
+
+    BOOL editing = [window makeFirstResponder:fieldA] && [fieldA currentEditor] != nil;
+    if (editing) {
+        [[fieldA currentEditor] setString:@"Abcdefgh"];
+    } else {
+        [fieldA setStringValue:@"Abcdefgh"];
+    }
+    [view commitIncrementalNow:a value:@"Abcdefgh" editingView:fieldA];
+
+    XCTAssertEqual([fieldA superview], view, @"the field being typed into was replaced");
+    XCTAssertEqual([sum superview], view, @"the output was replaced instead of updated");
+    XCTAssertEqualObjects([sum stringValue], @"Abcdefgh");
+    XCTAssertGreaterThan(NSWidth([sum frame]), emptyWidth + 20,
+                         @"the output kept the width it had when it was empty");
+    if (editing) {
+        XCTAssertEqualObjects([fieldA currentEditor], [window firstResponder],
+                              @"the incremental refresh ended the editing session");
+        XCTAssertEqualObjects([[fieldA currentEditor] string], @"Abcdefgh",
+                              @"the refresh pushed a value into the field being typed into");
+    }
+}
+
+/// Rows a repeat gains get new widgets; the rows it keeps keep theirs; the
+/// ones it loses leave the form.
+- (void)testRepeatRowsComeAndGoAroundTheWidgetsThatStay
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+        @"<xf:instance><d xmlns=\"\"><t/><r><n>one</n></r><r><n>two</n></r></d></xf:instance>"
+                          extra:
+        @"<xf:input ref=\"t\"><xf:label>Title</xf:label></xf:input>"
+        @"<xf:repeat nodeset=\"r\" id=\"rep\"><xf:input ref=\"n\"><xf:label>N</xf:label></xf:input></xf:repeat>"
+        @"<xf:trigger id=\"add\"><xf:label>Add</xf:label>"
+        @"  <xf:action ev:event=\"DOMActivate\"><xf:insert nodeset=\"r\" at=\"last()\" position=\"after\"/></xf:action>"
+        @"</xf:trigger>"
+        @"<xf:trigger id=\"del\"><xf:label>Del</xf:label>"
+        @"  <xf:action ev:event=\"DOMActivate\"><xf:delete nodeset=\"r\" at=\"1\"/></xf:action>"
+        @"</xf:trigger>"
+                          error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *view = [[XFFormView alloc] initWithProcessor:p];
+    (void)[self windowShowing:view];
+
+    NSMutableArray<NSTextField *> *(^fields)(void) = ^{
+        NSMutableArray *out = [NSMutableArray array];
+        for (NSView *v in [view subviews]) {
+            if ([v isKindOfClass:[NSTextField class]] && [(NSTextField *)v isEditable]) {
+                [out addObject:v];
+            }
+        }
+        return out;
+    };
+    NSArray<NSTextField *> *initial = fields();
+    XCTAssertEqual(initial.count, 3u);   // the standalone input + two rows
+
+    XFTriggerControl *add = nil, *del = nil;
+    for (XFControl *c in p.controls) {
+        if ([c isKindOfClass:[XFTriggerControl class]]) {
+            if ([c.label isEqualToString:@"Add"]) add = (XFTriggerControl *)c;
+            if ([c.label isEqualToString:@"Del"]) del = (XFTriggerControl *)c;
+        }
+    }
+    XCTAssertNotNil(add);
+    XCTAssertNotNil(del);
+
+    [add activate];
+    [view reloadFromProcessor];
+    NSArray<NSTextField *> *grown = fields();
+    XCTAssertEqual(grown.count, 4u);
+    for (NSTextField *f in initial) {
+        XCTAssertTrue([grown containsObject:f], @"a row that stayed was recreated");
+    }
+
+    [del activate];
+    [view reloadFromProcessor];
+    NSArray<NSTextField *> *shrunk = fields();
+    XCTAssertEqual(shrunk.count, 3u);
+    XCTAssertTrue([shrunk containsObject:initial[0]], @"the standalone input was recreated");
+    XCTAssertTrue([shrunk containsObject:initial[2]], @"the surviving row was recreated");
+    XCTAssertFalse([shrunk containsObject:initial[1]], @"the deleted row's field is still in the form");
+    XCTAssertNil([initial[1] superview]);
+}
+
+
+/// The hint / alert info box is taken down from a badge's mouseExited: /
+/// mouseEntered:, i.e. from inside GNUstep's tracking-rect walk, which
+/// holds an unretained snapshot of the form view's subviews -- the box
+/// among them. So the box must outlive the event that hides it (it was
+/// the -[NSWindow _checkTrackingRectangles:forEvent:] crash on
+/// input.xhtml when the pointer went from one hint's badge to the other's).
+- (void)testHidingTheBadgeInfoBoxKeepsItAliveUntilTheEventIsOver
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self form:
+        @"<xf:instance><d xmlns=\"\"><a/></d></xf:instance>"
+                          extra:
+        @"<xf:input ref=\"a\"><xf:label>A</xf:label><xf:hint>Also known as given name.</xf:hint></xf:input>"
+                          error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *view = [[XFFormView alloc] initWithProcessor:p];
+    (void)[self windowShowing:view];
+    XFBadgeView *badge = [self firstViewOfClass:[XFBadgeView class] under:view matching:^BOOL(NSView *v) {
+        return [(XFBadgeView *)v kind] == XFBadgeHint;
+    }];
+    XCTAssertNotNil(badge);
+
+    __weak NSView *box = nil;
+    @autoreleasepool {
+        // Reading the property can leave an autoreleased reference behind
+        // (Cocoa does, GNUstep may not): drain it here, so that what keeps
+        // the box alive below is the deferred release and nothing else.
+        [view showBadgeInfo:badge];
+        box = view.badgePopup;
+        XCTAssertNotNil(box);
+        XCTAssertEqual([box superview], view);
+        [view hideBadgeInfo];
+        XCTAssertNil(view.badgePopup);
+    }
+    XCTAssertNotNil(box, @"the box was freed inside the event that hid it");
+    XCTAssertNil([box superview], @"the box should have left the view");
+
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
+    XCTAssertNil(box, @"the box should be released once the event is over");
 }
 
 @end

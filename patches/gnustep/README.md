@@ -5,9 +5,10 @@ places: heavy NSXML mutation, run-loop-driven asynchrony, and — since the
 SVG renderer moved to CoreGraphics — Opal. The notes below are what a
 fresh Linux setup needs to know.
 
-This directory carries two patches, both applied by
-`.github/scripts/dependencies.sh`: one to gnustep-base (section 1) and one
-to Opal (section 2). A third, older one is now upstream (section 3).
+This directory carries five patches, all applied by
+`.github/scripts/dependencies.sh`: one to gnustep-base (section 1), one
+to Opal (section 2) and three to gnustep-gui (section 3). A sixth, older
+one is now upstream (section 4).
 
 ## 1. gnustep-base: the NSXML addAttribute: use-after-free (patch applied)
 
@@ -74,10 +75,150 @@ width of 320 rather than 20 (origin and height-origin were right, which
 is the tell: only the size was wrong). `testSVGPaintServersUseAndHitTesting`
 catches it.
 
-This one is worth sending upstream; unlike section 3 it is not fixed
+This one is worth sending upstream; unlike section 4 it is not fixed
 there yet.
 
-## 3. gnustep-base: the NSXML detached-attribute bug (fixed upstream — nothing to do)
+## 3. gnustep-gui: Auto Layout's tableau use-after-free on resize (patch applied)
+
+`gnustep-gui-gscstableau-removerow-use-after-free.patch` — applied to
+libs-gui by `.github/scripts/dependencies.sh`, and needed by any hand-built
+gnustep-gui that will run the viewer or the AppImage.
+`gscstableau-removerow-use-after-free.m` beside it is an AppKit-only
+reproduction (a window of plain autoresizing views, one
+`-layoutSubtreeIfNeeded`, a resize): valgrind names the freed object on the
+first resize and `MALLOC_PERTURB_` turns it into a segfault every time.
+`xfviewer-resize-smoke.m` is the same exercise through the viewer's own
+document and window classes — open a sample, grow the window to the
+screen, shrink it — which is how it was found; its header says how to
+build it against the viewer's objects.
+
+Symptom: XFormsViewer dies when its window is maximized, on any sample,
+and sometimes when a sample is first opened (a window manager that
+resizes the window as it maps it takes the same path):
+
+```
+-[GSMutableArray countByEnumeratingWithState:objects:count:]   <- memcpy segfault
+-[GSCSTableau removeRowForVariable:]
+-[GSCSTableau pivotWithEntryVariable:exitVariable:]
+-[GSCassowarySolver removeConstraint:]
+-[GSAutoLayoutEngine updateContentViewSize]
+-[NSView setFrame:] <- GSWindowDecorationView <- NSWindow sendEvent: <- placewindow::
+```
+
+Two things combine. First, `-[GSCSTableau removeRowForVariable:]` reads the
+row's expression out of `_rows`, removes the entry — releasing the
+expression, since the dictionary is its only owner — and then walks the
+freed expression's terms; its caller `-pivotWithEntryVariable:exitVariable:`
+keeps rewriting the same freed object. Every content-view resize of a
+window with a layout engine removes and re-adds the size constraints,
+and removing a constraint pivots, so every resize is a use-after-free
+whose outcome is up to the allocator. The patch retains the expression
+for the autorelease scope before the row is removed, as
+`-[GSCassowarySolver removeConstraintFromTableau:]` already does for its
+marker variable.
+
+Second, the viewer never asked for Auto Layout. On GNUstep
+`-layoutSubtreeIfNeeded` is not a no-op for a constraint-free window: it
+runs `-updateConstraints` over the subtree, `translatesAutoresizingMaskIntoConstraints`
+is YES by default, so every view's autoresizing mask becomes a set of
+`NSAutoresizingMaskLayoutConstraint`s, the first of them creates the
+window's `GSAutoLayoutEngine`, and from then on the Cassowary solver runs
+on every resize. `XFDocumentWindowController` called it once after
+building the split view (a Cocoa idiom for "lay out now"); that call is
+now Cocoa-only, so on GNUstep the viewer stays on plain autoresizing and
+never reaches the solver, patched or not. The designer's windows come
+from XIBs without constraints and were never affected.
+
+gnustep-gui's own NSLayoutConstraint, NSLayoutAnchor, NSLayoutGuide and
+NSCollectionViewFlowLayout suites pass with the patch, as does the rest
+of `Tests/gui` (4,675 tests). Not yet upstream.
+
+### 3b. An action that releases its sender
+
+`gnustep-gui-action-sender-lifetime.patch`, with
+`nsmenu-action-releases-sender.m` beside it. Found with the same smoke
+harness once it learned to type: `readonly.xhtml` died the moment a
+select1 popup's choice was committed —
+
+```
+objc_retain                                          <- freed NSMenu
+-[NSNotificationCenter postNotificationName:object:userInfo:]
+-[NSMenu performActionForItemAtIndex:]
+-[NSPopUpButton keyDown:]
+```
+
+`XFFormView` rebuilds every widget when a value changes, and it does so
+from inside the widget's own action: `popupChanged:` → `reloadFromProcessor`
+→ `rebuild`, which removes and releases the popup that sent the action.
+The popup owned its menu, and `-[NSMenu performActionForItemAtIndex:]`
+goes on to post `NSMenuDidSendActionNotification` naming that menu.
+`-[NSTextField textDidEndEditing:]` has the same shape (it asks `_window`
+for the first responder after the action). On Cocoa the sender of an
+action is kept alive by the event dispatch until the pool drains, which is
+why the pattern is harmless there.
+
+Two fixes, either sufficient. gnustep-gui: retain the receiver for the
+autorelease scope before sending the action, in both methods. XFormsKit:
+`-[XFFormView rebuild]` no longer throws the widgets away at all — it
+reconciles the new layout against the old one by widget key (host
+element + bound node), so the popup that sent the action is the popup
+that is still there afterwards; the few views a pass does retire leave
+the hierarchy at once but are released only on the next run-loop turn
+(`performSelector:afterDelay:0`), after every AppKit user of the sender
+is done — which also makes any other AppKit code that touches a sender
+after its action safe, patched gui or not. All 47 samples pass the
+harness's open / hover / type-into-every-field / maximize / shrink run
+with either.
+
+The same shape existed in two places the harness never reached, and both
+now retire their views the same way: the viewer's inspector
+(`-[XFDocumentWindowController rebuildInspector]`, run from
+`applyInspector:`, the action of the inspector's own text fields and its
+Apply button) and the designer's Action page
+(`-[XFDActionRowsPane buildRowsIfNeededForElement:]`). The Apply button
+was the half the patch never covered: `-[NSControl mouseDown:]` goes on
+using its cell after the action, and nothing in gnustep-gui holds the
+control for it. No XFormsKit code depends on this patch any more; it
+stays applied as insurance for anything else on the AppImage's
+gnustep-gui that regenerates a control from its own action.
+
+### 3c. The mouse-tracking walk visits a view its own handler freed
+
+**Patch:** `gnustep-gui-tracking-walk-retains-subviews.patch`
+**Reproduction:** `nswindow-tracking-walk-freed-subview.m`
+
+Found from the AppImage's own crash report (`XFCrashReporter.h`), which
+is what the viewer prints on a fatal signal:
+
+```
+objc_msgSend_fpret
+-[NSWindow _checkTrackingRectangles:forEvent:]    x7, one per view level
+-[NSWindow sendEvent:]
+```
+
+input.xhtml died every time the pointer went from the second input's
+hint badge to the first's. For each view, `_checkTrackingRectangles:`
+copies the tracking rects and then the subviews into C arrays with
+`getObjects:` — no references held — and calls the rect owners'
+`mouseEntered:` / `mouseExited:` from inside the loop. XFFormView's
+badges put a hover box up on entering and take it down on leaving; the
+box was a subview later in the same list, the form view was its only
+owner, and the walk reached it after the handler had freed it:
+`[subs[i] isHidden]` on freed memory. Whether that dies depends on the
+allocator, which is why the harness here never saw it. An owner that
+removes its own tracking rect from a handler is the same bug one loop
+earlier.
+
+Two fixes, either sufficient. gnustep-gui: retain the entries of both
+snapshots for the loop (a removed view is harmless to visit, a freed one
+is not). XFormsKit: `-[XFFormView hideBadgeInfo]` keeps the box alive
+until the event is over, the way retired widgets are — so the viewer
+survives an unpatched gui too. The reproduction is AppKit-only: two
+views with tracking rects and a third view their `mouseEntered:`
+replaces; valgrind reports the invalid read at the `isHidden`, freed by
+`removeFromSuperview`, and with the patch it prints "survived".
+
+## 4. gnustep-base: the NSXML detached-attribute bug (fixed upstream — nothing to do)
 
 This project used to carry
 `gnustep-base-nsxmlnode-detached-attribute-dict-strings.patch`, which had
@@ -109,7 +250,7 @@ because `XFDOMTests` uses NSXML as a reference oracle, and because a
 gnustep-base built without it is broken for anyone else's NSXML code —
 but the engine no longer depends on it.
 
-## 4. Run-loop asynchrony without GS_USE_LIBDISPATCH_RUNLOOP
+## 5. Run-loop asynchrony without GS_USE_LIBDISPATCH_RUNLOOP
 
 gnustep-base only drains the libdispatch MAIN queue from NSRunLoop when
 it was configured with libdispatch development headers available
@@ -138,7 +279,7 @@ testDispatchChildrenPropertiesDelayAndDefaultSubmitTarget FAILED
 To check a gnustep-base build:
 `grep GS_USE_LIBDISPATCH_RUNLOOP $(gnustep-config --variable=GNUSTEP_SYSTEM_HEADERS)/GNUstepBase/GSConfig.h`
 
-## 5. Run-loop mode gotcha (engine-internal, for the record)
+## 6. Run-loop mode gotcha (engine-internal, for the record)
 
 GNUstep takes `NSRunLoopCommonModes` literally — a timer added ONLY for
 that "mode" never fires, because no run loop ever runs a mode by that

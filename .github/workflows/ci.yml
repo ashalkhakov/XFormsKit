@@ -209,6 +209,31 @@ jobs:
           [ "$missing" -eq 0 ] || exit 1
           echo "all listed"
 
+      # An unsigned build of each app on every commit, so there is always
+      # something to hand someone. release.yml makes the signed, notarized
+      # ones; these are named for the commit and expire.
+      - name: Package the apps
+        run: |
+          built=$(xcodebuild -project XFormsKit.xcodeproj -scheme XFormsViewer \
+                    -destination 'platform=macOS' -configuration Debug \
+                    -showBuildSettings 2>/dev/null \
+                  | awk -F' = ' '/ BUILT_PRODUCTS_DIR/{print $2; exit}')
+          for app in XFormsViewer XFormsDesigner; do
+            # each app carries its own copy of the framework it links
+            # through @rpath; without it the bundle does not start off this
+            # machine, which is what an embed phase is for
+            test -d "$built/$app.app/Contents/Frameworks/XFormsKit.framework" \
+              || { echo "::error::$app.app does not embed XFormsKit.framework"; exit 1; }
+            ditto -c -k --keepParent "$built/$app.app" "$app-macOS-unsigned.zip"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: XFormsKit-macOS-${{ github.sha }}
+          path: |
+            XFormsViewer-macOS-unsigned.zip
+            XFormsDesigner-macOS-unsigned.zip
+          retention-days: 14
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: failure()
@@ -255,40 +280,39 @@ jobs:
       # What GNUstep DOES have: <AppKit/AppKit.h>, and -- since the project
       # adopted Opal -- <CoreGraphics/CoreGraphics.h> and
       # <CoreText/CoreText.h>, which the SVG renderer draws through. What it
-      # does not: Cocoa.h, QuartzCore, UIKit.
+      # does not: Cocoa.h, QuartzCore, UIKit -- see the next paragraph.
       #
-      # UIKit is a special case since the iOS form layer landed in this
-      # tree. Its headers are READ on GNUstep -- XFormsKit.h pulls in
-      # XFFormViewController.h, and XFRichText.h declares both
-      # presentations -- so a UIKit import is allowed, but only behind
-      # `#if __has_include(<UIKit/UIKit.h>)`. A bare one compiles on a Mac
-      # and breaks this job half an hour later, which is the mistake this
-      # step exists to catch early.
+      # UIKit and Cocoa are special cases. Their headers are READ on
+      # GNUstep -- XFormsKit.h pulls in XFFormViewController.h, XFRichText.h
+      # declares both presentations, and the designer vendors third-party
+      # views written against Cocoa -- so those imports are allowed, but only
+      # behind `#if __has_include(<Framework/Framework.h>)` with an AppKit or
+      # Foundation branch beside them. A bare one compiles on a Mac and breaks
+      # this job half an hour later, which is the mistake this step exists to
+      # catch early.
       #
       # Matches import lines only. An earlier version grepped for the bare
       # framework name and failed on prose in a comment.
       #
-      # Scoped to what this job actually builds: the framework, the tests and
-      # the viewer. The designer is macOS-only and vendors third-party views
-      # that do import Cocoa.h; Apps/XFormsMobile is iOS-only and is never
-      # built here.
+      # Scoped to what this job builds: the framework, the tests, both apps
+      # and the launcher that chooses between them inside the AppImage.
+      # Apps/XFormsMobile is iOS-only and is never built here.
       - name: No imports GNUstep cannot satisfy
         run: |
-          if grep -rnE '^[[:space:]]*#[[:space:]]*(import|include)[[:space:]]*[<"](Cocoa/|QuartzCore/)' \
-               --include="*.h" --include="*.m" Sources Tests Apps/XFormsViewer; then
-            echo "::error::an import GNUstep cannot satisfy; see the step's comment"
-            exit 1
-          fi
+          tree="Sources Tests Apps/XFormsViewer Apps/XFormsDesigner Apps/XFormsLauncher"
           unguarded=0
-          for f in $(grep -rlE '^[[:space:]]*#[[:space:]]*(import|include)[[:space:]]*[<"]UIKit/' \
-                       --include="*.h" --include="*.m" Sources Tests Apps/XFormsViewer || true); do
-            if ! grep -q '__has_include(<UIKit/UIKit.h>)' "$f"; then
-              echo "::error file=$f::imports UIKit without a __has_include guard"
-              unguarded=1
-            fi
+          for framework in Cocoa UIKit QuartzCore; do
+            files=$(grep -rlE "^[[:space:]]*#[[:space:]]*(import|include)[[:space:]]*[<\"]${framework}/" \
+                      --include="*.h" --include="*.m" $tree || true)
+            for f in $files; do
+              if ! grep -q "__has_include(<${framework}/${framework}.h>)" "$f"; then
+                echo "::error file=$f::imports $framework without a __has_include guard"
+                unguarded=1
+              fi
+            done
           done
           [ "$unguarded" -eq 0 ] || exit 1
-          echo "none found"
+          echo "every framework import GNUstep lacks is guarded"
 
       - name: Install packages
         run: |
@@ -360,7 +384,55 @@ jobs:
           . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
           xvfb-run -a make w3ccheck
 
-      - name: Build the viewer
+      - name: Build the apps
         run: |
           . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
-          make viewer
+          make apps
+
+      # Packaged on every commit, unstable ones included, so there is always
+      # a build to hand someone. Signed releases are release.yml's job; these
+      # are named for the commit they came from and expire.
+      - name: Fetch linuxdeploy and the AppImage runtime
+        run: ./Scripts/install-linuxdeploy.sh
+
+      - name: Package the AppImage
+        env:
+          LDAI_RUNTIME_FILE: /tmp/appimage-runtime/runtime-x86_64
+          APP_VERSION: 0.0.0-${{ github.run_number }}-${{ github.sha }}
+        run: |
+          sudo apt-get -q -y install desktop-file-utils fonts-dejavu fonts-liberation
+          . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
+          ./Scripts/stamp-version.sh "$APP_VERSION"
+          GNUSTEP_PREFIX="$INSTALL_PATH" ./Scripts/prepare-appdir.sh
+          GNUSTEP_PREFIX="$INSTALL_PATH" ./Scripts/package-appimage.sh
+
+      # Both apps have to START. They are GUI-only, so each is launched
+      # against a virtual display and left for a moment: a bundle that cannot
+      # find its framework, the backend or its resources dies immediately,
+      # here rather than for whoever downloads it.
+      - name: Smoke-test the AppImage
+        run: |
+          image=$(ls XFormsKit-Linux-*.AppImage)
+          chmod +x "$image"
+          # "" is the no-argument case: the launcher, which is what
+          # opening the image does.
+          for app in "" viewer designer; do
+            timeout 90 xvfb-run -a ./"$image" $app &
+            pid=$!
+            sleep 25
+            if kill -0 $pid 2>/dev/null; then
+              echo "${app:-launcher}: up after 25s"
+              kill $pid 2>/dev/null || true
+              wait $pid 2>/dev/null || true
+            else
+              wait $pid; status=$?
+              echo "::error::${app:-launcher} exited on its own with status $status"
+              exit 1
+            fi
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: XFormsKit-Linux-${{ github.sha }}
+          path: ${{ env.SRC_PATH }}/XFormsKit-Linux-*.AppImage
+          retention-days: 14

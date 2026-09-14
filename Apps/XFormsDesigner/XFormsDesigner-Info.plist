@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleName</key>
+	<string>XFormsDesigner</string>
+	<key>CFBundleDisplayName</key>
+	<string>XFormsDesigner</string>
+	<key>CFBundleExecutable</key>
+	<string>XFormsDesigner</string>
+	<key>CFBundleIdentifier</key>
+	<string>org.gnustep.XFormsDesigner</string>
+	<key>CFBundleIconFile</key>
+	<string>XFormsDesigner</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.0.0</string>
+	<key>CFBundleVersion</key>
+	<string>0.0.0</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>12.0</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<key>NSMainNibFile</key>
+	<string>MainMenu</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright (c) 2026 the XFormsKit contributors. LGPL 2.1.</string>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>xhtml</string>
+				<string>xml</string>
+				<string>xf</string>
+			</array>
+			<key>CFBundleTypeName</key>
+			<string>XHTML+XForms Document</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>NSDocumentClass</key>
+			<string>XFDDocument</string>
+		</dict>
+	</array>
+
+	<!-- GNUstep reads this same file: gnustep-make looks for <App>-Info.plist
+	     (Instance/rules.make) and merges it into the Info-gnustep.plist it
+	     generates inside the built bundle. What follows is what it reads and
+	     Cocoa ignores. Nothing here may use an Xcode build setting like
+	     $(PRODUCT_NAME): gnustep-make does not expand them. -->
+	<key>ApplicationName</key>
+	<string>XFormsDesigner</string>
+	<key>ApplicationDescription</key>
+	<string>XHTML+XForms form designer</string>
+	<key>ApplicationIcon</key>
+	<string>XFormsDesigner.png</string>
+	<!-- GSInfoPanel, the About panel, shows these. -->
+	<key>ApplicationRelease</key>
+	<string>0.0.0-dev</string>
+	<key>FullVersionID</key>
+	<string>0.0.0-dev</string>
+	<key>Authors</key>
+	<array>
+		<string>Artyom Shalkhakov</string>
+	</array>
+	<key>URL</key>
+	<string>https://github.com/ashalkhakov/GSXFormsKit</string>
+	<key>Copyright</key>
+	<string>Copyright (C) 2026 the XFormsKit contributors</string>
+	<key>CopyrightDescription</key>
+	<string>GNU LGPL 2.1</string>
+	<key>NSExecutable</key>
+	<string>XFormsDesigner</string>
+	<key>NSRole</key>
+	<string>Editor</string>
+	<!-- Document types in GNUstep's own form. NSDocumentController reads
+	     NSTypes first and CFBundleDocumentTypes after, so both are here. -->
+	<key>NSTypes</key>
+	<array>
+		<dict>
+			<key>NSName</key>
+			<string>XHTML+XForms</string>
+			<key>NSHumanReadableName</key>
+			<string>XHTML+XForms Document</string>
+			<key>NSUnixExtensions</key>
+			<array>
+				<string>xhtml</string>
+				<string>xml</string>
+				<string>xf</string>
+			</array>
+			<key>NSRole</key>
+			<string>Editor</string>
+			<key>NSDocumentClass</key>
+			<string>XFDDocument</string>
+		</dict>
+	</array>
+</dict>
+</plist>

@@ -25,10 +25,15 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithProcessor:(XFProcessor *)processor rootGroup:(nullable XFGroup *)rootGroup;
 @property (nonatomic, strong, readonly, nullable) XFGroup *rootGroup;
 
-/// Refresh the controls, rebuild the widgets and call instanceChangedHandler.
+/// Refresh the controls, bring the widgets up to date and call
+/// instanceChangedHandler.
 - (void)reloadFromProcessor;
-/// Rebuild the widgets from the current control state only (for a host
-/// that refreshed the processor itself, e.g. after another view's edit).
+/// Bring the widgets up to date with the current control state only (for
+/// a host that refreshed the processor itself, e.g. after another view's
+/// edit). The layout is walked afresh, but a widget whose control is still
+/// there is kept — its view, focus and editing session included — and only
+/// updated; widgets for controls that came into existence are created and
+/// those for controls that went away are retired.
 - (void)rebuildWidgets;
 
 /* Design-support introspection: the current layout's geometry, for hosts

@@ -15,12 +15,15 @@ include $(GNUSTEP_MAKEFILES)/common.make
 APP_NAME = XFormsViewer
 
 XFormsViewer_LDFLAGS += -ldispatch
+# The app's own methods by name in a crash report (XFCrashReporter.h).
+XFormsViewer_LDFLAGS += -rdynamic
 XFormsViewer_OBJC_FILES = \
 	main.m \
 	XFFormDocument.m \
 	XFDocumentWindowController.m
 
 XFormsViewer_RESOURCE_FILES = \
+	XFormsViewer.png \
 	../../Samples/XMLSchemaTypeCode.xml \
 	../../Samples/address.xhtml \
 	../../Samples/balance-table.xhtml \

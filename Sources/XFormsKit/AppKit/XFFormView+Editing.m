@@ -156,10 +156,9 @@ void XFAppKitHasEditingFile(void) {}
 
 #pragma mark - Incremental commits
 
-/// incremental="true": commit on every keystroke without rebuilding the
-/// form (a rebuild would replace the field being edited). Other widgets are
-/// refreshed in place; layout changes (relevance) are applied by the rebuild
-/// on the final commit (Return / focus loss).
+/// incremental="true": commit on every keystroke. The layout pass that
+/// follows reuses the widgets, so the field being edited stays where it is
+/// with its field editor; everything else follows the model.
 - (void)commitIncremental:(XFControl *)control value:(NSString *)value editingView:(NSView *)editing
 {
     if (control.delay > 0) {
@@ -247,74 +246,12 @@ void XFAppKitHasEditingFile(void) {}
 
 - (void)refreshWidgetsInPlaceExcept:(NSView *)editing
 {
-    // SVG re-resolves its AVTs and gathered output values (G-20 phase 3)
-    for (XFSVGView *svg in self.svgViews) {
-        [svg rebuild];
-    }
-    for (XFTableAdapter *t in self.tables) {
-        [t refreshInPlace];
-    }
-    for (XFWidget *w in self.widgets) {
-        XFControl *control = w.control;
-        NSView *view = w.view;
-        if (view != editing) {
-            if ([view isKindOfClass:[NSPopUpButton class]] && [control isKindOfClass:[XFSelectControl class]]) {
-                NSPopUpButton *popup = (NSPopUpButton *)view;
-                NSString *selected = [(XFSelectControl *)control selectedValues].firstObject;
-                BOOL found = NO;
-                for (NSMenuItem *item in [popup itemArray]) {
-                    if (selected && [[item representedObject] isEqual:selected]) {
-                        [popup selectItem:item];
-                        found = YES;
-                        break;
-                    }
-                }
-                if (!found) {
-                    if ([[popup itemAtIndex:0] representedObject] != nil || [[popup itemTitleAtIndex:0] length]) {
-                        [popup insertItemWithTitle:@"" atIndex:0];
-                    }
-                    [popup selectItemAtIndex:0];
-                }
-            } else if ([view isKindOfClass:[NSButton class]] && [control isKindOfClass:[XFSelectControl class]]) {
-                NSString *value = [view toolTip];
-                BOOL on = value && [[(XFSelectControl *)control selectedValues] containsObject:value];
-                [(NSButton *)view setState:on ? NSOnState : NSOffState];
-            } else if ([view isKindOfClass:[NSButton class]] && [control isKindOfClass:[XFInputControl class]]) {
-                BOOL on = [control.stringValue isEqualToString:@"true"] || [control.stringValue isEqualToString:@"1"];
-                [(NSButton *)view setState:on ? NSOnState : NSOffState];
-            } else if ([view isKindOfClass:[NSSlider class]] && [control isKindOfClass:[XFRangeControl class]]) {
-                [(NSSlider *)view setDoubleValue:[(XFRangeControl *)control numericValue]];
-            } else if ([view isKindOfClass:[NSDatePicker class]] && [control isKindOfClass:[XFInputControl class]]) {
-                NSDate *date = [(XFInputControl *)control dateValue];
-                if (date) {
-                    [(NSDatePicker *)view setDateValue:date];
-                }
-            } else if ([view isKindOfClass:[XFRichTextEditor class]]) {
-                XFRichTextEditor *editor = (XFRichTextEditor *)view;
-                if (![[editor HTML] isEqualToString:control.stringValue ?: @""]) {
-                    [editor setHTML:control.stringValue ?: @""];
-                }
-            } else if ([view isKindOfClass:[NSScrollView class]]) {
-                NSTextView *tv = [(NSScrollView *)view documentView];
-                if ([tv isKindOfClass:[NSTextView class]]
-                    && ![[tv string] isEqualToString:control.stringValue ?: @""]) {
-                    [tv setString:control.stringValue ?: @""];
-                }
-            } else if ([view isKindOfClass:[NSTextField class]]
-                       && ![control isKindOfClass:[XFTriggerControl class]]) {
-                NSTextField *field = (NSTextField *)view;
-                if (![[field stringValue] isEqualToString:control.stringValue ?: @""]) {
-                    [field setStringValue:control.stringValue ?: @""];
-                }
-            }
-        }
-        [self applyEnabled:view control:control];
-        [self updateBadgesForWidget:w];
-        [w.labelField setHidden:!control.relevant];
-        if (w.labelField && [w.labelField respondsToSelector:@selector(setTextColor:)]) {
-            [w.labelField setTextColor:control.valid ? [NSColor controlTextColor] : XFInvalidTextColor()];
-        }
-    }
+    // The same pass a commit runs: widgets are reused by key, so the field
+    // being typed into keeps its view and field editor; its own value is
+    // left alone (the engine may hold a normalised form of what is being
+    // typed), everything else -- outputs, badges, relevance, a repeat that
+    // grew -- follows the model, at its new size.
+    [self reconcileExcept:editing];
 }
 
 - (void)textDidEndEditing:(NSNotification *)note

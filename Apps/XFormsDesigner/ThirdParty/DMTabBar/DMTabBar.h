@@ -7,7 +7,12 @@
 //  Licensed under MIT License
 //
 
+// GNUstep has no Cocoa umbrella; AppKit is the half these views use.
+#if __has_include(<Cocoa/Cocoa.h>)
 #import <Cocoa/Cocoa.h>
+#else
+#import <AppKit/AppKit.h>
+#endif
 #import "DMTabBarItem.h"
 
 @interface DMTabBar : NSView {

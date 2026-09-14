@@ -1,6 +1,7 @@
 #import "XFAppKitPriv.h"
 
 const void *kXFBoundControlKey = &kXFBoundControlKey;
+const void *kXFReconcileKey = &kXFReconcileKey;
 
 const CGFloat kLabelWidth = 110.0;
 const CGFloat kRowHeight = 24.0;
@@ -306,12 +307,19 @@ NSView *XFKeyViewOf(NSView *view)
     // its top line, like XSLTForms' inline icons).
     CGFloat rowH = MIN([view frame].size.height, kRowHeight);
     CGFloat y = [view frame].origin.y + (rowH - kBadgeSize) / 2;
+    // A reused widget brings its badges along; one it no longer needs is
+    // dropped here (not kept, so the pass retires it).
     if (control.hint.length && !control.hintMinimal) {
-        w.hintBadge = [XFBadgeView badgeWithKind:XFBadgeHint text:control.hint];
+        if (w.hintBadge == nil) {
+            w.hintBadge = [XFBadgeView badgeWithKind:XFBadgeHint text:control.hint];
+        }
         w.hintBadge.markup = control.hintMarkup;
         [w.hintBadge setFrameOrigin:NSMakePoint(x, y)];
-        [self addSubview:w.hintBadge];
+        [self keepView:w.hintBadge];
+        [w.hintBadge refreshTracking];
         x += kBadgeSize + 2;
+    } else {
+        w.hintBadge = nil;
     }
     if ((control.alert.length || !control.valid)
         && ![control isKindOfClass:[XFTriggerControl class]]
@@ -321,11 +329,16 @@ NSView *XFKeyViewOf(NSView *view)
         // badge without moving the layout; a control without an alert gets
         // its badge at the rebuild that follows a commit
         // (.xforms-invalid span.xforms-alert { display: inline }).
-        w.alertBadge = [XFBadgeView badgeWithKind:XFBadgeAlert text:control.alert];
+        if (w.alertBadge == nil) {
+            w.alertBadge = [XFBadgeView badgeWithKind:XFBadgeAlert text:control.alert];
+        }
         w.alertBadge.markup = control.alertMarkup;
         [w.alertBadge setFrameOrigin:NSMakePoint(x, y)];
-        [self addSubview:w.alertBadge];
+        [self keepView:w.alertBadge];
+        [w.alertBadge refreshTracking];
         x += kBadgeSize + 2;
+    } else {
+        w.alertBadge = nil;
     }
     [self updateBadgesForWidget:w];
     return x - 4;
@@ -461,9 +474,21 @@ NSView *XFKeyViewOf(NSView *view)
 
 - (void)hideBadgeInfo
 {
-    [self.badgePopup removeFromSuperview];
+    NSView *popup = self.badgePopup;
+    if (popup == nil) {
+        return;
+    }
+    [popup removeFromSuperview];
     self.badgePopup = nil;
     self.badgePopupBadge = nil;
+    // This runs from a badge's mouseEntered: / mouseExited:, i.e. from
+    // inside GNUstep's -[NSWindow _checkTrackingRectangles:forEvent:],
+    // which is walking an unretained snapshot of this view's subviews --
+    // the box included. Freed now, it is messaged a few iterations later
+    // (input.xhtml: pointer from one hint's badge to the other's). So the
+    // box outlives the event, the way retired widgets do; see the
+    // gnustep-gui patch in patches/gnustep for the walk itself.
+    [self performSelector:@selector(releaseRetiredViews:) withObject:@[ popup ] afterDelay:0];
 }
 
 - (XFWidget *)addWidget:(XFControl *)control view:(NSView *)view height:(CGFloat)height
@@ -482,17 +507,123 @@ NSView *XFKeyViewOf(NSView *view)
     w.control = control;
     w.view = view;
     w.height = height;
+    w.variant = [self variantForControl:control];
+    [self placeWidget:w atY:y indent:indent caption:caption];
+    return w;
+}
+
+#pragma mark - Reconciliation
+
+- (NSString *)keyForControl:(XFControl *)control item:(NSString *)item
+{
+    // The control object itself is no identity: a repeat item's controls
+    // are made anew on every refresh. Its host element and bound node are
+    // (widgetForControl: has always matched on them); the prefix tells the
+    // items of a repeat apart for a control that binds nothing (a
+    // trigger). The pointers cannot be recycled under us: the previous
+    // generation's widgets hold their controls for the whole pass.
+    return [NSString stringWithFormat:@"%@c/%p/%p/%@", self.keyPrefix ?: @"",
+            control.element, control.boundNode, item ?: @""];
+}
+
+- (NSString *)keyForElement:(XFXMLElement *)element kind:(NSString *)kind
+{
+    return [NSString stringWithFormat:@"%@%@/%p", self.keyPrefix ?: @"", kind, element];
+}
+
+- (void)keepView:(NSView *)view
+{
+    if (view == nil) {
+        return;
+    }
+    [self.liveViews addObject:view];
+    if ([view superview] != self) {
+        [self addSubview:view];
+    }
+}
+
+- (void)keepBoxView:(NSView *)view
+{
+    if (view == nil) {
+        return;
+    }
+    [self.liveViews addObject:view];
+    if ([view superview] != self) {
+        [self addSubview:view positioned:NSWindowBelow relativeTo:nil];
+    }
+}
+
+- (XFWidget *)takeWidgetForControl:(XFControl *)control item:(NSString *)item variant:(NSString *)variant
+{
+    NSString *key = [self keyForControl:control item:item];
+    XFWidget *w = self.previousWidgets[key];
+    if (w == nil) {
+        return nil;
+    }
+    [self.previousWidgets removeObjectForKey:key];
+    if (![w.variant isEqualToString:variant] || w.view == nil) {
+        return nil;   // a different kind of view now: the old one is retired
+    }
+    w.key = key;
+    w.control = control;
+    objc_setAssociatedObject(w.view, kXFBoundControlKey, control, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    return w;
+}
+
+- (NSView *)takeContainerForKey:(NSString *)key
+{
+    NSView *view = self.previousContainers[key];
+    if (view != nil) {
+        [self.previousContainers removeObjectForKey:key];
+    }
+    return view;
+}
+
+- (XFWidget *)widgetForControl:(XFControl *)control item:(NSString *)item
+{
+    NSString *variant = [self variantForControl:control];
+    XFWidget *w = [self takeWidgetForControl:control item:item variant:variant];
+    if (w != nil) {
+        [self configureWidget:w];
+        w.height = [self heightForWidget:w];
+        return w;
+    }
+    CGFloat height = kRowHeight;
+    NSView *view = [self makeViewForControl:control height:&height];
+    if (view == nil) {
+        return nil;
+    }
+    w = [[XFWidget alloc] init];
+    w.key = [self keyForControl:control item:item];
+    w.variant = variant;
+    w.control = control;
+    w.view = view;
+    w.height = height;
+    objc_setAssociatedObject(view, kXFBoundControlKey, control, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [self configureWidget:w];
+    return w;
+}
+
+- (void)placeWidget:(XFWidget *)w atY:(CGFloat)y indent:(CGFloat)indent caption:(BOOL)caption
+{
+    XFControl *control = w.control;
+    NSView *view = w.view;
+    CGFloat height = w.height;
     if (caption && control.label.length && ![control isKindOfClass:[XFTriggerControl class]]
         && ![control isKindOfClass:[XFGroup class]]) {
-        NSString *caption = control.required
+        NSString *text = control.required
             ? [NSString stringWithFormat:@"%@ *", control.label]
             : control.label;
-        NSTextField *label = [self makeLabel:caption];
-        if (!control.valid && [label respondsToSelector:@selector(setTextColor:)]) {
-            [label setTextColor:XFInvalidTextColor()];
+        NSTextField *label = w.labelField ?: [self makeLabel:text];
+        if (![[label stringValue] isEqualToString:text]) {
+            [label setStringValue:text];
         }
+        if ([label respondsToSelector:@selector(setTextColor:)]) {
+            [label setTextColor:control.valid ? [NSColor controlTextColor] : XFInvalidTextColor()];
+        }
+        [label setHidden:!control.relevant];
         [label setFrame:NSMakeRect(kMargin + indent, y, kLabelWidth, kRowHeight)];
-        [self addSubview:label];
+        [self keepView:label];
         w.labelField = label;
         // an image view keeps the width the factory derived from the
         // picture (natural size, capped); text-ish fields fill the row
@@ -500,18 +631,39 @@ NSView *XFKeyViewOf(NSView *view)
             && [view frame].size.width > 0 ? [view frame].size.width : kFieldWidth;
         [view setFrame:NSMakeRect(kMargin + indent + kLabelWidth + 8, y, fieldWidth, height)];
     } else {
+        w.labelField = nil;   // a caption it had before is retired
         CGFloat fullWidth = [view isKindOfClass:[NSImageView class]]
             && [view frame].size.width > 0
             ? [view frame].size.width : kLabelWidth + 8 + kFieldWidth;
         [view setFrame:NSMakeRect(kMargin + indent, y, fullWidth, height)];
     }
-    [self addSubview:view];
+    [self keepView:view];
     [self.widgets addObject:w];
     [self registerKeyView:XFKeyViewOf(view) control:control];
     objc_setAssociatedObject(view, kXFBoundControlKey, control, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [self applyEnabled:view control:control];
     [self noteRight:[self attachBadgesToWidget:w]];
-    return w;
+}
+
+- (BOOL)isViewFocused:(NSView *)view
+{
+    NSWindow *window = [self window];
+    if (view == nil || window == nil) {
+        return NO;
+    }
+    NSResponder *responder = [window firstResponder];
+    if (responder == view) {
+        return YES;
+    }
+    if ([responder isKindOfClass:[NSTextView class]] && [(NSTextView *)responder isFieldEditor]) {
+        return (id)[(NSTextView *)responder delegate] == view;
+    }
+    return NO;
+}
+
+- (void)releaseRetiredViews:(NSArray *)retired
+{
+    (void)retired;   // held by the perform request until now
 }
 
 - (void)noteRight:(CGFloat)right
@@ -560,19 +712,83 @@ NSView *XFKeyViewOf(NSView *view)
 
 - (void)rebuild
 {
+    [self reconcileExcept:nil];
+}
+
+/// Z-order after a pass: boxes behind everything, then the widgets and
+/// text in the order they already have (the comparison is total, so the
+/// sort is stable whatever algorithm AppKit uses).
+static NSComparisonResult XFCompareLayers(NSView *a, NSView *b, void *context)
+{
+    NSDictionary *order = (__bridge NSDictionary *)context;
+    NSInteger la = [a isKindOfClass:[NSBox class]] ? 0 : 1;
+    NSInteger lb = [b isKindOfClass:[NSBox class]] ? 0 : 1;
+    if (la != lb) {
+        return la < lb ? NSOrderedAscending : NSOrderedDescending;
+    }
+    NSInteger ia = [order[[NSValue valueWithNonretainedObject:a]] integerValue];
+    NSInteger ib = [order[[NSValue valueWithNonretainedObject:b]] integerValue];
+    return ia < ib ? NSOrderedAscending : (ia > ib ? NSOrderedDescending : NSOrderedSame);
+}
+
+/// One layout pass, reconciled against the last one.
+///
+/// The walk over the host tree (-layoutNodes: and friends) is the "new
+/// tree": it visits every control in document order and decides its
+/// frame. Instead of tearing the old views down first, every view the
+/// walk wants is looked up by key in the previous generation — a widget
+/// by its control's host element and bound node (-keyForControl:item:), a
+/// group or fieldset box, a host table's adapter and an SVG view by their
+/// element (-keyForElement:kind:) — and reused when the key is there and
+/// the variant (the kind of view the factory would build now) still
+/// matches. A reused view is moved and its state pushed in
+/// (-configureWidget:); a control that is new gets a new view; static
+/// text, rules and bullets hold nothing and are simply made afresh. What
+/// the walk did not claim is retired at the end. The upshot is that a
+/// commit, a popup choice or an incremental keystroke leaves the widget
+/// that caused it exactly where it was, first responder, field editor
+/// and selection included, and the rest of the form follows the model.
+- (void)reconcileExcept:(NSView *)editing
+{
     [self hideBadgeInfo];
-    for (NSView *view in [[self subviews] copy]) {
-        [view removeFromSuperview];
+    self.reconcileEditingView = editing;
+    self.generation++;
+
+    // The previous generation, by key. Every view the walk claims or
+    // creates is marked live; the rest is retired below.
+    NSMutableDictionary<NSString *, XFWidget *> *previousWidgets = [NSMutableDictionary dictionary];
+    for (XFWidget *w in self.widgets) {
+        if (w.key != nil) {
+            previousWidgets[w.key] = w;
+        }
     }
-    [self.widgets removeAllObjects];
-    [self.keyViews removeAllObjects];
+    self.previousWidgets = previousWidgets;
+    self.previousContainers = self.containers ?: [NSMutableDictionary dictionary];
+    self.containers = [NSMutableDictionary dictionary];
+    NSMutableDictionary<NSString *, XFTableAdapter *> *previousTables = [NSMutableDictionary dictionary];
     for (XFTableAdapter *t in self.tables) {
-        [t.tableView setDataSource:nil];
-        [t.tableView setDelegate:nil];
+        NSString *key = objc_getAssociatedObject(t, kXFReconcileKey);
+        if (key != nil) {
+            previousTables[key] = t;
+        }
     }
-    [self.tables removeAllObjects];
+    self.previousTables = previousTables;
+    NSMutableDictionary<NSString *, XFSVGView *> *previousSVGs = [NSMutableDictionary dictionary];
+    for (XFSVGView *svg in self.svgViews) {
+        NSString *key = objc_getAssociatedObject(svg, kXFReconcileKey);
+        if (key != nil) {
+            previousSVGs[key] = svg;
+        }
+    }
+    self.previousSVGs = previousSVGs;
+    self.liveViews = [NSMutableSet set];
+    self.keyPrefix = @"";
+
+    self.widgets = [NSMutableArray array];
+    [self.keyViews removeAllObjects];
+    self.tables = [NSMutableArray array];
     [self.listBoxes removeAllObjects];
-    [self.svgViews removeAllObjects];
+    self.svgViews = [NSMutableArray array];
     self.maxRight = 0;
     self.wrapRight = MAX(kWrapWidth, [self frame].size.width) - kMargin;
     CGFloat y = kMargin;
@@ -580,9 +796,50 @@ NSView *XFKeyViewOf(NSView *view)
     if (self.rootGroup == nil && self.widgets.count == 0 && self.processor.controls.count == 0) {
         NSTextField *empty = [self makeLabel:@"No XForms controls in the host body."];
         [empty setFrame:NSMakeRect(kMargin, y, 400, 40)];
-        [self addSubview:empty];
+        [self keepView:empty];
         y += 48;
     }
+
+    // Retire what the walk did not claim. The views leave the hierarchy
+    // now but stay alive until the event is over: a rebuild usually runs
+    // from inside a widget's own action -- the popup just chosen, the
+    // field that just ended editing -- and AppKit keeps using that sender
+    // after the action returns (GNUstep's -[NSMenu
+    // performActionForItemAtIndex:] posts NSMenuDidSendActionNotification
+    // with the menu; -[NSTextField textDidEndEditing:] asks its window for
+    // the first responder). Reuse makes that the rare case; this makes it
+    // a safe one.
+    NSMutableArray *retired = [NSMutableArray array];
+    for (NSView *view in [[self subviews] copy]) {
+        if (![self.liveViews containsObject:view]) {
+            [view removeFromSuperview];
+            [retired addObject:view];
+        }
+    }
+    for (XFTableAdapter *t in [self.previousTables allValues]) {
+        if (![self.tables containsObject:t]) {
+            [t.tableView setDataSource:nil];
+            [t.tableView setDelegate:nil];
+            [retired addObject:t];
+        }
+    }
+    if (retired.count) {
+        [self performSelector:@selector(releaseRetiredViews:) withObject:retired afterDelay:0];
+    }
+    self.previousWidgets = nil;
+    self.previousContainers = nil;
+    self.previousTables = nil;
+    self.previousSVGs = nil;
+    self.liveViews = nil;
+    self.reconcileEditingView = nil;
+
+    NSMutableDictionary *order = [NSMutableDictionary dictionary];
+    NSInteger index = 0;
+    for (NSView *view in [self subviews]) {
+        order[[NSValue valueWithNonretainedObject:view]] = @(index++);
+    }
+    [self sortSubviewsUsingFunction:XFCompareLayers context:(__bridge void *)order];
+
     self.contentHeight = y + kMargin;
     [self setFrame:NSMakeRect(0, 0, MAX(kWrapWidth, self.maxRight + kMargin), MAX(self.contentHeight, 80))];
     [self setNeedsDisplay:YES];
@@ -621,9 +878,11 @@ NSView *XFKeyViewOf(NSView *view)
     self.firstKeyView = chain.firstObject;
     self.keyChain = chain;
     [self installInitialFirstResponder];
-    // the widgets were recreated: give the engine's focused control its
-    // first responder back — unless a Tab movement is about to place the
-    // focus itself (G-63)
+    // A widget that was recreated (or the engine's focused control, if
+    // its view is not the one focused): give it its first responder
+    // back — unless a Tab movement is about to place the focus itself
+    // (G-63). A reused widget that already has the focus keeps it, field
+    // editor, selection and all.
     if (self.processor.focusedControl && [self window] && self.pendingTabDirection == 0) {
         [self makeControlFirstResponder:self.processor.focusedControl];
     }
@@ -654,7 +913,9 @@ NSView *XFKeyViewOf(NSView *view)
     NSView *wantedView = wanted ? XFKeyViewOf([self widgetForControl:wanted].view) : nil;
     if (wantedView && [wantedView acceptsFirstResponder]) {
         [window setInitialFirstResponder:wantedView];
-        [window makeFirstResponder:wantedView];
+        if (![self isViewFocused:wantedView]) {
+            [window makeFirstResponder:wantedView];
+        }
         return;
     }
     if (self.firstKeyView) {
@@ -980,7 +1241,7 @@ static NSRect XFWidgetRect(XFWidget *w)
 {
     XFWidget *w = [self widgetForControl:control];
     NSView *view = XFKeyViewOf(w.view);
-    if (view && [view window] && [view acceptsFirstResponder]) {
+    if (view && [view window] && [view acceptsFirstResponder] && ![self isViewFocused:view]) {
         [[view window] makeFirstResponder:view];
     }
 }

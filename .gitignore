@@ -28,3 +28,8 @@ xcuserdata/
 core
 Apps/XFormsViewer/XFormsViewer.app/
 Apps/XFormsDesigner/XFormsDesigner.app/
+
+# Packaging (Scripts/prepare-appdir.sh, Scripts/package-appimage.sh)
+AppDir/
+*.AppImage
+*-macOS-*.zip

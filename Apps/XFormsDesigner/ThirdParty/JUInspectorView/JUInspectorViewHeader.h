@@ -15,7 +15,12 @@
 //  ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+// GNUstep has no Cocoa umbrella; AppKit is the half these views use.
+#if __has_include(<Cocoa/Cocoa.h>)
 #import <Cocoa/Cocoa.h>
+#else
+#import <AppKit/AppKit.h>
+#endif
 #import "JUInspectorBaseView.h"
 
 @class JUInspectorViewHeader;

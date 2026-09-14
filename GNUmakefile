@@ -87,6 +87,7 @@ XFormsKit_HEADER_FILES = \
 	XFSubmission.h \
 	XFSubmissionTransport.h \
 	XFFormView.h \
+	XFCrashReporter.h \
 	XFEvent.h \
 	XFListener.h \
 	XFXMLEvents.h
@@ -175,7 +176,8 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/AppKit/XFTableAdapter.m \
 	Sources/XFormsKit/AppKit/XFRichTextEditor.m \
 	Sources/XFormsKit/AppKit/XFRichTextPresentation.m \
-	Sources/XFormsKit/AppKit/XFSVGView.m
+	Sources/XFormsKit/AppKit/XFSVGView.m \
+	Sources/XFormsKit/AppKit/XFCrashReporter.m
 
 XFormsKit_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath
 XFormsKit_OBJCFLAGS += -fobjc-arc -Wall -Wextra
@@ -215,7 +217,11 @@ XFormsKitTests_RESOURCE_FILES = Tests/Fixtures/hello.xhtml
 # compiled into this bundle rather than linked from the app: the
 # designer is an executable, not a library, and the syntax
 # highlighting is worth testing without it.
-XFormsKitTests_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath -IApps/XFormsDesigner
+# AppKit/ is on this list for XFAppKitPriv.h: the widget tests reach into the
+# view layer's private interfaces -- the table adapter, for one -- which the
+# Xcode target's header search path already allowed and this did not.
+XFormsKitTests_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath \
+                              -ISources/XFormsKit/AppKit -IApps/XFormsDesigner
 XFormsKitTests_OBJCFLAGS += -fobjc-arc -Wall
 XFormsKitTests_BUNDLE_LIBS += -lXFormsKit -lXCTest
 XFormsKitTests_LIB_DIRS += -L./XFormsKit.framework/Versions/Current
@@ -267,6 +273,16 @@ check:: all
 
 viewer: all
 	$(MAKE) -C Apps/XFormsViewer
+
+designer: all
+	$(MAKE) -C Apps/XFormsDesigner
+
+# The chooser the AppImage opens. GNUstep only: a Mac installs the two apps
+# separately and has nothing to choose between.
+launcher:
+	$(MAKE) -C Apps/XFormsLauncher
+
+apps: viewer designer launcher
 
 # The W3C suite as XCTest assertions (spec-true: engine gaps stay red).
 w3ccheck: all

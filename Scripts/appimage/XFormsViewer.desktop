@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=XFormsViewer
+GenericName=XForms Viewer
+Comment=Open and fill in XHTML+XForms documents
+Exec=AppRun viewer %f
+Icon=xformsviewer
+Terminal=false
+Categories=Office;Viewer;
+MimeType=application/xhtml+xml;application/xml;

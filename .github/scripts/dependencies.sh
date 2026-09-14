@@ -17,9 +17,10 @@
 #
 # XFormsKit needs more of the stack than a Foundation-only project would:
 # XFFormView draws through AppKit, so libs-gui and a graphics backend are
-# required, and both test bundles are XCTest, so tools-xctest is too. The
-# theme and libs-corebase from that recipe are not built here; nothing in
-# XFormsKit uses them, and CI does not package an app.
+# required, both test bundles are XCTest, so tools-xctest is too, the SVG
+# renderer draws through Opal (and Opal through libs-corebase), and the
+# packaged apps ship with the Eau theme, which has to be built against the
+# same gui it will be loaded into.
 #
 # Expects: CC, CXX, LIBRARY_COMBO, RUNTIME_VERSION, DEPS_PATH, INSTALL_PATH.
 set -ex
@@ -140,6 +141,32 @@ install_libs_gui() {
     . "$GNUSTEP_SH"
     git clone -q -b ${LIBS_GUI_BRANCH:-master} https://github.com/gnustep/libs-gui.git
     cd libs-gui
+    # -[GSCSTableau removeRowForVariable:] uses a row expression after the
+    # row dictionary, its only owner, has released it, so every resize of a
+    # window that has a layout engine is a use-after-free. See
+    # patches/gnustep/README.md, which also carries a standalone
+    # reproduction. The viewer no longer engages the engine on GNUstep (it
+    # skipped -layoutSubtreeIfNeeded), so XFormsKit itself does not depend
+    # on this patch -- but anything drawn by gnustep-gui that does use
+    # Auto Layout, and the AppImage's users, do.
+    patch -p1 < "$WORKSPACE_DIR/patches/gnustep/gnustep-gui-gscstableau-removerow-use-after-free.patch"
+    # -[NSMenu performActionForItemAtIndex:] and -[NSTextField
+    # textDidEndEditing:] keep using the receiver after the action they sent
+    # has released it. XFFormView, the viewer's inspector and the designer's
+    # Action page all regenerate controls from inside those actions, and all
+    # three now keep the old controls alive until the event ends, so nothing
+    # of ours depends on this any more; it is insurance for anything else on
+    # the AppImage's gnustep-gui that regenerates a control in its own
+    # action. See patches/gnustep/README.md section 3b.
+    patch -p1 < "$WORKSPACE_DIR/patches/gnustep/gnustep-gui-action-sender-lifetime.patch"
+    # -[NSWindow _checkTrackingRectangles:forEvent:] walks unretained
+    # snapshots of a view's tracking rects and subviews while calling the
+    # owners' mouseEntered: / mouseExited:; a handler that takes a hover
+    # box down frees a view the walk still has to visit. XFFormView keeps
+    # its own hint box alive past the event, so the viewer is safe either
+    # way; anything else drawn by this gui that does the same is not. See
+    # patches/gnustep/README.md section 3c.
+    patch -p1 < "$WORKSPACE_DIR/patches/gnustep/gnustep-gui-tracking-walk-retains-subviews.patch"
     ./configure --prefix="$INSTALL_PATH" || cat config.log
     make install
     echo "::endgroup::"
@@ -225,6 +252,30 @@ install_libs_opal() {
     echo "::endgroup::"
 }
 
+# The look users expect on Linux. It is a theme bundle that gnustep-gui
+# dlopens at runtime, so it has to be inside the AppImage and it has to be
+# selected -- Scripts/appimage/AppRun does the selecting. Built here rather
+# than shipped prebuilt because a theme links against the same gui it will be
+# loaded into.
+install_eau_theme() {
+    echo "::group::Eau theme"
+    cd "$DEPS_PATH"
+    . "$GNUSTEP_SH"
+    git clone -q --depth 1 https://github.com/gershwin-desktop/gershwin-eau-theme.git Eau
+    cd Eau
+    # The theme uses blocks, and nothing in a theme bundle's link line pulls
+    # the runtime in on its own. BlocksRuntime is only a separate library when
+    # libdispatch built its own; ours is told to use libobjc's, so ask for it
+    # only if it is there.
+    ldflags="-L$INSTALL_PATH/lib -Wl,-rpath,$INSTALL_PATH/lib -ldispatch"
+    if [ -e "$INSTALL_PATH/lib/libBlocksRuntime.so" ]; then
+        ldflags="$ldflags -lBlocksRuntime"
+    fi
+    make ADDITIONAL_LDFLAGS="$ldflags"
+    make install
+    echo "::endgroup::"
+}
+
 install_tools_xctest() {
     echo "::group::tools-xctest"
     cd "$DEPS_PATH"
@@ -247,6 +298,7 @@ install_libs_gui
 install_libs_back
 install_libs_corebase
 install_libs_opal
+install_eau_theme
 install_tools_xctest
 
 echo "=== the prefix ==="

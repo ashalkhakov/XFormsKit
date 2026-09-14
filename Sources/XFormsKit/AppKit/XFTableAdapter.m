@@ -2,6 +2,40 @@
 
 void XFAppKitHasTableAdapterFile(void) {}
 
+/// A column that answers the adapter's per-row cell.
+///
+/// A table of XForms controls needs a different cell in different ROWS of one
+/// column -- a trigger here, a field there -- and the delegate method for that
+/// is `tableView:dataCellForTableColumn:row:`. Cocoa's NSTableView asks for it
+/// everywhere. GNUstep asks in `-preparedCellAtColumn:row:`, which covers
+/// clicking and editing, but its row DRAWING goes through the theme, and
+/// `-[GSTheme drawTableViewRow:clipRect:inView:]` takes the cell from
+/// `-[NSTableColumn dataCellForRow:]` instead: a table of controls was live
+/// but drawn as plain text -- Samples/calculator.xhtml came up as a grid of
+/// "0"s (a trigger's object value is its button state) that worked when
+/// pressed.
+///
+/// Overriding the column's own accessor puts the right cell in front of every
+/// caller on both platforms, and leaves selection, highlighting and editing to
+/// the table as they were.
+@interface XFControlTableColumn : NSTableColumn
+@property (nonatomic, weak) XFTableAdapter *adapter;
+@end
+
+@implementation XFControlTableColumn
+
+- (NSCell *)dataCellForRow:(NSInteger)row
+{
+    // the adapter ignores the table it is handed, and this is the one path
+    // that has none to hand it
+    NSCell *cell = [self.adapter tableView:(NSTableView *)[self tableView]
+                    dataCellForTableColumn:self
+                                       row:row];
+    return cell ?: [super dataCellForRow:row];
+}
+
+@end
+
 static const CGFloat kTableRowHeight = 22.0;
 static const CGFloat kTableHeaderHeight = 20.0;
 static const CGFloat kTableMinColumnWidth = 60.0;
@@ -141,7 +175,9 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     [table setColumnAutoresizingStyle:NSTableViewNoColumnAutoresizing];
     CGFloat width = 0;
     for (NSUInteger col = 0; col < self.model.columnCount; col++) {
-        NSTableColumn *column = [[NSTableColumn alloc] initWithIdentifier:[self identifierForColumn:col]];
+        XFControlTableColumn *column = [[XFControlTableColumn alloc]
+            initWithIdentifier:[self identifierForColumn:col]];
+        column.adapter = self;
         NSString *title = col < self.model.columnTitles.count ? self.model.columnTitles[col] : @"";
         [[column headerCell] setStringValue:title ?: @""];
         CGFloat w = [self preferredWidthForColumn:col];
@@ -174,6 +210,55 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     self.scrollView = scroll;
 
     CGFloat rows = MAX((CGFloat)self.model.rows.count, 1);
+    CGFloat height = rows * (rowHeight + [table intercellSpacing].height)
+        + (hasHeader ? kTableHeaderHeight : 0) + 4;
+    [table setFrame:NSMakeRect(0, 0, width, height)];
+    return NSMakeSize(width + 4, height);
+}
+
+- (NSSize)rebuildWithModel:(XFTableModel *)model
+{
+    NSTableView *table = self.tableView;
+    NSScrollView *scroll = self.scrollView;
+    BOOL sameColumns = table != nil && scroll != nil
+        && model.columnCount == self.model.columnCount
+        && (model.columnTitles != nil) == (self.model.columnTitles != nil);
+    self.model = model;
+    if (!sameColumns) {
+        // a different shape: a new table view, in the scroll view the
+        // form already holds (the old table is retired with the event)
+        if (table != nil) {
+            [table setDataSource:nil];
+            [table setDelegate:nil];
+        }
+        NSSize size = [self build];
+        if (scroll != nil) {
+            [scroll setDocumentView:self.tableView];
+            self.scrollView = scroll;
+        }
+        return size;
+    }
+    CGFloat width = 0;
+    NSMutableArray<NSNumber *> *widths = [NSMutableArray array];
+    NSArray<NSTableColumn *> *columns = [table tableColumns];
+    for (NSUInteger col = 0; col < columns.count; col++) {
+        NSTableColumn *column = columns[col];
+        NSString *title = col < model.columnTitles.count ? model.columnTitles[col] : @"";
+        [[column headerCell] setStringValue:title ?: @""];
+        CGFloat w = [self preferredWidthForColumn:col];
+        [column setWidth:w];
+        [widths addObject:@(w)];
+        width += w + [table intercellSpacing].width;
+    }
+    CGFloat rowHeight = [self preferredRowHeightWithColumnWidths:widths];
+    [table setRowHeight:rowHeight];
+    // the cell kind at a position may differ in the new model (a repeat
+    // row that came or went); the cache is per position
+    [self.cells removeAllObjects];
+    [table reloadData];
+    [self selectCurrentRow];
+    BOOL hasHeader = model.columnTitles != nil;
+    CGFloat rows = MAX((CGFloat)model.rows.count, 1);
     CGFloat height = rows * (rowHeight + [table intercellSpacing].height)
         + (hasHeader ? kTableHeaderHeight : 0) + 4;
     [table setFrame:NSMakeRect(0, 0, width, height)];
@@ -407,6 +492,16 @@ static const CGFloat kTableMaxColumnWidth = 240.0;
     XFControl *control = tc.control;
     if (control && [cell respondsToSelector:@selector(setTextColor:)] && [cell isKindOfClass:[NSTextFieldCell class]]) {
         [(NSTextFieldCell *)cell setTextColor:control.valid ? [NSColor controlTextColor] : XFInvalidTextColor()];
+    }
+    // A trigger's title, re-applied after the table has set the cell's object
+    // value. The object value is the button's STATE (NSOffState), which is
+    // what Cocoa's NSButtonCell reads it as -- GNUstep's takes it as the
+    // cell's contents instead and draws every button captioned "0", which is
+    // what Samples/calculator.xhtml looked like there: a working keypad with
+    // no labels on it.
+    if ([control isKindOfClass:[XFTriggerControl class]]
+        && [cell isKindOfClass:[NSButtonCell class]]) {
+        [(NSButtonCell *)cell setTitle:control.label ?: @"OK"];
     }
 }
 

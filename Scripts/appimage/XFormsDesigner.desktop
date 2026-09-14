@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=XFormsDesigner
+GenericName=XForms Designer
+Comment=Create and edit XHTML+XForms documents
+Exec=AppRun designer %f
+Icon=xformsdesigner
+Terminal=false
+Categories=Office;Development;
+MimeType=application/xhtml+xml;application/xml;

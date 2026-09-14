@@ -186,24 +186,115 @@ the left, Form / Source / Instance in the center, inspector on the right.
 
 File ▸ Open Sample lists the ported XSLTForms forms.
 
+### Designer
+
+The form editor, the same document model with an outline, a palette and
+inspectors around it. It builds on both platforms:
+
+    make designer                        # GNUstep, after the framework
+    make apps                            # both of them
+    # or: xcodebuild -project XFormsKit.xcodeproj -scheme XFormsDesigner build
+
 ## Continuous integration
 
 `.github/workflows/ci.yml` runs on every push:
 
 - **macOS (Xcode)** — builds the framework, the viewer and the designer,
-  then runs the unit suite and the W3C suite against *both* XML back ends.
-  On the portable leg it also builds the framework for both iPhone SDKs
-  and the iOS app for the simulator, and runs both suites in the
-  simulator. That is what keeps the portable half portable: iOS
-  Foundation has no NSXML, so a stray dependency on it fails there and
-  nowhere else.
+  then runs the unit suite and the W3C suite. It also builds the framework
+  for both iPhone SDKs and the iOS app for the simulator, and runs both
+  suites in the simulator. That is what keeps the portable half portable:
+  iOS Foundation has no NSXML, so a stray dependency on it fails there and
+  nowhere else. It finishes by packaging an unsigned copy of each app.
 - **Ubuntu (GNUstep, clang, gnustep-2.0)** — builds the whole GNUstep
   stack from source into a cached prefix
-  (`.github/scripts/dependencies.sh`), then builds and runs both suites in
-  both configurations under `xvfb`. One patch is applied to gnustep-base
-  (`patches/gnustep/`, an `-[NSXMLElement addAttribute:]` use-after-free
-  that the NSXML configuration hits); see `patches/gnustep/README.md` for
-  it and for what else a Linux setup should know.
+  (`.github/scripts/dependencies.sh`), then builds and runs both suites
+  under `xvfb`, builds both apps, and packages and smoke-tests the
+  AppImage. One patch is applied to gnustep-base and one to Opal
+  (`patches/gnustep/`); see `patches/gnustep/README.md` for them and for
+  what else a Linux setup should know.
+
+## Builds and releases
+
+Every push produces downloadable artifacts, from the run's own page in the
+Actions tab: an `XFormsKit-Linux-<sha>` AppImage and an
+`XFormsKit-macOS-<sha>` holding `XFormsViewer.app` and `XFormsDesigner.app`.
+They are unsigned, named for the commit, and kept for 14 days — for trying a
+build, not for shipping.
+
+`.github/workflows/release.yml` is the shipping one. It runs on a `v*` tag, or
+by hand for the artifacts without publishing a release. Note that the "Run
+workflow" button only appears once the workflow is on the default branch; a tag
+triggers it from anywhere.
+
+* **Linux** — one AppImage carrying both apps. `Scripts/prepare-appdir.sh`
+  assembles an AppDir with the framework, both applications and the GNUstep
+  runtime, and `Scripts/package-appimage.sh` hands it to `linuxdeploy`. The
+  layout follows GNUstep's: `AppRun` writes a config pointing
+  `GNUSTEP_SYSTEM_ROOT` and its siblings at wherever the image is mounted,
+  because that path is not known until it runs. Both scripts are ports of
+  RDLKit's, which are ports of UDQuakeTools'; the places they differ are
+  marked in the files.
+
+  Launching the image opens **XFormsLauncher**, a chooser with a button per
+  app — one image, two applications, so it asks which. (It is the same answer
+  UDQuakeTools' `UDLauncher` gives for three.) Either app is also reachable
+  directly:
+
+      ./XFormsKit-Linux-*.AppImage designer
+      ./XFormsKit-Linux-*.AppImage form.xhtml        # a file opens the viewer
+      ln -s XFormsKit-Linux-*.AppImage xformsdesigner && ./xformsdesigner
+
+  `AppRun` picks the app from the name it was invoked through, then from the
+  first argument — `viewer`, `designer`, or a path, which means the viewer —
+  and with none of those it opens the launcher. Desktop entries for all three
+  ship in `usr/share/applications` inside the image; the launcher's is the one
+  at the top level, which is what desktop integration installs.
+
+  The launcher is GNUstep-only (`make launcher`, or `make apps` for all
+  three). A Mac installs `XFormsViewer.app` and `XFormsDesigner.app`
+  separately and has nothing to choose between, so the Xcode project does not
+  build it.
+
+  The image carries the **Eau** theme, built from source into the prefix by
+  `.github/scripts/dependencies.sh` (a theme bundle links against the gui it
+  will be dlopened into, so it cannot be shipped prebuilt), and `AppRun`
+  selects it — along with the bundled Liberation fonts — by writing them into
+  each app's own defaults domain at launch, so they look the way a GNUstep
+  desktop is expected to look rather than like stock GNUstep. It also carries
+  `Scripts/appimage/open`, installed into the bundle's GNUstep tools directory
+  as both `open` and `xdg-open` and named by the `GSUnknownFileTool` default:
+  `NSWorkspace` hands a URL to whatever `+[NSTask launchPathForTool:]` finds,
+  and that searches GNUstep's tool directories before `$PATH` — inside the
+  image those are in the bundle, where no opener lives. The shim restores the
+  host's `PATH` and `LD_LIBRARY_PATH` before handing the URL on, because a
+  browser started with the image's libraries does not start.
+* **macOS** — `XFormsViewer.app` and `XFormsDesigner.app`, each embedding its
+  own copy of `XFormsKit.framework` (they link it through `@rpath`, so a
+  bundle without it does not launch off the build machine), signed with a
+  Developer ID and notarized. Signing needs `MACOS_CERTIFICATE` (a base64
+  `.p12`), `MACOS_CERTIFICATE_PASSWORD` and `MACOS_SIGN_IDENTITY`;
+  notarization additionally needs `NOTARY_APPLE_ID`, `NOTARY_TEAM_ID` and
+  `NOTARY_PASSWORD`. Without them the build still produces artifacts, marked
+  `-unsigned`, rather than failing.
+
+Each app has **one** property list, `Apps/<App>/<App>-Info.plist`, carrying
+the Cocoa keys and the GNUstep ones side by side. Xcode points
+`INFOPLIST_FILE` at it; gnustep-make finds the same file by name and merges it
+into the `Info-gnustep.plist` it generates inside the bundle — that file is a
+build output, so there is none in the tree. Nothing in the shared file may use
+an Xcode build setting such as `$(PRODUCT_NAME)`, because gnustep-make does not
+expand them.
+
+No version number is maintained by hand. `Scripts/stamp-version.sh` writes the
+tag (or `0.0.0-build<run>`) into those two plists and into the project's
+`MARKETING_VERSION`, in two forms: the display version for GNUstep's About
+panel, which can say anything, and the leading dotted number for the keys Apple
+parses. What is in the tree is `0.0.0-dev`, which is what a build from a
+working copy is.
+
+The AppImage bundles DejaVu and Liberation, and the Microsoft core fonts if
+they are installed on the builder: a form's CSS names the fonts its author had,
+and the host tree is laid out in whatever the machine can find.
 
 ## License
 
