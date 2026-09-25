@@ -22,14 +22,48 @@
 # packaged apps ship with the Eau theme, which has to be built against the
 # same gui it will be loaded into.
 #
+# Fixes to GNUstep itself come from the shared gnustep-patches repository,
+# cloned below and applied per project; they are written for upstream and
+# held there until they can be sent. Everything else is built from master as
+# it stands.
+#
 # Expects: CC, CXX, LIBRARY_COMBO, RUNTIME_VERSION, DEPS_PATH, INSTALL_PATH.
 set -ex
 
-# Captured before anything cds away: the patches below are named relative
-# to the checkout.
+# Captured before anything cds away.
 WORKSPACE_DIR=$(pwd)
 
 mkdir -p "$DEPS_PATH"
+
+# GNUstep's own fixes are not kept here any more: several projects on this
+# machine build the same stack and each used to carry its own copies, which
+# drifted and outlived the merges upstream. They live in one repository now,
+# and this fetches it.
+#
+# GNUSTEP_PATCHES_REF should name a commit, not a branch: it is what pins the
+# build, and the workflows fold it into the cache key so that changing a
+# patch invalidates the cached prefix. A branch name builds whatever is on it
+# that day and the cache will not notice.
+GNUSTEP_PATCHES_URL=${GNUSTEP_PATCHES_URL:-https://github.com/ashalkhakov/gnustep-patches.git}
+GNUSTEP_PATCHES_REF=${GNUSTEP_PATCHES_REF:-5b7cea43e828d053d72078f6dd1ebeb8785d770c}
+GNUSTEP_PATCHES_DIR="$DEPS_PATH/gnustep-patches"
+
+install_gnustep_patches() {
+    echo "::group::GNUstep patches"
+    if [ ! -d "$GNUSTEP_PATCHES_DIR" ]; then
+        git clone -q "$GNUSTEP_PATCHES_URL" "$GNUSTEP_PATCHES_DIR"
+        (cd "$GNUSTEP_PATCHES_DIR" && git checkout -q "$GNUSTEP_PATCHES_REF")
+    fi
+    (cd "$GNUSTEP_PATCHES_DIR" && git log --oneline -1)
+    echo "::endgroup::"
+}
+
+# Applies every patch that repository carries for one upstream project, with
+# no fuzz, and skips one that is already present -- which is what a fix looks
+# like between the day it is merged upstream and the day it is deleted there.
+apply_gnustep_patches() {
+    "$GNUSTEP_PATCHES_DIR/Scripts/apply-patches.sh" "$1" "$(pwd)"
+}
 
 # With --with-layout=gnustep this is where tools-make puts the makefiles.
 GNUSTEP_SH="$INSTALL_PATH/System/Library/Makefiles/GNUstep.sh"
@@ -103,19 +137,7 @@ install_libs_base() {
     . "$GNUSTEP_SH"
     git clone -q -b ${LIBS_BASE_BRANCH:-master} https://github.com/gnustep/libs-base.git
     cd libs-base
-    # Required for this project: -[NSXMLElement addAttribute:] frees the
-    # private document of a prefixed attribute while the attribute's value
-    # nodes still point at it, and the next -detach reads freed memory. With
-    # the libxml2 2.9.x Ubuntu ships that is a segfault in the designer's
-    # host-XML editing (testActionAuthoring); a libs-base built against
-    # libxml2 2.12+ repairs the pointer by accident, which is why the crash
-    # is invisible on a workstation. See patches/gnustep/README.md, which
-    # also carries a standalone reproduction. (The earlier detached-attribute
-    # patch this project carried has been upstreamed and is not applied.)
-    #
-    # Only the default (NSXML) configuration depends on this. Built against
-    # XFDOM the engine never touches gnustep-base's NSXML at all.
-    patch -p1 < "$WORKSPACE_DIR/patches/gnustep/gnustep-base-nsxmlelement-addattribute-value-doc.patch"
+    apply_gnustep_patches libs-base
     # The reference recipe names $PREFIX/etc/GNUstep.conf here. This
     # gnustep-make writes it to $PREFIX/etc/GNUstep/GNUstep.conf instead, and
     # when the named file does not exist libs-base falls back to the built-in
@@ -141,32 +163,7 @@ install_libs_gui() {
     . "$GNUSTEP_SH"
     git clone -q -b ${LIBS_GUI_BRANCH:-master} https://github.com/gnustep/libs-gui.git
     cd libs-gui
-    # -[GSCSTableau removeRowForVariable:] uses a row expression after the
-    # row dictionary, its only owner, has released it, so every resize of a
-    # window that has a layout engine is a use-after-free. See
-    # patches/gnustep/README.md, which also carries a standalone
-    # reproduction. The viewer no longer engages the engine on GNUstep (it
-    # skipped -layoutSubtreeIfNeeded), so XFormsKit itself does not depend
-    # on this patch -- but anything drawn by gnustep-gui that does use
-    # Auto Layout, and the AppImage's users, do.
-    patch -p1 < "$WORKSPACE_DIR/patches/gnustep/gnustep-gui-gscstableau-removerow-use-after-free.patch"
-    # -[NSMenu performActionForItemAtIndex:] and -[NSTextField
-    # textDidEndEditing:] keep using the receiver after the action they sent
-    # has released it. XFFormView, the viewer's inspector and the designer's
-    # Action page all regenerate controls from inside those actions, and all
-    # three now keep the old controls alive until the event ends, so nothing
-    # of ours depends on this any more; it is insurance for anything else on
-    # the AppImage's gnustep-gui that regenerates a control in its own
-    # action. See patches/gnustep/README.md section 3b.
-    patch -p1 < "$WORKSPACE_DIR/patches/gnustep/gnustep-gui-action-sender-lifetime.patch"
-    # -[NSWindow _checkTrackingRectangles:forEvent:] walks unretained
-    # snapshots of a view's tracking rects and subviews while calling the
-    # owners' mouseEntered: / mouseExited:; a handler that takes a hover
-    # box down frees a view the walk still has to visit. XFFormView keeps
-    # its own hint box alive past the event, so the viewer is safe either
-    # way; anything else drawn by this gui that does the same is not. See
-    # patches/gnustep/README.md section 3c.
-    patch -p1 < "$WORKSPACE_DIR/patches/gnustep/gnustep-gui-tracking-walk-retains-subviews.patch"
+    apply_gnustep_patches libs-gui
     ./configure --prefix="$INSTALL_PATH" || cat config.log
     make install
     echo "::endgroup::"
@@ -230,14 +227,11 @@ install_libs_opal() {
     . "$GNUSTEP_SH"
     git clone -q https://github.com/gnustep/libs-opal.git
     cd libs-opal
+    apply_gnustep_patches libs-opal
     # No configure script: Opal is a plain gnustep-make project. Only the
     # Source subproject is built -- the aggregate also builds Tests, which
     # is a set of example tools this build has no use for and would only
     # add ways to fail.
-    # CGRectUnion stores the union's far edges as its SIZE instead of
-    # subtracting the origin it just chose, so any union away from the
-    # origin comes out far too large. See patches/gnustep/README.md.
-    patch -p1 < "$WORKSPACE_DIR/patches/gnustep/opal-cgrectunion-size.patch"
     make -C Source
     # OpalGraphics/GNUmakefile.postamble finishes the install by copying the
     # ImageIO headers into GNUSTEP_SYSTEM_HEADERS with a bare `cp -r`: no
@@ -290,6 +284,7 @@ install_tools_xctest() {
 # tools-make with --with-runtime-abi=gnustep-2.0 probes for it, and libdispatch
 # needs BlocksRuntime from it. Everything after that needs GNUstep.sh, which
 # tools-make installs.
+install_gnustep_patches
 install_libobjc2
 install_libdispatch
 install_tools_make

@@ -61,8 +61,9 @@ Details: [docs/building.md](docs/building.md) · [docs/packaging.md](docs/packag
   there is nothing to serve or store forms yet.
 - **GNUstep:** dates display but cannot be edited until gnustep-gui gets an
   editable `NSDatePicker` ([#22](https://github.com/ashalkhakov/XFormsKit/issues/22)).
-  The Linux build ships a patched gnustep-gui
-  ([`patches/gnustep`](patches/gnustep), upstreaming in
+  The Linux build ships a patched gnustep-gui (the fixes live in the shared
+  `gnustep-patches` repository — see
+  [the notes](patches/gnustep/README.md) — upstreaming in
   [#23](https://github.com/ashalkhakov/XFormsKit/issues/23)).
 - **iOS:** one control per row in the iOS idiom, not the desktop layout; no
   designer; no App Store or TestFlight build.
@@ -119,7 +120,7 @@ flowchart LR
 - [Building](docs/building.md) and [packaging](docs/packaging.md)
 - [XSLTForms → XFormsKit class map](docs/XSLTForms-mapping.md) and [gap list](docs/XSLTForms-gaps.md)
 - [iOS port plan](docs/ios-port-plan.md) · [W3C suite as XCTests](docs/w3c-xctests.md) · [Submission authentication](docs/submission-auth.md)
-- [GNUstep notes and patches](patches/gnustep/README.md)
+- [GNUstep notes for Linux](patches/gnustep/README.md)
 
 ## License
 

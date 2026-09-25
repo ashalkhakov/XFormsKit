@@ -264,6 +264,13 @@ jobs:
       # gnustep layout does not treat as a library root. GNUstep.sh prepends
       # the roots it does know about to this.
       LD_LIBRARY_PATH: ${{ github.workspace }}/build/lib
+      # The fixes to GNUstep itself come from the shared gnustep-patches
+      # repository rather than from this tree; this pins which commit of it
+      # the stack is built with, and it is part of the cache key below so
+      # that changing a patch invalidates the cached prefix. It should name
+      # a commit rather than a branch: a branch builds whatever is on it
+      # that day and the cache will not notice.
+      GNUSTEP_PATCHES_REF: 5b7cea43e828d053d72078f6dd1ebeb8785d770c
     defaults:
       run:
         working-directory: ${{ github.workspace }}/source
@@ -351,7 +358,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ env.INSTALL_PATH }}
-          key: gnustep-v1-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh', 'source/patches/gnustep/*.patch') }}
+          key: gnustep-v2-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh') }}-${{ env.GNUSTEP_PATCHES_REF }}
 
       - name: Build GNUstep
         if: steps.gnustep-cache.outputs.cache-hit != 'true'
@@ -362,7 +369,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ${{ env.INSTALL_PATH }}
-          key: gnustep-v1-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh', 'source/patches/gnustep/*.patch') }}
+          key: gnustep-v2-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh') }}-${{ env.GNUSTEP_PATCHES_REF }}
 
       # One pass: the engine on XFDOM, which is now the only tree. There
       # used to be a second pass against gnustep-base's NSXML, with a

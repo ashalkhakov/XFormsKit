@@ -27,6 +27,11 @@ jobs:
       # See the note in ci.yml: the gnustep layout does not treat the prefix's
       # plain lib/ as a library root, but libobjc2 and libdispatch live there.
       LD_LIBRARY_PATH: ${{ github.workspace }}/build/lib
+      # The commit of the shared gnustep-patches repository the stack is
+      # built with. It is part of the cache key below, which has to match
+      # ci.yml's exactly for a release to reuse the stack a push built --
+      # so this value has to match ci.yml's too.
+      GNUSTEP_PATCHES_REF: 5b7cea43e828d053d72078f6dd1ebeb8785d770c
     defaults:
       run:
         working-directory: ${{ env.SRC_PATH }}
@@ -72,7 +77,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ env.INSTALL_PATH }}
-          key: gnustep-v1-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh', 'source/patches/gnustep/*.patch') }}
+          key: gnustep-v2-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh') }}-${{ env.GNUSTEP_PATCHES_REF }}
 
       - name: Build GNUstep
         if: steps.gnustep-cache.outputs.cache-hit != 'true'

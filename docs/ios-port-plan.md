@@ -319,7 +319,8 @@ GNUstep has since been exercised, and Opal answered each of the questions
 that were open here:
 
 - **It builds, and the context is usable.** Opal compiles in CI with the
-  one patch in `patches/gnustep/` (`CGRectUnion` on an empty rect), and
+  one patch the shared `gnustep-patches` repository carries for it
+  (`CGRectUnion` on an empty rect), and
   `-[NSGraphicsContext CGContext]` hands back a context the renderer draws
   into; no offscreen-bitmap detour was needed.
 - **`CTFontCreateUIFontForLanguage` cannot be asked for a UI font.** Opal

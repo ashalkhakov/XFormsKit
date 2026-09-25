@@ -10,7 +10,7 @@
  *   V=obj/XFormsViewer.obj
  *   clang -c -g -fobjc-arc -fobjc-runtime=gnustep-2.2 `gnustep-config --objc-flags` \
  *       -I. -I../../Sources -I../../Sources/XFormsKit \
- *       -o /tmp/smoke.o ../../patches/gnustep/xfviewer-resize-smoke.m
+ *       -o /tmp/smoke.o Tests/xfviewer-resize-smoke.m
  *   mkdir -p /tmp/Smoke.app/Resources
  *   clang -o /tmp/Smoke.app/Smoke /tmp/smoke.o $V/XFFormDocument.m.o \
  *       $V/XFDocumentWindowController.m.o -rdynamic -fobjc-arc \
