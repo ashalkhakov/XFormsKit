@@ -43,10 +43,11 @@ is the useful thing a host can do today.
 
 Needs gnustep-base, gnustep-gui and a back end, gnustep-make, libs-corebase,
 Opal (CoreGraphics/CoreText for the SVG renderer) and
-[tools-xctest](https://github.com/gnustep/tools-xctest). Four patches in
-[`patches/gnustep/`](../patches/gnustep/) matter;
-`.github/scripts/dependencies.sh` builds the whole stack from source with them
-applied, which is the most reliable way to get a working prefix.
+[tools-xctest](https://github.com/gnustep/tools-xctest). A handful of fixes to
+GNUstep itself matter, and they live in the shared `gnustep-patches`
+repository; `.github/scripts/dependencies.sh` clones it and builds the whole
+stack from source with them applied, which is the most reliable way to get a
+working prefix.
 
     . $PREFIX/System/Library/Makefiles/GNUstep.sh
     make              # the framework

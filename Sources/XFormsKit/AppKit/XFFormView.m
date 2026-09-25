@@ -486,8 +486,9 @@ NSView *XFKeyViewOf(NSView *view)
     // which is walking an unretained snapshot of this view's subviews --
     // the box included. Freed now, it is messaged a few iterations later
     // (input.xhtml: pointer from one hint's badge to the other's). So the
-    // box outlives the event, the way retired widgets do; see the
-    // gnustep-gui patch in patches/gnustep for the walk itself.
+    // box outlives the event, the way retired widgets do; the walk itself
+    // is fixed by the gnustep-patches repository's
+    // libs-gui/tracking-walk-retains-subviews.
     [self performSelector:@selector(releaseRetiredViews:) withObject:@[ popup ] afterDelay:0];
 }
 
