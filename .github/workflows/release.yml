@@ -14,7 +14,13 @@ jobs:
   ############################ Linux AppImage ############################
   appimage:
     name: Linux AppImage
-    runs-on: ubuntu-latest
+    # Built on the oldest Ubuntu LTS still in support, not ubuntu-latest:
+    # an AppImage carries its own libraries but not glibc, so it runs only
+    # on a system at least as new as the one it was linked on. Built on a
+    # current runner it fails to start on that LTS, which is what
+    # appimage.github.io tests with (FreeCoreData's PR 9036 there). Raise
+    # this only when that release leaves support.
+    runs-on: ubuntu-22.04
     timeout-minutes: 120
     env:
       SRC_PATH: ${{ github.workspace }}/source
@@ -31,7 +37,7 @@ jobs:
       # built with. It is part of the cache key below, which has to match
       # ci.yml's exactly for a release to reuse the stack a push built --
       # so this value has to match ci.yml's too.
-      GNUSTEP_PATCHES_REF: 44b9f3d8b750c0c2c128a14718a265b83a9a797c
+      GNUSTEP_PATCHES_REF: 803b0dcb1c83b2044347379a9f08b47376319ea2
     defaults:
       run:
         working-directory: ${{ env.SRC_PATH }}
@@ -77,7 +83,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ env.INSTALL_PATH }}
-          key: gnustep-v2-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh') }}-${{ env.GNUSTEP_PATCHES_REF }}
+          key: gnustep-v3-ubuntu-22.04-${{ hashFiles('source/.github/scripts/dependencies.sh') }}-${{ env.GNUSTEP_PATCHES_REF }}
 
       - name: Build GNUstep
         if: steps.gnustep-cache.outputs.cache-hit != 'true'
@@ -104,7 +110,7 @@ jobs:
       - name: Smoke-test the AppImage
         run: |
           sudo apt-get -q -y install xvfb
-          image=$(ls XFormsKit-Linux-*.AppImage)
+          image=$(ls XFormsKit-*.AppImage)
           chmod +x "$image"
           # "" is the no-argument case: the launcher, which is what
           # opening the image does.
@@ -125,14 +131,14 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: XFormsKit-Linux-${{ env.APP_VERSION }}
-          path: ${{ env.SRC_PATH }}/XFormsKit-Linux-*.AppImage
+          name: XFormsKit-${{ env.APP_VERSION }}
+          path: ${{ env.SRC_PATH }}/XFormsKit-*.AppImage
 
       - name: Attach to the release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.SRC_PATH }}/XFormsKit-Linux-*.AppImage
+          files: ${{ env.SRC_PATH }}/XFormsKit-*.AppImage
 
   ############################ macOS ############################
   macos:

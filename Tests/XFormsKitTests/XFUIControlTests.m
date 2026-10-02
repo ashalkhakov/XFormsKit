@@ -2138,7 +2138,18 @@
     XCTAssertNotNil(box, @"the box was freed inside the event that hid it");
     XCTAssertNil([box superview], @"the box should have left the view");
 
-    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
+    // The release is a perform after a delay of 0: it comes on a later turn
+    // of the run loop, and what the timer let go of may sit in an
+    // autorelease pool until that pool drains. So the loop turns in short
+    // slices, each in a pool of its own, until the box is gone -- a fixed
+    // 50ms on a busy CI runner was sometimes not enough (macOS, 2026-10-02).
+    NSDate *deadline = [NSDate dateWithTimeIntervalSinceNow:2.0];
+    while (box != nil && [deadline timeIntervalSinceNow] > 0) {
+        @autoreleasepool {
+            [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode
+                                     beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.02]];
+        }
+    }
     XCTAssertNil(box, @"the box should be released once the event is over");
 }
 

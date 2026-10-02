@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <dispatch/dispatch.h>
 #import "XFSubmission.h"
+#import "XFRandom.h"
 #import "XFSubmissionTransport.h"
 #import "XFModel.h"
 #import "XFInstance.h"
@@ -329,7 +330,7 @@ static BOOL XFBoolAttr(XFXMLElement *el, NSString *name, BOOL fallback)
                         mediaType:(NSString **)outMediaType
 {
     NSString *boundary = [NSString stringWithFormat:@"XFormsKit-%08x%08x",
-                          arc4random(), arc4random()];
+                          XFRandomUInt32(), XFRandomUInt32()];
     NSMutableData *data = [NSMutableData data];
     NSMutableArray *leaves = [NSMutableArray array];
     [self collectLeaves:node into:leaves];

@@ -1,4 +1,5 @@
 #import "XFSubmissionTransport.h"
+#import "XFRandom.h"
 #if defined(__APPLE__)
 #import <CommonCrypto/CommonDigest.h>
 #else
@@ -476,7 +477,7 @@ static NSString * const XFHTTPTransportRunLoopMode = @"XFHTTPSubmissionTransport
 
 - (NSString *)makeCNonce
 {
-    return [NSString stringWithFormat:@"%08x%08x", arc4random(), arc4random()];
+    return [NSString stringWithFormat:@"%08x%08x", XFRandomUInt32(), XFRandomUInt32()];
 }
 
 - (XFSubmissionResponse *)performSingleRequest:(XFSubmissionRequest *)request

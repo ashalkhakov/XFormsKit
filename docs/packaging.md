@@ -3,7 +3,7 @@
 ## Artifacts
 
 Every push uploads unsigned builds to its Actions run, kept for 14 days: an
-`XFormsKit-Linux-<sha>` AppImage and an `XFormsKit-macOS-<sha>` with both apps.
+`XFormsKit-<sha>` AppImage and an `XFormsKit-macOS-<sha>` with both apps.
 
 `.github/workflows/release.yml` is the shipping one. It runs on a `v*` tag
 (and attaches the files to the GitHub release), or by hand for the artifacts
@@ -19,10 +19,10 @@ UDQuakeTools'; the differences are marked in the files. `AppRun` writes a
 GNUstep config pointing `GNUSTEP_SYSTEM_ROOT` and its siblings at wherever the
 image is mounted, since that path is not known until it runs.
 
-    ./XFormsKit-Linux-*.AppImage                   # the launcher: pick an app
-    ./XFormsKit-Linux-*.AppImage designer
-    ./XFormsKit-Linux-*.AppImage form.xhtml        # a file opens the viewer
-    ln -s XFormsKit-Linux-*.AppImage xformsdesigner && ./xformsdesigner
+    ./XFormsKit-*.AppImage                   # the launcher: pick an app
+    ./XFormsKit-*.AppImage designer
+    ./XFormsKit-*.AppImage form.xhtml        # a file opens the viewer
+    ln -s XFormsKit-*.AppImage xformsdesigner && ./xformsdesigner
 
 `AppRun` picks the app from the name it was invoked through, then from the
 first argument, and otherwise opens **XFormsLauncher** — one image, two apps,
