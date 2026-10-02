@@ -14,10 +14,38 @@
 
 @implementation XFDDocument
 
+/// The window's nib in this framework's bundle, not the host app's: compiled
+/// (.nib) by Xcode, the xib itself on GNUstep, which loads it through GSXib5.
+static NSString *XFDWindowNibPath(void)
+{
+    NSBundle *bundle = [NSBundle bundleForClass:[XFDWindowController class]];
+    return [bundle pathForResource:@"XFDDocumentWindow" ofType:@"nib"]
+        ?: [bundle pathForResource:@"XFDDocumentWindow" ofType:@"xib"];
+}
+
 - (void)makeWindowControllers
 {
-    [self addWindowController:
-        [[XFDWindowController alloc] initWithWindowNibName:@"XFDDocumentWindow"]];
+    NSString *path = XFDWindowNibPath();
+    if (path == nil) {
+        NSLog(@"XFormsDesignKit: XFDDocumentWindow is not in %@",
+              [[NSBundle bundleForClass:[XFDWindowController class]] bundlePath]);
+        return;
+    }
+    XFDWindowController *controller = [XFDWindowController alloc];
+    controller = [controller initWithWindowNibPath:path owner:controller];
+    [self addWindowController:controller];
+}
+
++ (NSMenuItem *)formMenuItem
+{
+    NSMenu *menu = [[NSMenu alloc] initWithTitle:@"Form"];
+    [menu addItemWithTitle:@"Insert Element" action:@selector(insertElement:) keyEquivalent:@""];
+    [menu addItemWithTitle:@"Delete Element" action:@selector(deleteElement:) keyEquivalent:@""];
+    [menu addItem:[NSMenuItem separatorItem]];
+    [menu addItemWithTitle:@"Reset Instance Data" action:@selector(resetInstances:) keyEquivalent:@""];
+    NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:@"Form" action:NULL keyEquivalent:@""];
+    [item setSubmenu:menu];
+    return item;
 }
 
 - (BOOL)adoptProcessorFromXML:(NSString *)xml error:(NSError **)error

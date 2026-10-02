@@ -224,6 +224,10 @@ jobs:
             # machine, which is what an embed phase is for
             test -d "$built/$app.app/Contents/Frameworks/XFormsKit.framework" \
               || { echo "::error::$app.app does not embed XFormsKit.framework"; exit 1; }
+            if [ "$app" = XFormsDesigner ]; then
+              test -d "$built/$app.app/Contents/Frameworks/XFormsDesignKit.framework" \
+                || { echo "::error::$app.app does not embed XFormsDesignKit.framework"; exit 1; }
+            fi
             ditto -c -k --keepParent "$built/$app.app" "$app-macOS-unsigned.zip"
           done
 

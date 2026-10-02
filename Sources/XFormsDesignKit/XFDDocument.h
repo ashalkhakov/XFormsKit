@@ -12,6 +12,11 @@
 
 @interface XFDDocument : NSDocument
 
+/// The Form menu -- Insert Element, Delete Element, Reset Instance Data --
+/// for an app that hosts the designer to put in its main menu: its items
+/// go to the key window's designer through the responder chain.
++ (NSMenuItem *)formMenuItem;
+
 /// The projection: rebuilt only by open / applySourceXML / resetPreview.
 @property (nonatomic, strong, readonly) XFProcessor *processor;
 /// The command layer bound to `processor` and this document's undo manager.

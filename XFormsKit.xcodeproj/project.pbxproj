@@ -243,6 +243,9 @@
 		MN0000010000000000000030 /* XFMobileAppTests.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000030 /* XFMobileAppTests.m */; };
 		MN0000010000000000000031 /* XFMobileForm.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000004 /* XFMobileForm.m */; };
 		MN0000010000000000000032 /* XFFormBrowserViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000003 /* XFFormBrowserViewController.m */; };
+		DK000000000000000000000A /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; };
+		DK000000000000000000000D /* XFormsDesignKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DK0000000000000000000002 /* XFormsDesignKit.framework */; };
+		DK000000000000000000000E /* XFormsDesignKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DK0000000000000000000002 /* XFormsDesignKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -281,6 +284,20 @@
 			remoteGlobalIDString = EE0000010000000000000001;
 			remoteInfo = XFormsKit;
 		};
+		DK000000000000000000000B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DD0000010000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE0000010000000000000001;
+			remoteInfo = XFormsKit;
+		};
+		DK000000000000000000000F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DD0000010000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DK0000000000000000000001;
+			remoteInfo = XFormsDesignKit;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -302,6 +319,7 @@
 			dstSubfolderSpec = 10;
 			files = (
 				EF0000020000000000000001 /* XFormsKit.framework in Embed Frameworks */,
+				DK000000000000000000000E /* XFormsDesignKit.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -594,6 +612,8 @@
 		MM0000010000000000000020 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		MM0000010000000000000021 /* XFormsMobile.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = XFormsMobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		MM0000010000000000000030 /* XFMobileAppTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFMobileAppTests.m; sourceTree = "<group>"; };
+		DK0000000000000000000002 /* XFormsDesignKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = XFormsDesignKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		DK0000000000000000000011 /* XFormsDesignKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFormsDesignKit.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -625,6 +645,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0000020000000000000040 /* XFormsKit.framework in Frameworks */,
+				DK000000000000000000000D /* XFormsDesignKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -641,6 +662,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				MN0000010000000000000010 /* XFormsKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DK0000000000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DK000000000000000000000A /* XFormsKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -666,6 +695,7 @@
 			isa = PBXGroup;
 			children = (
 				GG0000010000000000000005 /* XFormsKit */,
+				DK0000000000000000000009 /* XFormsDesignKit */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -689,6 +719,7 @@
 				BB00000100000000000000F7 /* XFormsViewer.app */,
 				MM0000010000000000000021 /* XFormsMobile.app */,
 				BB0000020000000000000030 /* XFormsDesigner.app */,
+				DK0000000000000000000002 /* XFormsDesignKit.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -969,48 +1000,9 @@
 			isa = PBXGroup;
 			children = (
 				BB0000020000000000000001 /* main.m */,
-				BB0000020000000000000011 /* XFDDocument.h */,
-				BB0000020000000000000002 /* XFDDocument.m */,
-				BB0000020000000000000012 /* XFDEditors.h */,
-				BB0000020000000000000003 /* XFDEditors.m */,
-				BB0000020000000000000013 /* XFDWindowController.h */,
-				BB0000020000000000000004 /* XFDWindowController.m */,
-				BB000002000000000000001B /* XFDXPathField.h */,
-				BB000002000000000000000B /* XFDXPathField.m */,
-				MM0000010000000000000060 /* XFDXPathTextStorage.m */,
-				MM0000010000000000000064 /* XFDExpressionField.m */,
-				MM0000010000000000000065 /* XFDExpressionField.h */,
-				MM0000010000000000000061 /* XFDXPathTextStorage.h */,
-				BB000002000000000000001C /* XFDRichTextField.h */,
-				BB000002000000000000000C /* XFDRichTextField.m */,
-				BB000002000000000000001D /* XFDIDRefField.h */,
-				BB000002000000000000000D /* XFDIDRefField.m */,
-				BB000002000000000000001E /* XFDDesignOverlay.h */,
-				BB000002000000000000000E /* XFDDesignOverlay.m */,
-				BB0000020000000000000050 /* XFDWindowController+Outline.m */,
-				BB0000020000000000000051 /* XFDWindowController+Inspector.m */,
-				BB0000020000000000000052 /* XFDWindowController+Preview.m */,
-				BB0000020000000000000053 /* XFDInspectorSpecs.m */,
-				BB0000020000000000000063 /* XFDInspectorSpecs.h */,
-				BB0000020000000000000054 /* XFDPalettePanel.m */,
-				BB0000020000000000000064 /* XFDPalettePanel.h */,
-				BB0000020000000000000055 /* XFDInstanceXMLEditor.m */,
-				BB0000020000000000000065 /* XFDInstanceXMLEditor.h */,
-				BB0000020000000000000056 /* XFDEventsPane.m */,
-				BB0000020000000000000066 /* XFDEventsPane.h */,
-				BB0000020000000000000057 /* XFDActionRowsPane.m */,
-				BB0000020000000000000067 /* XFDActionRowsPane.h */,
-				BB0000020000000000000069 /* XFDSubmissionTester.h */,
-				BB000002000000000000006A /* XFDEventsConsole.h */,
-				BB0000020000000000000059 /* XFDEventsConsole.m */,
-				BB0000020000000000000058 /* XFDSubmissionTester.m */,
-				BB0000020000000000000068 /* XFDWindowControllerPriv.h */,
 				BB0000020000000000000021 /* MainMenu.xib */,
-				BB0000020000000000000022 /* XFDDocumentWindow.xib */,
 				BB0000020000000000000023 /* XFormsDesigner-Info.plist */,
 				IC00000200000000000000F6 /* XFormsDesigner.icns */,
-				GG0000020000000000000002 /* ThirdParty/DMTabBar */,
-				GG0000020000000000000003 /* ThirdParty/JUInspectorView */,
 			);
 			path = XFormsDesigner;
 			sourceTree = "<group>";
@@ -1077,6 +1069,53 @@
 				MM0000010000000000000040 /* Samples */,
 			);
 			path = XFormsMobile;
+			sourceTree = "<group>";
+		};
+		DK0000000000000000000009 /* XFormsDesignKit */ = {
+			isa = PBXGroup;
+			children = (
+				DK0000000000000000000011 /* XFormsDesignKit.h */,
+				BB0000020000000000000011 /* XFDDocument.h */,
+				BB0000020000000000000002 /* XFDDocument.m */,
+				BB0000020000000000000012 /* XFDEditors.h */,
+				BB0000020000000000000003 /* XFDEditors.m */,
+				BB0000020000000000000013 /* XFDWindowController.h */,
+				BB0000020000000000000004 /* XFDWindowController.m */,
+				BB000002000000000000001B /* XFDXPathField.h */,
+				BB000002000000000000000B /* XFDXPathField.m */,
+				MM0000010000000000000060 /* XFDXPathTextStorage.m */,
+				MM0000010000000000000064 /* XFDExpressionField.m */,
+				MM0000010000000000000065 /* XFDExpressionField.h */,
+				MM0000010000000000000061 /* XFDXPathTextStorage.h */,
+				BB000002000000000000001C /* XFDRichTextField.h */,
+				BB000002000000000000000C /* XFDRichTextField.m */,
+				BB000002000000000000001D /* XFDIDRefField.h */,
+				BB000002000000000000000D /* XFDIDRefField.m */,
+				BB000002000000000000001E /* XFDDesignOverlay.h */,
+				BB000002000000000000000E /* XFDDesignOverlay.m */,
+				BB0000020000000000000050 /* XFDWindowController+Outline.m */,
+				BB0000020000000000000051 /* XFDWindowController+Inspector.m */,
+				BB0000020000000000000052 /* XFDWindowController+Preview.m */,
+				BB0000020000000000000053 /* XFDInspectorSpecs.m */,
+				BB0000020000000000000063 /* XFDInspectorSpecs.h */,
+				BB0000020000000000000054 /* XFDPalettePanel.m */,
+				BB0000020000000000000064 /* XFDPalettePanel.h */,
+				BB0000020000000000000055 /* XFDInstanceXMLEditor.m */,
+				BB0000020000000000000065 /* XFDInstanceXMLEditor.h */,
+				BB0000020000000000000056 /* XFDEventsPane.m */,
+				BB0000020000000000000066 /* XFDEventsPane.h */,
+				BB0000020000000000000057 /* XFDActionRowsPane.m */,
+				BB0000020000000000000067 /* XFDActionRowsPane.h */,
+				BB0000020000000000000069 /* XFDSubmissionTester.h */,
+				BB000002000000000000006A /* XFDEventsConsole.h */,
+				BB0000020000000000000059 /* XFDEventsConsole.m */,
+				BB0000020000000000000058 /* XFDSubmissionTester.m */,
+				BB0000020000000000000068 /* XFDWindowControllerPriv.h */,
+				BB0000020000000000000022 /* XFDDocumentWindow.xib */,
+				GG0000020000000000000002 /* ThirdParty/DMTabBar */,
+				GG0000020000000000000003 /* ThirdParty/JUInspectorView */,
+			);
+			path = XFormsDesignKit;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1225,6 +1264,7 @@
 			);
 			dependencies = (
 				DP0000020000000000000001 /* PBXTargetDependency */,
+				DK0000000000000000000010 /* PBXTargetDependency */,
 			);
 			name = XFormsDesigner;
 			productName = XFormsDesigner;
@@ -1267,6 +1307,24 @@
 			productReference = MM0000010000000000000021 /* XFormsMobile.app */;
 			productType = "com.apple.product-type.application";
 		};
+		DK0000000000000000000001 /* XFormsDesignKit */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DK0000000000000000000006 /* Build configuration list for PBXNativeTarget "XFormsDesignKit" */;
+			buildPhases = (
+				DK0000000000000000000003 /* Sources */,
+				DK0000000000000000000004 /* Frameworks */,
+				DK0000000000000000000005 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DK000000000000000000000C /* PBXTargetDependency */,
+			);
+			name = XFormsDesignKit;
+			productName = XFormsDesignKit;
+			productReference = DK0000000000000000000002 /* XFormsDesignKit.framework */;
+			productType = "com.apple.product-type.framework";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1300,6 +1358,7 @@
 				EE0000010000000000000001 /* XFormsKit */,
 				EE0000010000000000000002 /* XFormsKitTests */,
 				EE0000010000000000000003 /* XFormsViewer */,
+				DK0000000000000000000001 /* XFormsDesignKit */,
 				EE0000020000000000000001 /* XFormsDesigner */,
 				EE0000030000000000000001 /* XFW3CTests */,
 				EE0000040000000000000001 /* XFormsMobile */,
@@ -1339,6 +1398,13 @@
 			files = (
 				ICB0000200000000000000F6 /* XFormsDesigner.icns in Resources */,
 				AA0000020000000000000021 /* MainMenu.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DK0000000000000000000005 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 				AA0000020000000000000022 /* XFDDocumentWindow.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1495,6 +1561,34 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0000020000000000000001 /* main.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		SS0000030000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA0000030000000000000001 /* XFW3CTestCase.m in Sources */,
+				AA0000030000000000000002 /* XFW3CChapter03Tests.m in Sources */,
+				AA0000030000000000000003 /* XFW3CChapter04Tests.m in Sources */,
+				AA0000030000000000000004 /* XFW3CChapter05Tests.m in Sources */,
+				AA0000030000000000000005 /* XFW3CChapter06Tests.m in Sources */,
+				AA0000030000000000000007 /* XFW3CChapter07Tests.m in Sources */,
+				AA0000030000000000000008 /* XFW3CChapter08Tests.m in Sources */,
+				AA0000030000000000000009 /* XFW3CChapter09Tests.m in Sources */,
+				AA000003000000000000000A /* XFW3CChapter10Tests.m in Sources */,
+				AA000003000000000000000B /* XFW3CChapter11Tests.m in Sources */,
+				AA000003000000000000000C /* XFW3CChapter02Tests.m in Sources */,
+				AA000003000000000000000D /* XFW3CAppendixBTests.m in Sources */,
+				AA000003000000000000000E /* XFW3CAppendixGTests.m in Sources */,
+				AA000003000000000000000F /* XFW3CAppendixHTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DK0000000000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 				AA0000020000000000000002 /* XFDDocument.m in Sources */,
 				AA0000020000000000000003 /* XFDEditors.m in Sources */,
 				AA0000020000000000000004 /* XFDWindowController.m in Sources */,
@@ -1520,27 +1614,6 @@
 				AA0000020000000000000008 /* JUInspectorView.m in Sources */,
 				AA0000020000000000000009 /* JUInspectorViewContainer.m in Sources */,
 				AA000002000000000000000A /* JUInspectorViewHeader.m in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		SS0000030000000000000001 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				AA0000030000000000000001 /* XFW3CTestCase.m in Sources */,
-				AA0000030000000000000002 /* XFW3CChapter03Tests.m in Sources */,
-				AA0000030000000000000003 /* XFW3CChapter04Tests.m in Sources */,
-				AA0000030000000000000004 /* XFW3CChapter05Tests.m in Sources */,
-				AA0000030000000000000005 /* XFW3CChapter06Tests.m in Sources */,
-				AA0000030000000000000007 /* XFW3CChapter07Tests.m in Sources */,
-				AA0000030000000000000008 /* XFW3CChapter08Tests.m in Sources */,
-				AA0000030000000000000009 /* XFW3CChapter09Tests.m in Sources */,
-				AA000003000000000000000A /* XFW3CChapter10Tests.m in Sources */,
-				AA000003000000000000000B /* XFW3CChapter11Tests.m in Sources */,
-				AA000003000000000000000C /* XFW3CChapter02Tests.m in Sources */,
-				AA000003000000000000000D /* XFW3CAppendixBTests.m in Sources */,
-				AA000003000000000000000E /* XFW3CAppendixGTests.m in Sources */,
-				AA000003000000000000000F /* XFW3CAppendixHTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1571,6 +1644,16 @@
 			isa = PBXTargetDependency;
 			target = EE0000010000000000000001 /* XFormsKit */;
 			targetProxy = CC0000040000000000000001 /* PBXContainerItemProxy */;
+		};
+		DK000000000000000000000C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE0000010000000000000001 /* XFormsKit */;
+			targetProxy = DK000000000000000000000B /* PBXContainerItemProxy */;
+		};
+		DK0000000000000000000010 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DK0000000000000000000001 /* XFormsDesignKit */;
+			targetProxy = DK000000000000000000000F /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1727,7 +1810,7 @@
 					"$(SRCROOT)/Sources/XFormsKit",
 					"$(SRCROOT)/Sources/XFormsKit/XPath",
 					"$(SRCROOT)/Apps/XFormsMobile",
-					"$(SRCROOT)/Apps/XFormsDesigner",
+					"$(SRCROOT)/Sources/XFormsDesignKit",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1761,7 +1844,7 @@
 					"$(SRCROOT)/Sources/XFormsKit",
 					"$(SRCROOT)/Sources/XFormsKit/XPath",
 					"$(SRCROOT)/Apps/XFormsMobile",
-					"$(SRCROOT)/Apps/XFormsDesigner",
+					"$(SRCROOT)/Sources/XFormsDesignKit",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1830,9 +1913,9 @@
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/Sources",
 					"$(SRCROOT)/Sources/XFormsKit",
-					"$(SRCROOT)/Apps/XFormsDesigner",
-					"$(SRCROOT)/Apps/XFormsDesigner/ThirdParty/DMTabBar",
-					"$(SRCROOT)/Apps/XFormsDesigner/ThirdParty/JUInspectorView",
+					"$(SRCROOT)/Sources/XFormsDesignKit",
+					"$(SRCROOT)/Sources/XFormsDesignKit/ThirdParty/DMTabBar",
+					"$(SRCROOT)/Sources/XFormsDesignKit/ThirdParty/JUInspectorView",
 				);
 				INFOPLIST_FILE = "Apps/XFormsDesigner/XFormsDesigner-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1853,9 +1936,9 @@
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/Sources",
 					"$(SRCROOT)/Sources/XFormsKit",
-					"$(SRCROOT)/Apps/XFormsDesigner",
-					"$(SRCROOT)/Apps/XFormsDesigner/ThirdParty/DMTabBar",
-					"$(SRCROOT)/Apps/XFormsDesigner/ThirdParty/JUInspectorView",
+					"$(SRCROOT)/Sources/XFormsDesignKit",
+					"$(SRCROOT)/Sources/XFormsDesignKit/ThirdParty/DMTabBar",
+					"$(SRCROOT)/Sources/XFormsDesignKit/ThirdParty/JUInspectorView",
 				);
 				INFOPLIST_FILE = "Apps/XFormsDesigner/XFormsDesigner-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1882,7 +1965,7 @@
 					"$(SRCROOT)/Sources/XFormsKit",
 					"$(SRCROOT)/Sources/XFormsKit/XPath",
 					"$(SRCROOT)/Apps/XFormsMobile",
-					"$(SRCROOT)/Apps/XFormsDesigner",
+					"$(SRCROOT)/Sources/XFormsDesignKit",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1913,7 +1996,7 @@
 					"$(SRCROOT)/Sources/XFormsKit",
 					"$(SRCROOT)/Sources/XFormsKit/XPath",
 					"$(SRCROOT)/Apps/XFormsMobile",
-					"$(SRCROOT)/Apps/XFormsDesigner",
+					"$(SRCROOT)/Sources/XFormsDesignKit",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1941,7 +2024,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/Sources",
 					"$(SRCROOT)/Apps/XFormsMobile",
-					"$(SRCROOT)/Apps/XFormsDesigner",
+					"$(SRCROOT)/Sources/XFormsDesignKit",
 				);
 				INFOPLIST_FILE = Apps/XFormsMobile/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
@@ -1969,7 +2052,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(SRCROOT)/Sources",
 					"$(SRCROOT)/Apps/XFormsMobile",
-					"$(SRCROOT)/Apps/XFormsDesigner",
+					"$(SRCROOT)/Sources/XFormsDesignKit",
 				);
 				INFOPLIST_FILE = Apps/XFormsMobile/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
@@ -1983,6 +2066,74 @@
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		DK0000000000000000000007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 0.0.0;
+				DEFINES_MODULE = NO;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Sources",
+					"$(SRCROOT)/Sources/XFormsKit",
+					"$(SRCROOT)/Sources/XFormsDesignKit",
+					"$(SRCROOT)/Sources/XFormsDesignKit/ThirdParty/DMTabBar",
+					"$(SRCROOT)/Sources/XFormsDesignKit/ThirdParty/JUInspectorView",
+				);
+				INFOPLIST_KEY_NSHumanReadableCopyright = "LGPL-2.1";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MARKETING_VERSION = 0.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsDesignKit;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
+			};
+			name = Debug;
+		};
+		DK0000000000000000000008 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 0.0.0;
+				DEFINES_MODULE = NO;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Sources",
+					"$(SRCROOT)/Sources/XFormsKit",
+					"$(SRCROOT)/Sources/XFormsDesignKit",
+					"$(SRCROOT)/Sources/XFormsDesignKit/ThirdParty/DMTabBar",
+					"$(SRCROOT)/Sources/XFormsDesignKit/ThirdParty/JUInspectorView",
+				);
+				INFOPLIST_KEY_NSHumanReadableCopyright = "LGPL-2.1";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MARKETING_VERSION = 0.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsDesignKit;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = macosx;
 			};
 			name = Release;
 		};
@@ -2048,6 +2199,15 @@
 			buildConfigurations = (
 				XC0000040000000000000001 /* Debug */,
 				XC0000040000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DK0000000000000000000006 /* Build configuration list for PBXNativeTarget "XFormsDesignKit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DK0000000000000000000007 /* Debug */,
+				DK0000000000000000000008 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

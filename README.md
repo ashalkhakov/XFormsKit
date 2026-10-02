@@ -110,6 +110,7 @@ flowchart LR
 | `Sources/XFormsKit/` | Engine: processor, model, controls, actions, events, submission |
 | `Sources/XFormsKit/XPath/` · `DOM/` · `SVG/` · `RichText/` | Portable subsystems |
 | `Sources/XFormsKit/AppKit/` · `UIKit/` | The two front ends |
+| `Sources/XFormsDesignKit/` | The designer's editor as a framework, for the designer and other apps to host |
 | `Apps/` | Viewer, designer, iOS app, AppImage launcher |
 | `Tests/` · `TestSuite/` | Unit tests, W3C conformance suite |
 | `Samples/` | XSLTForms sample forms |

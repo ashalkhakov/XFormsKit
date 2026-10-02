@@ -53,6 +53,7 @@ working prefix.
     make              # the framework
     make check        # unit tests
     make w3ccheck     # W3C conformance suite
+    make designkit    # the designer's editor, XFormsDesignKit
     make apps         # viewer, designer and the AppImage launcher
 
 What a Linux setup should know: [patches/gnustep/README.md](../patches/gnustep/README.md).
