@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <dispatch/dispatch.h>
 #import "XFXPathPriv.h"
+#import "XFRandom.h"
 #import "XFModel.h"
 #import "XFProcessor.h"
 #import "XFInstance.h"
@@ -636,7 +637,8 @@ static XFXPathValue *XFEventValue(NSString *key, id v)
             }],
             @"random": [XFXPathFunction acceptContext:NO defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)ctx; (void)args; (void)err;
-                return [XFXPathValue number:(double)arc4random() / (double)UINT32_MAX];
+                // over 2^32, not UINT32_MAX: random() is in [0, 1), never 1
+                return [XFXPathValue number:(double)XFRandomUInt32() / 4294967296.0];
             }],
             @"property": [XFXPathFunction acceptContext:YES defaultTo:XFXPathFnDefaultNone body:^XFXPathValue *(XFExprContext *ctx, NSArray *args, NSError **err) {
                 (void)err;
