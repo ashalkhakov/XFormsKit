@@ -8,7 +8,7 @@
 # is the launcher, so opening the image asks which app you want. The viewer's
 # and the designer's own entries go in usr/share/applications, where a desktop
 # reading the mounted image (or an extracted copy) finds them, and each is
-# always reachable as `./XFormsKit-Linux-*.AppImage viewer|designer`.
+# always reachable as `./XFormsKit-*.AppImage viewer|designer`.
 set -euo pipefail
 workspace_dir=${1:-$(pwd)}
 appdir=${2:-AppDir}

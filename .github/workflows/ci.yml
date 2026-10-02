@@ -249,7 +249,13 @@ jobs:
   # on a cold start.
   gnustep:
     name: Ubuntu (GNUstep, clang, gnustep-2.0)
-    runs-on: ubuntu-latest
+    # Built on the oldest Ubuntu LTS still in support, not ubuntu-latest:
+    # an AppImage carries its own libraries but not glibc, so it runs only
+    # on a system at least as new as the one it was linked on. Built on a
+    # current runner it fails to start on that LTS, which is what
+    # appimage.github.io tests with (FreeCoreData's PR 9036 there). Raise
+    # this only when that release leaves support.
+    runs-on: ubuntu-22.04
     # The dependency build is the long pole; everything after it is minutes.
     timeout-minutes: 90
     env:
@@ -358,7 +364,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ env.INSTALL_PATH }}
-          key: gnustep-v2-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh') }}-${{ env.GNUSTEP_PATCHES_REF }}
+          key: gnustep-v3-ubuntu-22.04-${{ hashFiles('source/.github/scripts/dependencies.sh') }}-${{ env.GNUSTEP_PATCHES_REF }}
 
       - name: Build GNUstep
         if: steps.gnustep-cache.outputs.cache-hit != 'true'
@@ -369,7 +375,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ${{ env.INSTALL_PATH }}
-          key: gnustep-v2-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh') }}-${{ env.GNUSTEP_PATCHES_REF }}
+          key: gnustep-v3-ubuntu-22.04-${{ hashFiles('source/.github/scripts/dependencies.sh') }}-${{ env.GNUSTEP_PATCHES_REF }}
 
       # One pass: the engine on XFDOM, which is now the only tree. There
       # used to be a second pass against gnustep-base's NSXML, with a
@@ -419,7 +425,7 @@ jobs:
       # here rather than for whoever downloads it.
       - name: Smoke-test the AppImage
         run: |
-          image=$(ls XFormsKit-Linux-*.AppImage)
+          image=$(ls XFormsKit-*.AppImage)
           chmod +x "$image"
           # "" is the no-argument case: the launcher, which is what
           # opening the image does.
@@ -440,6 +446,6 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: XFormsKit-Linux-${{ github.sha }}
-          path: ${{ env.SRC_PATH }}/XFormsKit-Linux-*.AppImage
+          name: XFormsKit-${{ github.sha }}
+          path: ${{ env.SRC_PATH }}/XFormsKit-*.AppImage
           retention-days: 14
