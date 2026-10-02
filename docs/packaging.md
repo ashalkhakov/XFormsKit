@@ -46,7 +46,7 @@ What the image carries besides the apps:
 ## macOS: signed apps
 
 `XFormsViewer.app` and `XFormsDesigner.app`, each embedding its own
-`XFormsKit.framework`, signed inside-out (framework, then app) with a
+`XFormsKit.framework` (and the designer `XFormsDesignKit.framework`), signed inside-out (framework, then app) with a
 Developer ID and notarized. Signing needs `MACOS_CERTIFICATE` (base64 `.p12`),
 `MACOS_CERTIFICATE_PASSWORD` and `MACOS_SIGN_IDENTITY`; notarization also needs
 `NOTARY_APPLE_ID`, `NOTARY_TEAM_ID` and `NOTARY_PASSWORD`, all in the

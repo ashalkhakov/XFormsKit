@@ -2,8 +2,9 @@
 
 A native XForms 1.1 engine in Objective-C for macOS, iOS and Linux
 (GNUstep): it reads an XHTML+XForms document and runs it as a real native
-form. `Sources/XFormsKit/` is the engine, `Apps/` holds the viewer, designer,
-launcher and the mobile shell.
+form. `Sources/XFormsKit/` is the engine, `Sources/XFormsDesignKit/` the
+designer's editor as a framework that apps host (`XFormsDesignKit.h`),
+`Apps/` holds the viewer, designer, launcher and the mobile shell.
 
 ## GNUstep patches live elsewhere
 

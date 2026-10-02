@@ -29,6 +29,9 @@ mkdir -p AppDir/usr/local/bin
 # put the test bundles in the image, and nothing in it runs tests.
 make BUNDLE_NAME=
 make BUNDLE_NAME= install GNUSTEP_INSTALLATION_DOMAIN=SYSTEM
+# The designer's editor, which XFormsDesigner links.
+make -C Sources/XFormsDesignKit
+make -C Sources/XFormsDesignKit install GNUSTEP_INSTALLATION_DOMAIN=SYSTEM
 for app in XFormsViewer XFormsDesigner XFormsLauncher; do
     make -C "Apps/$app"
     make -C "Apps/$app" install GNUSTEP_INSTALLATION_DOMAIN=SYSTEM

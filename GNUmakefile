@@ -197,7 +197,7 @@ XFormsKitTests_OBJC_FILES = \
 	Tests/XFormsKitTests/XFRichSupportTests.m \
 	Tests/XFormsKitTests/XFSVGRenderTests.m \
 	Tests/XFormsKitTests/XFDXPathHighlightTests.m \
-	Apps/XFormsDesigner/XFDXPathTextStorage.m \
+	Sources/XFormsDesignKit/XFDXPathTextStorage.m \
 	Tests/XFormsKitTests/XFFormRowsTests.m \
 	Tests/XFormsKitTests/XFXPathTests.m \
 	Tests/XFormsKitTests/XFInstanceTests.m \
@@ -212,16 +212,16 @@ XFormsKitTests_OBJC_FILES = \
 	Tests/XFormsKitTests/XFTypeTests.m
 
 XFormsKitTests_RESOURCE_FILES = Tests/Fixtures/hello.xhtml
-# Apps/XFormsDesigner is on the path for XFDXPathHighlightTests, which
+# Sources/XFormsDesignKit is on the path for XFDXPathHighlightTests, which
 # drives the designer's XFDXPathTextStorage directly. The storage is
-# compiled into this bundle rather than linked from the app: the
-# designer is an executable, not a library, and the syntax
-# highlighting is worth testing without it.
+# compiled into this bundle rather than linked from XFormsDesignKit, which
+# is built after this bundle: the syntax highlighting is worth testing
+# without the rest of the designer.
 # AppKit/ is on this list for XFAppKitPriv.h: the widget tests reach into the
 # view layer's private interfaces -- the table adapter, for one -- which the
 # Xcode target's header search path already allowed and this did not.
 XFormsKitTests_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath \
-                              -ISources/XFormsKit/AppKit -IApps/XFormsDesigner
+                              -ISources/XFormsKit/AppKit -ISources/XFormsDesignKit
 XFormsKitTests_OBJCFLAGS += -fobjc-arc -Wall
 XFormsKitTests_BUNDLE_LIBS += -lXFormsKit -lXCTest
 XFormsKitTests_LIB_DIRS += -L./XFormsKit.framework/Versions/Current
@@ -274,7 +274,12 @@ check:: all
 viewer: all
 	$(MAKE) -C Apps/XFormsViewer
 
-designer: all
+# The designer's editor as a framework (Sources/XFormsDesignKit), which the
+# designer app and other apps that edit forms link.
+designkit: all
+	$(MAKE) -C Sources/XFormsDesignKit
+
+designer: designkit
 	$(MAKE) -C Apps/XFormsDesigner
 
 # The chooser the AppImage opens. GNUstep only: a Mac installs the two apps

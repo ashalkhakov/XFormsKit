@@ -209,10 +209,13 @@ jobs:
           # signature stale the moment the inner one is written. --deep would
           # do it in one call, but Apple deprecates it and it is the usual
           # reason notarization rejects a nested framework.
+          # Every framework the app embeds: the designer carries
+          # XFormsDesignKit as well as XFormsKit.
           for app in XFormsViewer XFormsDesigner; do
-            codesign --force --timestamp --options runtime \
-                     --sign "$IDENTITY" \
-                     "$built/$app.app/Contents/Frameworks/XFormsKit.framework"
+            for framework in "$built/$app.app/Contents/Frameworks/"*.framework; do
+              codesign --force --timestamp --options runtime \
+                       --sign "$IDENTITY" "$framework"
+            done
             codesign --force --timestamp --options runtime \
                      --sign "$IDENTITY" "$built/$app.app"
             codesign --verify --strict --verbose=2 "$built/$app.app"

@@ -1,7 +1,7 @@
 #
 # XFormsDesigner — document-based XHTML+XForms form designer
-# (the runner is Apps/XFormsViewer). The window layout lives in
-# XFDDocumentWindow.xib, loaded through GSXib5 on GNUstep.
+# (the runner is Apps/XFormsViewer). The editor is XFormsDesignKit
+# (Sources/XFormsDesignKit): this app is its main menu and main.m.
 #
 
 ifeq ($(GNUSTEP_MAKEFILES),)
@@ -19,51 +19,25 @@ APP_NAME = XFormsDesigner
 XFormsDesigner_LDFLAGS += -ldispatch
 # The app's own methods by name in a crash report (XFCrashReporter.h).
 XFormsDesigner_LDFLAGS += -rdynamic
-XFormsDesigner_OBJC_FILES = \
-	main.m \
-	XFDDocument.m \
-	XFDEditors.m \
-	XFDWindowController.m \
-	XFDWindowController+Outline.m \
-	XFDWindowController+Inspector.m \
-	XFDWindowController+Preview.m \
-	XFDInspectorSpecs.m \
-	XFDPalettePanel.m \
-	XFDInstanceXMLEditor.m \
-	XFDEventsPane.m \
-	XFDActionRowsPane.m \
-	XFDSubmissionTester.m \
-	XFDEventsConsole.m \
-	XFDXPathField.m \
-	XFDXPathTextStorage.m \
-	XFDExpressionField.m \
-	XFDRichTextField.m \
-	XFDIDRefField.m \
-	XFDDesignOverlay.m \
-	ThirdParty/DMTabBar/DMTabBar.m \
-	ThirdParty/DMTabBar/DMTabBarItem.m \
-	ThirdParty/JUInspectorView/JUInspectorBaseView.m \
-	ThirdParty/JUInspectorView/JUInspectorView.m \
-	ThirdParty/JUInspectorView/JUInspectorViewContainer.m \
-	ThirdParty/JUInspectorView/JUInspectorViewHeader.m
+XFormsDesigner_OBJC_FILES = main.m
 
 XFormsDesigner_RESOURCE_FILES = \
 	XFormsDesigner.png \
-	MainMenu.xib \
-	XFDDocumentWindow.xib
+	MainMenu.xib
 
 XFormsDesigner_MAIN_MODEL_FILE = MainMenu.xib
 
 XFormsDesigner_INCLUDE_DIRS = \
-	-I. \
 	-I../../Sources \
 	-I../../Sources/XFormsKit \
-	-IThirdParty/DMTabBar \
-	-IThirdParty/JUInspectorView
+	-I../../Sources/XFormsDesignKit \
+	-I../../Sources/XFormsDesignKit/ThirdParty/DMTabBar \
+	-I../../Sources/XFormsDesignKit/ThirdParty/JUInspectorView
 
 XFormsDesigner_OBJCFLAGS += -fobjc-arc -Wall
-XFormsDesigner_TOOL_LIBS += -lXFormsKit
-XFormsDesigner_LIB_DIRS += -L../../XFormsKit.framework/Versions/Current
+XFormsDesigner_TOOL_LIBS += -lXFormsDesignKit -lXFormsKit
+XFormsDesigner_LIB_DIRS += -L../../Sources/XFormsDesignKit/XFormsDesignKit.framework/Versions/Current \
+	-L../../XFormsKit.framework/Versions/Current
 
 -include GNUmakefile.preamble
 include $(GNUSTEP_MAKEFILES)/application.make
@@ -72,4 +46,4 @@ include $(GNUSTEP_MAKEFILES)/application.make
 after-all::
 	@dst="./$(APP_NAME).app/Resources"; \
 	mkdir -p "$$dst"; \
-	cp -f MainMenu.xib XFDDocumentWindow.xib "$$dst/"
+	cp -f MainMenu.xib "$$dst/"
