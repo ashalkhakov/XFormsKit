@@ -37,7 +37,7 @@ jobs:
       # built with. It is part of the cache key below, which has to match
       # ci.yml's exactly for a release to reuse the stack a push built --
       # so this value has to match ci.yml's too.
-      GNUSTEP_PATCHES_REF: 44b9f3d8b750c0c2c128a14718a265b83a9a797c
+      GNUSTEP_PATCHES_REF: 803b0dcb1c83b2044347379a9f08b47376319ea2
     defaults:
       run:
         working-directory: ${{ env.SRC_PATH }}
