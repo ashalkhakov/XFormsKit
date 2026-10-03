@@ -48,6 +48,12 @@
  *   XF_FILE2     a second sample to open after the first typing round, with
  *                the first window still up; the run then continues in it
  *   XF_CLOSE_FIRST  with XF_FILE2: close the first window once the second is up
+ *   XF_TAB       words, comma-separated, typed from the first editable field
+ *                on, each followed by Tab, as a person fills a form: each
+ *                field must then hold its own word, in order ("== tab
+ *                order ok"); a field skipped or filled twice fails the run
+ *                with exit status 3. XF_TAB=A,B,3,4 on a form of plain
+ *                inputs.
  *
  * Run over Samples/*.xhtml with MALLOC_PERTURB_ set, it is the quickest way
  * to see whether a gnustep-gui build has the patches in README.md section 3.
@@ -152,8 +158,41 @@ static NSTextField *firstEditableField(NSView *v)
         }
     }
 }
+/* XF_TAB: the words typed with Tab between them, then each field read. */
+- (void)tabThrough:(NSWindow *)w words:(NSArray<NSString *> *)words
+{
+    NSMutableArray *fields = [NSMutableArray array];
+    collectEditableFields([w contentView], fields);
+    [w makeFirstResponder:[fields firstObject]];
+    [fields removeAllObjects];
+    for (NSString *word in words) {
+        for (NSUInteger i = 0; i < [word length]; i++) {
+            [self keyDown:[word substringWithRange:NSMakeRange(i, 1)] inWindow:w];
+            [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
+        }
+        [self keyDown:@"\t" inWindow:w];
+        [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.3]];
+    }
+    collectEditableFields([w contentView], fields);
+    BOOL ok = [fields count] >= [words count];
+    for (NSUInteger i = 0; i < [words count] && i < [fields count]; i++) {
+        NSString *value = [fields[i] stringValue];
+        fprintf(stderr, "   field %lu '%s'\n", (unsigned long)i, [value UTF8String]);
+        ok = ok && [value isEqualToString:words[i]];
+    }
+    fprintf(stderr, "== tab order %s\n", ok ? "ok" : "wrong");
+    if (!ok) {
+        exit(3);
+    }
+}
 - (void)typeText
 {
+    if (getenv("XF_TAB")) {
+        NSWindow *w = [[[self.doc windowControllers] firstObject] window];
+        [self tabThrough:w words:[[NSString stringWithUTF8String:getenv("XF_TAB")] componentsSeparatedByString:@","]];
+        [self maximize];
+        return;
+    }
     if (getenv("XF_HOVER")) {
         NSWindow *w = [[[self.doc windowControllers] firstObject] window];
         fprintf(stderr, "== hovering\n");
