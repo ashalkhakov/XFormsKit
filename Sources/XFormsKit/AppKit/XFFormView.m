@@ -1281,6 +1281,16 @@ static NSRect XFWidgetRect(XFWidget *w)
         return;
     }
     NSView *fromView = XFKeyViewOf([self widgetForControl:from].view);
+    // The toolkit may have made the move itself: a field reused through
+    // the commit is still in the window, and gnustep-gui moves on from it
+    // once its action is sent. Moving again from `from` would make the
+    // field already being edited first responder anew, which ends its
+    // editing and passes the focus one field further on.
+    for (NSView *v in self.keyChain) {
+        if (v != fromView && [self isViewFocused:v]) {
+            return;
+        }
+    }
     NSInteger count = (NSInteger)self.keyChain.count;
     NSInteger at = fromView ? (NSInteger)[self.keyChain indexOfObject:fromView] : NSNotFound;
     if (at == NSNotFound) {
