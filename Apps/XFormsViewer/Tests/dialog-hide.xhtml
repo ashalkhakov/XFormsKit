@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Smoke fixture for issue #30: a dialog closed by a button inside it. The
+     viewer drops the dialog's panel, and with it the form view whose button
+     is being clicked, from inside that button's action. Run it through
+     xfviewer-resize-smoke.m with XF_CLICK=Open,Done,Open,Done.
+
+     Keep the dialog this bare, for the reason replace-all.xhtml gives. -->
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xf="http://www.w3.org/2002/xforms"
+      xmlns:ev="http://www.w3.org/2001/xml-events">
+  <head>
+    <title>xf:hide from inside the dialog</title>
+    <xf:model>
+      <xf:instance>
+        <data xmlns=""/>
+      </xf:instance>
+    </xf:model>
+  </head>
+  <body>
+    <xf:trigger>
+      <xf:label>Open</xf:label>
+      <xf:show dialog="dialog" ev:event="DOMActivate"/>
+    </xf:trigger>
+    <xf:dialog id="dialog">
+      <xf:trigger>
+        <xf:label>Done</xf:label>
+        <xf:hide dialog="dialog" ev:event="DOMActivate"/>
+      </xf:trigger>
+    </xf:dialog>
+  </body>
+</html>
