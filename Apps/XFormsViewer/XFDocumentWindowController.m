@@ -688,6 +688,12 @@ static BOOL XFAlertTakeAccessoryView(NSAlert *alert, NSView *accessory)
     }
     [self.dialogPanels removeObjectForKey:key];
     [self endSheetPanel:panel];
+    // dialogPanels was likely its last owner, and an xf:hide usually runs
+    // from a button inside the dialog: keep the panel, and the form view
+    // whose action this is, alive until the event is over (see rebuildForm)
+    [self performSelector:@selector(releaseRetiredViews:)
+               withObject:@[ panel ]
+               afterDelay:0];
 }
 
 - (void)endSheetPanel:(NSPanel *)panel
@@ -739,6 +745,15 @@ static BOOL XFAlertTakeAccessoryView(NSAlert *alert, NSView *accessory)
 - (void)rebuildForm
 {
     XFFormDocument *doc = [self formDocument];
+    // The old form view and dialogs stay alive until the event is over, as
+    // in rebuildInspector: a replace="all" submission rebuilds the form from
+    // inside the action of one of its own buttons or fields, and AppKit goes
+    // on using the sender after the action returns.
+    NSMutableArray *retired = [NSMutableArray array];
+    if (self.formView) {
+        [retired addObject:self.formView];
+    }
+    [retired addObjectsFromArray:[self.dialogPanels allValues]];
     // Detach through the scroll view, not -removeFromSuperview: GNUstep's
     // NSClipView keeps an unretained _documentView pointer and would later
     // message the freed view (use-after-free on the next setDocumentView:).
@@ -748,6 +763,11 @@ static BOOL XFAlertTakeAccessoryView(NSAlert *alert, NSView *accessory)
     }
     [self.dialogPanels removeAllObjects];
     self.formView = nil;
+    if (retired.count) {
+        [self performSelector:@selector(releaseRetiredViews:)
+                   withObject:retired
+                   afterDelay:0];
+    }
     if (doc.processor) {
         XFFormView *form = [[XFFormView alloc] initWithProcessor:doc.processor];
         __weak XFDocumentWindowController *weakSelf = self;
@@ -944,8 +964,9 @@ static BOOL XFAlertTakeAccessoryView(NSAlert *alert, NSView *accessory)
     [el addAttribute:[XFXMLNode attributeWithName:name stringValue:value]];
 }
 
-/// Held by the perform request until the run loop turns; see rebuildInspector.
-- (void)releaseRetiredInspectorViews:(NSArray *)retired
+/// Held by the perform request until the run loop turns; see rebuildInspector,
+/// rebuildForm and dismissDialog:.
+- (void)releaseRetiredViews:(NSArray *)retired
 {
     (void)retired;
 }
@@ -965,7 +986,7 @@ static BOOL XFAlertTakeAccessoryView(NSAlert *alert, NSView *accessory)
         [sub removeFromSuperview];
     }
     if (retired.count) {
-        [self performSelector:@selector(releaseRetiredInspectorViews:)
+        [self performSelector:@selector(releaseRetiredViews:)
                    withObject:retired
                    afterDelay:0];
     }

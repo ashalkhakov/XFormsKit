@@ -45,7 +45,7 @@ mkdir -p "$DEPS_PATH"
 # patch invalidates the cached prefix. A branch name builds whatever is on it
 # that day and the cache will not notice.
 GNUSTEP_PATCHES_URL=${GNUSTEP_PATCHES_URL:-https://github.com/ashalkhakov/gnustep-patches.git}
-GNUSTEP_PATCHES_REF=${GNUSTEP_PATCHES_REF:-803b0dcb1c83b2044347379a9f08b47376319ea2}
+GNUSTEP_PATCHES_REF=${GNUSTEP_PATCHES_REF:-d7eccc94b2eeb1811a226e36aeb662ba17b20c03}
 GNUSTEP_PATCHES_DIR="$DEPS_PATH/gnustep-patches"
 
 install_gnustep_patches() {
@@ -255,8 +255,12 @@ install_eau_theme() {
     echo "::group::Eau theme"
     cd "$DEPS_PATH"
     . "$GNUSTEP_SH"
-    git clone -q --depth 1 https://github.com/gershwin-desktop/gershwin-eau-theme.git Eau
+    # dev, not main: Gershwin merges only into dev. At a commit, the one
+    # gnustep-patches builds against, so that a change landing on dev cannot
+    # stop this build; it moves when that repository moves it.
+    git clone -q -b dev https://github.com/gershwin-desktop/gershwin-eau-theme.git Eau
     cd Eau
+    git checkout -q ${EAU_REF:-01be00b5216b0ad508f30d66fa0d6734f44052c2}
     # The theme uses blocks, and nothing in a theme bundle's link line pulls
     # the runtime in on its own. BlocksRuntime is only a separate library when
     # libdispatch built its own; ours is told to use libobjc's, so ask for it
