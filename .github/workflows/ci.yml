@@ -280,7 +280,7 @@ jobs:
       # that changing a patch invalidates the cached prefix. It should name
       # a commit rather than a branch: a branch builds whatever is on it
       # that day and the cache will not notice.
-      GNUSTEP_PATCHES_REF: 803b0dcb1c83b2044347379a9f08b47376319ea2
+      GNUSTEP_PATCHES_REF: d7eccc94b2eeb1811a226e36aeb662ba17b20c03
     defaults:
       run:
         working-directory: ${{ github.workspace }}/source

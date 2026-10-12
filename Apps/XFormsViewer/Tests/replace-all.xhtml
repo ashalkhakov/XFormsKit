@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Smoke fixture for issue #30: a submit whose submission replaces the
+     whole document, here with this same file. The viewer rebuilds its form
+     from inside the button's action, so the form view that holds the button
+     is dropped while -[NSControl mouseDown:] is still using the button. Run
+     it through xfviewer-resize-smoke.m with XF_CLICK=Submit,Submit (the two
+     buttons print different addresses: the form was rebuilt).
+
+     Keep it this bare. A control that the click's own refresh rebuilds hands
+     the form view to a deferred release, which keeps it alive past the event
+     and hides the bug: an xf:input's label did, and so did an xf:dialog. -->
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:xf="http://www.w3.org/2002/xforms">
+  <head>
+    <title>replace="all" from a button</title>
+    <xf:model>
+      <xf:instance>
+        <data xmlns=""/>
+      </xf:instance>
+      <xf:submission id="reload" method="get" serialization="none" replace="all"
+                     action="replace-all.xhtml"/>
+    </xf:model>
+  </head>
+  <body>
+    <xf:submit submission="reload"><xf:label>Submit</xf:label></xf:submit>
+  </body>
+</html>

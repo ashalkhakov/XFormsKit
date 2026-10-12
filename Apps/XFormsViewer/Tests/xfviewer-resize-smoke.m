@@ -15,7 +15,7 @@
  *   clang -o /tmp/Smoke.app/Smoke /tmp/smoke.o $V/XFFormDocument.m.o \
  *       $V/XFDocumentWindowController.m.o -rdynamic -fobjc-arc \
  *       -L../../XFormsKit.framework/Versions/Current `gnustep-config --gui-libs` \
- *       -lXFormsKit -ldispatch -lX11
+ *       -lXFormsKit -ldispatch -lX11 -lXtst
  *   printf '{ NSExecutable = "Smoke"; NSPrincipalClass = "NSApplication"; }\n' \
  *       > /tmp/Smoke.app/Resources/Info-gnustep.plist
  *
@@ -54,6 +54,17 @@
  *                order ok"); a field skipped or filled twice fails the run
  *                with exit status 3. XF_TAB=A,B,3,4 on a form of plain
  *                inputs.
+ *   XF_CLICK     button titles, comma-separated, clicked in order before
+ *                anything else; each is looked up afresh in every window
+ *                (a dialog is a sheet of its own), and a title not found
+ *                fails the run with exit status 4. The click is a real
+ *                one, through the X server (XTest, hence -lXtst and
+ *                libxtst-dev), so the button goes through
+ *                -[NSControl mouseDown:] and AppKit still holds it when its
+ *                action returns -- what Tests/replace-all.xhtml
+ *                (XF_CLICK=Submit,Submit) and Tests/dialog-hide.xhtml
+ *                (XF_CLICK=Open,Done,Open,Done) need, issue #30. Each click
+ *                prints the button's address: a new one means a rebuild.
  *
  * Run over Samples/*.xhtml with MALLOC_PERTURB_ set, it is the quickest way
  * to see whether a gnustep-gui build has the patches in README.md section 3.
@@ -63,6 +74,7 @@
 #import "XFDocumentWindowController.h"
 #import <XFormsKit/XFormsKit.h>
 #include <X11/Xlib.h>
+#include <X11/extensions/XTest.h>
 
 /* Real pointer motion through the X server, so GNUstep's tracking rects and
  * tool tips see MotionNotify / Enter / Leave the way they do under a person's
@@ -76,11 +88,25 @@ static void warp(int x, int y)
     XFlush(d);
 }
 
+/* A real left click at the pointer's position, through the X server. */
+static void click(void)
+{
+    Display *d = XOpenDisplay(NULL);
+    if (!d) return;
+    XTestFakeButtonEvent(d, 1, True, CurrentTime);
+    XTestFakeButtonEvent(d, 1, False, CurrentTime);
+    XFlush(d);
+    XCloseDisplay(d);
+}
+
 @interface Driver : NSObject
 @property (nonatomic, copy) NSString *path;
 @property (nonatomic, assign) double delay;
 @property (nonatomic, strong) XFFormDocument *doc;
 @property (nonatomic, assign) BOOL secondOpened;
+@property (nonatomic, assign) BOOL clicked;
+@property (nonatomic, assign) BOOL focusClicked;
+@property (nonatomic, strong) NSMutableArray<NSString *> *pendingClicks;
 @end
 
 @implementation Driver
@@ -158,6 +184,90 @@ static NSTextField *firstEditableField(NSView *v)
         }
     }
 }
+static NSButton *buttonTitled(NSView *v, NSString *title)
+{
+    if ([v isKindOfClass:[NSButton class]] && [[(NSButton *)v title] isEqualToString:title]
+        && ![v isHiddenOrHasHiddenAncestor]) {
+        return (NSButton *)v;
+    }
+    for (NSView *sub in [v subviews]) {
+        NSButton *b = buttonTitled(sub, title);
+        if (b) return b;
+    }
+    return nil;
+}
+/* XF_CLICK: a real click in the middle of each button, through the X
+ * server, so the button goes through -[NSControl mouseDown:] as under a
+ * person's mouse and AppKit still holds it when its action returns. Nothing
+ * here keeps the button. One click per timer, and the timer runs in the
+ * modal mode as well: GNUstep's -beginSheet: is a modal loop, so the click
+ * that brings up a dialog does not return until the dialog is gone, and the
+ * next click has to come from inside that loop. */
+- (void)scheduleNextClick
+{
+    NSTimer *t = [NSTimer timerWithTimeInterval:0.5 target:self
+        selector:@selector(clickNext:) userInfo:nil repeats:NO];
+    for (NSString *mode in @[ NSDefaultRunLoopMode, NSModalPanelRunLoopMode,
+                              NSEventTrackingRunLoopMode ]) {
+        [[NSRunLoop currentRunLoop] addTimer:t forMode:mode];
+    }
+}
+- (void)clickNext:(NSTimer *)timer
+{
+    (void)timer;
+    if (self.pendingClicks.count == 0) {
+        fprintf(stderr, "== clicked\n");
+        [self typeText];
+        return;
+    }
+    NSString *title = self.pendingClicks.firstObject;
+    [self.pendingClicks removeObjectAtIndex:0];
+    NSWindow *win = nil;
+    NSPoint at = NSZeroPoint;
+    @autoreleasepool {
+        NSButton *b = nil;
+        for (NSWindow *w in [NSApp windows]) {
+            if (![w isVisible]) continue;
+            b = buttonTitled([w contentView], title);
+            if (b) { win = w; break; }
+        }
+        if (b == nil) {
+            fprintf(stderr, "== no button '%s'\n", [title UTF8String]);
+            exit(4);
+        }
+        NSRect r = [b convertRect:[b bounds] toView:nil];
+        at = [win convertBaseToScreen:NSMakePoint(NSMidX(r), NSMidY(r))];
+        // the address tells a rebuilt button from the one clicked before
+        fprintf(stderr, "== clicking '%s' %p\n", [title UTF8String], (__bridge void *)b);
+    }
+    if (!self.focusClicked) {
+        // No window manager under Xvfb to hand the window the focus, so the
+        // first click only gives it the focus and never reaches the button.
+        // Spend it on a bare part of the form, where it presses nothing.
+        self.focusClicked = YES;
+        NSView *frame = [[win contentView] superview];
+        NSRect f = [[win contentView] frame];
+        for (int gy = 1; gy < 20; gy++) {
+            for (int gx = 1; gx < 20; gx++) {
+                NSPoint p = NSMakePoint(NSMinX(f) + NSWidth(f) * gx / 20,
+                                        NSMinY(f) + NSHeight(f) * gy / 20);
+                if ([[frame hitTest:p] isKindOfClass:[XFFormView class]]) {
+                    NSPoint q = [win convertBaseToScreen:p];
+                    warp((int)q.x, (int)([[NSScreen mainScreen] frame].size.height - q.y));
+                    click();
+                    gy = gx = 20;
+                }
+            }
+        }
+        [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.3]];
+    }
+    win = nil;
+    // scheduled first: this click may not return before the next is due
+    [self scheduleNextClick];
+    CGFloat screenH = [[NSScreen mainScreen] frame].size.height;
+    warp((int)at.x, (int)(screenH - at.y));
+    click();
+}
 /* XF_TAB: the words typed with Tab between them, then each field read. */
 - (void)tabThrough:(NSWindow *)w words:(NSArray<NSString *> *)words
 {
@@ -187,6 +297,13 @@ static NSTextField *firstEditableField(NSView *v)
 }
 - (void)typeText
 {
+    if (getenv("XF_CLICK") && !self.clicked) {
+        self.clicked = YES;
+        self.pendingClicks = [[[NSString stringWithUTF8String:getenv("XF_CLICK")]
+            componentsSeparatedByString:@","] mutableCopy];
+        [self scheduleNextClick];
+        return;
+    }
     if (getenv("XF_TAB")) {
         NSWindow *w = [[[self.doc windowControllers] firstObject] window];
         [self tabThrough:w words:[[NSString stringWithUTF8String:getenv("XF_TAB")] componentsSeparatedByString:@","]];
