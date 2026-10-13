@@ -20,7 +20,8 @@ XFormsViewer_LDFLAGS += -rdynamic
 XFormsViewer_OBJC_FILES = \
 	main.m \
 	XFFormDocument.m \
-	XFDocumentWindowController.m
+	XFDocumentWindowController.m \
+	../Shared/XFUpdater.m
 
 XFormsViewer_RESOURCE_FILES = \
 	XFormsViewer.png \
@@ -78,6 +79,7 @@ XFormsViewer_RESOURCE_FILES = \
 
 XFormsViewer_INCLUDE_DIRS = \
 	-I. \
+	-I../Shared \
 	-I../../Sources \
 	-I../../Sources/XFormsKit \
 	-I../../Sources/XFormsKit/XPath

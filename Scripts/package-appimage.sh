@@ -3,6 +3,7 @@
 # Scripts/package-appimage.sh, which came from UDQuakeTools'.
 #
 #   APP_VERSION=1.2.3 ./Scripts/package-appimage.sh
+#   LDAI_UPDATE_INFORMATION='gh-releases-zsync|...' ...   (and a .zsync beside it)
 set -euo pipefail
 
 WORKSPACE_DIR=$(pwd)
@@ -34,6 +35,9 @@ export NO_VALIDATE=1
 # .symtab, which linuxdeploy's strip would remove. Costs some tens of MB.
 export NO_STRIP="${NO_STRIP:-1}"
 export LDAI_RUNTIME_FILE="${LDAI_RUNTIME_FILE:-/tmp/appimage-runtime/runtime-$(uname -m)}"
+# LDAI_UPDATE_INFORMATION, when set (gnustep-release-actions'
+# appimage-update-info, for a release), is embedded, and a .zsync written
+# beside the image.
 
 LD_LIBRARY_PATH="${LOCAL_PREFIX}/System/Library/Libraries:${LOCAL_PREFIX}/Local/Library/Libraries:${WORKSPACE_DIR}/AppDir/usr/lib:${LD_LIBRARY_PATH:-}" \
     "$LINUXDEPLOY" --appdir AppDir "${ELF_ARGS[@]}" --output appimage

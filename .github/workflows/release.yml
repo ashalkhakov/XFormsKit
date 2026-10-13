@@ -1,14 +1,28 @@
 name: Release
 
-# Tag a version to publish, or run it by hand to get the artifacts without
-# creating a release.
+# Tag a version to publish, or run it by hand: with a tag, it builds that
+# tag and attaches to its release; with none, it builds the branch, as
+# artifacts only. A tag with a - in it (v0.2.0-rc1) makes a pre-release.
+#
+# Signing, notarizing, the Sparkle appcasts, the GNUstep stack, linuxdeploy
+# and the AppImage's update information are gnustep-release-actions', the
+# same in every app's release; the build, the packaging and the smoke tests
+# are this repository's own.
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'A v* tag to build and attach to its release (empty: this branch, artifacts only)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
+
+env:
+  TAG: ${{ inputs.tag || (github.ref_type == 'tag' && github.ref_name) || '' }}
 
 jobs:
   ############################ Linux AppImage ############################
@@ -22,86 +36,68 @@ jobs:
     # this only when that release leaves support.
     runs-on: ubuntu-22.04
     timeout-minutes: 120
-    env:
-      SRC_PATH: ${{ github.workspace }}/source
-      DEPS_PATH: ${{ github.workspace }}/dependencies
-      INSTALL_PATH: ${{ github.workspace }}/build
-      CC: clang
-      CXX: clang++
-      LIBRARY_COMBO: ng-gnu-gnu
-      RUNTIME_VERSION: gnustep-2.0
-      # See the note in ci.yml: the gnustep layout does not treat the prefix's
-      # plain lib/ as a library root, but libobjc2 and libdispatch live there.
-      LD_LIBRARY_PATH: ${{ github.workspace }}/build/lib
-      # The commit of the shared gnustep-patches repository the stack is
-      # built with. It is part of the cache key below, which has to match
-      # ci.yml's exactly for a release to reuse the stack a push built --
-      # so this value has to match ci.yml's too.
-      GNUSTEP_PATCHES_REF: d7eccc94b2eeb1811a226e36aeb662ba17b20c03
+    # The stack's settings (PREFIX, COMPONENTS, the toolchain) are
+    # gnustep-release-actions/gnustep-stack's; its commits are
+    # .github/pins.env's, which CI builds from too.
     defaults:
       run:
-        working-directory: ${{ env.SRC_PATH }}
+        working-directory: ${{ github.workspace }}/source
 
     steps:
       - uses: actions/checkout@v4
         with:
-          path: ${{ env.SRC_PATH }}
+          ref: ${{ env.TAG || github.ref }}
+          path: source
+
+      - name: Pins
+        uses: ashalkhakov/gnustep-release-actions/pins@v1
+        with:
+          file: source/.github/pins.env
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ashalkhakov/gnustep-patches
+          ref: ${{ env.GNUSTEP_PATCHES_REF }}
+          path: gnustep-patches
 
       - name: Version
         run: |
-          if [ "${GITHUB_REF#refs/tags/}" != "$GITHUB_REF" ]; then
-            echo "APP_VERSION=${GITHUB_REF#refs/tags/}" >> "$GITHUB_ENV"
+          if [ -n "$TAG" ]; then
+            echo "APP_VERSION=$TAG" >> "$GITHUB_ENV"
           else
             echo "APP_VERSION=0.0.0-build${{ github.run_number }}" >> "$GITHUB_ENV"
           fi
 
-      - name: Install packages
-        run: |
-          ./.github/scripts/apt-update.sh
-          sudo apt-get -q -y install \
-            pkg-config libgnutls28-dev libffi-dev libicu-dev libxml2-dev libxslt1-dev \
-            libssl-dev libavahi-client-dev zlib1g-dev gnutls-bin libcurl4-gnutls-dev \
-            libgmp-dev libcairo2-dev libjpeg-dev libtiff-dev libpng-dev libicns-dev \
-            libpthread-workqueue-dev \
-            libxt-dev libxmu-dev libxft-dev libxrandr-dev libxfixes-dev libxcursor-dev \
-            libfreetype6-dev libfontconfig1-dev liblcms2-dev libxrender-dev \
-            fuse libfuse2 desktop-file-utils \
-            fonts-dejavu fonts-liberation
-          if [ -x /usr/bin/ld.gold ]; then
-            sudo update-alternatives --install /usr/bin/ld ld /usr/bin/ld.gold 10
-          else
-            sudo apt-get -q -y install lld
-            sudo update-alternatives --install /usr/bin/ld ld /usr/bin/ld.lld 10
-          fi
-
-      # The same stack, the same script and the same cache key as CI, so a
-      # release does not rebuild what a push already built. Restore only: this
-      # job installs the framework and both apps INTO the prefix in order to
-      # package it, so it must never write that result back to the cache.
-      - name: Restore GNUstep
-        id: gnustep-cache
-        uses: actions/cache/restore@v4
+      # The patched stack, cached by its recipe. Beyond the default: the SVG
+      # renderer draws through Opal (and Opal through libs-corebase), as
+      # .github/scripts/dependencies.sh builds them for CI. No tools-xctest:
+      # nothing in the image runs tests.
+      - name: GNUstep
+        uses: ashalkhakov/gnustep-release-actions/gnustep-stack@v1
         with:
-          path: ${{ env.INSTALL_PATH }}
-          key: gnustep-v3-ubuntu-22.04-${{ hashFiles('source/.github/scripts/dependencies.sh') }}-${{ env.GNUSTEP_PATCHES_REF }}
+          patches: ${{ github.workspace }}/gnustep-patches
+          components: libobjc2 libdispatch tools-make libs-base libs-gui libs-back libs-corebase libs-opal eau
 
-      - name: Build GNUstep
-        if: steps.gnustep-cache.outputs.cache-hit != 'true'
-        run: ./.github/scripts/dependencies.sh
-
-      - name: Fetch linuxdeploy and the AppImage runtime
-        run: ./Scripts/install-linuxdeploy.sh
+      - name: linuxdeploy and the AppImage runtime
+        uses: ashalkhakov/gnustep-release-actions/appimage-tools@v1
 
       - name: Stamp the version
         run: ./Scripts/stamp-version.sh "$APP_VERSION"
 
       - name: Assemble AppDir
-        run: GNUSTEP_PREFIX="$INSTALL_PATH" ./Scripts/prepare-appdir.sh
+        run: GNUSTEP_PREFIX="$PREFIX" ./Scripts/prepare-appdir.sh
+
+      # A release's image updates itself from the newest release (through
+      # AppImageUpdate, Gear Lever and the like), by the .zsync attached
+      # beside it; a pre-release's does not.
+      - name: Update information
+        uses: ashalkhakov/gnustep-release-actions/appimage-update-info@v1
+        with:
+          tag: ${{ env.TAG }}
+          zsync: XFormsKit-*x86_64.AppImage.zsync
 
       - name: Package the AppImage
-        env:
-          LDAI_RUNTIME_FILE: /tmp/appimage-runtime/runtime-x86_64
-        run: GNUSTEP_PREFIX="$INSTALL_PATH" ./Scripts/package-appimage.sh
+        run: GNUSTEP_PREFIX="$PREFIX" ./Scripts/package-appimage.sh
 
       # Proof it starts. Both apps are GUI-only, so they are launched against a
       # virtual display and asked to open a sample; a bundle that cannot find
@@ -132,19 +128,26 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: XFormsKit-${{ env.APP_VERSION }}
-          path: ${{ env.SRC_PATH }}/XFormsKit-*.AppImage
+          path: |
+            ${{ github.workspace }}/source/XFormsKit-*.AppImage
+            ${{ github.workspace }}/source/XFormsKit-*.AppImage.zsync
+          if-no-files-found: error
 
       - name: Attach to the release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: env.TAG != ''
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.SRC_PATH }}/XFormsKit-*.AppImage
+          tag_name: ${{ env.TAG }}
+          prerelease: ${{ contains(env.TAG, '-') }}
+          files: |
+            ${{ github.workspace }}/source/XFormsKit-*.AppImage
+            ${{ github.workspace }}/source/XFormsKit-*.AppImage.zsync
 
   ############################ macOS ############################
   macos:
     name: macOS (signed)
     runs-on: macos-15
-    timeout-minutes: 45
+    timeout-minutes: 60
     # The signing and notarisation secrets live in this environment, and an
     # environment's secrets are only readable by a job that names it: without
     # this line every one of them resolves to the empty string and the job
@@ -152,11 +155,13 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG || github.ref }}
 
       - name: Version
         run: |
-          if [ "${GITHUB_REF#refs/tags/}" != "$GITHUB_REF" ]; then
-            echo "APP_VERSION=${GITHUB_REF#refs/tags/}" >> "$GITHUB_ENV"
+          if [ -n "$TAG" ]; then
+            echo "APP_VERSION=$TAG" >> "$GITHUB_ENV"
           else
             echo "APP_VERSION=0.0.0-build${{ github.run_number }}" >> "$GITHUB_ENV"
           fi
@@ -164,86 +169,63 @@ jobs:
       - name: Stamp the version
         run: ./Scripts/stamp-version.sh "$APP_VERSION"
 
+      # Each app embeds its frameworks: XFormsKit, the designer
+      # XFormsDesignKit as well, and both Sparkle.
       - name: Build
         run: |
           for scheme in XFormsKit XFormsViewer XFormsDesigner; do
             xcodebuild -project XFormsKit.xcodeproj -scheme "$scheme" \
               -destination 'platform=macOS' -configuration Release build
           done
-
-      # Signing is skipped, loudly, when the certificate secrets are absent, so
-      # a fork or a dry run still produces artifacts -- unsigned, and named so.
-      - name: Sign
-        id: sign
-        env:
-          CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
-          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-          IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
-        run: |
           built=$(xcodebuild -project XFormsKit.xcodeproj -scheme XFormsViewer \
                     -destination 'platform=macOS' -configuration Release \
                     -showBuildSettings 2>/dev/null \
                   | awk -F' = ' '/ BUILT_PRODUCTS_DIR/{print $2; exit}')
           echo "BUILT=$built" >> "$GITHUB_ENV"
-          if [ -z "$CERTIFICATE" ] || [ -z "$IDENTITY" ]; then
-            echo "::warning::MACOS_CERTIFICATE or MACOS_SIGN_IDENTITY not set; shipping unsigned"
-            echo "signed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          keychain=$RUNNER_TEMP/signing.keychain-db
-          password=$(uuidgen)
-          security create-keychain -p "$password" "$keychain"
-          security set-keychain-settings -lut 21600 "$keychain"
-          security unlock-keychain -p "$password" "$keychain"
-          echo "$CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/cert.p12"
-          security import "$RUNNER_TEMP/cert.p12" -k "$keychain" \
-            -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: \
-            -s -k "$password" "$keychain" > /dev/null
-          security list-keychain -d user -s "$keychain" login.keychain-db
-          rm -f "$RUNNER_TEMP/cert.p12"
-
-          # --options runtime is what notarization requires. Signed
-          # inside out, the way RDLKit does it: each app embeds its own copy
-          # of the framework, and signing the app first would leave the outer
-          # signature stale the moment the inner one is written. --deep would
-          # do it in one call, but Apple deprecates it and it is the usual
-          # reason notarization rejects a nested framework.
-          # Every framework the app embeds: the designer carries
-          # XFormsDesignKit as well as XFormsKit.
           for app in XFormsViewer XFormsDesigner; do
-            for framework in "$built/$app.app/Contents/Frameworks/"*.framework; do
-              codesign --force --timestamp --options runtime \
-                       --sign "$IDENTITY" "$framework"
-            done
-            codesign --force --timestamp --options runtime \
-                     --sign "$IDENTITY" "$built/$app.app"
-            codesign --verify --strict --verbose=2 "$built/$app.app"
+            test -d "$built/$app.app/Contents/Frameworks/Sparkle.framework" \
+              || { echo "::error::$app.app does not embed Sparkle.framework"; exit 1; }
           done
-          echo "signed=true" >> "$GITHUB_OUTPUT"
 
-      - name: Notarize
+      # Signing, notarizing and the appcasts are gnustep-release-actions'.
+      # Each step skips itself, saying so, when its secrets are absent (a
+      # fork, a dry run): the build is then unsigned, and named so. Both
+      # apps are signed with the one identity the first chose.
+      - name: Sign the viewer
+        id: sign
+        uses: ashalkhakov/gnustep-release-actions/macos-sign@v1
+        with:
+          app: ${{ env.BUILT }}/XFormsViewer.app
+          certificate: ${{ secrets.MACOS_CERTIFICATE }}
+          certificate-password: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          identity: ${{ secrets.MACOS_SIGN_IDENTITY }}
+
+      - name: Sign the designer
         if: steps.sign.outputs.signed == 'true'
-        env:
-          NOTARY_APPLE_ID: ${{ secrets.NOTARY_APPLE_ID }}
-          NOTARY_TEAM_ID: ${{ secrets.NOTARY_TEAM_ID }}
-          NOTARY_PASSWORD: ${{ secrets.NOTARY_PASSWORD }}
-        run: |
-          # Checked here rather than in `if:`, where a step's own env block is
-          # not reliably visible to its own condition -- the step would be
-          # skipped whatever the secrets said, and a signed-but-unnotarized app
-          # that Gatekeeper still refuses would ship from a green run.
-          if [ -z "$NOTARY_APPLE_ID" ] || [ -z "$NOTARY_TEAM_ID" ] || [ -z "$NOTARY_PASSWORD" ]; then
-            echo "::warning::NOTARY_* secrets not set; signed but not notarized"
-            exit 0
-          fi
-          for app in XFormsViewer XFormsDesigner; do
-            ditto -c -k --keepParent "$BUILT/$app.app" "$RUNNER_TEMP/$app-notarize.zip"
-            xcrun notarytool submit "$RUNNER_TEMP/$app-notarize.zip" \
-              --apple-id "$NOTARY_APPLE_ID" --team-id "$NOTARY_TEAM_ID" \
-              --password "$NOTARY_PASSWORD" --wait
-            xcrun stapler staple "$BUILT/$app.app"
-          done
+        uses: ashalkhakov/gnustep-release-actions/macos-sign@v1
+        with:
+          app: ${{ env.BUILT }}/XFormsDesigner.app
+          certificate: ${{ secrets.MACOS_CERTIFICATE }}
+          certificate-password: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          identity: ${{ secrets.MACOS_SIGN_IDENTITY }}
+
+      - name: Notarize the viewer
+        if: steps.sign.outputs.signed == 'true'
+        uses: ashalkhakov/gnustep-release-actions/macos-notarize@v1
+        with:
+          app: ${{ env.BUILT }}/XFormsViewer.app
+          apple-id: ${{ secrets.NOTARY_APPLE_ID }}
+          team-id: ${{ secrets.NOTARY_TEAM_ID }}
+          password: ${{ secrets.NOTARY_PASSWORD }}
+
+      - name: Notarize the designer
+        if: steps.sign.outputs.signed == 'true'
+        uses: ashalkhakov/gnustep-release-actions/macos-notarize@v1
+        with:
+          app: ${{ env.BUILT }}/XFormsDesigner.app
+          apple-id: ${{ secrets.NOTARY_APPLE_ID }}
+          team-id: ${{ secrets.NOTARY_TEAM_ID }}
+          password: ${{ secrets.NOTARY_PASSWORD }}
 
       - name: Package
         run: |
@@ -254,17 +236,43 @@ jobs:
               "$app-macOS-${APP_VERSION}${suffix}.zip"
           done
 
+      # One appcast per app, which its Sparkle reads (SUFeedURL in
+      # Apps/<App>/<App>-Info.plist: the newest release's
+      # appcast-<App>.xml), signed with the key whose public half is
+      # SUPublicEDKey; for a release only.
+      - name: Appcast for the viewer
+        if: steps.sign.outputs.signed == 'true'
+        uses: ashalkhakov/gnustep-release-actions/sparkle-appcast@v1
+        with:
+          archive: ${{ github.workspace }}/XFormsViewer-macOS-${{ env.APP_VERSION }}.zip
+          output: ${{ github.workspace }}/appcast-XFormsViewer.xml
+          tag: ${{ env.TAG }}
+          private-key: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+
+      - name: Appcast for the designer
+        if: steps.sign.outputs.signed == 'true'
+        uses: ashalkhakov/gnustep-release-actions/sparkle-appcast@v1
+        with:
+          archive: ${{ github.workspace }}/XFormsDesigner-macOS-${{ env.APP_VERSION }}.zip
+          output: ${{ github.workspace }}/appcast-XFormsDesigner.xml
+          tag: ${{ env.TAG }}
+          private-key: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+
       - uses: actions/upload-artifact@v4
         with:
           name: XFormsKit-macOS-${{ env.APP_VERSION }}
           path: |
-            XFormsViewer-macOS-*.zip
-            XFormsDesigner-macOS-*.zip
+            ${{ github.workspace }}/XFormsViewer-macOS-*.zip
+            ${{ github.workspace }}/XFormsDesigner-macOS-*.zip
+            ${{ github.workspace }}/appcast-*.xml
 
       - name: Attach to the release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: env.TAG != ''
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.TAG }}
+          prerelease: ${{ contains(env.TAG, '-') }}
           files: |
-            XFormsViewer-macOS-*.zip
-            XFormsDesigner-macOS-*.zip
+            ${{ github.workspace }}/XFormsViewer-macOS-*.zip
+            ${{ github.workspace }}/XFormsDesigner-macOS-*.zip
+            ${{ github.workspace }}/appcast-*.xml

@@ -40,12 +40,14 @@ mkdir -p "$DEPS_PATH"
 # drifted and outlived the merges upstream. They live in one repository now,
 # and this fetches it.
 #
-# GNUSTEP_PATCHES_REF should name a commit, not a branch: it is what pins the
-# build, and the workflows fold it into the cache key so that changing a
-# patch invalidates the cached prefix. A branch name builds whatever is on it
-# that day and the cache will not notice.
+# The commits (GNUSTEP_PATCHES_REF, EAU_REF) are .github/pins.env's, the one
+# place they are named; one already in the environment wins.
+patches_ref=${GNUSTEP_PATCHES_REF:-}
+eau_ref=${EAU_REF:-}
+. "$(cd "$(dirname "$0")/.." && pwd)/pins.env"
+GNUSTEP_PATCHES_REF=${patches_ref:-$GNUSTEP_PATCHES_REF}
+EAU_REF=${eau_ref:-$EAU_REF}
 GNUSTEP_PATCHES_URL=${GNUSTEP_PATCHES_URL:-https://github.com/ashalkhakov/gnustep-patches.git}
-GNUSTEP_PATCHES_REF=${GNUSTEP_PATCHES_REF:-d7eccc94b2eeb1811a226e36aeb662ba17b20c03}
 GNUSTEP_PATCHES_DIR="$DEPS_PATH/gnustep-patches"
 
 install_gnustep_patches() {
@@ -260,7 +262,7 @@ install_eau_theme() {
     # stop this build; it moves when that repository moves it.
     git clone -q -b dev https://github.com/gershwin-desktop/gershwin-eau-theme.git Eau
     cd Eau
-    git checkout -q ${EAU_REF:-01be00b5216b0ad508f30d66fa0d6734f44052c2}
+    git checkout -q "$EAU_REF"
     # The theme uses blocks, and nothing in a theme bundle's link line pulls
     # the runtime in on its own. BlocksRuntime is only a separate library when
     # libdispatch built its own; ours is told to use libobjc's, so ask for it

@@ -33,3 +33,5 @@ Apps/XFormsDesigner/XFormsDesigner.app/
 AppDir/
 *.AppImage
 *-macOS-*.zip
+*.AppImage.zsync
+appcast-*.xml

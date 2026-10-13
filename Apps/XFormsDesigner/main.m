@@ -18,12 +18,59 @@
 #import "XFDDesignOverlay.h"
 #import "XFDSubmissionTester.h"
 #import "XFDEventsConsole.h"
+#import "XFUpdater.h"
+
+/* The application's delegate, from MainMenu.xib: it holds the updater.
+   Set up as the menu is loaded, before the app finishes launching (as
+   Sparkle asks); not started in a self-test. Where there is no updater,
+   no Check for Updates… item. */
+@interface XFDesignerAppDelegate : NSObject
+@property (nonatomic, weak) IBOutlet NSMenuItem *checkForUpdatesItem;
+- (IBAction)checkForUpdates:(id)sender;
+@end
+
+@implementation XFDesignerAppDelegate {
+    XFUpdater *_updater;
+}
+
+- (void)awakeFromNib
+{
+    _updater = [[XFUpdater alloc] initStarting:getenv("XFD_SELFTEST") == NULL];
+    if (![_updater available] && self.checkForUpdatesItem != nil) {
+        [[self.checkForUpdatesItem menu] removeItem:self.checkForUpdatesItem];
+    }
+}
+
+- (IBAction)checkForUpdates:(id)sender
+{
+    [_updater checkForUpdates:sender];
+}
+
+- (BOOL)validateMenuItem:(NSMenuItem *)item
+{
+    if ([item action] == @selector(checkForUpdates:)) {
+        return [_updater canCheckForUpdates];
+    }
+    return YES;
+}
+
+@end
 
 static BOOL XFDLoadNib(NSString *name, id owner)
 {
 #if defined(__APPLE__)
+    // Kept: the app delegate is one of them, and NSApp does not retain
+    // its delegate.
+    static NSMutableArray *kept;
     NSArray *top = nil;
-    return [[NSBundle mainBundle] loadNibNamed:name owner:owner topLevelObjects:&top];
+    if (![[NSBundle mainBundle] loadNibNamed:name owner:owner topLevelObjects:&top]) {
+        return NO;
+    }
+    if (kept == nil) {
+        kept = [NSMutableArray array];
+    }
+    [kept addObjectsFromArray:top];
+    return YES;
 #else
     return [NSBundle loadNibNamed:name owner:owner];
 #endif
@@ -849,6 +896,17 @@ static int XFDRunSelfTest(NSString *path)
     }
     if (doc.processor.controls.count != before) {
         NSLog(@"SELFTEST undo failed (%lu controls)", (unsigned long)doc.processor.controls.count);
+        return 1;
+    }
+    // Check for Updates…: in the app menu where there is an updater
+    // (Sparkle, on macOS), not where the image is updated from outside
+    // (GNUstep's AppImage).
+    BOOL hasUpdater = [[XFUpdater alloc] initStarting:NO].available;
+    NSMenuItem *checkForUpdates = [[[[NSApp mainMenu] itemAtIndex:0] submenu]
+                                   itemWithTag:XFCheckForUpdatesMenuItemTag];
+    if ((checkForUpdates != nil) != hasUpdater
+        || (checkForUpdates != nil && [checkForUpdates action] != @selector(checkForUpdates:))) {
+        NSLog(@"SELFTEST Check for Updates… %@", hasUpdater ? @"missing from the app menu" : @"offered");
         return 1;
     }
     NSLog(@"SELFTEST OK (%lu controls, %lu chars)",

@@ -1,6 +1,7 @@
 #import <AppKit/AppKit.h>
 #import "XFFormDocument.h"
 #import "XFDocumentWindowController.h"
+#import "XFUpdater.h"
 #if defined(GNUSTEP)
 #import <XFormsKit/XFCrashReporter.h>   // not in the Xcode project: GNUstep-only
 #endif
@@ -8,13 +9,32 @@
 @interface XFViewerApp : NSObject
 @end
 
-@implementation XFViewerApp
+@implementation XFViewerApp {
+    XFUpdater *_updater;
+}
 
 - (void)applicationWillFinishLaunching:(NSNotification *)note
 {
     (void)[XFFormDocument class];
     (void)[XFDocumentWindowController class];
     (void)[NSDocumentController sharedDocumentController];
+    // Updates, set up before the app finishes launching, as Sparkle asks.
+    _updater = [[XFUpdater alloc] initStarting:YES];
+}
+
+// Check for Updates… (XFUpdater.h): on macOS only; GNUstep's menu has no
+// such item, the AppImage being updated from outside.
+- (IBAction)checkForUpdates:(id)sender
+{
+    [_updater checkForUpdates:sender];
+}
+
+- (BOOL)validateMenuItem:(NSMenuItem *)item
+{
+    if ([item action] == @selector(checkForUpdates:)) {
+        return [_updater canCheckForUpdates];
+    }
+    return YES;
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)note
@@ -35,6 +55,13 @@
     [appMenu addItemWithTitle:@"About XFormsViewer"
                        action:@selector(orderFrontStandardAboutPanel:)
                 keyEquivalent:@""];
+    if ([_updater available]) {
+        NSMenuItem *check = [appMenu addItemWithTitle:@"Check for Updates…"
+                                               action:@selector(checkForUpdates:)
+                                        keyEquivalent:@""];
+        [check setTarget:self];
+        [check setTag:XFCheckForUpdatesMenuItemTag];
+    }
     [appMenu addItem:[NSMenuItem separatorItem]];
     [appMenu addItemWithTitle:@"Quit XFormsViewer"
                        action:@selector(terminate:)

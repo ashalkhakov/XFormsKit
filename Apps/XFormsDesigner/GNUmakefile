@@ -19,7 +19,9 @@ APP_NAME = XFormsDesigner
 XFormsDesigner_LDFLAGS += -ldispatch
 # The app's own methods by name in a crash report (XFCrashReporter.h).
 XFormsDesigner_LDFLAGS += -rdynamic
-XFormsDesigner_OBJC_FILES = main.m
+# XFUpdater.m: no updater on GNUstep, the AppImage is updated from outside
+# (../Shared/XFUpdater.h).
+XFormsDesigner_OBJC_FILES = main.m ../Shared/XFUpdater.m
 
 XFormsDesigner_RESOURCE_FILES = \
 	XFormsDesigner.png \
@@ -28,6 +30,7 @@ XFormsDesigner_RESOURCE_FILES = \
 XFormsDesigner_MAIN_MODEL_FILE = MainMenu.xib
 
 XFormsDesigner_INCLUDE_DIRS = \
+	-I../Shared \
 	-I../../Sources \
 	-I../../Sources/XFormsKit \
 	-I../../Sources/XFormsDesignKit \

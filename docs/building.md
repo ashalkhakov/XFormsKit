@@ -47,7 +47,9 @@ Opal (CoreGraphics/CoreText for the SVG renderer) and
 GNUstep itself matter, and they live in the shared `gnustep-patches`
 repository; `.github/scripts/dependencies.sh` clones it and builds the whole
 stack from source with them applied, which is the most reliable way to get a
-working prefix.
+working prefix. The commits it builds (gnustep-patches, the Eau theme) are
+pinned in `.github/pins.env`, for CI and the release too: to move one, edit
+it there.
 
     . $PREFIX/System/Library/Makefiles/GNUstep.sh
     make              # the framework
