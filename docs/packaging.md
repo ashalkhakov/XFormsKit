@@ -10,18 +10,19 @@ Every push uploads unsigned builds to its Actions run, kept for 14 days: an
 alone (or, given a tag, to build that tag and attach to its release). The
 "Run workflow" button only appears once the workflow is on the default
 branch; a tag triggers it from anywhere. Signing, notarizing, the appcasts,
-the GNUstep stack, linuxdeploy and the update information are the shared
-steps in `ashalkhakov/gnustep-release-actions`; the build, the packaging and
-the smoke tests are this repository's.
+the GNUstep stack, the AppImage and its update information are the shared
+steps in `ashalkhakov/gnustep-release-actions`; the build and the smoke tests
+are this repository's.
 
 ## Linux: one AppImage
 
-`Scripts/prepare-appdir.sh` assembles an AppDir with the framework, the viewer,
-the designer, the launcher and the GNUstep runtime; `Scripts/package-appimage.sh`
-hands it to `linuxdeploy`. Both are ports of RDLKit's, which are ports of
-UDQuakeTools'; the differences are marked in the files. `AppRun` writes a
-GNUstep config pointing `GNUSTEP_SYSTEM_ROOT` and its siblings at wherever the
-image is mounted, since that path is not known until it runs.
+gnustep-release-actions' `appimage` makes it, the same as every app's image:
+the framework, the viewer, the designer and the launcher (installed into the
+prefix by `.github/release/linux-install.sh`), the GNUstep runtime, and the
+shared launcher, `AppRun`, which writes a GNUstep config pointing
+`GNUSTEP_SYSTEM_ROOT` and its siblings at wherever the image is mounted, since
+that path is not known until it runs. What is XFormsKit's own is
+`.github/release/appimage.conf`.
 
     ./XFormsKit-*.AppImage                   # the launcher: pick an app
     ./XFormsKit-*.AppImage designer
@@ -29,7 +30,7 @@ image is mounted, since that path is not known until it runs.
     ln -s XFormsKit-*.AppImage xformsdesigner && ./xformsdesigner
 
 `AppRun` picks the app from the name it was invoked through, then from the
-first argument, and otherwise opens **XFormsLauncher** — one image, two apps,
+first argument (`ROUTES` in `appimage.conf`), and otherwise opens **XFormsLauncher** — one image, two apps,
 so it asks. The launcher is GNUstep-only; a Mac installs the apps separately.
 
 What the image carries besides the apps:
@@ -40,12 +41,12 @@ What the image carries besides the apps:
   as Command;
 - DejaVu and Liberation fonts, so a form lays out the same on a machine that has
   none of the fonts its CSS names;
-- `Scripts/appimage/open`, installed as `open` and `xdg-open` in the bundle's
+- an opener, installed as `open` and `xdg-open` in the bundle's
   tools directory, which `NSWorkspace` searches before `$PATH`. It restores the
   host's `PATH` and `LD_LIBRARY_PATH` before handing a URL to the host, because
   a browser started with the image's libraries does not start;
 - symbol tables (`NO_STRIP`), so a crash prints its own symbolized backtrace
-  (`XFCrashReporter.h`). `XF_GDB=1` runs gdb against the host's libraries.
+  (`XFCrashReporter.h`). `APPIMAGE_GDB=1` runs gdb against the host's libraries.
 
 A release's image (not a pre-release's) carries update information naming
 the newest release's `.zsync`, which is attached beside it, so Gear Lever,

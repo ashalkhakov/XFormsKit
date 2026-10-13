@@ -35,5 +35,4 @@ jobs:
     uses: ashalkhakov/gnustep-release-actions/.github/workflows/appimage-release.yml@v1
     with:
       tag: ${{ inputs.tag }}
-      appimage: XFormsKit
       components: libobjc2 libdispatch tools-make libs-base libs-gui libs-back libs-corebase libs-opal eau
