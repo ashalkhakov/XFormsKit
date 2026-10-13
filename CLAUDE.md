@@ -9,10 +9,10 @@ designer's editor as a framework that apps host (`XFormsDesignKit.h`),
 ## GNUstep patches live elsewhere
 
 Fixes to GNUstep itself are not kept here. They live in `../gnustep-patches`,
-which this machine's GNUstep projects share, and `.github/scripts/dependencies.sh`
-clones that repository at the commit pinned by `GNUSTEP_PATCHES_REF` in
-`.github/pins.env` (where every pin lives; move one by editing it there) and
-applies what it carries for libs-base, libs-gui and Opal.
+which this machine's GNUstep projects share. This repository no longer builds
+GNUstep: CI's Linux job runs on the patched stack gnustep-patches publishes as
+an image, `ghcr.io/ashalkhakov/gnustep:latest` (in `/opt/gnustep`), so a fix
+reaches CI once gnustep-patches publishes a new image.
 
 If a bug here turns out to be GNUstep's, work in that repository and read its
 `CLAUDE.md` first: reproduce in the docker container, fix, turn the

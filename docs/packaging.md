@@ -2,17 +2,24 @@
 
 ## Artifacts
 
-Every push uploads unsigned builds to its Actions run, kept for 14 days: an
-`XFormsKit-<sha>` AppImage and an `XFormsKit-macOS-<sha>` with both apps.
+One workflow, `.github/workflows/build.yml`, builds, tests and ships. Every
+push and pull request uploads unsigned builds to its Actions run, kept two
+weeks, each named for its app and version: zips of XFormsViewer and
+XFormsDesigner, the iOS builds of XFormsMobile, and the XFormsKit AppImage.
 
-`.github/workflows/release.yml` is the shipping one. It runs on a `v*` tag
-(and attaches the files to the GitHub release), or by hand for the artifacts
-alone (or, given a tag, to build that tag and attach to its release). The
+A `v*` tag also releases them, attached to the tag's GitHub release (a
+pre-release when the tag has a `-`): the Mac apps signed and notarized, each
+with its Sparkle appcast; XFormsMobile as an unsigned
+`XFormsMobile-<version>-unsigned.ipa` and a simulator build,
+`XFormsMobile-Simulator-<version>.zip`; the AppImage with its update
+information and `.zsync`. A run started by hand builds the branch as
+artifacts, or, given a tag, builds that tag and attaches to its release. The
 "Run workflow" button only appears once the workflow is on the default
 branch; a tag triggers it from anywhere. Signing, notarizing, the appcasts,
-the GNUstep stack, the AppImage and its update information are the shared
-steps in `ashalkhakov/gnustep-release-actions`; the build and the smoke tests
-are this repository's.
+the AppImage and its update information are the shared workflows in
+`ashalkhakov/gnustep-release-actions`; the GNUstep stack is gnustep-patches'
+image; the build and the smoke tests are this repository's hooks in
+`.github/release/`.
 
 ## Linux: one AppImage
 

@@ -312,8 +312,8 @@ Three things were written around gaps in Opal rather than into them:
 
 The iOS framework now carries `XFSVGDocument` and `XFSVGNode` and links
 CoreGraphics and CoreText; CI asserts that, and that no view class comes
-with them. `.github/scripts/dependencies.sh` builds libs-corebase and Opal
-into the GNUstep prefix, and the GNUmakefile links `-lopal`.
+with them. The GNUstep stack CI builds on (gnustep-patches' image) carries
+libs-corebase and Opal, and the GNUmakefile links `-lopal`.
 
 GNUstep has since been exercised, and Opal answered each of the questions
 that were open here:
@@ -820,10 +820,10 @@ UIKit form layer.
 - No storyboard and no scene manifest — an empty `UILaunchScreen`
   dictionary and a window from the app delegate.
 
-CI builds the app for the simulator on the portable leg of the matrix. A
-device build is not attempted: signing an app needs an identity the
-runner has no reason to hold, and the framework's `iphoneos` slice
-already covers the linker constraints.
+CI builds the app, unsigned, for the simulator and for a device, and a
+`v*` tag attaches both to its release (an unsigned `.ipa` and a simulator
+zip). It is not signed: that needs an identity the runner has no reason
+to hold.
 
 `XFMobileForm` and the browser are compiled into the framework's test
 bundle as well, so the loading path and the push are tested rather than

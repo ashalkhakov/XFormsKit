@@ -1,6 +1,6 @@
 # XFormsKit
 
-[![CI](https://github.com/ashalkhakov/XFormsKit/actions/workflows/ci.yml/badge.svg)](https://github.com/ashalkhakov/XFormsKit/actions/workflows/ci.yml)
+[![Build](https://github.com/ashalkhakov/XFormsKit/actions/workflows/build.yml/badge.svg)](https://github.com/ashalkhakov/XFormsKit/actions/workflows/build.yml)
 
 A native **XForms 1.1** engine in Objective-C, for **macOS, iOS and Linux (GNUstep)**.
 It reads an XHTML+XForms document and runs it as a real native form: stock
@@ -22,9 +22,9 @@ Download from [Releases](https://github.com/ashalkhakov/XFormsKit/releases/lates
 |---|---|---|
 | macOS 11+ (designer 12+) | `XFormsViewer-macOS-*.zip`, `XFormsDesigner-macOS-*.zip` | Signed, notarized apps; they update themselves (*Check for Updates…*) |
 | Linux x86_64 | `XFormsKit-*.AppImage` | Viewer + designer; opens a chooser (`… designer`, `… form.xhtml` go straight in); updated by Gear Lever or AppImageUpdate |
-| iOS 15+ | — | Build `XFormsMobile` from source |
+| iOS 15+ | `XFormsMobile-*-unsigned.ipa`, `XFormsMobile-Simulator-*.zip` | Unsigned: sign the `.ipa` yourself to install it on a device; the zip runs in the iOS Simulator |
 
-Every push also uploads unsigned builds to its [Actions run](https://github.com/ashalkhakov/XFormsKit/actions).
+Every push also uploads unsigned builds to its [Actions run](https://github.com/ashalkhakov/XFormsKit/actions), kept two weeks.
 
 Build from source:
 
@@ -62,8 +62,8 @@ Details: [docs/building.md](docs/building.md) · [docs/packaging.md](docs/packag
 - **GNUstep:** dates display but cannot be edited until gnustep-gui gets an
   editable `NSDatePicker` ([#22](https://github.com/ashalkhakov/XFormsKit/issues/22)).
   The Linux build ships a patched gnustep-gui (the fixes live in the shared
-  `gnustep-patches` repository — see
-  [the notes](patches/gnustep/README.md) — upstreaming in
+  [`gnustep-patches`](https://github.com/ashalkhakov/gnustep-patches)
+  repository — upstreaming in
   [#23](https://github.com/ashalkhakov/XFormsKit/issues/23)).
 - **iOS:** one control per row in the iOS idiom, not the desktop layout; no
   designer; no App Store or TestFlight build.
@@ -121,7 +121,7 @@ flowchart LR
 - [Building](docs/building.md) and [packaging](docs/packaging.md)
 - [XSLTForms → XFormsKit class map](docs/XSLTForms-mapping.md) and [gap list](docs/XSLTForms-gaps.md)
 - [iOS port plan](docs/ios-port-plan.md) · [W3C suite as XCTests](docs/w3c-xctests.md) · [Submission authentication](docs/submission-auth.md)
-- [GNUstep notes for Linux](patches/gnustep/README.md)
+- [GNUstep patches for Linux](https://github.com/ashalkhakov/gnustep-patches)
 
 ## License
 
