@@ -35,3 +35,4 @@ AppDir/
 *-macOS-*.zip
 *.AppImage.zsync
 appcast-*.xml
+.deps/

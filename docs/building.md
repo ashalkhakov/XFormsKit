@@ -46,19 +46,26 @@ Opal (CoreGraphics/CoreText for the SVG renderer) and
 [tools-xctest](https://github.com/gnustep/tools-xctest). A handful of fixes to
 GNUstep itself matter, and they live in the shared
 [gnustep-patches](https://github.com/ashalkhakov/gnustep-patches) repository,
-which publishes the patched stack as an image,
-`ghcr.io/ashalkhakov/gnustep:latest` (dated tags such as `v2026.10.13`;
-Ubuntu 22.04, in `/opt/gnustep`, every component above). CI builds on it, and
+which publishes the patched stack as releases: an archive for Ubuntu 22.04
+that unpacks into `/opt/gnustep`, with every component above.
+`.github/pins.env` names the one CI builds on (`GNUSTEP_PATCHES_VERSION`), and
 it is the quickest way to a working prefix. To build the same stack on your
 own machine, run gnustep-patches' `Scripts/build-gnustep.sh` with
 `COMPONENTS="libobjc2 libdispatch tools-make libs-base libs-gui libs-back libs-corebase libs-opal eau tools-xctest"`.
 
     . $PREFIX/System/Library/Makefiles/GNUstep.sh
-    make              # the framework
-    make check        # unit tests
-    make w3ccheck     # W3C conformance suite
-    make designkit    # the designer's editor, XFormsDesignKit
-    make apps         # viewer, designer and the AppImage launcher
+    make              # the framework, the designer's editor (XFormsDesignKit),
+                      # the viewer, the designer and the AppImage launcher
+    make check        # the source checks, the unit tests, the W3C suite
+    make install      # all of it but the test bundles
+    make w3ccheck     # the W3C conformance suite alone
+
+On macOS and iOS, `Makefile.apple` (Sparkle's XCFramework in `.deps/`,
+which gnustep-release-actions' `scripts/deps.sh apple` fetches by the version
+`.github/pins.env` names):
+
+    make -f Makefile.apple && make -f Makefile.apple check
+    make -f Makefile.apple ios && make -f Makefile.apple ios-check
 
 What a Linux setup should know: [gnustep-patches](https://github.com/ashalkhakov/gnustep-patches).
 
@@ -73,21 +80,23 @@ is one, as a reference. Background: [ios-port-dom-lift.md](ios-port-dom-lift.md)
 
 ## Continuous integration
 
-One workflow, `.github/workflows/build.yml`, on every push, pull request and
-`v*` tag. It calls gnustep-release-actions' shared workflows, the same as every
-app's; what is XFormsKit's own are the hooks in `.github/release/`:
+One workflow, `.github/workflows/build.yml`, on every push and `v*` tag. It
+calls gnustep-release-actions' shared workflows, the same as every
+repository's, which fetch what `.github/pins.env` names and run the commands
+above:
 
-- **macOS** (`macos-build.sh`, `macos-test.sh`) — unit and W3C suites; that
-  `XFDOMTests` still compares against NSXML; that the viewer offers every
-  sample; then the Release universal viewer and designer, each checked to
-  embed its frameworks.
-- **iOS** (`ios-build.sh`, `ios-test.sh`) — the framework for both iPhone
-  SDKs, checked for its shape (UIKit linked, AppKit never, the listed classes
-  present or left out); XFormsMobile unsigned for device and simulator; both
-  suites in the simulator.
-- **Linux** (`linux-build.sh`, `linux-install.sh`, `linux-test.sh`,
-  `appimage.conf`), on gnustep-patches' stack image — every framework import
-  GNUstep lacks is guarded; both suites under `xvfb`; all three apps; the
-  AppImage, packaged and smoke-tested.
+- **macOS** (`Makefile.apple`) — `check`: the source checks
+  (`Scripts/check-sources.sh`: every framework import GNUstep lacks is
+  guarded, `XFDOMTests` still compares against NSXML, the viewer offers every
+  sample), the unit and W3C suites; then the Release universal viewer and
+  designer, and `installcheck`: each embeds its frameworks.
+- **iOS** (`Makefile.apple`) — `ios`: the framework for both iPhone SDKs,
+  checked for its shape (UIKit linked, AppKit never, the listed classes
+  present or left out), and XFormsMobile unsigned for device and simulator;
+  `ios-check`: both suites in the simulator.
+- **Linux** (`GNUmakefile`, `appimage.conf`), on gnustep-patches' released
+  stack — `make`, `make check` (the same source checks, both suites under
+  `xvfb`), `make install`; the AppImage, packaged and smoke-tested on a clean
+  Ubuntu (`Scripts/appimage-smoke.sh`).
 
 Packaging and releases: [packaging.md](packaging.md).

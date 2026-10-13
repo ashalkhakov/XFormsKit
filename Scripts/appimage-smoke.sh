@@ -1,6 +1,9 @@
 #!/bin/bash
-# Proof each app in the image starts and stays up: the launcher, the viewer
-# and the designer, against a virtual display.
+# The AppImage on a clean Ubuntu, as gnustep-release-actions' appimage-test
+# runs it (.github/release/appimage.conf, SMOKE_SCRIPT): each app in the
+# image starts and stays up, the launcher, the viewer and the designer,
+# against a virtual display.
+#   Scripts/appimage-smoke.sh <XFormsKit AppImage>
 set -euo pipefail
 image=$1
 for app in "" viewer designer; do

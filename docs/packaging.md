@@ -18,14 +18,15 @@ artifacts, or, given a tag, builds that tag and attaches to its release. The
 branch; a tag triggers it from anywhere. Signing, notarizing, the appcasts,
 the AppImage and its update information are the shared workflows in
 `ashalkhakov/gnustep-release-actions`; the GNUstep stack is gnustep-patches'
-image; the build and the smoke tests are this repository's hooks in
-`.github/release/`.
+release `.github/pins.env` names; the build is this repository's
+`GNUmakefile` and `Makefile.apple`, and the AppImage's smoke test
+`Scripts/appimage-smoke.sh`.
 
 ## Linux: one AppImage
 
 gnustep-release-actions' `appimage` makes it, the same as every app's image:
 the framework, the viewer, the designer and the launcher (installed into the
-prefix by `.github/release/linux-install.sh`), the GNUstep runtime, and the
+prefix by `make install`), the GNUstep runtime, and the
 shared launcher, `AppRun`, which writes a GNUstep config pointing
 `GNUSTEP_SYSTEM_ROOT` and its siblings at wherever the image is mounted, since
 that path is not known until it runs. What is XFormsKit's own is
