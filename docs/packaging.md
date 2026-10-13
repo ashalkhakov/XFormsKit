@@ -7,8 +7,12 @@ Every push uploads unsigned builds to its Actions run, kept for 14 days: an
 
 `.github/workflows/release.yml` is the shipping one. It runs on a `v*` tag
 (and attaches the files to the GitHub release), or by hand for the artifacts
-alone. The "Run workflow" button only appears once the workflow is on the
-default branch; a tag triggers it from anywhere.
+alone (or, given a tag, to build that tag and attach to its release). The
+"Run workflow" button only appears once the workflow is on the default
+branch; a tag triggers it from anywhere. Signing, notarizing, the appcasts,
+the GNUstep stack, linuxdeploy and the update information are the shared
+steps in `ashalkhakov/gnustep-release-actions`; the build, the packaging and
+the smoke tests are this repository's.
 
 ## Linux: one AppImage
 
@@ -30,7 +34,7 @@ so it asks. The launcher is GNUstep-only; a Mac installs the apps separately.
 
 What the image carries besides the apps:
 
-- the **Eau** theme, built into the prefix by `dependencies.sh` (a theme links
+- the **Eau** theme, built into the prefix with the stack (a theme links
   against the gui it is loaded into, so it cannot ship prebuilt) and selected by
   `AppRun` in each app's defaults domain, with Liberation fonts and Ctrl mapped
   as Command;
@@ -43,6 +47,10 @@ What the image carries besides the apps:
 - symbol tables (`NO_STRIP`), so a crash prints its own symbolized backtrace
   (`XFCrashReporter.h`). `XF_GDB=1` runs gdb against the host's libraries.
 
+A release's image (not a pre-release's) carries update information naming
+the newest release's `.zsync`, which is attached beside it, so Gear Lever,
+AppImageUpdate and the like update it by the blocks that changed.
+
 ## macOS: signed apps
 
 `XFormsViewer.app` and `XFormsDesigner.app`, each embedding its own
@@ -52,6 +60,14 @@ Developer ID and notarized. Signing needs `MACOS_CERTIFICATE` (base64 `.p12`),
 `NOTARY_APPLE_ID`, `NOTARY_TEAM_ID` and `NOTARY_PASSWORD`, all in the
 `production` environment. Without them the job still produces artifacts,
 named `-unsigned`.
+
+Both apps update themselves with Sparkle (*Check for Updates…* in the app
+menu; `Apps/Shared/XFUpdater.h`). Each reads its own appcast in the newest
+release, `appcast-XFormsViewer.xml` and `appcast-XFormsDesigner.xml`
+(`SUFeedURL` in its Info.plist), which a release (not a pre-release) writes
+and signs with the EdDSA key in the `SPARKLE_PRIVATE_KEY` secret, also in
+`production`; its public half is `SUPublicEDKey`. Without the secret there
+are no appcasts, and the apps are not offered the release.
 
 ## Versions and Info.plists
 
