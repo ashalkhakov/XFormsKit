@@ -94,8 +94,6 @@ fi
 # --- BUNDLE FONTS FOR PORTABILITY ---
 # A form's CSS names the fonts its author had, and the host tree is laid out in
 # whatever the machine can find. See the README.
-mkdir -p AppDir/usr/etc/fonts
-cp Scripts/appimage/fonts.conf AppDir/usr/etc/fonts/fonts.conf
 for dir in /usr/share/fonts/truetype/dejavu /usr/share/fonts/truetype/liberation \
            /usr/share/fonts/truetype/msttcorefonts; do
 if [ -d "$dir" ]; then
