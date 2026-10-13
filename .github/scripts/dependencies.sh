@@ -45,7 +45,7 @@ mkdir -p "$DEPS_PATH"
 # patch invalidates the cached prefix. A branch name builds whatever is on it
 # that day and the cache will not notice.
 GNUSTEP_PATCHES_URL=${GNUSTEP_PATCHES_URL:-https://github.com/ashalkhakov/gnustep-patches.git}
-GNUSTEP_PATCHES_REF=${GNUSTEP_PATCHES_REF:-d7eccc94b2eeb1811a226e36aeb662ba17b20c03}
+GNUSTEP_PATCHES_REF=${GNUSTEP_PATCHES_REF:-dcbad8f6db6db7054bc9152aad3e8686a233809d}
 GNUSTEP_PATCHES_DIR="$DEPS_PATH/gnustep-patches"
 
 install_gnustep_patches() {

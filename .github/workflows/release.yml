@@ -41,7 +41,7 @@ jobs:
     env:
       # The commit of the shared gnustep-patches repository the stack is
       # built with: ci.yml's, so a release is built from what CI tested.
-      GNUSTEP_PATCHES_REF: d7eccc94b2eeb1811a226e36aeb662ba17b20c03
+      GNUSTEP_PATCHES_REF: dcbad8f6db6db7054bc9152aad3e8686a233809d
     defaults:
       run:
         working-directory: ${{ github.workspace }}/source
