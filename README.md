@@ -20,8 +20,8 @@ Download from [Releases](https://github.com/ashalkhakov/XFormsKit/releases/lates
 
 | Platform | Download | Contains |
 |---|---|---|
-| macOS 11+ (designer 12+) | `XFormsViewer-macOS-*.zip`, `XFormsDesigner-macOS-*.zip` | Signed, notarized apps |
-| Linux x86_64 | `XFormsKit-*.AppImage` | Viewer + designer; opens a chooser (`… designer`, `… form.xhtml` go straight in) |
+| macOS 11+ (designer 12+) | `XFormsViewer-macOS-*.zip`, `XFormsDesigner-macOS-*.zip` | Signed, notarized apps; they update themselves (*Check for Updates…*) |
+| Linux x86_64 | `XFormsKit-*.AppImage` | Viewer + designer; opens a chooser (`… designer`, `… form.xhtml` go straight in); updated by Gear Lever or AppImageUpdate |
 | iOS 15+ | — | Build `XFormsMobile` from source |
 
 Every push also uploads unsigned builds to its [Actions run](https://github.com/ashalkhakov/XFormsKit/actions).
