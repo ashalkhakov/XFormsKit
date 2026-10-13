@@ -78,7 +78,8 @@ it into the `Info-gnustep.plist` it generates, which is a build output and not
 in the tree. No Xcode build settings (`$(PRODUCT_NAME)`) in it: gnustep-make
 does not expand them.
 
-No version number is kept by hand. `Scripts/stamp-version.sh` writes the tag
-(or `0.0.0-build<run>`) into those plists and `MARKETING_VERSION`: the display
+No version number is kept by hand. The release workflows (gnustep-release-actions'
+`stamp-version.sh`) write the tag (or `0.0.0-build<run>`) into those plists and
+`MARKETING_VERSION`, and the run number into `CFBundleVersion`: the display
 form for GNUstep's About panel, the leading dotted number where Apple parses
 it. The tree carries `0.0.0-dev`.
