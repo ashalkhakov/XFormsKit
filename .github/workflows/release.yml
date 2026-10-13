@@ -32,7 +32,7 @@ jobs:
     secrets: inherit
 
   appimage:
-    uses: ashalkhakov/gnustep-release-actions/.github/workflows/appimage-release.yml@appimage-shared
+    uses: ashalkhakov/gnustep-release-actions/.github/workflows/appimage-release.yml@v1
     with:
       tag: ${{ inputs.tag }}
       components: libobjc2 libdispatch tools-make libs-base libs-gui libs-back libs-corebase libs-opal eau
