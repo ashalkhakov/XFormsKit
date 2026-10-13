@@ -37,11 +37,8 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 120
     # The stack's settings (PREFIX, COMPONENTS, the toolchain) are
-    # gnustep-release-actions/gnustep-stack's.
-    env:
-      # The commit of the shared gnustep-patches repository the stack is
-      # built with: ci.yml's, so a release is built from what CI tested.
-      GNUSTEP_PATCHES_REF: dcbad8f6db6db7054bc9152aad3e8686a233809d
+    # gnustep-release-actions/gnustep-stack's; its commits are
+    # .github/pins.env's, which CI builds from too.
     defaults:
       run:
         working-directory: ${{ github.workspace }}/source
@@ -51,6 +48,11 @@ jobs:
         with:
           ref: ${{ env.TAG || github.ref }}
           path: source
+
+      - name: Pins
+        uses: ashalkhakov/gnustep-release-actions/pins@v1
+        with:
+          file: source/.github/pins.env
 
       - uses: actions/checkout@v4
         with:
