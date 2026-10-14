@@ -29,9 +29,10 @@ core
 Apps/XFormsViewer/XFormsViewer.app/
 Apps/XFormsDesigner/XFormsDesigner.app/
 
-# Packaging (Scripts/prepare-appdir.sh, Scripts/package-appimage.sh)
+# Packaging (gnustep-release-actions' appimage)
 AppDir/
 *.AppImage
 *-macOS-*.zip
 *.AppImage.zsync
 appcast-*.xml
+.deps/

@@ -44,21 +44,30 @@ is the useful thing a host can do today.
 Needs gnustep-base, gnustep-gui and a back end, gnustep-make, libs-corebase,
 Opal (CoreGraphics/CoreText for the SVG renderer) and
 [tools-xctest](https://github.com/gnustep/tools-xctest). A handful of fixes to
-GNUstep itself matter, and they live in the shared `gnustep-patches`
-repository; `.github/scripts/dependencies.sh` clones it and builds the whole
-stack from source with them applied, which is the most reliable way to get a
-working prefix. The commits it builds (gnustep-patches, the Eau theme) are
-pinned in `.github/pins.env`, for CI and the release too: to move one, edit
-it there.
+GNUstep itself matter, and they live in the shared
+[gnustep-patches](https://github.com/ashalkhakov/gnustep-patches) repository,
+which publishes the patched stack as releases: an archive for Ubuntu 22.04
+that unpacks into `/opt/gnustep`, with every component above.
+`.github/pins.env` names the one CI builds on (`GNUSTEP_PATCHES_VERSION`), and
+it is the quickest way to a working prefix. To build the same stack on your
+own machine, run gnustep-patches' `Scripts/build-gnustep.sh` with
+`COMPONENTS="libobjc2 libdispatch tools-make libs-base libs-gui libs-back libs-corebase libs-opal eau tools-xctest"`.
 
     . $PREFIX/System/Library/Makefiles/GNUstep.sh
-    make              # the framework
-    make check        # unit tests
-    make w3ccheck     # W3C conformance suite
-    make designkit    # the designer's editor, XFormsDesignKit
-    make apps         # viewer, designer and the AppImage launcher
+    make              # the framework, the designer's editor (XFormsDesignKit),
+                      # the viewer, the designer and the AppImage launcher
+    make check        # the source checks, the unit tests, the W3C suite
+    make install      # all of it but the test bundles
+    make w3ccheck     # the W3C conformance suite alone
 
-What a Linux setup should know: [patches/gnustep/README.md](../patches/gnustep/README.md).
+On macOS and iOS, `Makefile.apple` (Sparkle's XCFramework in `.deps/`,
+which gnustep-release-actions' `scripts/deps.sh apple` fetches by the version
+`.github/pins.env` names):
+
+    make -f Makefile.apple && make -f Makefile.apple check
+    make -f Makefile.apple ios && make -f Makefile.apple ios-check
+
+What a Linux setup should know: [gnustep-patches](https://github.com/ashalkhakov/gnustep-patches).
 
 ## The DOM
 
@@ -71,13 +80,23 @@ is one, as a reference. Background: [ios-port-dom-lift.md](ios-port-dom-lift.md)
 
 ## Continuous integration
 
-`.github/workflows/ci.yml`, on every push:
+One workflow, `.github/workflows/build.yml`, on every push and `v*` tag. It
+calls gnustep-release-actions' shared workflows, the same as every
+repository's, which fetch what `.github/pins.env` names and run the commands
+above:
 
-- **macOS** — framework, viewer, designer; unit and W3C suites; the framework
-  for both iPhone SDKs and the iOS app; both suites in the simulator; unsigned
-  zips of both apps.
-- **Ubuntu (GNUstep, clang, gnustep-2.0)** — the GNUstep stack from source into
-  a cached prefix; both suites under `xvfb`; all three apps; the AppImage,
-  packaged and smoke-tested.
+- **macOS** (`Makefile.apple`) — `check`: the source checks
+  (`Scripts/check-sources.sh`: every framework import GNUstep lacks is
+  guarded, `XFDOMTests` still compares against NSXML, the viewer offers every
+  sample), the unit and W3C suites; then the Release universal viewer and
+  designer, and `installcheck`: each embeds its frameworks.
+- **iOS** (`Makefile.apple`) — `ios`: the framework for both iPhone SDKs,
+  checked for its shape (UIKit linked, AppKit never, the listed classes
+  present or left out), and XFormsMobile unsigned for device and simulator;
+  `ios-check`: both suites in the simulator.
+- **Linux** (`GNUmakefile`, `appimage.conf`), on gnustep-patches' released
+  stack — `make`, `make check` (the same source checks, both suites under
+  `xvfb`), `make install`; the AppImage, packaged and smoke-tested on a clean
+  Ubuntu (`Scripts/appimage-smoke.sh`).
 
 Packaging and releases: [packaging.md](packaging.md).

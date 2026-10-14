@@ -1,5 +1,16 @@
 #
-# GNUmakefile — XFormsKit framework + XCTest bundle
+# GNUmakefile — XFormsKit on GNUstep: the framework, the designer's editor
+# (XFormsDesignKit), the apps, and their tests.
+#
+#   make            the framework and its test bundles, then XFormsDesignKit
+#                   and the apps (XFormsViewer, XFormsDesigner, XFormsLauncher)
+#   make check      the sources checked (Scripts/check-sources.sh), the unit
+#                   tests and the W3C XForms 1.1 suite (under Xvfb when there
+#                   is no display: the widget tests and some W3C cases draw)
+#   make install    the framework, XFormsDesignKit and the apps; not the test
+#                   bundles
+#
+# macOS and iOS: Makefile.apple.
 #
 
 ifeq ($(GNUSTEP_MAKEFILES),)
@@ -15,6 +26,9 @@ include $(GNUSTEP_MAKEFILES)/common.make
 PACKAGE_NAME = XFormsKit
 FRAMEWORK_NAME = XFormsKit
 BUNDLE_NAME = XFormsKitTests XFW3CTests
+# Built and run, never installed.
+XFormsKitTests_STANDARD_INSTALL = no
+XFW3CTests_STANDARD_INSTALL = no
 
 XFormsKit_NEEDS_GUI = yes
 XFormsKit_CURRENT_VERSION_NAME = A
@@ -262,14 +276,31 @@ include $(GNUSTEP_MAKEFILES)/framework.make
 include $(GNUSTEP_MAKEFILES)/bundle.make
 -include GNUmakefile.postamble
 
+# The rest, on the framework: the designer's editor and the apps.
+XF_APPS = Apps/XFormsViewer Apps/XFormsDesigner Apps/XFormsLauncher
+after-all::
+	$(MAKE) -C Sources/XFormsDesignKit
+	@for app in $(XF_APPS); do $(MAKE) -C $$app || exit 1; done
+
+after-install::
+	$(MAKE) -C Sources/XFormsDesignKit install
+	@for app in $(XF_APPS); do $(MAKE) -C $$app install || exit 1; done
+
+after-clean::
+	$(MAKE) -C Sources/XFormsDesignKit clean
+	@for app in $(XF_APPS); do $(MAKE) -C $$app clean || exit 1; done
+
+XVFB = $(if $(DISPLAY),,$(shell command -v xvfb-run >/dev/null 2>&1 && echo xvfb-run -a))
 check:: all
+	Scripts/check-sources.sh
 	@if command -v xctest >/dev/null 2>&1; then \
 	  LD_LIBRARY_PATH="$(CURDIR)/XFormsKit.framework/Versions/Current:$$LD_LIBRARY_PATH" \
-	  xctest ./XFormsKitTests.bundle; \
+	  $(XVFB) xctest ./XFormsKitTests.bundle; \
 	else \
 	  echo "xctest not on PATH. Install gnustep/tools-xctest and re-run make check."; \
 	  exit 1; \
 	fi
+	$(XVFB) $(MAKE) w3ccheck
 
 viewer: all
 	$(MAKE) -C Apps/XFormsViewer

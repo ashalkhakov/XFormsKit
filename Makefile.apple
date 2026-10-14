@@ -1,0 +1,106 @@
+# XFormsKit on Apple's platforms, the familiar way (gnustep-release-actions'
+# macos.yml and ios.yml run the same):
+#
+#   make -f Makefile.apple            XFormsViewer and XFormsDesigner, universal
+#                                     (Release), with the frameworks they embed
+#   make -f Makefile.apple check      the sources checked (Scripts/check-sources.sh),
+#                                     the unit tests and the W3C XForms 1.1 suite
+#                                     (green since the port, so a gate)
+#   make -f Makefile.apple install DESTDIR=<dir>       both apps
+#   make -f Makefile.apple installcheck DESTDIR=<dir>  each embeds the frameworks
+#                                     it links, and its signature holds
+#
+#   make -f Makefile.apple ios        the framework for both iPhone SDKs, checked
+#                                     for its shape, and XFormsMobile, unsigned,
+#                                     for a device and for the simulator
+#   make -f Makefile.apple ios-check  the unit tests and the W3C suite in a
+#                                     simulator
+#   make -f Makefile.apple ios-install DESTDIR=<dir>   <dir>/iphoneos and
+#                                     <dir>/iphonesimulator/XFormsMobile.app
+#
+# Sparkle's XCFramework is in .deps/, by the version .github/pins.env names
+# (gnustep-release-actions' scripts/deps.sh apple). GNUstep: GNUmakefile.
+
+BUILD = build
+DERIVED = $(BUILD)/DerivedData
+PRODUCTS = $(DERIVED)/Build/Products
+# Where a failed test's result bundle is kept (CI uploads it from there).
+RESULTS ?= $(or $(RUNNER_TEMP),$(BUILD))
+XCODEBUILD = xcodebuild -project XFormsKit.xcodeproj -derivedDataPath $(DERIVED)
+APPS = XFormsViewer XFormsDesigner
+
+all:
+	@test -d .deps/Sparkle.xcframework \
+	  || { echo "no Sparkle in .deps: gnustep-release-actions' scripts/deps.sh apple fetches what .github/pins.env names"; exit 1; }
+	@for scheme in XFormsKit $(APPS); do \
+	  $(XCODEBUILD) -scheme $$scheme -configuration Release -destination 'generic/platform=macOS' build || exit 1; \
+	done
+
+check:
+	Scripts/check-sources.sh
+	@for scheme in XFormsKit XFW3CTests; do \
+	  rm -rf $(RESULTS)/$$scheme.xcresult; \
+	  $(XCODEBUILD) -scheme $$scheme -configuration Debug -destination 'platform=macOS' \
+	    -resultBundlePath $(RESULTS)/$$scheme.xcresult test || exit 1; \
+	done
+
+install: all
+	@test -n "$(DESTDIR)" || { echo "install: give DESTDIR"; exit 1; }
+	mkdir -p $(DESTDIR)
+	@for app in $(APPS); do rm -rf $(DESTDIR)/$$app.app && ditto $(PRODUCTS)/Release/$$app.app $(DESTDIR)/$$app.app || exit 1; done
+
+installcheck:
+	@for app in $(APPS); do \
+	  test -d $(DESTDIR)/$$app.app/Contents/Frameworks/XFormsKit.framework \
+	    || { echo "$$app.app does not embed XFormsKit.framework"; exit 1; }; \
+	  codesign --verify --deep --strict $(DESTDIR)/$$app.app || exit 1; \
+	done
+	test -d $(DESTDIR)/XFormsDesigner.app/Contents/Frameworks/XFormsDesignKit.framework \
+	  || { echo "XFormsDesigner.app does not embed XFormsDesignKit.framework"; exit 1; }
+
+# The framework for both iPhone SDKs, and what came out of it: the engine and
+# the UIKit form layer, never AppKit's widget layer. CoreGraphics and
+# CoreText are expected (the SVG renderer draws through them).
+IOS_FRAMEWORK = $(PRODUCTS)/Debug-iphonesimulator/XFormsKit.framework/XFormsKit
+ios:
+	$(XCODEBUILD) -scheme XFormsKit -configuration Debug -destination 'generic/platform=iOS Simulator' build
+	$(XCODEBUILD) -scheme XFormsKit -configuration Debug -destination 'generic/platform=iOS' build CODE_SIGNING_ALLOWED=NO
+	otool -L $(IOS_FRAMEWORK) | tail -n +2
+	@if otool -L $(IOS_FRAMEWORK) | grep -q "/AppKit.framework/"; then echo "the iOS framework links AppKit"; exit 1; fi
+	@otool -L $(IOS_FRAMEWORK) | grep -q "/UIKit.framework/" \
+	  || { echo "the iOS framework does not link UIKit: the form layer is missing"; exit 1; }
+	@classes=$$(nm -arch arm64 -gU $(IOS_FRAMEWORK) | sed -n 's/.*_OBJC_CLASS_\$$_//p'); \
+	  for c in XFProcessor XFDOMDocument XFXPath XFSubmission XFSVGDocument XFRichText XFFormRows XFFormViewController; do \
+	    echo "$$classes" | grep -qx "$$c" || { echo "$$c is missing from the iOS framework"; exit 1; }; \
+	  done; \
+	  for c in XFFormView XFSVGView XFRichTextEditor XFTableAdapter XFBadgeView; do \
+	    if echo "$$classes" | grep -qx "$$c"; then echo "the AppKit view layer leaked into the iOS framework ($$c)"; exit 1; fi; \
+	  done; \
+	  echo "engine, SVG, rich text and the UIKit form layer present; AppKit layer excluded"
+	$(XCODEBUILD) -scheme XFormsMobile -configuration Release -destination 'generic/platform=iOS' \
+	  CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+	$(XCODEBUILD) -scheme XFormsMobile -configuration Release -destination 'generic/platform=iOS Simulator' build
+
+# Whatever iPhone this Xcode ships with, by its UDID: a model's name changes
+# every autumn.
+ios-check:
+	@udid=$$(xcrun simctl list devices available | grep -E '^ +iPhone' | head -1 | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/'); \
+	  [ -n "$$udid" ] || { echo "no iOS Simulator device is available"; exit 1; }; \
+	  echo "simulator: $$udid"; \
+	  for scheme in XFormsKit XFW3CTests; do \
+	    rm -rf $(RESULTS)/$$scheme-iOS.xcresult; \
+	    $(XCODEBUILD) -scheme $$scheme -configuration Debug -destination "platform=iOS Simulator,id=$$udid" \
+	      -resultBundlePath $(RESULTS)/$$scheme-iOS.xcresult test || exit 1; \
+	  done
+
+ios-install: ios
+	@test -n "$(DESTDIR)" || { echo "ios-install: give DESTDIR"; exit 1; }
+	@for sdk in iphoneos iphonesimulator; do \
+	  rm -rf $(DESTDIR)/$$sdk/XFormsMobile.app; mkdir -p $(DESTDIR)/$$sdk; \
+	  ditto $(PRODUCTS)/Release-$$sdk/XFormsMobile.app $(DESTDIR)/$$sdk/XFormsMobile.app || exit 1; \
+	done
+
+clean:
+	rm -rf $(BUILD)
+
+.PHONY: all check install installcheck ios ios-check ios-install clean

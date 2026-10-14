@@ -7,10 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D3675E9CA977D75E4D5C228B /* Sparkle.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 98D96A275723CC2CA5B6B54C /* Sparkle.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		D147EC0AEEB029EC8B47A0EC /* Sparkle.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 98D96A275723CC2CA5B6B54C /* Sparkle.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		UP0000010000000000000001 /* XFUpdater-Apple.m in Sources */ = {isa = PBXBuildFile; fileRef = UP0000000000000000000002 /* XFUpdater-Apple.m */; };
 		UP0000020000000000000001 /* XFUpdater-Apple.m in Sources */ = {isa = PBXBuildFile; fileRef = UP0000000000000000000002 /* XFUpdater-Apple.m */; };
-		UP0000010000000000000002 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = UP0000010000000000000003 /* Sparkle */; };
-		UP0000020000000000000002 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = UP0000020000000000000003 /* Sparkle */; };
+		UP0000010000000000000002 /* Sparkle.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 98D96A275723CC2CA5B6B54C /* Sparkle.xcframework */; };
+		UP0000020000000000000002 /* Sparkle.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 98D96A275723CC2CA5B6B54C /* Sparkle.xcframework */; };
 		EF0000020000000000000001 /* XFormsKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		EF00000100000000000000F7 /* XFormsKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		ICB0000200000000000000F6 /* XFormsDesigner.icns in Resources */ = {isa = PBXBuildFile; fileRef = IC00000200000000000000F6 /* XFormsDesigner.icns */; };
@@ -311,6 +313,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				D147EC0AEEB029EC8B47A0EC /* Sparkle.xcframework in Embed Frameworks */,
 				EF00000100000000000000F7 /* XFormsKit.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
@@ -322,6 +325,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				D3675E9CA977D75E4D5C228B /* Sparkle.xcframework in Embed Frameworks */,
 				EF0000020000000000000001 /* XFormsKit.framework in Embed Frameworks */,
 				DK000000000000000000000E /* XFormsDesignKit.framework in Embed Frameworks */,
 			);
@@ -342,6 +346,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		98D96A275723CC2CA5B6B54C /* Sparkle.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = Sparkle.xcframework; path = .deps/Sparkle.xcframework; sourceTree = SOURCE_ROOT; };
 		MM0000010000000000000064 /* XFDExpressionField.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDExpressionField.m; sourceTree = "<group>"; };
 		MM0000010000000000000065 /* XFDExpressionField.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDExpressionField.h; sourceTree = "<group>"; };
 		MM0000010000000000000062 /* XFDXPathHighlightTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDXPathHighlightTests.m; sourceTree = "<group>"; };
@@ -644,7 +649,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CEA77CCE3044722B006750A1 /* XFormsKit.framework in Frameworks */,
-				UP0000010000000000000002 /* Sparkle in Frameworks */,
+				UP0000010000000000000002 /* Sparkle.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -654,7 +659,7 @@
 			files = (
 				AA0000020000000000000040 /* XFormsKit.framework in Frameworks */,
 				DK000000000000000000000D /* XFormsDesignKit.framework in Frameworks */,
-				UP0000020000000000000002 /* Sparkle in Frameworks */,
+				UP0000020000000000000002 /* Sparkle.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -688,6 +693,7 @@
 		GG0000010000000000000001 = {
 			isa = PBXGroup;
 			children = (
+				98D96A275723CC2CA5B6B54C /* Sparkle.xcframework */,
 				BB0000010000000000000103 /* README.md */,
 				BB0000010000000000000102 /* COPYING.LIB */,
 				BB0000010000000000000105 /* LICENSE */,
@@ -1267,9 +1273,6 @@
 				DP0000010000000000000002 /* PBXTargetDependency */,
 			);
 			name = XFormsViewer;
-			packageProductDependencies = (
-				UP0000010000000000000003 /* Sparkle */,
-			);
 			productName = XFormsViewer;
 			productReference = BB00000100000000000000F7 /* XFormsViewer.app */;
 			productType = "com.apple.product-type.application";
@@ -1290,9 +1293,6 @@
 				DK0000000000000000000010 /* PBXTargetDependency */,
 			);
 			name = XFormsDesigner;
-			packageProductDependencies = (
-				UP0000020000000000000003 /* Sparkle */,
-			);
 			productName = XFormsDesigner;
 			productReference = BB0000020000000000000030 /* XFormsDesigner.app */;
 			productType = "com.apple.product-type.application";
@@ -1377,9 +1377,6 @@
 				Base,
 			);
 			mainGroup = GG0000010000000000000001;
-			packageReferences = (
-				UP0000000000000000000005 /* XCRemoteSwiftPackageReference "Sparkle" */,
-			);
 			productRefGroup = GG0000010000000000000004 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -1709,7 +1706,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 			};
@@ -1733,7 +1730,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				SDKROOT = macosx;
 			};
 			name = Release;
@@ -1849,7 +1846,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsKitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -1883,7 +1880,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsKitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -1909,7 +1906,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsViewer;
 				PRODUCT_NAME = XFormsViewer;
 			};
@@ -1932,7 +1929,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsViewer;
 				PRODUCT_NAME = XFormsViewer;
 			};
@@ -1956,7 +1953,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.gnustep.XFormsDesigner;
 				PRODUCT_NAME = XFormsDesigner;
 			};
@@ -1980,7 +1977,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.gnustep.XFormsDesigner;
 				PRODUCT_NAME = XFormsDesigner;
 			};
@@ -2008,7 +2005,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFW3CTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -2039,7 +2036,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFW3CTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -2128,7 +2125,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 0.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsDesignKit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
@@ -2162,7 +2159,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 0.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsDesignKit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
@@ -2249,29 +2246,6 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		UP0000000000000000000005 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/sparkle-project/Sparkle";
-			requirement = {
-				kind = exactVersion;
-				version = 2.10.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		UP0000010000000000000003 /* Sparkle */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = UP0000000000000000000005 /* XCRemoteSwiftPackageReference "Sparkle" */;
-			productName = Sparkle;
-		};
-		UP0000020000000000000003 /* Sparkle */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = UP0000000000000000000005 /* XCRemoteSwiftPackageReference "Sparkle" */;
-			productName = Sparkle;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = DD0000010000000000000001 /* Project object */;
 }
