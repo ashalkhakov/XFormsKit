@@ -1,4 +1,4 @@
-/* XFCrashReporter.m — see XFCrashReporter.h.
+/* XFCrashReporter-posix.m — see XFCrashReporter.h: signals, backtrace(3).
    Copyright (c) 2026 the XFormsKit contributors. LGPL 2.1. */
 
 #ifndef _GNU_SOURCE

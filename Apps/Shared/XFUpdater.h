@@ -4,11 +4,15 @@
 // On macOS, Sparkle: the newest release's appcast for this app
 // (SUFeedURL in <App>-Info.plist, appcast-<App>.xml, signed with the key
 // SUPublicEDKey names) is checked once a day if the user allows it, and
-// Check for Updates… checks now. On GNUstep, nothing: the AppImage carries
-// its update information, for AppImageUpdate, Gear Lever and the like
-// (docs/packaging.md).
+// Check for Updates… checks now. On GNUstep, the stack's GSUpdater: on
+// Windows WinSparkle, its feed the newest release's appcast-windows.xml
+// (SUWindowsFeedURL, which the installer's build writes into
+// Info-gnustep.plist with SUPublicEDKey, the same key's); on Linux nothing,
+// the AppImage carrying its own update information, for AppImageUpdate,
+// Gear Lever and the like (docs/packaging.md).
 //
-// XFUpdater-Apple.m is the Xcode targets', XFUpdater.m the GNUmakefiles'.
+// XFUpdater-Apple.m is the Xcode targets', XFUpdater-GNUstep.m the
+// GNUmakefiles'.
 //
 
 #import <AppKit/AppKit.h>

@@ -5,11 +5,13 @@ name: Build
 # gnustep-release-actions' workflows, the same as every repository's: every
 # push is built, tested and uploaded as artifacts (XFormsViewer and
 # XFormsDesigner for macOS, XFormsMobile for iOS, unsigned, and the
-# AppImage: the launcher, the viewer and the designer); a v* tag (or a run
-# started by hand with one) is also released: the Mac apps signed and
-# notarized with their Sparkle appcasts (appcast-XFormsViewer.xml,
-# appcast-XFormsDesigner.xml), the AppImage with its update information,
-# attached to the tag's release (a pre-release when the tag has a '-'). What
+# AppImage: the launcher, the viewer and the designer; the Windows
+# installer, XFormsKit-<version>-win64.msi, with the same three); a v* tag
+# (or a run started by hand with one) is also released: the Mac apps signed
+# and notarized with their Sparkle appcasts (appcast-XFormsViewer.xml,
+# appcast-XFormsDesigner.xml), the AppImage with its update information, the
+# installer with its WinSparkle appcast (appcast-windows.xml), attached to
+# the tag's release (a pre-release when the tag has a '-'). What
 # it builds on is in .github/pins.env.
 on:
   push:
@@ -50,3 +52,9 @@ jobs:
     with:
       tag: ${{ inputs.tag }}
       apps: XFormsMobile=XFormsMobile
+
+  windows:
+    uses: ashalkhakov/gnustep-release-actions/.github/workflows/windows.yml@v1
+    with:
+      tag: ${{ inputs.tag }}
+    secrets: inherit

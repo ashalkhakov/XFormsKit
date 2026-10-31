@@ -270,6 +270,15 @@ static BOOL XFIsJSONName(NSString *name)
     return [[name substringFromIndex:1] rangeOfCharacterFromSet:[rest invertedSet]].location == NSNotFound;
 }
 
+/// Whether a JSON value is true or false rather than a number. JSON's
+/// booleans are NSNumber's two shared instances, on Apple's Foundation and
+/// GNUstep's alike; their objCType does not tell them apart, since on
+/// Windows BOOL is an int and @encode(BOOL) every integer's "i".
+static BOOL XFJSONIsBoolean(id json)
+{
+    return json == (id)@YES || json == (id)@NO;
+}
+
 /// XsltForms_browser.json2xml(name, json, root, inarray)
 static void XFJSON2XML(NSString *name, id json, BOOL root, BOOL inarray, NSMutableString *ret)
 {
@@ -303,8 +312,7 @@ static void XFJSON2XML(NSString *name, id json, BOOL root, BOOL inarray, NSMutab
         if ([json isKindOfClass:[NSString class]]) {
             xsdtype = @" xsi:type=\"xsd:string\"";
         } else if ([json isKindOfClass:[NSNumber class]]) {
-            const char *t = [json objCType];
-            xsdtype = (strcmp(t, @encode(BOOL)) == 0 || strcmp(t, "c") == 0 || strcmp(t, "B") == 0)
+            xsdtype = XFJSONIsBoolean(json)
                 ? @" xsi:type=\"xsd:boolean\"" : @" xsi:type=\"xsd:double\"";
         }
         if (name.length == 0) {
@@ -323,8 +331,7 @@ static void XFJSON2XML(NSString *name, id json, BOOL root, BOOL inarray, NSMutab
         } else if ([json isKindOfClass:[NSNull class]]) {
             // null → empty element
         } else if ([json isKindOfClass:[NSNumber class]]) {
-            const char *t = [json objCType];
-            if (strcmp(t, @encode(BOOL)) == 0 || strcmp(t, "c") == 0 || strcmp(t, "B") == 0) {
+            if (XFJSONIsBoolean(json)) {
                 [ret appendString:[json boolValue] ? @"true" : @"false"];
             } else {
                 [ret appendString:[json stringValue]];

@@ -3,6 +3,12 @@
 #import <XFormsKit/XFDOMElement.h>
 #import <XFormsKit/XFDOMDocument.h>
 
+/* XFormsKit's own: exported where it is built for Windows (its GNUmakefile),
+   imported everywhere else, as FOUNDATION_EXPORT. */
+#ifndef XFORMSKIT_EXPORT
+#define XFORMSKIT_EXPORT FOUNDATION_EXPORT
+#endif
+
 NS_ASSUME_NONNULL_BEGIN
 
 /// Internals shared between the DOM classes and the parser. Not public:
@@ -50,7 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /// Shared escaping, exposed for the tests.
-FOUNDATION_EXPORT NSString *XFDOMEscapedText(NSString *text);
-FOUNDATION_EXPORT NSString *XFDOMEscapedAttributeValue(NSString *value);
+XFORMSKIT_EXPORT NSString *XFDOMEscapedText(NSString *text);
+XFORMSKIT_EXPORT NSString *XFDOMEscapedAttributeValue(NSString *value);
 
 NS_ASSUME_NONNULL_END

@@ -21,6 +21,12 @@
 #import <AppKit/AppKit.h>
 #import <XFormsKit/XFormsKit.h>
 
+/* XFormsDesignKit's own: exported where it is built for Windows (its GNUmakefile),
+   imported everywhere else, as FOUNDATION_EXPORT. */
+#ifndef XFORMSDESIGNKIT_EXPORT
+#define XFORMSDESIGNKIT_EXPORT FOUNDATION_EXPORT
+#endif
+
 @class XFDRichTextField;
 
 /// Context for the "Insert Output…" token flow: the same node picker the
@@ -38,9 +44,9 @@
 /// children — appears in the rich editor as an atomic-looking token
 /// `⟦expr⟧` (mail-merge style), and the brackets are the truth on the way
 /// back. Everything else round-trips through XFRichText untouched.
-FOUNDATION_EXPORT NSString *XFDTokenizeFragment(NSString *fragment);
-FOUNDATION_EXPORT NSString *XFDEscapeXML(NSString *text);
-FOUNDATION_EXPORT NSString *XFDDetokenizeFragment(NSString *fragment);
+XFORMSDESIGNKIT_EXPORT NSString *XFDTokenizeFragment(NSString *fragment);
+XFORMSDESIGNKIT_EXPORT NSString *XFDEscapeXML(NSString *text);
+XFORMSDESIGNKIT_EXPORT NSString *XFDDetokenizeFragment(NSString *fragment);
 
 @interface XFDRichTextField : NSView
 

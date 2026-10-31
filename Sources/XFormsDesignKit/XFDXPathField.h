@@ -14,6 +14,12 @@
 #import <AppKit/AppKit.h>
 #import <XFormsKit/XFormsKit.h>
 
+/* XFormsDesignKit's own: exported where it is built for Windows (its GNUmakefile),
+   imported everywhere else, as FOUNDATION_EXPORT. */
+#ifndef XFORMSDESIGNKIT_EXPORT
+#define XFORMSDESIGNKIT_EXPORT FOUNDATION_EXPORT
+#endif
+
 @class XFDXPathField;
 
 /// What the attribute being edited wants from the expression — the picker
@@ -33,8 +39,8 @@ typedef NS_ENUM(NSInteger, XFDXPathExpectation) {
 /// expression is anything richer (functions, unions, //, operators): the
 /// picker then keeps it editable as text with the steps table disabled.
 /// Join renders the canonical spelling back (.. / . / @name shorthands).
-FOUNDATION_EXPORT NSDictionary *XFDSplitLocationPath(NSString *expression);
-FOUNDATION_EXPORT NSString *XFDJoinLocationPath(NSDictionary *path);
+XFORMSDESIGNKIT_EXPORT NSDictionary *XFDSplitLocationPath(NSString *expression);
+XFORMSDESIGNKIT_EXPORT NSString *XFDJoinLocationPath(NSDictionary *path);
 
 /// The predicate sub-editor's preview (exposed for the selftest): how
 /// `predicates` filters the nodes `baseExpression` selects. A bare
@@ -43,7 +49,7 @@ FOUNDATION_EXPORT NSString *XFDJoinLocationPath(NSDictionary *path);
 /// rows: [ { index, node, value, match } ] } — rows are the CANDIDATE
 /// nodes (capped at 200) with match flags, so the editor can show what
 /// the predicate keeps and what it drops.
-FOUNDATION_EXPORT NSDictionary *XFDPredicatePreview(NSString *baseExpression,
+XFORMSDESIGNKIT_EXPORT NSDictionary *XFDPredicatePreview(NSString *baseExpression,
                                                     NSString *predicates,
                                                     XFXMLElement *_Nullable hostElement,
                                                     XFXMLNode *_Nullable contextNode,
@@ -51,10 +57,10 @@ FOUNDATION_EXPORT NSDictionary *XFDPredicatePreview(NSString *baseExpression,
 
 /// Refs suggested from the data's implied schema, relative to `context`
 /// (positional clones collapse to one entry — the schema XForms infers).
-FOUNDATION_EXPORT NSArray *XFDSchemaPathsFromNode(XFXMLNode *context, NSUInteger cap);
+XFORMSDESIGNKIT_EXPORT NSArray *XFDSchemaPathsFromNode(XFXMLNode *context, NSUInteger cap);
 /// The context properties event() exposes for `eventName` (XForms 1.1
 /// §4). nil = unknown event; empty = known to carry none.
-FOUNDATION_EXPORT NSArray *XFDEventContextProperties(NSString *eventName);
+XFORMSDESIGNKIT_EXPORT NSArray *XFDEventContextProperties(NSString *eventName);
 
 /// NSBeep raises on a headless GNUstep (no display server) — the selftest
 /// would hang on a modal exception panel. Every beep in the designer goes

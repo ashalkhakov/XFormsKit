@@ -178,13 +178,13 @@ NSColor *XFInvalidTextColor(void)
 // Every file split out of XFFormView.m defines one of these; referencing
 // them here turns a translation unit missing from a build (GNUmakefile or
 // an Xcode project) into a LINK error instead of a silent runtime gap.
-FOUNDATION_EXPORT void XFAppKitHasWidgetsFile(void);
-FOUNDATION_EXPORT void XFAppKitHasLayoutFile(void);
-FOUNDATION_EXPORT void XFAppKitHasEditingFile(void);
-FOUNDATION_EXPORT void XFAppKitHasTableAdapterFile(void);
-FOUNDATION_EXPORT void XFAppKitHasRichTextEditorFile(void);
-FOUNDATION_EXPORT void XFAppKitHasRichTextFile(void);
-FOUNDATION_EXPORT void XFAppKitHasSVGFile(void);
+extern void XFAppKitHasWidgetsFile(void);
+extern void XFAppKitHasLayoutFile(void);
+extern void XFAppKitHasEditingFile(void);
+extern void XFAppKitHasTableAdapterFile(void);
+extern void XFAppKitHasRichTextEditorFile(void);
+extern void XFAppKitHasRichTextFile(void);
+extern void XFAppKitHasSVGFile(void);
 __attribute__((used)) static void (*const XFAppKitLinkChecks[])(void) = {
     XFAppKitHasWidgetsFile,
     XFAppKitHasLayoutFile,

@@ -5,6 +5,12 @@
 #import "XFErrors.h"
 #import <Foundation/Foundation.h>
 
+/* XFormsKit's own: exported where it is built for Windows (its GNUmakefile),
+   imported everywhere else, as FOUNDATION_EXPORT. */
+#ifndef XFORMSKIT_EXPORT
+#define XFORMSKIT_EXPORT FOUNDATION_EXPORT
+#endif
+
 
 #pragma mark - Tokens
 
@@ -66,19 +72,19 @@ typedef NS_ENUM(NSInteger, XFXPathTokenKind) {
 
 #pragma mark - Axes (XsltForms_xpathAxis)
 
-extern NSString * const XFAxisAncestorOrSelf;
-extern NSString * const XFAxisAncestor;
-extern NSString * const XFAxisAttribute;
-extern NSString * const XFAxisChild;
-extern NSString * const XFAxisDescendantOrSelf;
-extern NSString * const XFAxisDescendant;
-extern NSString * const XFAxisFollowingSibling;
-extern NSString * const XFAxisFollowing;
-extern NSString * const XFAxisNamespace;
-extern NSString * const XFAxisParent;
-extern NSString * const XFAxisPrecedingSibling;
-extern NSString * const XFAxisPreceding;
-extern NSString * const XFAxisSelf;
+XFORMSKIT_EXPORT NSString * const XFAxisAncestorOrSelf;
+XFORMSKIT_EXPORT NSString * const XFAxisAncestor;
+XFORMSKIT_EXPORT NSString * const XFAxisAttribute;
+XFORMSKIT_EXPORT NSString * const XFAxisChild;
+XFORMSKIT_EXPORT NSString * const XFAxisDescendantOrSelf;
+XFORMSKIT_EXPORT NSString * const XFAxisDescendant;
+XFORMSKIT_EXPORT NSString * const XFAxisFollowingSibling;
+XFORMSKIT_EXPORT NSString * const XFAxisFollowing;
+XFORMSKIT_EXPORT NSString * const XFAxisNamespace;
+XFORMSKIT_EXPORT NSString * const XFAxisParent;
+XFORMSKIT_EXPORT NSString * const XFAxisPrecedingSibling;
+XFORMSKIT_EXPORT NSString * const XFAxisPreceding;
+XFORMSKIT_EXPORT NSString * const XFAxisSelf;
 
 #pragma mark - Expressions (XsltForms xpathexpr classes)
 
@@ -233,7 +239,7 @@ typedef XFXPathValue * _Nullable (^XFXPathFnBody)(XFExprContext *ctx, NSArray<XF
 /// XPath 2 string helpers, aggregates, format-number, EXSLT math, XSLTForms
 /// extras (XFXPathExtraFunctions.m). A plain function rather than a category
 /// so a missing compilation unit fails at link time, not at runtime.
-FOUNDATION_EXPORT NSDictionary<NSString *, XFXPathFunction *> *XFXPathExtraFunctionTable(void);
+XFORMSKIT_EXPORT NSDictionary<NSString *, XFXPathFunction *> *XFXPathExtraFunctionTable(void);
 
 #pragma mark - Helpers
 
@@ -243,8 +249,8 @@ FOUNDATION_EXPORT NSDictionary<NSString *, XFXPathFunction *> *XFXPathExtraFunct
 /// 0 and the expression is evaluated (5+5 → 10); anything unparsable stays
 /// text. Everything in the XPath layer must read nodes through this, not
 /// [XFXML stringValueOfNode:], so sum()/comparisons/outputs agree.
-FOUNDATION_EXPORT NSString *XFXPathNodeValue(XFXMLNode *node);
-FOUNDATION_EXPORT XFXMLNode *XFRootNode(XFXMLNode *node);
-FOUNDATION_EXPORT BOOL XFNodeInArray(XFXMLNode *node, NSArray<XFXMLNode *> *array);
-FOUNDATION_EXPORT NSComparisonResult XFCompareDocumentOrder(XFXMLNode *a, XFXMLNode *b);
-FOUNDATION_EXPORT NSArray<XFXMLNode *> *XFSortDocumentOrder(NSArray<XFXMLNode *> *nodes);
+XFORMSKIT_EXPORT NSString *XFXPathNodeValue(XFXMLNode *node);
+XFORMSKIT_EXPORT XFXMLNode *XFRootNode(XFXMLNode *node);
+XFORMSKIT_EXPORT BOOL XFNodeInArray(XFXMLNode *node, NSArray<XFXMLNode *> *array);
+XFORMSKIT_EXPORT NSComparisonResult XFCompareDocumentOrder(XFXMLNode *a, XFXMLNode *b);
+XFORMSKIT_EXPORT NSArray<XFXMLNode *> *XFSortDocumentOrder(NSArray<XFXMLNode *> *nodes);

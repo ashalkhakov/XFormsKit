@@ -38,23 +38,29 @@
 #import "XFType.h"
 #import "XFXML.h"
 
+/* XFormsKit's own: exported where it is built for Windows (its GNUmakefile),
+   imported everywhere else, as FOUNDATION_EXPORT. */
+#ifndef XFORMSKIT_EXPORT
+#define XFORMSKIT_EXPORT FOUNDATION_EXPORT
+#endif
+
 /// Associated-object key tying a cell view back to its XFControl.
-FOUNDATION_EXPORT const void *kXFBoundControlKey;
+XFORMSKIT_EXPORT const void *kXFBoundControlKey;
 /// Associated-object key holding the reconciliation key of a table adapter
 /// or SVG view (widgets carry theirs in XFWidget.key).
-FOUNDATION_EXPORT const void *kXFReconcileKey;
+XFORMSKIT_EXPORT const void *kXFReconcileKey;
 
 /// Layout constants (defined in XFFormView.m).
-FOUNDATION_EXPORT const CGFloat kLabelWidth;
-FOUNDATION_EXPORT const CGFloat kRowHeight;
-FOUNDATION_EXPORT const CGFloat kTextareaHeight;
-FOUNDATION_EXPORT const CGFloat kRowGap;
-FOUNDATION_EXPORT const CGFloat kMargin;
-FOUNDATION_EXPORT const CGFloat kIndent;
-FOUNDATION_EXPORT const CGFloat kFieldWidth;
-FOUNDATION_EXPORT const CGFloat kInlineFieldWidth;
-FOUNDATION_EXPORT const CGFloat kLineGap;
-FOUNDATION_EXPORT const CGFloat kWrapWidth;
+XFORMSKIT_EXPORT const CGFloat kLabelWidth;
+XFORMSKIT_EXPORT const CGFloat kRowHeight;
+XFORMSKIT_EXPORT const CGFloat kTextareaHeight;
+XFORMSKIT_EXPORT const CGFloat kRowGap;
+XFORMSKIT_EXPORT const CGFloat kMargin;
+XFORMSKIT_EXPORT const CGFloat kIndent;
+XFORMSKIT_EXPORT const CGFloat kFieldWidth;
+XFORMSKIT_EXPORT const CGFloat kInlineFieldWidth;
+XFORMSKIT_EXPORT const CGFloat kLineGap;
+XFORMSKIT_EXPORT const CGFloat kWrapWidth;
 
 typedef NS_ENUM(NSInteger, XFAtomKind) {
     XFAtomText,
@@ -167,16 +173,16 @@ typedef NS_ENUM(NSInteger, XFBadgeKind) {
 
 /// The view AppKit focuses for a widget (the field editor host, the
 /// scroll view document, or the view itself). Defined in XFFormView.m.
-FOUNDATION_EXPORT NSView *XFKeyViewOf(NSView *view);
+XFORMSKIT_EXPORT NSView *XFKeyViewOf(NSView *view);
 
 /// YES when the effective theme is dark: the system appearance on Apple,
 /// the theme's text background luminance on GNUstep. Badge and info-box
 /// colors are hard values chosen per theme — neither platform has a
 /// semantic "pale warning background". Defined in XFFormView.m.
-FOUNDATION_EXPORT BOOL XFDarkTheme(void);
+XFORMSKIT_EXPORT BOOL XFDarkTheme(void);
 /// The color of invalid labels / cells (systemRedColor where it exists —
 /// it keeps its contrast in dark mode — plain red elsewhere).
-FOUNDATION_EXPORT NSColor *XFInvalidTextColor(void);
+XFORMSKIT_EXPORT NSColor *XFInvalidTextColor(void);
 
 @interface XFFormView () <NSTextViewDelegate, NSTextFieldDelegate>
 @property (nonatomic, strong, readwrite) XFProcessor *processor;

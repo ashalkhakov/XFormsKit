@@ -19,9 +19,9 @@ APP_NAME = XFormsDesigner
 XFormsDesigner_LDFLAGS += -ldispatch
 # The app's own methods by name in a crash report (XFCrashReporter.h).
 XFormsDesigner_LDFLAGS += -rdynamic
-# XFUpdater.m: no updater on GNUstep, the AppImage is updated from outside
+# XFUpdater-GNUstep.m: the stack's GSUpdater, WinSparkle on Windows
 # (../Shared/XFUpdater.h).
-XFormsDesigner_OBJC_FILES = main.m ../Shared/XFUpdater.m
+XFormsDesigner_OBJC_FILES = main.m ../Shared/XFUpdater-GNUstep.m
 
 XFormsDesigner_RESOURCE_FILES = \
 	XFormsDesigner.png \
@@ -38,9 +38,12 @@ XFormsDesigner_INCLUDE_DIRS = \
 	-I../../Sources/XFormsDesignKit/ThirdParty/JUInspectorView
 
 XFormsDesigner_OBJCFLAGS += -fobjc-arc -Wall
-XFormsDesigner_TOOL_LIBS += -lXFormsDesignKit -lXFormsKit
+XFormsDesigner_TOOL_LIBS += -lXFormsDesignKit -lXFormsKit -lGSUpdater
+# The frameworks' import libraries are beside their DLLs on Windows
+# (<Name>.framework), in Versions/Current elsewhere.
 XFormsDesigner_LIB_DIRS += -L../../Sources/XFormsDesignKit/XFormsDesignKit.framework/Versions/Current \
-	-L../../XFormsKit.framework/Versions/Current
+	-L../../Sources/XFormsDesignKit/XFormsDesignKit.framework \
+	-L../../XFormsKit.framework/Versions/Current -L../../XFormsKit.framework
 
 -include GNUmakefile.preamble
 include $(GNUSTEP_MAKEFILES)/application.make
