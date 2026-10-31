@@ -12,8 +12,9 @@ name: Build
 # appcast-XFormsDesigner.xml), the AppImage with its update information, the
 # installer with its WinSparkle appcast (appcast-windows.xml), and the
 # frameworks for what builds on them (xformskit-<version>-ubuntu22.04-<arch>
-# and -windows-clang64-x86_64.tar.xz, which gnustep-release-actions'
-# deps.sh fetches for an XFORMSKIT_VERSION pin), attached to the tag's
+# and -windows-clang64-x86_64.tar.xz, and xformskit-<version>-apple.zip, the
+# XCFrameworks, which gnustep-release-actions' deps.sh fetches for an
+# XFORMSKIT_VERSION pin), attached to the tag's
 # release (a pre-release when the tag has a '-'). What it builds on is in
 # .github/pins.env.
 on:
@@ -49,6 +50,7 @@ jobs:
     with:
       tag: ${{ inputs.tag }}
       apps: XFormsViewer=XFormsViewer XFormsDesigner=XFormsDesigner
+      library: true
     secrets: inherit
 
   ios:

@@ -252,6 +252,29 @@
 		DK000000000000000000000A /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; };
 		DK000000000000000000000D /* XFormsDesignKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DK0000000000000000000002 /* XFormsDesignKit.framework */; };
 		DK000000000000000000000E /* XFormsDesignKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DK0000000000000000000002 /* XFormsDesignKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		PH0000000000000000000101 /* XFDActionRowsPane.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000067 /* XFDActionRowsPane.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH0000000000000000000102 /* XFDDesignOverlay.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000002000000000000001E /* XFDDesignOverlay.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH0000000000000000000103 /* XFDDocument.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000011 /* XFDDocument.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH0000000000000000000104 /* XFDEditors.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000012 /* XFDEditors.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH0000000000000000000105 /* XFDEventsConsole.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000002000000000000006A /* XFDEventsConsole.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH0000000000000000000106 /* XFDEventsPane.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000066 /* XFDEventsPane.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH0000000000000000000107 /* XFDExpressionField.h in Headers */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000065 /* XFDExpressionField.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH0000000000000000000108 /* XFDIDRefField.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000002000000000000001D /* XFDIDRefField.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH0000000000000000000109 /* XFDInspectorSpecs.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000063 /* XFDInspectorSpecs.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH000000000000000000010A /* XFDInstanceXMLEditor.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000065 /* XFDInstanceXMLEditor.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH000000000000000000010B /* XFDPalettePanel.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000064 /* XFDPalettePanel.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH000000000000000000010C /* XFDRichTextField.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000002000000000000001C /* XFDRichTextField.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH000000000000000000010D /* XFDSubmissionTester.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000069 /* XFDSubmissionTester.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH000000000000000000010E /* XFDWindowController.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000013 /* XFDWindowController.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH000000000000000000010F /* XFDXPathField.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000002000000000000001B /* XFDXPathField.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH0000000000000000000110 /* XFDXPathTextStorage.h in Headers */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000061 /* XFDXPathTextStorage.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH0000000000000000000111 /* XFormsDesignKit.h in Headers */ = {isa = PBXBuildFile; fileRef = DK0000000000000000000011 /* XFormsDesignKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH0000000000000000000112 /* DMTabBar.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000015 /* DMTabBar.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH0000000000000000000113 /* DMTabBarItem.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000016 /* DMTabBarItem.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH0000000000000000000114 /* JUInspectorBaseView.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000017 /* JUInspectorBaseView.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH0000000000000000000115 /* JUInspectorView.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000018 /* JUInspectorView.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH0000000000000000000116 /* JUInspectorViewContainer.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000019 /* JUInspectorViewContainer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PH0000000000000000000117 /* JUInspectorViewHeader.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000002000000000000001A /* JUInspectorViewHeader.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1220,6 +1243,36 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		PH0000000000000000000001 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				PH0000000000000000000101 /* XFDActionRowsPane.h in Headers */,
+				PH0000000000000000000102 /* XFDDesignOverlay.h in Headers */,
+				PH0000000000000000000103 /* XFDDocument.h in Headers */,
+				PH0000000000000000000104 /* XFDEditors.h in Headers */,
+				PH0000000000000000000105 /* XFDEventsConsole.h in Headers */,
+				PH0000000000000000000106 /* XFDEventsPane.h in Headers */,
+				PH0000000000000000000107 /* XFDExpressionField.h in Headers */,
+				PH0000000000000000000108 /* XFDIDRefField.h in Headers */,
+				PH0000000000000000000109 /* XFDInspectorSpecs.h in Headers */,
+				PH000000000000000000010A /* XFDInstanceXMLEditor.h in Headers */,
+				PH000000000000000000010B /* XFDPalettePanel.h in Headers */,
+				PH000000000000000000010C /* XFDRichTextField.h in Headers */,
+				PH000000000000000000010D /* XFDSubmissionTester.h in Headers */,
+				PH000000000000000000010E /* XFDWindowController.h in Headers */,
+				PH000000000000000000010F /* XFDXPathField.h in Headers */,
+				PH0000000000000000000110 /* XFDXPathTextStorage.h in Headers */,
+				PH0000000000000000000111 /* XFormsDesignKit.h in Headers */,
+				PH0000000000000000000112 /* DMTabBar.h in Headers */,
+				PH0000000000000000000113 /* DMTabBarItem.h in Headers */,
+				PH0000000000000000000114 /* JUInspectorBaseView.h in Headers */,
+				PH0000000000000000000115 /* JUInspectorView.h in Headers */,
+				PH0000000000000000000116 /* JUInspectorViewContainer.h in Headers */,
+				PH0000000000000000000117 /* JUInspectorViewHeader.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
@@ -1337,6 +1390,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = DK0000000000000000000006 /* Build configuration list for PBXNativeTarget "XFormsDesignKit" */;
 			buildPhases = (
+				PH0000000000000000000001 /* Headers */,
 				DK0000000000000000000003 /* Sources */,
 				DK0000000000000000000004 /* Frameworks */,
 				DK0000000000000000000005 /* Resources */,
@@ -1770,7 +1824,6 @@
 				MARKETING_VERSION = 0.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsKit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				PUBLIC_HEADERS_FOLDER_PATH = Headers;
 				SDKROOT = auto;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator";
@@ -1813,7 +1866,6 @@
 				MARKETING_VERSION = 0.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsKit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				PUBLIC_HEADERS_FOLDER_PATH = Headers;
 				SDKROOT = auto;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator";
