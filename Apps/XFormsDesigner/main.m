@@ -19,6 +19,7 @@
 #import "XFDSubmissionTester.h"
 #import "XFDEventsConsole.h"
 #import "XFUpdater.h"
+#import "XFMenuStyle.h"
 
 /* The application's delegate, from MainMenu.xib: it holds the updater.
    Set up as the menu is loaded, before the app finishes launching (as
@@ -52,6 +53,13 @@
         return [_updater canCheckForUpdates];
     }
     return YES;
+}
+
+// Where the menus are in the windows (XFMenuStyle.h), a designer with no
+// window left shows nothing of itself: it quits with its last one.
+- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender
+{
+    return XFMenusInWindows();
 }
 
 @end

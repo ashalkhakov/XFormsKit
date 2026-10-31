@@ -2,6 +2,7 @@
 #import "XFFormDocument.h"
 #import "XFDocumentWindowController.h"
 #import "XFUpdater.h"
+#import "XFMenuStyle.h"
 #if defined(GNUSTEP)
 #import <XFormsKit/XFCrashReporter.h>   // not in the Xcode project: GNUstep-only
 #endif
@@ -42,9 +43,18 @@
     [self installMenus];
 }
 
+// No untitled form at launch, as a document viewer: one is opened. Except
+// where the menus are in the windows (XFMenuStyle.h), where a viewer with no
+// window shows nothing of itself: there it opens with a new form, as File >
+// New would, and quits with its last window.
 - (BOOL)applicationShouldOpenUntitledFile:(NSApplication *)sender
 {
-    return NO;
+    return XFMenusInWindows();
+}
+
+- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender
+{
+    return XFMenusInWindows();
 }
 
 - (void)installMenus
