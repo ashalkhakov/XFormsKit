@@ -9,8 +9,8 @@
    its NSDocumentController as it opens its own documents, and adds
    +[XFDDocument formMenuItem] to its main menu.
 
-   Like XFormsKit, the framework carries no headers: include them from
-   Sources/XFormsDesignKit.
+   Its headers are installed with it, laid out as in
+   Sources/XFormsDesignKit (ThirdParty/ too).
    Copyright (c) 2026 the XFormsKit contributors. LGPL 2.1. */
 #pragma once
 #import <AppKit/AppKit.h>
