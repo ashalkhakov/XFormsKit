@@ -8,6 +8,12 @@
 #define XF_APPKIT_PRIV_H
 
 #import "XFFormView.h"
+/* XFormsKit's own: exported where it is built for Windows (its GNUmakefile),
+   imported everywhere else, as FOUNDATION_EXPORT. */
+#ifndef XFORMSKIT_EXPORT
+#define XFORMSKIT_EXPORT FOUNDATION_EXPORT
+#endif
+
 #import <XFormsKit/XFXMLTypes.h>
 #import "XFRichText.h"
 #import "XFSVG.h"
@@ -38,11 +44,6 @@
 #import "XFType.h"
 #import "XFXML.h"
 
-/* XFormsKit's own: exported where it is built for Windows (its GNUmakefile),
-   imported everywhere else, as FOUNDATION_EXPORT. */
-#ifndef XFORMSKIT_EXPORT
-#define XFORMSKIT_EXPORT FOUNDATION_EXPORT
-#endif
 
 /// Associated-object key tying a cell view back to its XFControl.
 XFORMSKIT_EXPORT const void *kXFBoundControlKey;

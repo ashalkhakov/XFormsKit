@@ -1,15 +1,15 @@
 #import <Foundation/Foundation.h>
-#if __has_include(<AppKit/AppKit.h>)
-#import <AppKit/AppKit.h>
-#endif
-#if __has_include(<UIKit/UIKit.h>)
-#import <UIKit/UIKit.h>
-
 /* XFormsKit's own: exported where it is built for Windows (its GNUmakefile),
    imported everywhere else, as FOUNDATION_EXPORT. */
 #ifndef XFORMSKIT_EXPORT
 #define XFORMSKIT_EXPORT FOUNDATION_EXPORT
 #endif
+
+#if __has_include(<AppKit/AppKit.h>)
+#import <AppKit/AppKit.h>
+#endif
+#if __has_include(<UIKit/UIKit.h>)
+#import <UIKit/UIKit.h>
 #endif
 
 NS_ASSUME_NONNULL_BEGIN
