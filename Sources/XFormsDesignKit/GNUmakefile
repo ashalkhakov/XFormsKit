@@ -50,6 +50,36 @@ XFormsDesignKit_OBJC_FILES = \
 
 XFormsDesignKit_RESOURCE_FILES = XFDDocumentWindow.xib
 
+# Its headers, installed where the framework is, laid out as here: what
+# builds on an installed XFormsDesignKit (WorkflowKit's designer) includes
+# <XFormsDesignKit/XFormsDesignKit.h>, or names this directory and
+# ThirdParty/DMTabBar as a checkout of it would.
+XFormsDesignKit_HEADER_FILES_DIR = .
+XFormsDesignKit_HEADER_FILES = \
+	XFDActionRowsPane.h \
+	XFDDesignOverlay.h \
+	XFDDocument.h \
+	XFDEditors.h \
+	XFDEventsConsole.h \
+	XFDEventsPane.h \
+	XFDExpressionField.h \
+	XFDIDRefField.h \
+	XFDInspectorSpecs.h \
+	XFDInstanceXMLEditor.h \
+	XFDPalettePanel.h \
+	XFDRichTextField.h \
+	XFDSubmissionTester.h \
+	XFDWindowController.h \
+	XFDXPathField.h \
+	XFDXPathTextStorage.h \
+	XFormsDesignKit.h \
+	ThirdParty/DMTabBar/DMTabBar.h \
+	ThirdParty/DMTabBar/DMTabBarItem.h \
+	ThirdParty/JUInspectorView/JUInspectorBaseView.h \
+	ThirdParty/JUInspectorView/JUInspectorView.h \
+	ThirdParty/JUInspectorView/JUInspectorViewContainer.h \
+	ThirdParty/JUInspectorView/JUInspectorViewHeader.h
+
 XFormsDesignKit_INCLUDE_DIRS = \
 	-I. \
 	-I.. \
