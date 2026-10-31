@@ -138,6 +138,13 @@
     // sense, and closing it must not take the app with it.
     NSTask *task = [[NSTask alloc] init];
     [task setLaunchPath:executable];
+    // The app looks the way this one does: the Windows installer starts the
+    // launcher with -GSTheme WinUXTheme, an argument, which the app it starts
+    // would not otherwise have.
+    NSString *theme = [[NSUserDefaults standardUserDefaults] stringForKey:@"GSTheme"];
+    if (theme.length > 0) {
+        [task setArguments:@[ @"-GSTheme", theme ]];
+    }
     @try {
         [task launch];
     } @catch (NSException *problem) {
