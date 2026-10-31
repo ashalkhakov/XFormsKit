@@ -5,6 +5,8 @@ XFormsKit.xcodeproj/project.pbxproj, for what builds on their XCFrameworks
 
   - XFormsKit's PUBLIC_HEADERS_FOLDER_PATH (Headers, which put them beside
     the framework in the build products, not in it) goes, for the default;
+  - XFormsKit publishes every header its GNUmakefile installs (XFType.h,
+    XFAVT.h and XFSVG.h, which XFormsKit.h imports, were not);
   - XFormsDesignKit gets a Headers phase (ids PH...) with the headers its
     GNUmakefile installs (XFormsDesignKit_HEADER_FILES), public; Xcode puts
     them side by side, ThirdParty/'s too, so their quoted imports of each
@@ -20,24 +22,46 @@ s = s.replace('\t\t\t\tPUBLIC_HEADERS_FOLDER_PATH = Headers;\n', '')
 
 PHASE = 'PH0000000000000000000001'
 TARGET = 'DK0000000000000000000001'
-if PHASE in s:
-    open(path, 'w').write(s)
-    print('already public'); sys.exit(0)
-
-make = open('Sources/XFormsDesignKit/GNUmakefile').read().replace('\\\n', ' ')
-headers = re.search(r'^XFormsDesignKit_HEADER_FILES\s*=\s*(.*)$', make, re.M).group(1).split()
+KIT_PHASE = 'HH0000010000000000000001'   # XFormsKit's Headers
 
 
 def ref(name):
     m = re.findall(r'^\t\t([0-9A-Z]{24}) /\* %s \*/ = \{isa = PBXFileReference' % re.escape(name), s, re.M)
-    assert len(m) == 1, (name, m)
-    return m[0]
+    assert len(m) <= 1, (name, m)
+    return m[0] if m else None
 
 
 def section_end(name):
     i = s.find('/* End %s section */' % name)
     assert i != -1, name
     return i
+
+
+# XFormsKit: every header its GNUmakefile installs that the project knows
+# (not XFCrashReporter.h, GNUstep's alone) and does not yet publish.
+make = open('GNUmakefile').read().replace('\\\n', ' ')
+kit = re.search(r'^XFormsKit_HEADER_FILES\s*=\s*(.*)$', make, re.M).group(1).split()
+added = []
+for n, name in enumerate(kit, 1):
+    if re.search(r'/\* %s in Headers \*/ = \{isa = PBXBuildFile' % re.escape(name), s) or ref(name) is None:
+        continue
+    build = 'PK%022X' % (0x100 + n)
+    i = section_end('PBXBuildFile')
+    s = s[:i] + ('\t\t%s /* %s in Headers */ = {isa = PBXBuildFile; fileRef = %s /* %s */; '
+                 'settings = {ATTRIBUTES = (Public, ); }; };\n' % (build, name, ref(name), name)) + s[i:]
+    anchor = '\t\t%s /* Headers */ = {\n\t\t\tisa = PBXHeadersBuildPhase;\n\t\t\tbuildActionMask = 2147483647;\n\t\t\tfiles = (\n' % KIT_PHASE
+    assert s.count(anchor) == 1
+    s = s.replace(anchor, anchor + '\t\t\t\t%s /* %s in Headers */,\n' % (build, name))
+    added.append(name)
+if added:
+    print('public in XFormsKit:', ' '.join(added))
+
+if PHASE in s:
+    open(path, 'w').write(s)
+    print('already public'); sys.exit(0)
+
+make = open('Sources/XFormsDesignKit/GNUmakefile').read().replace('\\\n', ' ')
+headers = re.search(r'^XFormsDesignKit_HEADER_FILES\s*=\s*(.*)$', make, re.M).group(1).split()
 
 
 files = []

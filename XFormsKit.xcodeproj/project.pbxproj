@@ -275,6 +275,9 @@
 		PH0000000000000000000115 /* JUInspectorView.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000018 /* JUInspectorView.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		PH0000000000000000000116 /* JUInspectorViewContainer.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000019 /* JUInspectorViewContainer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		PH0000000000000000000117 /* JUInspectorViewHeader.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000002000000000000001A /* JUInspectorViewHeader.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PK0000000000000000000112 /* XFType.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000F8 /* XFType.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PK000000000000000000012C /* XFAVT.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000127 /* XFAVT.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		PK000000000000000000012D /* XFSVG.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000128 /* XFSVG.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1174,6 +1177,9 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				PK000000000000000000012D /* XFSVG.h in Headers */,
+				PK000000000000000000012C /* XFAVT.h in Headers */,
+				PK0000000000000000000112 /* XFType.h in Headers */,
 				AA0000010000000000000010 /* XFormsKit.h in Headers */,
 				AA0000010000000000000011 /* XFNamespaces.h in Headers */,
 				AA0000010000000000000012 /* XFErrors.h in Headers */,
