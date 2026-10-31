@@ -5,22 +5,24 @@
 One workflow, `.github/workflows/build.yml`, builds, tests and ships. Every
 push and pull request uploads unsigned builds to its Actions run, kept two
 weeks, each named for its app and version: zips of XFormsViewer and
-XFormsDesigner, the iOS builds of XFormsMobile, and the XFormsKit AppImage.
+XFormsDesigner, the iOS builds of XFormsMobile, the XFormsKit AppImage, and
+the Windows installer, `XFormsKit-<version>-win64.msi`.
 
 A `v*` tag also releases them, attached to the tag's GitHub release (a
 pre-release when the tag has a `-`): the Mac apps signed and notarized, each
 with its Sparkle appcast; XFormsMobile as an unsigned
 `XFormsMobile-<version>-unsigned.ipa` and a simulator build,
 `XFormsMobile-Simulator-<version>.zip`; the AppImage with its update
-information and `.zsync`. A run started by hand builds the branch as
+information and `.zsync`; the Windows installer with its WinSparkle appcast,
+`appcast-windows.xml`. A run started by hand builds the branch as
 artifacts, or, given a tag, builds that tag and attaches to its release. The
 "Run workflow" button only appears once the workflow is on the default
 branch; a tag triggers it from anywhere. Signing, notarizing, the appcasts,
 the AppImage and its update information are the shared workflows in
 `ashalkhakov/gnustep-release-actions`; the GNUstep stack is gnustep-patches'
 release `.github/pins.env` names; the build is this repository's
-`GNUmakefile` and `Makefile.apple`, and the AppImage's smoke test
-`Scripts/appimage-smoke.sh`.
+`GNUmakefile` and `Makefile.apple`, the AppImage's smoke test
+`Scripts/appimage-smoke.sh`, and the installer's `.github/release/windows.conf`.
 
 ## Linux: one AppImage
 
@@ -59,6 +61,20 @@ What the image carries besides the apps:
 A release's image (not a pre-release's) carries update information naming
 the newest release's `.zsync`, which is attached beside it, so Gear Lever,
 AppImageUpdate and the like update it by the blocks that changed.
+
+## Windows: one installer
+
+gnustep-release-actions' `msi` makes `XFormsKit-<version>-win64.msi` on
+MSYS2 CLANG64, the same as every app's installer: the framework, the viewer,
+the designer and the launcher, in the GNUstep runtime they run on, with
+WinUXTheme for its look. Its Start menu shortcut starts the launcher, which
+asks which app; CI installs it and checks the launcher is still up 25
+seconds later. The viewer and the designer update themselves with WinSparkle
+through the stack's GSUpdater (*Check for Updates…*;
+`Apps/Shared/XFUpdater.h`): a release (not a pre-release) writes
+`appcast-windows.xml`, signed with the same `SPARKLE_PRIVATE_KEY` as the Mac
+appcasts. A crash writes the exception and its frames as module and offset
+to standard error (`XFCrashReporter.h`), for `llvm-symbolizer`.
 
 ## macOS: signed apps
 

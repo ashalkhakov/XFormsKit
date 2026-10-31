@@ -190,8 +190,14 @@ XFormsKit_OBJC_FILES = \
 	Sources/XFormsKit/AppKit/XFTableAdapter.m \
 	Sources/XFormsKit/AppKit/XFRichTextEditor.m \
 	Sources/XFormsKit/AppKit/XFRichTextPresentation.m \
-	Sources/XFormsKit/AppKit/XFSVGView.m \
-	Sources/XFormsKit/AppKit/XFCrashReporter.m
+	Sources/XFormsKit/AppKit/XFSVGView.m
+
+# The crash reporter, one file for each kind of system (XFCrashReporter.h).
+ifneq ($(filter mingw% windows%,$(GNUSTEP_TARGET_OS)),)
+XFormsKit_OBJC_FILES += Sources/XFormsKit/AppKit/XFCrashReporter-windows.m
+else
+XFormsKit_OBJC_FILES += Sources/XFormsKit/AppKit/XFCrashReporter-posix.m
+endif
 
 XFormsKit_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath
 XFormsKit_OBJCFLAGS += -fobjc-arc -Wall -Wextra
@@ -203,6 +209,12 @@ XFormsKit_OBJCFLAGS += -fobjc-arc -Wall -Wextra
 # Opal -- without it the framework loads and then dies at the first
 # <text> it paints.
 XFormsKit_LIBRARIES_DEPEND_UPON += -ldispatch -lcrypto -lopal -lgnustep-corebase
+# Windows: a DLL exports what it marks, and once the runtime marks its
+# classes, its C constants and functions must be marked too: XFORMSKIT_EXPORT
+# (in its headers) is "export" while it is built, an import elsewhere.
+ifneq ($(filter mingw% windows%,$(GNUSTEP_TARGET_OS)),)
+XFormsKit_CPPFLAGS += "-DXFORMSKIT_EXPORT=__declspec(dllexport) extern"
+endif
 
 XFormsKitTests_NEEDS_GUI = yes
 XFormsKitTests_OBJC_FILES = \
@@ -237,8 +249,12 @@ XFormsKitTests_RESOURCE_FILES = Tests/Fixtures/hello.xhtml
 XFormsKitTests_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPath \
                               -ISources/XFormsKit/AppKit -ISources/XFormsDesignKit
 XFormsKitTests_OBJCFLAGS += -fobjc-arc -Wall
-XFormsKitTests_BUNDLE_LIBS += -lXFormsKit -lXCTest
-XFormsKitTests_LIB_DIRS += -L./XFormsKit.framework/Versions/Current
+# Opal and corebase too: the SVG tests draw through CoreGraphics themselves,
+# and a Windows DLL names every library it uses.
+XFormsKitTests_BUNDLE_LIBS += -lXFormsKit -lXCTest -lopal -lgnustep-corebase
+# The framework's import library is beside its DLL on Windows
+# (XFormsKit.framework), in Versions/Current elsewhere.
+XFormsKitTests_LIB_DIRS += -L./XFormsKit.framework/Versions/Current -L./XFormsKit.framework
 XFormsKitTests_PRINCIPAL_CLASS = XCTestCase
 
 # The W3C XForms 1.1 suite as per-case XCTest assertions (Tests/W3CTests):
@@ -268,7 +284,7 @@ XFW3CTests_INCLUDE_DIRS = -ISources -ISources/XFormsKit -ISources/XFormsKit/XPat
 XFW3CTests_OBJCFLAGS += -fobjc-arc -Wall
 
 XFW3CTests_BUNDLE_LIBS += -lXFormsKit -lXCTest
-XFW3CTests_LIB_DIRS += -L./XFormsKit.framework/Versions/Current
+XFW3CTests_LIB_DIRS += -L./XFormsKit.framework/Versions/Current -L./XFormsKit.framework
 XFW3CTests_PRINCIPAL_CLASS = XCTestCase
 
 -include GNUmakefile.preamble
@@ -291,10 +307,13 @@ after-clean::
 	@for app in $(XF_APPS); do $(MAKE) -C $$app clean || exit 1; done
 
 XVFB = $(if $(DISPLAY),,$(shell command -v xvfb-run >/dev/null 2>&1 && echo xvfb-run -a))
+# The tree's framework is found on LD_LIBRARY_PATH, and on Windows on PATH
+# (its DLL beside the wrapper's top, XFormsKit.framework).
 check:: all
 	Scripts/check-sources.sh
 	@if command -v xctest >/dev/null 2>&1; then \
 	  LD_LIBRARY_PATH="$(CURDIR)/XFormsKit.framework/Versions/Current:$$LD_LIBRARY_PATH" \
+	  PATH="$(CURDIR)/XFormsKit.framework:$$PATH" \
 	  $(XVFB) xctest ./XFormsKitTests.bundle; \
 	else \
 	  echo "xctest not on PATH. Install gnustep/tools-xctest and re-run make check."; \
@@ -324,6 +343,7 @@ apps: viewer designer launcher
 w3ccheck: all
 	@if command -v xctest >/dev/null 2>&1; then \
 	  LD_LIBRARY_PATH="$(CURDIR)/XFormsKit.framework/Versions/Current:$$LD_LIBRARY_PATH" \
+	  PATH="$(CURDIR)/XFormsKit.framework:$$PATH" \
 	  xctest ./XFW3CTests.bundle; \
 	else \
 	  echo "xctest not on PATH. Install gnustep/tools-xctest and re-run make w3ccheck."; \
@@ -334,4 +354,5 @@ w3ccheck: all
 testsuite: all
 	$(MAKE) -C tools/xftestrun
 	LD_LIBRARY_PATH="$(CURDIR)/XFormsKit.framework/Versions/Current:$$LD_LIBRARY_PATH" \
+	  PATH="$(CURDIR)/XFormsKit.framework:$$PATH" \
 	  ./tools/xftestrun/obj/xftestrun TestSuite/XForms1.1/Edition1

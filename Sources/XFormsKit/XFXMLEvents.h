@@ -3,6 +3,12 @@
 #import <XFormsKit/XFEvent.h>
 #import <XFormsKit/XFListener.h>
 
+/* XFormsKit's own: exported where it is built for Windows (its GNUmakefile),
+   imported everywhere else, as FOUNDATION_EXPORT. */
+#ifndef XFORMSKIT_EXPORT
+#define XFORMSKIT_EXPORT FOUNDATION_EXPORT
+#endif
+
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -132,19 +138,19 @@ typedef NS_ENUM(NSInteger, XFTraceKind) {
 
 /// debugConsole.write: forwards one formatted line to the installed sink;
 /// no-op (and no format evaluation beyond the varargs call) without one.
-FOUNDATION_EXPORT void XFTraceWrite(XFTraceKind kind,
+XFORMSKIT_EXPORT void XFTraceWrite(XFTraceKind kind,
                                     NSString *_Nullable eventName,
                                     XFXMLElement *_Nullable element,
                                     NSString *format, ...) NS_FORMAT_FUNCTION(4, 5);
 
 /// "<input class="…" id="…"/>" — the target description the XSLTForms
 /// console prints in its Dispatching/Captured lines.
-FOUNDATION_EXPORT NSString *XFTraceDescribeElement(XFXMLElement *_Nullable element);
+XFORMSKIT_EXPORT NSString *XFTraceDescribeElement(XFXMLElement *_Nullable element);
 
 /// XsltForms_browser.name2string: "@Q{ns}name" for attributes,
 /// "Q{ns}name" for elements, "#text"/"#document"… otherwise — the node
 /// description in Setvalue/insert/Calculate lines.
-FOUNDATION_EXPORT NSString *XFTraceDescribeNode(XFXMLNode *_Nullable node);
+XFORMSKIT_EXPORT NSString *XFTraceDescribeNode(XFXMLNode *_Nullable node);
 
 @protocol XFXMLEventHandler <NSObject>
 - (void)handleXMLEvent:(XFEvent *)event;

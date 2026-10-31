@@ -1,6 +1,12 @@
 #import <Foundation/Foundation.h>
 #import <XFormsKit/XFXMLTypes.h>
 
+/* XFormsKit's own: exported where it is built for Windows (its GNUmakefile),
+   imported everywhere else, as FOUNDATION_EXPORT. */
+#ifndef XFORMSKIT_EXPORT
+#define XFORMSKIT_EXPORT FOUNDATION_EXPORT
+#endif
+
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -12,7 +18,7 @@ typedef NS_ENUM(NSInteger, XFXPathValueType) {
 };
 
 /// XPath 1.0 number-to-string conversion (shortest round-trip decimal).
-FOUNDATION_EXPORT NSString *XFNumberToString(double n);
+XFORMSKIT_EXPORT NSString *XFNumberToString(double n);
 
 @interface XFXPathValue : NSObject
 

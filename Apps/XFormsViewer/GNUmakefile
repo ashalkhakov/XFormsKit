@@ -21,7 +21,7 @@ XFormsViewer_OBJC_FILES = \
 	main.m \
 	XFFormDocument.m \
 	XFDocumentWindowController.m \
-	../Shared/XFUpdater.m
+	../Shared/XFUpdater-GNUstep.m
 
 XFormsViewer_RESOURCE_FILES = \
 	XFormsViewer.png \
@@ -85,8 +85,11 @@ XFormsViewer_INCLUDE_DIRS = \
 	-I../../Sources/XFormsKit/XPath
 
 XFormsViewer_OBJCFLAGS += -fobjc-arc -Wall
-XFormsViewer_TOOL_LIBS += -lXFormsKit
-XFormsViewer_LIB_DIRS += -L../../XFormsKit.framework/Versions/Current
+# GSUpdater, the stack's: updates on Windows (../Shared/XFUpdater.h).
+XFormsViewer_TOOL_LIBS += -lXFormsKit -lGSUpdater
+# The framework's import library is beside its DLL on Windows
+# (XFormsKit.framework), in Versions/Current elsewhere.
+XFormsViewer_LIB_DIRS += -L../../XFormsKit.framework/Versions/Current -L../../XFormsKit.framework
 XFormsViewer_MAIN_MODEL_FILE =
 
 -include GNUmakefile.preamble

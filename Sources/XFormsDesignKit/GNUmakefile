@@ -59,7 +59,14 @@ XFormsDesignKit_INCLUDE_DIRS = \
 
 XFormsDesignKit_OBJCFLAGS += -fobjc-arc -Wall
 XFormsDesignKit_LIBRARIES_DEPEND_UPON += -lXFormsKit -ldispatch
-XFormsDesignKit_LIB_DIRS += -L../../XFormsKit.framework/Versions/Current
+# Windows: XFORMSDESIGNKIT_EXPORT (in its headers) is "export" while it is
+# built, an import elsewhere (as XFormsKit's GNUmakefile says).
+ifneq ($(filter mingw% windows%,$(GNUSTEP_TARGET_OS)),)
+XFormsDesignKit_CPPFLAGS += "-DXFORMSDESIGNKIT_EXPORT=__declspec(dllexport) extern"
+endif
+# The framework's import library is beside its DLL on Windows
+# (XFormsKit.framework), in Versions/Current elsewhere.
+XFormsDesignKit_LIB_DIRS += -L../../XFormsKit.framework/Versions/Current -L../../XFormsKit.framework
 
 -include GNUmakefile.preamble
 include $(GNUSTEP_MAKEFILES)/framework.make

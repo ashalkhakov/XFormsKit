@@ -1255,7 +1255,7 @@
 - (void)testRelativeSrcResolvesAgainstBaseURL
 {
     NSString *dir = [NSTemporaryDirectory() stringByAppendingPathComponent:
-        [NSString stringWithFormat:@"xfsrc-%d", getpid()]];
+        [NSString stringWithFormat:@"xfsrc-%d", [[NSProcessInfo processInfo] processIdentifier]]];
     [[NSFileManager defaultManager] createDirectoryAtPath:dir
                               withIntermediateDirectories:YES attributes:nil error:NULL];
     [@"<codes xmlns=\"\"><code>alpha</code><code>beta</code></codes>"

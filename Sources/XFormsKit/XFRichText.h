@@ -1,4 +1,10 @@
 #import <Foundation/Foundation.h>
+/* XFormsKit's own: exported where it is built for Windows (its GNUmakefile),
+   imported everywhere else, as FOUNDATION_EXPORT. */
+#ifndef XFORMSKIT_EXPORT
+#define XFORMSKIT_EXPORT FOUNDATION_EXPORT
+#endif
+
 #if __has_include(<AppKit/AppKit.h>)
 #import <AppKit/AppKit.h>
 #endif
@@ -9,7 +15,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /// Paragraph kind: "p" (default when absent), "h1"–"h3", "ul", "ol".
-FOUNDATION_EXPORT NSString * const XFRichBlockAttributeName;
+XFORMSKIT_EXPORT NSString * const XFRichBlockAttributeName;
 /// Inline markers (@YES). The converter reads and writes ONLY these, never
 /// a font or an underline style: that keeps it identical on Apple and
 /// GNUstep, independent of what NSFontManager can synthesise, and free of
@@ -17,10 +23,10 @@ FOUNDATION_EXPORT NSString * const XFRichBlockAttributeName;
 /// macOS and UIKit on iOS, neither of which the portable half may import.
 /// Turning the markers into something a text view displays is the view
 /// layer's job: see +decoratedString:baseFont: below.
-FOUNDATION_EXPORT NSString * const XFRichBoldAttributeName;
-FOUNDATION_EXPORT NSString * const XFRichItalicAttributeName;
-FOUNDATION_EXPORT NSString * const XFRichUnderlineAttributeName;
-FOUNDATION_EXPORT NSString * const XFRichStrikeAttributeName;
+XFORMSKIT_EXPORT NSString * const XFRichBoldAttributeName;
+XFORMSKIT_EXPORT NSString * const XFRichItalicAttributeName;
+XFORMSKIT_EXPORT NSString * const XFRichUnderlineAttributeName;
+XFORMSKIT_EXPORT NSString * const XFRichStrikeAttributeName;
 
 /// Two-way converter between NSAttributedString and the XHTML subset the
 /// rich textarea stores in the instance (`xf:textarea` /

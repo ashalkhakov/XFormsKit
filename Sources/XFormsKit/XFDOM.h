@@ -1,5 +1,11 @@
 #import <Foundation/Foundation.h>
 
+/* XFormsKit's own: exported where it is built for Windows (its GNUmakefile),
+   imported everywhere else, as FOUNDATION_EXPORT. */
+#ifndef XFORMSKIT_EXPORT
+#define XFORMSKIT_EXPORT FOUNDATION_EXPORT
+#endif
+
 /// XFDOM — the portable XML tree XFormsKit runs on.
 ///
 /// A clean-room implementation of the slice of the NSXML API the engine
@@ -50,7 +56,7 @@ typedef NS_OPTIONS(NSUInteger, XFDOMNodeOptions) {
     XFDOMNodePrettyPrint = 1 << 2,
 };
 
-FOUNDATION_EXPORT NSString *const XFDOMErrorDomain;
+XFORMSKIT_EXPORT NSString *const XFDOMErrorDomain;
 
 #import <XFormsKit/XFDOMNode.h>
 #import <XFormsKit/XFDOMElement.h>

@@ -17,16 +17,22 @@
 #pragma once
 #import <AppKit/AppKit.h>
 
+/* XFormsDesignKit's own: exported where it is built for Windows (its GNUmakefile),
+   imported everywhere else, as FOUNDATION_EXPORT. */
+#ifndef XFORMSDESIGNKIT_EXPORT
+#define XFORMSDESIGNKIT_EXPORT FOUNDATION_EXPORT
+#endif
+
 NS_ASSUME_NONNULL_BEGIN
 
 /// The colour one token kind is drawn in — the kinds
 /// +[XFXPath highlightTokensForString:] reports.
-FOUNDATION_EXPORT NSColor *XFDXPathTokenColor(NSString *kind);
+XFORMSDESIGNKIT_EXPORT NSColor *XFDXPathTokenColor(NSString *kind);
 
 /// The expression coloured, as a plain attributed string, for somewhere
 /// that only DISPLAYS it — a table cell. Anywhere it can be EDITED uses
 /// XFDExpressionField, whose storage recolours as the text changes.
-FOUNDATION_EXPORT NSAttributedString *XFDXPathAttributedString(NSString *expression,
+XFORMSDESIGNKIT_EXPORT NSAttributedString *XFDXPathAttributedString(NSString *expression,
                                                                NSFont *_Nullable font);
 
 @interface XFDXPathTextStorage : NSTextStorage

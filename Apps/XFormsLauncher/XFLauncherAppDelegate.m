@@ -90,9 +90,10 @@
 
 /// The chosen app's executable, looked for beside this one.
 ///
-/// Inside the image both live in the same Applications directory, which is
-/// where a GNUstep application bundle's parent is; GNUSTEP_LOCAL_APPS covers
-/// an installed tree where they do not sit together.
+/// Inside the image (or the Windows installer's runtime) both live in the
+/// same Applications directory, which is where a GNUstep application
+/// bundle's parent is; GNUSTEP_LOCAL_APPS covers an installed tree where they
+/// do not sit together. On Windows the executable is <App>.exe.
 - (nullable NSString *)executablePathForApp:(NSString *)app
 {
     NSFileManager *files = [NSFileManager defaultManager];
@@ -109,8 +110,10 @@
     for (NSString *root in roots) {
         NSString *path = [root stringByAppendingPathComponent:
                              [NSString stringWithFormat:@"%@.app/%@", app, app]];
-        if ([files isExecutableFileAtPath:path]) {
-            return path;
+        for (NSString *candidate in @[ path, [path stringByAppendingPathExtension:@"exe"] ]) {
+            if ([files isExecutableFileAtPath:candidate]) {
+                return candidate;
+            }
         }
     }
     return nil;
@@ -135,6 +138,13 @@
     // sense, and closing it must not take the app with it.
     NSTask *task = [[NSTask alloc] init];
     [task setLaunchPath:executable];
+    // The app looks the way this one does: the Windows installer starts the
+    // launcher with -GSTheme WinUXTheme, an argument, which the app it starts
+    // would not otherwise have.
+    NSString *theme = [[NSUserDefaults standardUserDefaults] stringForKey:@"GSTheme"];
+    if (theme.length > 0) {
+        [task setArguments:@[ @"-GSTheme", theme ]];
+    }
     @try {
         [task launch];
     } @catch (NSException *problem) {
