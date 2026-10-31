@@ -10,9 +10,12 @@ name: Build
 # (or a run started by hand with one) is also released: the Mac apps signed
 # and notarized with their Sparkle appcasts (appcast-XFormsViewer.xml,
 # appcast-XFormsDesigner.xml), the AppImage with its update information, the
-# installer with its WinSparkle appcast (appcast-windows.xml), attached to
-# the tag's release (a pre-release when the tag has a '-'). What
-# it builds on is in .github/pins.env.
+# installer with its WinSparkle appcast (appcast-windows.xml), and the
+# frameworks for what builds on them (xformskit-<version>-ubuntu22.04-<arch>
+# and -windows-clang64-x86_64.tar.xz, which gnustep-release-actions'
+# deps.sh fetches for an XFORMSKIT_VERSION pin), attached to the tag's
+# release (a pre-release when the tag has a '-'). What it builds on is in
+# .github/pins.env.
 on:
   push:
     branches: ['**']
@@ -39,6 +42,7 @@ jobs:
     uses: ashalkhakov/gnustep-release-actions/.github/workflows/linux.yml@v1
     with:
       tag: ${{ inputs.tag }}
+      library: true
 
   macos:
     uses: ashalkhakov/gnustep-release-actions/.github/workflows/macos.yml@v1
@@ -57,4 +61,5 @@ jobs:
     uses: ashalkhakov/gnustep-release-actions/.github/workflows/windows.yml@v1
     with:
       tag: ${{ inputs.tag }}
+      library: true
     secrets: inherit
