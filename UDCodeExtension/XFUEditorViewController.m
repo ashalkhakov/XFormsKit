@@ -68,6 +68,22 @@ static const CGFloat XFUOutlineMinimum = 160;
 
 @end
 
+// A badge at a pane tab's size (16 points square), drawn afresh: a copy of a
+// badge drawn with -lockFocus is blank on GNUstep, whose image keeps what
+// was drawn in a cache the copy does not take.
+static NSImage *XFUTabImage(NSImage *badge) {
+  if (badge == nil)
+    return nil;
+  NSImage *image = [[NSImage alloc] initWithSize:NSMakeSize(16, 16)];
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  [image lockFocus];
+  [badge drawInRect:NSMakeRect(0.5, 0.5, 15, 15) fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0];
+  [image unlockFocus];
+#pragma clang diagnostic pop
+  return image;
+}
+
 // An inspector's tab's image, as Xcode's are: its SF Symbol on macOS; on
 // GNUstep, which has none, the designer's own badge.
 static NSImage *XFUInspectorImage(NSViewController *inspector) {
@@ -81,9 +97,7 @@ static NSImage *XFUInspectorImage(NSViewController *inspector) {
   if (symbol != nil && [NSImage respondsToSelector:@selector(imageWithSystemSymbolName:accessibilityDescription:)])
     return [NSImage imageWithSystemSymbolName:symbol accessibilityDescription:inspector.title];
 #endif
-  NSImage *image = [[XFDInspectorViewController imageForInspector:inspector] copy];
-  [image setSize:NSMakeSize(16, 16)];
-  return image;
+  return XFUTabImage([XFDInspectorViewController imageForInspector:inspector]);
 }
 
 @interface XFUEditorViewController () <XFDFormEditorObserver, XFDFormEditorDelegate, XFDLibraryDelegate, NSSplitViewDelegate>
@@ -318,9 +332,7 @@ static void XFUPutView(NSView *view, NSView *host) {
 - (NSImage *)imageForBottomAreaViewController:(NSViewController *)viewController {
   if (viewController != self.consoleController)
     return nil;
-  NSImage *image = [XFDBadge(@"C", 0.70, 0.48, 0.32) copy];
-  [image setSize:NSMakeSize(16, 16)];
-  return image;
+  return XFUTabImage(XFDBadge(@"C", 0.70, 0.48, 0.32));
 }
 
 - (NSViewController *)libraryViewController {

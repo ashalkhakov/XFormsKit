@@ -105,6 +105,32 @@
                                              object:_document.textModel];
 }
 
+// Whether an image has paint in it: drawn into an image of its size and
+// read back (anywhere: a symbol's outline may leave its middle clear).
+- (BOOL)imageIsDrawn:(NSImage *)image {
+  NSSize size = [image size];
+  if (size.width < 1 || size.height < 1)
+    return NO;
+  NSImage *canvas = [[NSImage alloc] initWithSize:size];
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  [canvas lockFocus];
+  [[NSColor clearColor] set];
+  NSRectFill(NSMakeRect(0, 0, size.width, size.height));
+  [image drawInRect:NSMakeRect(0, 0, size.width, size.height)
+           fromRect:NSZeroRect
+          operation:NSCompositeSourceOver
+           fraction:1.0];
+  NSBitmapImageRep *rep = [[NSBitmapImageRep alloc] initWithFocusedViewRect:NSMakeRect(0, 0, size.width, size.height)];
+  [canvas unlockFocus];
+#pragma clang diagnostic pop
+  for (NSInteger y = 0; y < [rep pixelsHigh]; y++)
+    for (NSInteger x = 0; x < [rep pixelsWide]; x++)
+      if ([[rep colorAtX:x y:y] alphaComponent] > 0.5)
+        return YES;
+  return NO;
+}
+
 - (XFXMLElement *)inputOf:(XFDFormEditor *)editor {
   XFXMLElement *group = [editor elementChildrenOf:[editor bodyElement]].firstObject;
   return [editor elementChildrenOf:group].firstObject;
@@ -201,10 +227,14 @@
   XCTAssertEqual(inspectors.count, 3u);
   XCTAssertEqualObjects([inspectors valueForKey:@"title"], (@[ @"Identity", @"Attributes", @"Events" ]));
   for (NSViewController *inspector in inspectors) {
-    XCTAssertNotNil([_tab imageForInspectorViewController:inspector], @"%@'s image", inspector.title);
+    NSImage *image = [_tab imageForInspectorViewController:inspector];
+    XCTAssertNotNil(image, @"%@'s image", inspector.title);
+    XCTAssertTrue([self imageIsDrawn:image], @"%@'s image has its badge in it", inspector.title);
   }
   XCTAssertEqualObjects([_tab bottomAreaViewControllers], @[ _tab.consoleController ]);
-  XCTAssertNotNil([_tab imageForBottomAreaViewController:_tab.consoleController]);
+  NSImage *console = [_tab imageForBottomAreaViewController:_tab.consoleController];
+  XCTAssertNotNil(console);
+  XCTAssertTrue([self imageIsDrawn:console], @"the console's image has its badge in it");
 
   // the Events inspector's double click asks for the Attributes inspector
   [_tab.formEditor showAttributes];
