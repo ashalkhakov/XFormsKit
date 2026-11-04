@@ -307,6 +307,30 @@
 		DP0000000000000000000049 /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; };
 		DP000000000000000000004A /* hello.xhtml in Resources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000023 /* hello.xhtml */; };
 		DP000000000000000000004B /* piechart.xhtml in Resources */ = {isa = PBXBuildFile; fileRef = DP000000000000000000004C /* piechart.xhtml */; };
+		XU0000000000000000000013 /* XFUExtension.m in Sources */ = {isa = PBXBuildFile; fileRef = XU0000000000000000000001 /* XFUExtension.m */; };
+		XU0000000000000000000014 /* XFUEditorViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = XU0000000000000000000002 /* XFUEditorViewController.m */; };
+		XU0000000000000000000015 /* XFUTextDiff.m in Sources */ = {isa = PBXBuildFile; fileRef = XU0000000000000000000003 /* XFUTextDiff.m */; };
+		XU0000000000000000000017 /* XFUEditor.xib in Resources */ = {isa = PBXBuildFile; fileRef = XU0000000000000000000007 /* XFUEditor.xib */; };
+		XU0000000000000000000018 /* XFUEditorMenus.xib in Resources */ = {isa = PBXBuildFile; fileRef = XU0000000000000000000008 /* XFUEditorMenus.xib */; };
+		XU0000000000000000000019 /* LanguageInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = XU000000000000000000000A /* LanguageInfo.plist */; };
+		XU000000000000000000001B /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; };
+		XU000000000000000000001C /* XFormsDesignKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DK0000000000000000000002 /* XFormsDesignKit.framework */; };
+		XU000000000000000000001D /* UDCodeKit.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = XU000000000000000000000D /* UDCodeKit.xcframework */; };
+		XU000000000000000000001E /* UDPieceTable.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = XU000000000000000000000E /* UDPieceTable.xcframework */; };
+		XU000000000000000000001F /* LSPKit.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = XU000000000000000000000F /* LSPKit.xcframework */; };
+		XU0000000000000000000021 /* XFormsKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		XU0000000000000000000022 /* XFormsDesignKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DK0000000000000000000002 /* XFormsDesignKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		XU000000000000000000002C /* XFUTests.m in Sources */ = {isa = PBXBuildFile; fileRef = XU000000000000000000000C /* XFUTests.m */; };
+		XU000000000000000000002D /* XFUExtension.m in Sources */ = {isa = PBXBuildFile; fileRef = XU0000000000000000000001 /* XFUExtension.m */; };
+		XU000000000000000000002E /* XFUEditorViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = XU0000000000000000000002 /* XFUEditorViewController.m */; };
+		XU000000000000000000002F /* XFUTextDiff.m in Sources */ = {isa = PBXBuildFile; fileRef = XU0000000000000000000003 /* XFUTextDiff.m */; };
+		XU0000000000000000000031 /* XFUEditor.xib in Resources */ = {isa = PBXBuildFile; fileRef = XU0000000000000000000007 /* XFUEditor.xib */; };
+		XU0000000000000000000032 /* XFUEditorMenus.xib in Resources */ = {isa = PBXBuildFile; fileRef = XU0000000000000000000008 /* XFUEditorMenus.xib */; };
+		XU0000000000000000000034 /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; };
+		XU0000000000000000000035 /* XFormsDesignKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DK0000000000000000000002 /* XFormsDesignKit.framework */; };
+		XU0000000000000000000036 /* UDCodeKit.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = XU000000000000000000000D /* UDCodeKit.xcframework */; };
+		XU0000000000000000000037 /* UDPieceTable.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = XU000000000000000000000E /* UDPieceTable.xcframework */; };
+		XU0000000000000000000038 /* LSPKit.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = XU000000000000000000000F /* LSPKit.xcframework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -366,6 +390,34 @@
 			remoteGlobalIDString = DK0000000000000000000001;
 			remoteInfo = XFormsDesignKit;
 		};
+		XU0000000000000000000028 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DD0000010000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE0000010000000000000001;
+			remoteInfo = XFormsKit;
+		};
+		XU000000000000000000002A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DD0000010000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DK0000000000000000000001;
+			remoteInfo = XFormsDesignKit;
+		};
+		XU000000000000000000003E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DD0000010000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE0000010000000000000001;
+			remoteInfo = XFormsKit;
+		};
+		XU0000000000000000000040 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DD0000010000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DK0000000000000000000001;
+			remoteInfo = XFormsDesignKit;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -401,6 +453,18 @@
 			dstSubfolderSpec = 10;
 			files = (
 				MN0000010000000000000011 /* XFormsKit.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		XU0000000000000000000023 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				XU0000000000000000000021 /* XFormsKit.framework in Embed Frameworks */,
+				XU0000000000000000000022 /* XFormsDesignKit.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -714,6 +778,23 @@
 		DP000000000000000000004E /* XFDServicesTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDServicesTests.m; sourceTree = "<group>"; };
 		DP000000000000000000004C /* piechart.xhtml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = piechart.xhtml; path = Samples/piechart.xhtml; sourceTree = SOURCE_ROOT; };
 		DP000000000000000000003E /* XFormsDesignKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XFormsDesignKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		XU0000000000000000000001 /* XFUExtension.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFUExtension.m; sourceTree = "<group>"; };
+		XU0000000000000000000002 /* XFUEditorViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFUEditorViewController.m; sourceTree = "<group>"; };
+		XU0000000000000000000003 /* XFUTextDiff.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFUTextDiff.m; sourceTree = "<group>"; };
+		XU0000000000000000000004 /* XFUExtension.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFUExtension.h; sourceTree = "<group>"; };
+		XU0000000000000000000005 /* XFUEditorViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFUEditorViewController.h; sourceTree = "<group>"; };
+		XU0000000000000000000006 /* XFUTextDiff.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFUTextDiff.h; sourceTree = "<group>"; };
+		XU0000000000000000000007 /* XFUEditor.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFUEditor.xib; sourceTree = "<group>"; };
+		XU0000000000000000000008 /* XFUEditorMenus.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFUEditorMenus.xib; sourceTree = "<group>"; };
+		XU0000000000000000000009 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Resources/Info.plist; sourceTree = "<group>"; };
+		XU000000000000000000000A /* LanguageInfo.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = LanguageInfo.plist; path = Resources/LanguageInfo.plist; sourceTree = "<group>"; };
+		XU000000000000000000000B /* package.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = package.json; sourceTree = "<group>"; };
+		XU000000000000000000000C /* XFUTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = XFUTests.m; path = Tests/XFUTests.m; sourceTree = "<group>"; };
+		XU000000000000000000000D /* UDCodeKit.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = UDCodeKit.xcframework; path = .deps/UDCodeKit.xcframework; sourceTree = SOURCE_ROOT; };
+		XU000000000000000000000E /* UDPieceTable.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = UDPieceTable.xcframework; path = .deps/UDPieceTable.xcframework; sourceTree = SOURCE_ROOT; };
+		XU000000000000000000000F /* LSPKit.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = LSPKit.xcframework; path = .deps/LSPKit.xcframework; sourceTree = SOURCE_ROOT; };
+		XU0000000000000000000011 /* XForms.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XForms.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		XU0000000000000000000012 /* XFUTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XFUTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -784,6 +865,30 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		XU0000000000000000000020 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				XU000000000000000000001B /* XFormsKit.framework in Frameworks */,
+				XU000000000000000000001C /* XFormsDesignKit.framework in Frameworks */,
+				XU000000000000000000001D /* UDCodeKit.xcframework in Frameworks */,
+				XU000000000000000000001E /* UDPieceTable.xcframework in Frameworks */,
+				XU000000000000000000001F /* LSPKit.xcframework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		XU0000000000000000000039 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				XU0000000000000000000034 /* XFormsKit.framework in Frameworks */,
+				XU0000000000000000000035 /* XFormsDesignKit.framework in Frameworks */,
+				XU0000000000000000000036 /* UDCodeKit.xcframework in Frameworks */,
+				XU0000000000000000000037 /* UDPieceTable.xcframework in Frameworks */,
+				XU0000000000000000000038 /* LSPKit.xcframework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -800,6 +905,7 @@
 				GG000001000000000000000A /* Apps */,
 				BB00000100000000000000F0 /* Samples */,
 				GG0000010000000000000004 /* Products */,
+							XU0000000000000000000010 /* UDCodeExtension */,
 			);
 			sourceTree = "<group>";
 		};
@@ -808,6 +914,8 @@
 			children = (
 				GG0000010000000000000005 /* XFormsKit */,
 				DK0000000000000000000009 /* XFormsDesignKit */,
+							XU0000000000000000000011 /* XForms.bundle */,
+				XU0000000000000000000012 /* XFUTests.xctest */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -1275,6 +1383,28 @@
 			path = XFormsDesignKitTests;
 			sourceTree = "<group>";
 		};
+		XU0000000000000000000010 /* UDCodeExtension */ = {
+			isa = PBXGroup;
+			children = (
+				XU0000000000000000000001 /* XFUExtension.m */,
+				XU0000000000000000000002 /* XFUEditorViewController.m */,
+				XU0000000000000000000003 /* XFUTextDiff.m */,
+				XU0000000000000000000004 /* XFUExtension.h */,
+				XU0000000000000000000005 /* XFUEditorViewController.h */,
+				XU0000000000000000000006 /* XFUTextDiff.h */,
+				XU0000000000000000000007 /* XFUEditor.xib */,
+				XU0000000000000000000008 /* XFUEditorMenus.xib */,
+				XU0000000000000000000009 /* Info.plist */,
+				XU000000000000000000000A /* LanguageInfo.plist */,
+				XU000000000000000000000B /* package.json */,
+				XU000000000000000000000C /* XFUTests.m */,
+				XU000000000000000000000D /* UDCodeKit.xcframework */,
+				XU000000000000000000000E /* UDPieceTable.xcframework */,
+				XU000000000000000000000F /* LSPKit.xcframework */,
+			);
+			path = UDCodeExtension;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -1542,6 +1672,45 @@
 			productReference = DP000000000000000000003E /* XFormsDesignKitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		XU0000000000000000000027 /* XForms */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = XU0000000000000000000026 /* Build configuration list for PBXNativeTarget "XForms" */;
+			buildPhases = (
+				XU0000000000000000000016 /* Sources */,
+				XU000000000000000000001A /* Resources */,
+				XU0000000000000000000020 /* Frameworks */,
+				XU0000000000000000000023 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				XU0000000000000000000029 /* PBXTargetDependency */,
+				XU000000000000000000002B /* PBXTargetDependency */,
+			);
+			name = XForms;
+			productName = XForms;
+			productReference = XU0000000000000000000011 /* XForms.bundle */;
+			productType = "com.apple.product-type.bundle";
+		};
+		XU000000000000000000003D /* XFUTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = XU000000000000000000003C /* Build configuration list for PBXNativeTarget "XFUTests" */;
+			buildPhases = (
+				XU0000000000000000000030 /* Sources */,
+				XU0000000000000000000033 /* Resources */,
+				XU0000000000000000000039 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				XU000000000000000000003F /* PBXTargetDependency */,
+				XU0000000000000000000041 /* PBXTargetDependency */,
+			);
+			name = XFUTests;
+			productName = XFUTests;
+			productReference = XU0000000000000000000012 /* XFUTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1580,6 +1749,8 @@
 				EE0000030000000000000001 /* XFW3CTests */,
 				EE0000040000000000000001 /* XFormsMobile */,
 							DP000000000000000000003D /* XFormsDesignKitTests */,
+							XU0000000000000000000027 /* XForms */,
+							XU000000000000000000003D /* XFUTests */,
 			);
 		};
 /* End PBXProject section */
@@ -1643,6 +1814,25 @@
 			files = (
 				DP000000000000000000004A /* hello.xhtml in Resources */,
 				DP000000000000000000004B /* piechart.xhtml in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		XU000000000000000000001A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				XU0000000000000000000017 /* XFUEditor.xib in Resources */,
+				XU0000000000000000000018 /* XFUEditorMenus.xib in Resources */,
+				XU0000000000000000000019 /* LanguageInfo.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		XU0000000000000000000033 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				XU0000000000000000000031 /* XFUEditor.xib in Resources */,
+				XU0000000000000000000032 /* XFUEditorMenus.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1870,6 +2060,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		XU0000000000000000000016 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				XU0000000000000000000013 /* XFUExtension.m in Sources */,
+				XU0000000000000000000014 /* XFUEditorViewController.m in Sources */,
+				XU0000000000000000000015 /* XFUTextDiff.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		XU0000000000000000000030 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				XU000000000000000000002C /* XFUTests.m in Sources */,
+				XU000000000000000000002D /* XFUExtension.m in Sources */,
+				XU000000000000000000002E /* XFUEditorViewController.m in Sources */,
+				XU000000000000000000002F /* XFUTextDiff.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1912,6 +2123,26 @@
 			isa = PBXTargetDependency;
 			target = DK0000000000000000000001 /* XFormsDesignKit */;
 			targetProxy = DP0000000000000000000046 /* PBXContainerItemProxy */;
+		};
+		XU0000000000000000000029 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE0000010000000000000001 /* XFormsKit */;
+			targetProxy = XU0000000000000000000028 /* PBXContainerItemProxy */;
+		};
+		XU000000000000000000002B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DK0000000000000000000001 /* XFormsDesignKit */;
+			targetProxy = XU000000000000000000002A /* PBXContainerItemProxy */;
+		};
+		XU000000000000000000003F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE0000010000000000000001 /* XFormsKit */;
+			targetProxy = XU000000000000000000003E /* PBXContainerItemProxy */;
+		};
+		XU0000000000000000000041 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DK0000000000000000000001 /* XFormsDesignKit */;
+			targetProxy = XU0000000000000000000040 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -2441,6 +2672,68 @@
 			};
 			name = Release;
 		};
+		XU0000000000000000000024 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CURRENT_PROJECT_VERSION = 0.0.0;
+				GENERATE_INFOPLIST_FILE = NO;
+				HEADER_SEARCH_PATHS = ("$(SRCROOT)/UDCodeExtension", "$(SRCROOT)/Sources", "$(SRCROOT)/Sources/XFormsKit", "$(SRCROOT)/Sources/XFormsDesignKit", "$(SRCROOT)/Sources/XFormsDesignKit/ThirdParty/DMTabBar");
+				INFOPLIST_FILE = UDCodeExtension/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@loader_path/../Frameworks");
+				MARKETING_VERSION = 0.0.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.udcode.xforms;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				WRAPPER_EXTENSION = bundle;
+			};
+			name = Debug;
+		};
+		XU0000000000000000000025 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CURRENT_PROJECT_VERSION = 0.0.0;
+				GENERATE_INFOPLIST_FILE = NO;
+				HEADER_SEARCH_PATHS = ("$(SRCROOT)/UDCodeExtension", "$(SRCROOT)/Sources", "$(SRCROOT)/Sources/XFormsKit", "$(SRCROOT)/Sources/XFormsDesignKit", "$(SRCROOT)/Sources/XFormsDesignKit/ThirdParty/DMTabBar");
+				INFOPLIST_FILE = UDCodeExtension/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@loader_path/../Frameworks");
+				MARKETING_VERSION = 0.0.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.udcode.xforms;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				WRAPPER_EXTENSION = bundle;
+			};
+			name = Release;
+		};
+		XU000000000000000000003A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = ("$(SRCROOT)/UDCodeExtension", "$(SRCROOT)/Sources", "$(SRCROOT)/Sources/XFormsKit", "$(SRCROOT)/Sources/XFormsDesignKit", "$(SRCROOT)/Sources/XFormsDesignKit/ThirdParty/DMTabBar");
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks", "@loader_path/../Frameworks");
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.udcode.xforms.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		XU000000000000000000003B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = ("$(SRCROOT)/UDCodeExtension", "$(SRCROOT)/Sources", "$(SRCROOT)/Sources/XFormsKit", "$(SRCROOT)/Sources/XFormsDesignKit", "$(SRCROOT)/Sources/XFormsDesignKit/ThirdParty/DMTabBar");
+				LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/../Frameworks", "@loader_path/../Frameworks");
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.udcode.xforms.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -2521,6 +2814,24 @@
 			buildConfigurations = (
 				DP0000000000000000000043 /* Debug */,
 				DP0000000000000000000044 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		XU0000000000000000000026 /* Build configuration list for PBXNativeTarget "XForms" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				XU0000000000000000000024 /* Debug */,
+				XU0000000000000000000025 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		XU000000000000000000003C /* Build configuration list for PBXNativeTarget "XFUTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				XU000000000000000000003A /* Debug */,
+				XU000000000000000000003B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

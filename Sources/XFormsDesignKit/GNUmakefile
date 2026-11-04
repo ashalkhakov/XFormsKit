@@ -22,50 +22,9 @@ XFormsDesignKit_NEEDS_GUI = yes
 XFormsDesignKit_CURRENT_VERSION_NAME = A
 XFormsDesignKit_DEPLOY_WITH_CURRENT_VERSION = yes
 
-XFormsDesignKit_OBJC_FILES = \
-	XFDFormEditor.m \
-	XFDDocument.m \
-	XFDEditors.m \
-	XFDPartViewController.m \
-	XFDOutlineViewController.m \
-	XFDPreviewViewController.m \
-	XFDInspectorViewController.m \
-	XFDIdentityInspector.m \
-	XFDAttributesInspector.m \
-	XFDInspectorPages.m \
-	XFDEventsInspector.m \
-	XFDLibraryViewController.m \
-	XFDWindowController.m \
-	XFDInspectorSpecs.m \
-	XFDPalettePanel.m \
-	XFDInstanceXMLEditor.m \
-	XFDSubmissionTester.m \
-	XFDEventsConsole.m \
-	XFDXPathField.m \
-	XFDXPathTextStorage.m \
-	XFDExpressionField.m \
-	XFDRichTextField.m \
-	XFDIDRefField.m \
-	XFDDesignOverlay.m \
-	ThirdParty/DMTabBar/DMTabBar.m \
-	ThirdParty/DMTabBar/DMTabBarItem.m \
-	ThirdParty/JUInspectorView/JUInspectorBaseView.m \
-	ThirdParty/JUInspectorView/JUInspectorView.m \
-	ThirdParty/JUInspectorView/JUInspectorViewContainer.m \
-	ThirdParty/JUInspectorView/JUInspectorViewHeader.m
-
-XFormsDesignKit_RESOURCE_FILES = \
-	XFDDocumentWindow.xib \
-	XFDOutlineViewController.xib \
-	XFDPreviewViewController.xib \
-	XFDInspectorViewController.xib \
-	XFDIdentityInspector.xib \
-	XFDAttributesInspector.xib \
-	XFDEventsInspector.xib \
-	XFDLibrary.xib \
-	XFDPalettePanel.xib \
-	XFDEventsConsole.xib \
-	XFDEventsConsolePanel.xib
+include files.make
+XFormsDesignKit_OBJC_FILES = $(XFORMSDESIGNKIT_OBJC_FILES)
+XFormsDesignKit_RESOURCE_FILES = $(XFORMSDESIGNKIT_RESOURCE_FILES)
 
 # Its headers, installed where the framework is, laid out as here: what
 # builds on an installed XFormsDesignKit (WorkflowKit's designer) includes
