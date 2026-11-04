@@ -50,7 +50,7 @@ all:
 
 check:
 	Scripts/check-sources.sh
-	@for scheme in XFormsKit XFormsDesignKitTests XFW3CTests; do \
+	@for scheme in XFormsKit XFormsDesignKit XFW3CTests; do \
 	  rm -rf $(RESULTS)/$$scheme.xcresult; \
 	  $(XCODEBUILD) -scheme $$scheme -configuration Debug -destination 'platform=macOS' \
 	    -resultBundlePath $(RESULTS)/$$scheme.xcresult test || exit 1; \
