@@ -51,8 +51,36 @@ NS_ASSUME_NONNULL_BEGIN
 /// ("WARNING: Duplicate ids: …"): every id value used more than once.
 NSArray<NSString *> *XFDDuplicateIDsInDocument(XFXMLDocument *_Nullable document);
 
-@interface XFDEventsConsole : NSObject <NSTableViewDataSource, NSTableViewDelegate>
+/// The console's view (XFDEventsConsole.xib): its log's lines, filtered by
+/// kind and text, Pause, Clear, Save Log…, and the count. Started, it is
+/// the engine's trace sink (only one log is at a time); stopped, the
+/// engine's trace calls are no-ops again. The app shows it in a floating
+/// panel (XFDEventsConsole); an IDE in a pane of its own.
+@interface XFDEventsConsoleViewController : NSViewController <NSTableViewDataSource, NSTableViewDelegate>
+- (instancetype)init;
+@property (nonatomic, strong) IBOutlet NSPopUpButton *kindPopup;
+@property (nonatomic, strong) IBOutlet NSTextField *filterField;
+@property (nonatomic, strong) IBOutlet NSButton *pauseButton;
+@property (nonatomic, strong) IBOutlet NSTableView *table;
+@property (nonatomic, strong) IBOutlet NSTextField *countField;
+@property (nonatomic, strong, readonly) XFDEventsLog *log;
+@property (nonatomic, assign, readonly, getter=isRunning) BOOL running;
+/// The log installed as the trace sink, and the duplicate-id scan run
+/// over `hostDocument` (nil skips it).
+- (void)startWithHostDocument:(nullable XFXMLDocument *)hostDocument;
+- (void)stop;
+- (IBAction)filterChanged:(nullable id)sender;
+- (IBAction)pauseClicked:(nullable id)sender;
+- (IBAction)clearClicked:(nullable id)sender;
+- (IBAction)saveClicked:(nullable id)sender;
+@end
+
+/// The app's events console: the console's view in a floating panel
+/// (XFDEventsConsolePanel.xib), one for the app.
+@interface XFDEventsConsole : NSObject <NSWindowDelegate>
 + (XFDEventsConsole *)sharedConsole;
+@property (nonatomic, strong, nullable) IBOutlet NSPanel *panel;
+@property (nonatomic, strong, readonly) XFDEventsConsoleViewController *viewController;
 @property (nonatomic, assign, readonly, getter=isVisible) BOOL visible;
 /// Show (installing the log as trace sink) and run the duplicate-id scan
 /// over `hostDocument`; nil skips the scan.
@@ -62,5 +90,3 @@ NSArray<NSString *> *XFDDuplicateIDsInDocument(XFXMLDocument *_Nullable document
 @end
 
 NS_ASSUME_NONNULL_END
-
-void XFDEventsConsoleFilePresent(void);

@@ -45,5 +45,3 @@ NSDictionary *XFDPerformSubmission(XFSubmission *submission,
 @end
 
 NS_ASSUME_NONNULL_END
-
-void XFDSubmissionTesterFilePresent(void);

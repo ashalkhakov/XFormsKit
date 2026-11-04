@@ -213,14 +213,9 @@
 		AA0000020000000000000021 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000021 /* MainMenu.xib */; };
 		AA0000020000000000000022 /* XFDDocumentWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000022 /* XFDDocumentWindow.xib */; };
 		AA0000020000000000000040 /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; };
-		AA0000020000000000000050 /* XFDWindowController+Outline.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000050 /* XFDWindowController+Outline.m */; };
-		AA0000020000000000000051 /* XFDWindowController+Inspector.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000051 /* XFDWindowController+Inspector.m */; };
-		AA0000020000000000000052 /* XFDWindowController+Preview.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000052 /* XFDWindowController+Preview.m */; };
 		AA0000020000000000000053 /* XFDInspectorSpecs.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000053 /* XFDInspectorSpecs.m */; };
 		AA0000020000000000000054 /* XFDPalettePanel.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000054 /* XFDPalettePanel.m */; };
 		AA0000020000000000000055 /* XFDInstanceXMLEditor.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000055 /* XFDInstanceXMLEditor.m */; };
-		AA0000020000000000000056 /* XFDEventsPane.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000056 /* XFDEventsPane.m */; };
-		AA0000020000000000000057 /* XFDActionRowsPane.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000057 /* XFDActionRowsPane.m */; };
 		AA0000020000000000000058 /* XFDSubmissionTester.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000058 /* XFDSubmissionTester.m */; };
 		AA0000020000000000000059 /* XFDEventsConsole.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000059 /* XFDEventsConsole.m */; };
 		AA0000030000000000000001 /* XFW3CTestCase.m in Sources */ = {isa = PBXBuildFile; fileRef = BB0000030000000000000002 /* XFW3CTestCase.m */; };
@@ -252,12 +247,10 @@
 		DK000000000000000000000A /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; };
 		DK000000000000000000000D /* XFormsDesignKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DK0000000000000000000002 /* XFormsDesignKit.framework */; };
 		DK000000000000000000000E /* XFormsDesignKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DK0000000000000000000002 /* XFormsDesignKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		PH0000000000000000000101 /* XFDActionRowsPane.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000067 /* XFDActionRowsPane.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		PH0000000000000000000102 /* XFDDesignOverlay.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000002000000000000001E /* XFDDesignOverlay.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		PH0000000000000000000103 /* XFDDocument.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000011 /* XFDDocument.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		PH0000000000000000000104 /* XFDEditors.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000012 /* XFDEditors.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		PH0000000000000000000105 /* XFDEventsConsole.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000002000000000000006A /* XFDEventsConsole.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		PH0000000000000000000106 /* XFDEventsPane.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000066 /* XFDEventsPane.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		PH0000000000000000000107 /* XFDExpressionField.h in Headers */ = {isa = PBXBuildFile; fileRef = MM0000010000000000000065 /* XFDExpressionField.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		PH0000000000000000000108 /* XFDIDRefField.h in Headers */ = {isa = PBXBuildFile; fileRef = BB000002000000000000001D /* XFDIDRefField.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		PH0000000000000000000109 /* XFDInspectorSpecs.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000020000000000000063 /* XFDInspectorSpecs.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -278,6 +271,42 @@
 		PK0000000000000000000112 /* XFType.h in Headers */ = {isa = PBXBuildFile; fileRef = BB00000100000000000000F8 /* XFType.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		PK000000000000000000012C /* XFAVT.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000127 /* XFAVT.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		PK000000000000000000012D /* XFSVG.h in Headers */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000128 /* XFSVG.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		DP000000000000000000001F /* XFDFormEditor.m in Sources */ = {isa = PBXBuildFile; fileRef = DP0000000000000000000001 /* XFDFormEditor.m */; };
+		DP0000000000000000000020 /* XFDPartViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = DP0000000000000000000002 /* XFDPartViewController.m */; };
+		DP0000000000000000000021 /* XFDOutlineViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = DP0000000000000000000003 /* XFDOutlineViewController.m */; };
+		DP0000000000000000000022 /* XFDPreviewViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = DP0000000000000000000004 /* XFDPreviewViewController.m */; };
+		DP0000000000000000000023 /* XFDInspectorViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = DP0000000000000000000005 /* XFDInspectorViewController.m */; };
+		DP0000000000000000000024 /* XFDIdentityInspector.m in Sources */ = {isa = PBXBuildFile; fileRef = DP0000000000000000000006 /* XFDIdentityInspector.m */; };
+		DP0000000000000000000025 /* XFDAttributesInspector.m in Sources */ = {isa = PBXBuildFile; fileRef = DP0000000000000000000007 /* XFDAttributesInspector.m */; };
+		DP0000000000000000000026 /* XFDInspectorPages.m in Sources */ = {isa = PBXBuildFile; fileRef = DP0000000000000000000008 /* XFDInspectorPages.m */; };
+		DP0000000000000000000027 /* XFDEventsInspector.m in Sources */ = {isa = PBXBuildFile; fileRef = DP0000000000000000000009 /* XFDEventsInspector.m */; };
+		DP0000000000000000000028 /* XFDLibraryViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = DP000000000000000000000A /* XFDLibraryViewController.m */; };
+		DP0000000000000000000029 /* XFDFormEditor.h in Headers */ = {isa = PBXBuildFile; fileRef = DP000000000000000000000B /* XFDFormEditor.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		DP000000000000000000002A /* XFDPartViewController.h in Headers */ = {isa = PBXBuildFile; fileRef = DP000000000000000000000C /* XFDPartViewController.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		DP000000000000000000002B /* XFDOutlineViewController.h in Headers */ = {isa = PBXBuildFile; fileRef = DP000000000000000000000D /* XFDOutlineViewController.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		DP000000000000000000002C /* XFDPreviewViewController.h in Headers */ = {isa = PBXBuildFile; fileRef = DP000000000000000000000E /* XFDPreviewViewController.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		DP000000000000000000002D /* XFDInspectorViewController.h in Headers */ = {isa = PBXBuildFile; fileRef = DP000000000000000000000F /* XFDInspectorViewController.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		DP000000000000000000002E /* XFDIdentityInspector.h in Headers */ = {isa = PBXBuildFile; fileRef = DP0000000000000000000010 /* XFDIdentityInspector.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		DP000000000000000000002F /* XFDAttributesInspector.h in Headers */ = {isa = PBXBuildFile; fileRef = DP0000000000000000000011 /* XFDAttributesInspector.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		DP0000000000000000000030 /* XFDInspectorPages.h in Headers */ = {isa = PBXBuildFile; fileRef = DP0000000000000000000012 /* XFDInspectorPages.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		DP0000000000000000000031 /* XFDEventsInspector.h in Headers */ = {isa = PBXBuildFile; fileRef = DP0000000000000000000013 /* XFDEventsInspector.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		DP0000000000000000000032 /* XFDLibraryViewController.h in Headers */ = {isa = PBXBuildFile; fileRef = DP0000000000000000000014 /* XFDLibraryViewController.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		DP0000000000000000000033 /* XFDOutlineViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = DP0000000000000000000015 /* XFDOutlineViewController.xib */; };
+		DP0000000000000000000034 /* XFDPreviewViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = DP0000000000000000000016 /* XFDPreviewViewController.xib */; };
+		DP0000000000000000000035 /* XFDInspectorViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = DP0000000000000000000017 /* XFDInspectorViewController.xib */; };
+		DP0000000000000000000036 /* XFDIdentityInspector.xib in Resources */ = {isa = PBXBuildFile; fileRef = DP0000000000000000000018 /* XFDIdentityInspector.xib */; };
+		DP0000000000000000000037 /* XFDAttributesInspector.xib in Resources */ = {isa = PBXBuildFile; fileRef = DP0000000000000000000019 /* XFDAttributesInspector.xib */; };
+		DP0000000000000000000038 /* XFDEventsInspector.xib in Resources */ = {isa = PBXBuildFile; fileRef = DP000000000000000000001A /* XFDEventsInspector.xib */; };
+		DP0000000000000000000039 /* XFDLibrary.xib in Resources */ = {isa = PBXBuildFile; fileRef = DP000000000000000000001B /* XFDLibrary.xib */; };
+		DP000000000000000000003A /* XFDPalettePanel.xib in Resources */ = {isa = PBXBuildFile; fileRef = DP000000000000000000001C /* XFDPalettePanel.xib */; };
+		DP000000000000000000003B /* XFDEventsConsole.xib in Resources */ = {isa = PBXBuildFile; fileRef = DP000000000000000000001D /* XFDEventsConsole.xib */; };
+		DP000000000000000000003C /* XFDEventsConsolePanel.xib in Resources */ = {isa = PBXBuildFile; fileRef = DP000000000000000000001E /* XFDEventsConsolePanel.xib */; };
+		DP000000000000000000004F /* XFDPartsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = DP000000000000000000004D /* XFDPartsTests.m */; };
+		DP0000000000000000000050 /* XFDServicesTests.m in Sources */ = {isa = PBXBuildFile; fileRef = DP000000000000000000004E /* XFDServicesTests.m */; };
+		DP0000000000000000000048 /* XFormsDesignKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DK0000000000000000000002 /* XFormsDesignKit.framework */; };
+		DP0000000000000000000049 /* XFormsKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000100 /* XFormsKit.framework */; };
+		DP000000000000000000004A /* hello.xhtml in Resources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000023 /* hello.xhtml */; };
+		DP000000000000000000004B /* piechart.xhtml in Resources */ = {isa = PBXBuildFile; fileRef = DP000000000000000000004C /* piechart.xhtml */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -324,6 +353,13 @@
 			remoteInfo = XFormsKit;
 		};
 		DK000000000000000000000F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DD0000010000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DK0000000000000000000001;
+			remoteInfo = XFormsDesignKit;
+		};
+		DP0000000000000000000046 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = DD0000010000000000000001 /* Project object */;
 			proxyType = 1;
@@ -602,22 +638,14 @@
 		BB0000020000000000000023 /* XFormsDesigner-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "XFormsDesigner-Info.plist"; sourceTree = "<group>"; };
 		IC00000200000000000000F6 /* XFormsDesigner.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = XFormsDesigner.icns; sourceTree = "<group>"; };
 		BB0000020000000000000030 /* XFormsDesigner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = XFormsDesigner.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		BB0000020000000000000050 /* XFDWindowController+Outline.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFDWindowController+Outline.m"; sourceTree = "<group>"; };
-		BB0000020000000000000051 /* XFDWindowController+Inspector.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFDWindowController+Inspector.m"; sourceTree = "<group>"; };
-		BB0000020000000000000052 /* XFDWindowController+Preview.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFDWindowController+Preview.m"; sourceTree = "<group>"; };
 		BB0000020000000000000053 /* XFDInspectorSpecs.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDInspectorSpecs.m; sourceTree = "<group>"; };
 		BB0000020000000000000054 /* XFDPalettePanel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDPalettePanel.m; sourceTree = "<group>"; };
 		BB0000020000000000000055 /* XFDInstanceXMLEditor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDInstanceXMLEditor.m; sourceTree = "<group>"; };
-		BB0000020000000000000056 /* XFDEventsPane.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDEventsPane.m; sourceTree = "<group>"; };
-		BB0000020000000000000057 /* XFDActionRowsPane.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDActionRowsPane.m; sourceTree = "<group>"; };
 		BB0000020000000000000058 /* XFDSubmissionTester.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDSubmissionTester.m; sourceTree = "<group>"; };
 		BB0000020000000000000059 /* XFDEventsConsole.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDEventsConsole.m; sourceTree = "<group>"; };
 		BB0000020000000000000063 /* XFDInspectorSpecs.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDInspectorSpecs.h; sourceTree = "<group>"; };
 		BB0000020000000000000064 /* XFDPalettePanel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDPalettePanel.h; sourceTree = "<group>"; };
 		BB0000020000000000000065 /* XFDInstanceXMLEditor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDInstanceXMLEditor.h; sourceTree = "<group>"; };
-		BB0000020000000000000066 /* XFDEventsPane.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDEventsPane.h; sourceTree = "<group>"; };
-		BB0000020000000000000067 /* XFDActionRowsPane.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDActionRowsPane.h; sourceTree = "<group>"; };
-		BB0000020000000000000068 /* XFDWindowControllerPriv.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDWindowControllerPriv.h; sourceTree = "<group>"; };
 		BB0000020000000000000069 /* XFDSubmissionTester.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDSubmissionTester.h; sourceTree = "<group>"; };
 		BB000002000000000000006A /* XFDEventsConsole.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDEventsConsole.h; sourceTree = "<group>"; };
 		BB0000030000000000000001 /* XFW3CTestCase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFW3CTestCase.h; sourceTree = "<group>"; };
@@ -652,6 +680,40 @@
 		UP0000000000000000000001 /* XFUpdater.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFUpdater.h; sourceTree = "<group>"; };
 		UP0000000000000000000002 /* XFUpdater-Apple.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "XFUpdater-Apple.m"; sourceTree = "<group>"; };
 		UP0000000000000000000003 /* XFUpdater.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFUpdater.m; sourceTree = "<group>"; };
+		DP0000000000000000000001 /* XFDFormEditor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDFormEditor.m; sourceTree = "<group>"; };
+		DP0000000000000000000002 /* XFDPartViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDPartViewController.m; sourceTree = "<group>"; };
+		DP0000000000000000000003 /* XFDOutlineViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDOutlineViewController.m; sourceTree = "<group>"; };
+		DP0000000000000000000004 /* XFDPreviewViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDPreviewViewController.m; sourceTree = "<group>"; };
+		DP0000000000000000000005 /* XFDInspectorViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDInspectorViewController.m; sourceTree = "<group>"; };
+		DP0000000000000000000006 /* XFDIdentityInspector.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDIdentityInspector.m; sourceTree = "<group>"; };
+		DP0000000000000000000007 /* XFDAttributesInspector.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDAttributesInspector.m; sourceTree = "<group>"; };
+		DP0000000000000000000008 /* XFDInspectorPages.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDInspectorPages.m; sourceTree = "<group>"; };
+		DP0000000000000000000009 /* XFDEventsInspector.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDEventsInspector.m; sourceTree = "<group>"; };
+		DP000000000000000000000A /* XFDLibraryViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDLibraryViewController.m; sourceTree = "<group>"; };
+		DP000000000000000000000B /* XFDFormEditor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDFormEditor.h; sourceTree = "<group>"; };
+		DP000000000000000000000C /* XFDPartViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDPartViewController.h; sourceTree = "<group>"; };
+		DP000000000000000000000D /* XFDOutlineViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDOutlineViewController.h; sourceTree = "<group>"; };
+		DP000000000000000000000E /* XFDPreviewViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDPreviewViewController.h; sourceTree = "<group>"; };
+		DP000000000000000000000F /* XFDInspectorViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDInspectorViewController.h; sourceTree = "<group>"; };
+		DP0000000000000000000010 /* XFDIdentityInspector.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDIdentityInspector.h; sourceTree = "<group>"; };
+		DP0000000000000000000011 /* XFDAttributesInspector.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDAttributesInspector.h; sourceTree = "<group>"; };
+		DP0000000000000000000012 /* XFDInspectorPages.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDInspectorPages.h; sourceTree = "<group>"; };
+		DP0000000000000000000013 /* XFDEventsInspector.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDEventsInspector.h; sourceTree = "<group>"; };
+		DP0000000000000000000014 /* XFDLibraryViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDLibraryViewController.h; sourceTree = "<group>"; };
+		DP0000000000000000000015 /* XFDOutlineViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDOutlineViewController.xib; sourceTree = "<group>"; };
+		DP0000000000000000000016 /* XFDPreviewViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDPreviewViewController.xib; sourceTree = "<group>"; };
+		DP0000000000000000000017 /* XFDInspectorViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDInspectorViewController.xib; sourceTree = "<group>"; };
+		DP0000000000000000000018 /* XFDIdentityInspector.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDIdentityInspector.xib; sourceTree = "<group>"; };
+		DP0000000000000000000019 /* XFDAttributesInspector.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDAttributesInspector.xib; sourceTree = "<group>"; };
+		DP000000000000000000001A /* XFDEventsInspector.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDEventsInspector.xib; sourceTree = "<group>"; };
+		DP000000000000000000001B /* XFDLibrary.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDLibrary.xib; sourceTree = "<group>"; };
+		DP000000000000000000001C /* XFDPalettePanel.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDPalettePanel.xib; sourceTree = "<group>"; };
+		DP000000000000000000001D /* XFDEventsConsole.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDEventsConsole.xib; sourceTree = "<group>"; };
+		DP000000000000000000001E /* XFDEventsConsolePanel.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDEventsConsolePanel.xib; sourceTree = "<group>"; };
+		DP000000000000000000004D /* XFDPartsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDPartsTests.m; sourceTree = "<group>"; };
+		DP000000000000000000004E /* XFDServicesTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDServicesTests.m; sourceTree = "<group>"; };
+		DP000000000000000000004C /* piechart.xhtml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = piechart.xhtml; path = Samples/piechart.xhtml; sourceTree = SOURCE_ROOT; };
+		DP000000000000000000003E /* XFormsDesignKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XFormsDesignKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -713,6 +775,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		DP0000000000000000000040 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DP0000000000000000000048 /* XFormsDesignKit.framework in Frameworks */,
+				DP0000000000000000000049 /* XFormsKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -747,6 +818,7 @@
 				GG0000010000000000000006 /* XFormsKitTests */,
 				GG0000010000000000000007 /* Fixtures */,
 				GG0000030000000000000001 /* W3CTests */,
+							DP0000000000000000000045 /* XFormsDesignKitTests */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -761,6 +833,7 @@
 				MM0000010000000000000021 /* XFormsMobile.app */,
 				BB0000020000000000000030 /* XFormsDesigner.app */,
 				DK0000000000000000000002 /* XFormsDesignKit.framework */,
+							DP000000000000000000003E /* XFormsDesignKitTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1145,29 +1218,61 @@
 				BB000002000000000000000D /* XFDIDRefField.m */,
 				BB000002000000000000001E /* XFDDesignOverlay.h */,
 				BB000002000000000000000E /* XFDDesignOverlay.m */,
-				BB0000020000000000000050 /* XFDWindowController+Outline.m */,
-				BB0000020000000000000051 /* XFDWindowController+Inspector.m */,
-				BB0000020000000000000052 /* XFDWindowController+Preview.m */,
 				BB0000020000000000000053 /* XFDInspectorSpecs.m */,
 				BB0000020000000000000063 /* XFDInspectorSpecs.h */,
 				BB0000020000000000000054 /* XFDPalettePanel.m */,
 				BB0000020000000000000064 /* XFDPalettePanel.h */,
 				BB0000020000000000000055 /* XFDInstanceXMLEditor.m */,
 				BB0000020000000000000065 /* XFDInstanceXMLEditor.h */,
-				BB0000020000000000000056 /* XFDEventsPane.m */,
-				BB0000020000000000000066 /* XFDEventsPane.h */,
-				BB0000020000000000000057 /* XFDActionRowsPane.m */,
-				BB0000020000000000000067 /* XFDActionRowsPane.h */,
 				BB0000020000000000000069 /* XFDSubmissionTester.h */,
 				BB000002000000000000006A /* XFDEventsConsole.h */,
 				BB0000020000000000000059 /* XFDEventsConsole.m */,
 				BB0000020000000000000058 /* XFDSubmissionTester.m */,
-				BB0000020000000000000068 /* XFDWindowControllerPriv.h */,
 				BB0000020000000000000022 /* XFDDocumentWindow.xib */,
 				GG0000020000000000000002 /* ThirdParty/DMTabBar */,
 				GG0000020000000000000003 /* ThirdParty/JUInspectorView */,
+							DP0000000000000000000001 /* XFDFormEditor.m */,
+				DP0000000000000000000002 /* XFDPartViewController.m */,
+				DP0000000000000000000003 /* XFDOutlineViewController.m */,
+				DP0000000000000000000004 /* XFDPreviewViewController.m */,
+				DP0000000000000000000005 /* XFDInspectorViewController.m */,
+				DP0000000000000000000006 /* XFDIdentityInspector.m */,
+				DP0000000000000000000007 /* XFDAttributesInspector.m */,
+				DP0000000000000000000008 /* XFDInspectorPages.m */,
+				DP0000000000000000000009 /* XFDEventsInspector.m */,
+				DP000000000000000000000A /* XFDLibraryViewController.m */,
+				DP000000000000000000000B /* XFDFormEditor.h */,
+				DP000000000000000000000C /* XFDPartViewController.h */,
+				DP000000000000000000000D /* XFDOutlineViewController.h */,
+				DP000000000000000000000E /* XFDPreviewViewController.h */,
+				DP000000000000000000000F /* XFDInspectorViewController.h */,
+				DP0000000000000000000010 /* XFDIdentityInspector.h */,
+				DP0000000000000000000011 /* XFDAttributesInspector.h */,
+				DP0000000000000000000012 /* XFDInspectorPages.h */,
+				DP0000000000000000000013 /* XFDEventsInspector.h */,
+				DP0000000000000000000014 /* XFDLibraryViewController.h */,
+				DP0000000000000000000015 /* XFDOutlineViewController.xib */,
+				DP0000000000000000000016 /* XFDPreviewViewController.xib */,
+				DP0000000000000000000017 /* XFDInspectorViewController.xib */,
+				DP0000000000000000000018 /* XFDIdentityInspector.xib */,
+				DP0000000000000000000019 /* XFDAttributesInspector.xib */,
+				DP000000000000000000001A /* XFDEventsInspector.xib */,
+				DP000000000000000000001B /* XFDLibrary.xib */,
+				DP000000000000000000001C /* XFDPalettePanel.xib */,
+				DP000000000000000000001D /* XFDEventsConsole.xib */,
+				DP000000000000000000001E /* XFDEventsConsolePanel.xib */,
 			);
 			path = XFormsDesignKit;
+			sourceTree = "<group>";
+		};
+		DP0000000000000000000045 /* XFormsDesignKitTests */ = {
+			isa = PBXGroup;
+			children = (
+				DP000000000000000000004D /* XFDPartsTests.m */,
+				DP000000000000000000004E /* XFDServicesTests.m */,
+				DP000000000000000000004C /* piechart.xhtml */,
+			);
+			path = XFormsDesignKitTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1253,12 +1358,10 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				PH0000000000000000000101 /* XFDActionRowsPane.h in Headers */,
 				PH0000000000000000000102 /* XFDDesignOverlay.h in Headers */,
 				PH0000000000000000000103 /* XFDDocument.h in Headers */,
 				PH0000000000000000000104 /* XFDEditors.h in Headers */,
 				PH0000000000000000000105 /* XFDEventsConsole.h in Headers */,
-				PH0000000000000000000106 /* XFDEventsPane.h in Headers */,
 				PH0000000000000000000107 /* XFDExpressionField.h in Headers */,
 				PH0000000000000000000108 /* XFDIDRefField.h in Headers */,
 				PH0000000000000000000109 /* XFDInspectorSpecs.h in Headers */,
@@ -1276,6 +1379,16 @@
 				PH0000000000000000000115 /* JUInspectorView.h in Headers */,
 				PH0000000000000000000116 /* JUInspectorViewContainer.h in Headers */,
 				PH0000000000000000000117 /* JUInspectorViewHeader.h in Headers */,
+							DP0000000000000000000029 /* XFDFormEditor.h in Headers */,
+				DP000000000000000000002A /* XFDPartViewController.h in Headers */,
+				DP000000000000000000002B /* XFDOutlineViewController.h in Headers */,
+				DP000000000000000000002C /* XFDPreviewViewController.h in Headers */,
+				DP000000000000000000002D /* XFDInspectorViewController.h in Headers */,
+				DP000000000000000000002E /* XFDIdentityInspector.h in Headers */,
+				DP000000000000000000002F /* XFDAttributesInspector.h in Headers */,
+				DP0000000000000000000030 /* XFDInspectorPages.h in Headers */,
+				DP0000000000000000000031 /* XFDEventsInspector.h in Headers */,
+				DP0000000000000000000032 /* XFDLibraryViewController.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1411,6 +1524,24 @@
 			productReference = DK0000000000000000000002 /* XFormsDesignKit.framework */;
 			productType = "com.apple.product-type.framework";
 		};
+		DP000000000000000000003D /* XFormsDesignKitTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DP0000000000000000000042 /* Build configuration list for PBXNativeTarget "XFormsDesignKitTests" */;
+			buildPhases = (
+				DP000000000000000000003F /* Sources */,
+				DP0000000000000000000040 /* Frameworks */,
+				DP0000000000000000000041 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DP0000000000000000000047 /* PBXTargetDependency */,
+			);
+			name = XFormsDesignKitTests;
+			productName = XFormsDesignKitTests;
+			productReference = DP000000000000000000003E /* XFormsDesignKitTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1448,6 +1579,7 @@
 				EE0000020000000000000001 /* XFormsDesigner */,
 				EE0000030000000000000001 /* XFW3CTests */,
 				EE0000040000000000000001 /* XFormsMobile */,
+							DP000000000000000000003D /* XFormsDesignKitTests */,
 			);
 		};
 /* End PBXProject section */
@@ -1492,6 +1624,25 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0000020000000000000022 /* XFDDocumentWindow.xib in Resources */,
+							DP0000000000000000000033 /* XFDOutlineViewController.xib in Resources */,
+				DP0000000000000000000034 /* XFDPreviewViewController.xib in Resources */,
+				DP0000000000000000000035 /* XFDInspectorViewController.xib in Resources */,
+				DP0000000000000000000036 /* XFDIdentityInspector.xib in Resources */,
+				DP0000000000000000000037 /* XFDAttributesInspector.xib in Resources */,
+				DP0000000000000000000038 /* XFDEventsInspector.xib in Resources */,
+				DP0000000000000000000039 /* XFDLibrary.xib in Resources */,
+				DP000000000000000000003A /* XFDPalettePanel.xib in Resources */,
+				DP000000000000000000003B /* XFDEventsConsole.xib in Resources */,
+				DP000000000000000000003C /* XFDEventsConsolePanel.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DP0000000000000000000041 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DP000000000000000000004A /* hello.xhtml in Resources */,
+				DP000000000000000000004B /* piechart.xhtml in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1686,14 +1837,9 @@
 				AA000002000000000000000C /* XFDRichTextField.m in Sources */,
 				AA000002000000000000000D /* XFDIDRefField.m in Sources */,
 				AA000002000000000000000E /* XFDDesignOverlay.m in Sources */,
-				AA0000020000000000000050 /* XFDWindowController+Outline.m in Sources */,
-				AA0000020000000000000051 /* XFDWindowController+Inspector.m in Sources */,
-				AA0000020000000000000052 /* XFDWindowController+Preview.m in Sources */,
 				AA0000020000000000000053 /* XFDInspectorSpecs.m in Sources */,
 				AA0000020000000000000054 /* XFDPalettePanel.m in Sources */,
 				AA0000020000000000000055 /* XFDInstanceXMLEditor.m in Sources */,
-				AA0000020000000000000056 /* XFDEventsPane.m in Sources */,
-				AA0000020000000000000057 /* XFDActionRowsPane.m in Sources */,
 				AA0000020000000000000058 /* XFDSubmissionTester.m in Sources */,
 				AA0000020000000000000059 /* XFDEventsConsole.m in Sources */,
 				AA0000020000000000000005 /* DMTabBar.m in Sources */,
@@ -1702,6 +1848,25 @@
 				AA0000020000000000000008 /* JUInspectorView.m in Sources */,
 				AA0000020000000000000009 /* JUInspectorViewContainer.m in Sources */,
 				AA000002000000000000000A /* JUInspectorViewHeader.m in Sources */,
+							DP000000000000000000001F /* XFDFormEditor.m in Sources */,
+				DP0000000000000000000020 /* XFDPartViewController.m in Sources */,
+				DP0000000000000000000021 /* XFDOutlineViewController.m in Sources */,
+				DP0000000000000000000022 /* XFDPreviewViewController.m in Sources */,
+				DP0000000000000000000023 /* XFDInspectorViewController.m in Sources */,
+				DP0000000000000000000024 /* XFDIdentityInspector.m in Sources */,
+				DP0000000000000000000025 /* XFDAttributesInspector.m in Sources */,
+				DP0000000000000000000026 /* XFDInspectorPages.m in Sources */,
+				DP0000000000000000000027 /* XFDEventsInspector.m in Sources */,
+				DP0000000000000000000028 /* XFDLibraryViewController.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DP000000000000000000003F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DP000000000000000000004F /* XFDPartsTests.m in Sources */,
+				DP0000000000000000000050 /* XFDServicesTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1742,6 +1907,11 @@
 			isa = PBXTargetDependency;
 			target = DK0000000000000000000001 /* XFormsDesignKit */;
 			targetProxy = DK000000000000000000000F /* PBXContainerItemProxy */;
+		};
+		DP0000000000000000000047 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DK0000000000000000000001 /* XFormsDesignKit */;
+			targetProxy = DP0000000000000000000046 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -2227,6 +2397,50 @@
 			};
 			name = Release;
 		};
+		DP0000000000000000000043 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Sources",
+					"$(SRCROOT)/Sources/XFormsKit",
+					"$(SRCROOT)/Sources/XFormsDesignKit",
+				);
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsDesignKitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		DP0000000000000000000044 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/Sources",
+					"$(SRCROOT)/Sources/XFormsKit",
+					"$(SRCROOT)/Sources/XFormsDesignKit",
+				);
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.xformskit.XFormsDesignKitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -2298,6 +2512,15 @@
 			buildConfigurations = (
 				DK0000000000000000000007 /* Debug */,
 				DK0000000000000000000008 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DP0000000000000000000042 /* Build configuration list for PBXNativeTarget "XFormsDesignKitTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DP0000000000000000000043 /* Debug */,
+				DP0000000000000000000044 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

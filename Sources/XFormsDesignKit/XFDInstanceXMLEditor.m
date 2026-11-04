@@ -182,6 +182,27 @@ static void XFDBlankify(XFXMLElement *element)
     return editor->_result;
 }
 
-@end
++ (BOOL)editInstanceOfElement:(XFXMLElement *)element
+                 inFormEditor:(XFDFormEditor *)formEditor
+                        error:(NSError **)error
+{
+    XFXMLElement *instance = [formEditor instanceElementOf:element];
+    if (instance == nil) {
+        XFDBeep();
+        return NO;
+    }
+    XFHostEdit *edit = formEditor.hostEdit;
+    NSString *xml = [self runWithXML:[edit contentXMLOfElement:instance]
+                               title:[NSString stringWithFormat:@"Instance data — %@",
+                                      [[instance attributeForName:@"id"] stringValue] ?: @"instance"]];
+    if (xml == nil) {
+        return NO;
+    }
+    if (![edit setContentXML:xml onElement:instance error:error]) {
+        return NO;
+    }
+    formEditor.selection = instance;
+    return YES;
+}
 
-void XFDInstanceXMLEditorFilePresent(void) {}
+@end

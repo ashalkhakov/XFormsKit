@@ -555,5 +555,3 @@ static BOOL XFDHeaderIsSecret(NSString *name)
 }
 
 @end
-
-void XFDSubmissionTesterFilePresent(void) {}

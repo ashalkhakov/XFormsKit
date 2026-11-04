@@ -2,11 +2,13 @@
 # GNUmakefile — XFormsKit on GNUstep: the framework, the designer's editor
 # (XFormsDesignKit), the apps, and their tests.
 #
-#   make            the framework and its test bundles, then XFormsDesignKit
-#                   and the apps (XFormsViewer, XFormsDesigner, XFormsLauncher)
+#   make            the framework and its test bundles, then XFormsDesignKit,
+#                   its tests (Tests/XFormsDesignKitTests) and the apps
+#                   (XFormsViewer, XFormsDesigner, XFormsLauncher)
 #   make check      the sources checked (Scripts/check-sources.sh), the unit
-#                   tests and the W3C XForms 1.1 suite (under Xvfb when there
-#                   is no display: the widget tests and some W3C cases draw)
+#                   tests, the designer's, and the W3C XForms 1.1 suite (under
+#                   Xvfb when there is no display: the widget tests, the
+#                   designer's and some W3C cases draw)
 #   make install    the framework, XFormsDesignKit and the apps; not the test
 #                   bundles
 #
@@ -296,6 +298,7 @@ include $(GNUSTEP_MAKEFILES)/bundle.make
 XF_APPS = Apps/XFormsViewer Apps/XFormsDesigner Apps/XFormsLauncher
 after-all::
 	$(MAKE) -C Sources/XFormsDesignKit
+	$(MAKE) -C Tests/XFormsDesignKitTests
 	@for app in $(XF_APPS); do $(MAKE) -C $$app || exit 1; done
 
 after-install::
@@ -304,6 +307,7 @@ after-install::
 
 after-clean::
 	$(MAKE) -C Sources/XFormsDesignKit clean
+	$(MAKE) -C Tests/XFormsDesignKitTests clean
 	@for app in $(XF_APPS); do $(MAKE) -C $$app clean || exit 1; done
 
 XVFB = $(if $(DISPLAY),,$(shell command -v xvfb-run >/dev/null 2>&1 && echo xvfb-run -a))
@@ -314,7 +318,10 @@ check:: all
 	@if command -v xctest >/dev/null 2>&1; then \
 	  LD_LIBRARY_PATH="$(CURDIR)/XFormsKit.framework/Versions/Current:$$LD_LIBRARY_PATH" \
 	  PATH="$(CURDIR)/XFormsKit.framework:$$PATH" \
-	  $(XVFB) xctest ./XFormsKitTests.bundle; \
+	  $(XVFB) xctest ./XFormsKitTests.bundle && \
+	  LD_LIBRARY_PATH="$(CURDIR)/Sources/XFormsDesignKit/XFormsDesignKit.framework/Versions/Current:$(CURDIR)/XFormsKit.framework/Versions/Current:$$LD_LIBRARY_PATH" \
+	  PATH="$(CURDIR)/Sources/XFormsDesignKit/XFormsDesignKit.framework:$(CURDIR)/XFormsKit.framework:$$PATH" \
+	  $(XVFB) xctest ./Tests/XFormsDesignKitTests/XFormsDesignKitTests.bundle; \
 	else \
 	  echo "xctest not on PATH. Install gnustep/tools-xctest and re-run make check."; \
 	  exit 1; \

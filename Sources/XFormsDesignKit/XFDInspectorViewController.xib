@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24127" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+    <dependencies>
+        <deployment identifier="macosx" />
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24127" />
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0" />
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="XFDInspectorViewController">
+            <connections>
+                <outlet property="view" destination="xfd-p0-rgt" id="XFDIns-077" />
+                <outlet property="inspectorTabBar" destination="xfd-w0-bar" id="XFDIns-078" />
+                <outlet property="inspectorTabView" destination="xfd-w0-itb" id="XFDIns-079" />
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder" />
+        <customObject id="-3" userLabel="Application" customClass="NSObject" />
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="xfd-p0-rgt" userLabel="Inspector">
+            <rect key="frame" x="0.0" y="0.0" width="280" height="720" />
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+            <subviews>
+                <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-w0-bar" customClass="DMTabBar">
+                    <rect key="frame" x="0.0" y="698" width="280" height="22" />
+                    <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                </customView>
+                <tabView fixedFrame="YES" type="noTabsNoBorder" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-w0-itb">
+                    <rect key="frame" x="0.0" y="0.0" width="280" height="672" />
+                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                    <font key="font" metaFont="system" />
+                    <tabViewItems>
+                        <tabViewItem label="Identity" identifier="" id="xfd-a0-153">
+                            <view key="view" id="xfd-a0-154">
+                                <rect key="frame" x="0.0" y="0.0" width="280" height="672" />
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                            </view>
+                        </tabViewItem>
+                        <tabViewItem label="Attributes" identifier="" id="xfd-a0-155">
+                            <view key="view" id="xfd-a0-156">
+                                <rect key="frame" x="0.0" y="0.0" width="280" height="672" />
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                            </view>
+                        </tabViewItem>
+                        <tabViewItem label="Events" identifier="" id="xfd-a0-159">
+                            <view key="view" id="xfd-a0-160">
+                                <rect key="frame" x="0.0" y="0.0" width="280" height="672" />
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                            </view>
+                        </tabViewItem>
+                    </tabViewItems>
+                </tabView>
+            </subviews>
+        </customView>
+    </objects>
+</document>

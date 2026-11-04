@@ -5,9 +5,14 @@
 /// data. OK requires well-formed XML with a single root.
 #pragma once
 #import <AppKit/AppKit.h>
+#import "XFDFormEditor.h"
 
 @interface XFDInstanceXMLEditor : NSObject
 + (NSString *)runWithXML:(NSString *)xml title:(NSString *)title;
+/// The data of the xf:instance `element` is in (or is) edited, and that
+/// instance selected; NO when there is none, the editor was cancelled,
+/// or (with why) the XML could not be set.
++ (BOOL)editInstanceOfElement:(XFXMLElement *)element
+                 inFormEditor:(XFDFormEditor *)formEditor
+                        error:(NSError **)error;
 @end
-
-void XFDInstanceXMLEditorFilePresent(void);

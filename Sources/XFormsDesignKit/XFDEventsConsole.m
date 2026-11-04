@@ -2,7 +2,6 @@
 #import "XFDEventsConsole.h"
 #import <XFormsKit/XFXMLTypes.h>
 
-void XFDEventsConsoleFilePresent(void) {}
 
 @implementation XFDEventsLogEntry
 @end
@@ -155,7 +154,7 @@ NSArray<NSString *> *XFDDuplicateIDsInDocument(XFXMLDocument *document)
     return dupes;
 }
 
-#pragma mark - XFDEventsConsole (the panel)
+#pragma mark - XFDEventsConsoleViewController (the console's view)
 
 static NSString *XFDTraceKindName(XFTraceKind kind)
 {
@@ -170,197 +169,52 @@ static NSString *XFDTraceKindName(XFTraceKind kind)
     return @"?";
 }
 
-@interface XFDEventsConsole ()
-@property (nonatomic, strong) NSPanel *panel;
-@property (nonatomic, strong) XFDEventsLog *log;
-@property (nonatomic, strong) NSTableView *table;
-@property (nonatomic, strong) NSPopUpButton *kindPopup;
-@property (nonatomic, strong) NSTextField *filterField;
-@property (nonatomic, strong) NSButton *pauseButton;
-@property (nonatomic, strong) NSTextField *countField;
+@interface XFDEventsConsoleViewController ()
 @property (nonatomic, strong) NSArray<XFDEventsLogEntry *> *shown;
-@property (nonatomic, assign, readwrite, getter=isVisible) BOOL visible;
+@property (nonatomic, assign, readwrite, getter=isRunning) BOOL running;
 @end
 
-@implementation XFDEventsConsole
-
-+ (XFDEventsConsole *)sharedConsole
-{
-    static XFDEventsConsole *shared = nil;
-    if (shared == nil) {
-        shared = [[XFDEventsConsole alloc] init];
-    }
-    return shared;
-}
+@implementation XFDEventsConsoleViewController
 
 - (instancetype)init
 {
-    if ((self = [super init])) {
+    if ((self = [super initWithNibName:@"XFDEventsConsole"
+                                bundle:[NSBundle bundleForClass:[XFDEventsConsoleViewController class]]])) {
         _log = [[XFDEventsLog alloc] init];
         _shown = @[];
+        self.title = @"Events Console";
+        __weak XFDEventsConsoleViewController *weakSelf = self;
+        _log.onAppend = ^(XFDEventsLogEntry *entry) {
+            (void)entry;
+            [weakSelf refreshKeepingScroll:NO];
+        };
     }
     return self;
 }
 
-- (void)buildPanelIfNeeded
+- (void)loadView
 {
-    if (self.panel) {
-        return;
-    }
-    NSRect frame = NSMakeRect(120, 120, 720, 420);
-    NSPanel *panel = [[NSPanel alloc]
-        initWithContentRect:frame
-                  styleMask:(NSTitledWindowMask | NSClosableWindowMask
-                             | NSResizableWindowMask | NSUtilityWindowMask)
-                    backing:NSBackingStoreBuffered
-                      defer:NO];
-    [panel setTitle:@"Events Console"];
-    [panel setReleasedWhenClosed:NO];
-    [panel setFloatingPanel:NO];
-    [panel setDelegate:(id)self];
-    [panel setMinSize:NSMakeSize(480, 240)];
-    NSView *content = [panel contentView];
-    CGFloat width = NSWidth([content bounds]);
-    CGFloat height = NSHeight([content bounds]);
-
-    /* Top bar: kind filter, text filter, pause, clear, save. */
-    CGFloat barY = height - 32;
-    NSPopUpButton *kinds = [[NSPopUpButton alloc]
-        initWithFrame:NSMakeRect(8, barY, 110, 24) pullsDown:NO];
-    for (NSString *title in @[ @"All kinds", @"Events", @"Handlers",
-                               @"Actions", @"Model", @"Errors", @"Warnings" ]) {
-        [kinds addItemWithTitle:title];
-    }
-    [kinds setTarget:self];
-    [kinds setAction:@selector(filterChanged:)];
-    [kinds setAutoresizingMask:NSViewMinYMargin];
-    [content addSubview:kinds];
-    self.kindPopup = kinds;
-
-    NSTextField *filter = [[NSTextField alloc]
-        initWithFrame:NSMakeRect(126, barY + 2, width - 126 - 250, 21)];
-    [[filter cell] setPlaceholderString:@"Filter (message or event name)"];
-    [filter setTarget:self];
-    [filter setAction:@selector(filterChanged:)];
-    [filter setAutoresizingMask:NSViewWidthSizable | NSViewMinYMargin];
-    [content addSubview:filter];
-    self.filterField = filter;
-
-    CGFloat x = width - 244;
-    NSButton *pause = [[NSButton alloc] initWithFrame:NSMakeRect(x, barY, 70, 24)];
-    [pause setButtonType:NSPushOnPushOffButton];
-    [pause setTitle:@"Pause"];
-    [pause setBezelStyle:NSRoundedBezelStyle];
-    [pause setTarget:self];
-    [pause setAction:@selector(pauseClicked:)];
-    [pause setAutoresizingMask:NSViewMinXMargin | NSViewMinYMargin];
-    [content addSubview:pause];
-    self.pauseButton = pause;
-
-    NSButton *clear = [[NSButton alloc] initWithFrame:NSMakeRect(x + 74, barY, 70, 24)];
-    [clear setTitle:@"Clear"];
-    [clear setBezelStyle:NSRoundedBezelStyle];
-    [clear setTarget:self];
-    [clear setAction:@selector(clearClicked:)];
-    [clear setAutoresizingMask:NSViewMinXMargin | NSViewMinYMargin];
-    [content addSubview:clear];
-
-    NSButton *save = [[NSButton alloc] initWithFrame:NSMakeRect(x + 148, barY, 92, 24)];
-    [save setTitle:@"Save Log…"];
-    [save setBezelStyle:NSRoundedBezelStyle];
-    [save setTarget:self];
-    [save setAction:@selector(saveClicked:)];
-    [save setAutoresizingMask:NSViewMinXMargin | NSViewMinYMargin];
-    [content addSubview:save];
-
-    /* The log table. */
-    NSScrollView *scroll = [[NSScrollView alloc]
-        initWithFrame:NSMakeRect(0, 24, width, height - 24 - 36)];
-    [scroll setHasVerticalScroller:YES];
-    [scroll setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
-    NSTableView *table = [[NSTableView alloc]
-        initWithFrame:[[scroll contentView] bounds]];
-    struct { NSString *ident; NSString *title; CGFloat width; } cols[] = {
-        { @"delta", @"Δms", 52 },
-        { @"kind", @"Kind", 62 },
-        { @"event", @"Event", 150 },
-        { @"message", @"Message", 420 },
-    };
-    for (NSUInteger i = 0; i < 4; i++) {
-        NSTableColumn *col = [[NSTableColumn alloc] initWithIdentifier:cols[i].ident];
-        [[col headerCell] setStringValue:cols[i].title];
-        [col setWidth:cols[i].width];
-        [col setEditable:NO];
-        [table addTableColumn:col];
-    }
-    [table setUsesAlternatingRowBackgroundColors:YES];
-    [table setAllowsMultipleSelection:NO];
-    [table setDataSource:(id)self];
-    [table setDelegate:(id)self];
-    [scroll setDocumentView:table];
-    [content addSubview:scroll];
-    self.table = table;
-
-    /* Bottom: the count line. */
-    NSTextField *count = [[NSTextField alloc]
-        initWithFrame:NSMakeRect(8, 3, width - 16, 17)];
-    [count setEditable:NO];
-    [count setBordered:NO];
-    [count setDrawsBackground:NO];
-    [count setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-    [count setAutoresizingMask:NSViewWidthSizable | NSViewMaxYMargin];
-    [content addSubview:count];
-    self.countField = count;
-
-    self.panel = panel;
-
-    __weak XFDEventsConsole *weakSelf = self;
-    self.log.onAppend = ^(XFDEventsLogEntry *entry) {
-        (void)entry;
-        [weakSelf refreshKeepingScroll:NO];
-    };
+    [super loadView];
+    [self refreshKeepingScroll:YES];
 }
 
-#pragma mark show / close
-
-- (void)showWithHostDocument:(XFXMLDocument *)hostDocument
+- (void)startWithHostDocument:(XFXMLDocument *)hostDocument
 {
-    [self buildPanelIfNeeded];
     [self.log install];
-    self.visible = YES;
-    // XSLTForms debugging(): duplicate-id scan when the console opens.
+    self.running = YES;
+    // XSLTForms debugging(): the duplicate-id scan when the console opens
     NSArray<NSString *> *dupes = XFDDuplicateIDsInDocument(hostDocument);
     if (dupes.count) {
-        XFTraceWrite(XFTraceKindWarning, nil, nil,
-                     @"WARNING: Duplicate ids: %@",
+        XFTraceWrite(XFTraceKindWarning, nil, nil, @"WARNING: Duplicate ids: %@",
                      [dupes componentsJoinedByString:@" "]);
     }
     [self refreshKeepingScroll:YES];
-    [self.panel makeKeyAndOrderFront:nil];
 }
 
-- (void)close
+- (void)stop
 {
     [self.log uninstall];
-    self.visible = NO;
-    [self.panel orderOut:nil];
-}
-
-- (void)toggleWithHostDocument:(XFXMLDocument *)hostDocument
-{
-    if (self.visible) {
-        [self close];
-    } else {
-        [self showWithHostDocument:hostDocument];
-    }
-}
-
-- (void)windowWillClose:(NSNotification *)note
-{
-    (void)note;
-    // The close box: stop tracing, exactly like toggling off.
-    [self.log uninstall];
-    self.visible = NO;
+    self.running = NO;
 }
 
 #pragma mark actions
@@ -371,39 +225,42 @@ static NSString *XFDTraceKindName(XFTraceKind kind)
     return sel <= 0 ? -1 : sel - 1; // rows follow the XFTraceKind order
 }
 
-- (void)filterChanged:(id)sender
+- (IBAction)filterChanged:(id)sender
 {
     (void)sender;
     [self refreshKeepingScroll:YES];
 }
 
-- (void)pauseClicked:(id)sender
+- (IBAction)pauseClicked:(id)sender
 {
     (void)sender;
     self.log.paused = ([self.pauseButton state] == NSOnState);
+    [self refreshKeepingScroll:YES];
 }
 
-- (void)clearClicked:(id)sender
+- (IBAction)clearClicked:(id)sender
 {
     (void)sender;
     [self.log clear];
     [self refreshKeepingScroll:NO];
 }
 
-- (void)saveClicked:(id)sender
+- (IBAction)saveClicked:(id)sender
 {
     (void)sender;
     NSSavePanel *save = [NSSavePanel savePanel];
     [save setNameFieldStringValue:@"tracelog.xml"];
     if ([save runModal] == NSFileHandlingPanelOKButton && [save URL]) {
-        NSString *xml = [self.log tracelogXMLString];
-        [xml writeToURL:[save URL] atomically:YES
-               encoding:NSUTF8StringEncoding error:NULL];
+        [[self.log tracelogXMLString] writeToURL:[save URL] atomically:YES
+                                        encoding:NSUTF8StringEncoding error:NULL];
     }
 }
 
 - (void)refreshKeepingScroll:(BOOL)keep
 {
+    if (![self isViewLoaded]) {
+        return;
+    }
     self.shown = [self.log entriesMatchingKind:[self kindFilter]
                                      substring:[self.filterField stringValue]];
     [self.table reloadData];
@@ -468,6 +325,91 @@ static NSString *XFDTraceKindName(XFTraceKind kind)
     if ([cell respondsToSelector:@selector(setTextColor:)]) {
         [cell setTextColor:color];
     }
+}
+
+@end
+
+#pragma mark - XFDEventsConsole (the app's panel)
+
+@interface XFDEventsConsole ()
+@property (nonatomic, assign, readwrite, getter=isVisible) BOOL visible;
+@end
+
+@implementation XFDEventsConsole {
+    NSArray *_topLevelObjects;
+}
+
++ (XFDEventsConsole *)sharedConsole
+{
+    static XFDEventsConsole *shared = nil;
+    if (shared == nil) {
+        shared = [[XFDEventsConsole alloc] init];
+    }
+    return shared;
+}
+
+- (instancetype)init
+{
+    if ((self = [super init])) {
+        _viewController = [[XFDEventsConsoleViewController alloc] init];
+    }
+    return self;
+}
+
+/// The panel from its XIB, the console's view in it.
+- (BOOL)loadPanelIfNeeded
+{
+    if (self.panel != nil) {
+        return YES;
+    }
+    NSArray *objects = nil;
+    NSNib *nib = [[NSNib alloc] initWithNibNamed:@"XFDEventsConsolePanel"
+                                          bundle:[NSBundle bundleForClass:[XFDEventsConsole class]]];
+    if (![nib instantiateWithOwner:self topLevelObjects:&objects] || self.panel == nil) {
+        NSLog(@"XFormsDesignKit: XFDEventsConsolePanel did not load");
+        return NO;
+    }
+    _topLevelObjects = objects;
+    NSView *content = [self.panel contentView];
+    NSView *view = [self.viewController view];
+    [view setFrame:[content bounds]];
+    [view setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+    [content addSubview:view];
+    return YES;
+}
+
+- (void)showWithHostDocument:(XFXMLDocument *)hostDocument
+{
+    if (![self loadPanelIfNeeded]) {
+        return;
+    }
+    [self.viewController startWithHostDocument:hostDocument];
+    self.visible = YES;
+    [self.panel makeKeyAndOrderFront:nil];
+}
+
+- (void)close
+{
+    [self.viewController stop];
+    self.visible = NO;
+    [self.panel orderOut:nil];
+}
+
+- (void)toggleWithHostDocument:(XFXMLDocument *)hostDocument
+{
+    if (self.visible) {
+        [self close];
+    } else {
+        [self showWithHostDocument:hostDocument];
+    }
+}
+
+- (void)windowWillClose:(NSNotification *)note
+{
+    (void)note;
+    // the close box: tracing stops, as toggling off does
+    [self.viewController stop];
+    self.visible = NO;
 }
 
 @end

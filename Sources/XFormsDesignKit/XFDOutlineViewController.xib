@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24127" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+    <dependencies>
+        <deployment identifier="macosx" />
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24127" />
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0" />
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="XFDOutlineViewController">
+            <connections>
+                <outlet property="view" destination="xfd-p0-lft" id="XFDOut-001" />
+                <outlet property="outline" destination="xfd-w0-out" id="XFDOut-002" />
+                <outlet property="plusMinusControl" destination="xfd-w0-seg" id="XFDOut-003" />
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder" />
+        <customObject id="-3" userLabel="Application" customClass="NSObject" />
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="xfd-p0-lft" userLabel="Outline">
+            <rect key="frame" x="0.0" y="0.0" width="240" height="720" />
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+            <subviews>
+                <scrollView fixedFrame="YES" horizontalLineScroll="24" horizontalPageScroll="10" verticalLineScroll="24" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-117">
+                    <rect key="frame" x="0.0" y="28" width="240" height="692" />
+                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                    <clipView key="contentView" id="xfd-a0-118">
+                        <rect key="frame" x="0.0" y="0.0" width="240" height="692" />
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                        <subviews>
+                            <outlineView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" multipleSelection="NO" autosaveColumns="NO" rowHeight="20" indentationPerLevel="13" outlineTableColumn="xfd-w0-col" id="xfd-w0-out">
+                                <rect key="frame" x="0.0" y="0.0" width="240" height="692" />
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                <size key="intercellSpacing" width="3" height="2" />
+                                <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog" />
+                                <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog" />
+                                <tableColumns>
+                                    <tableColumn identifier="element" width="220" minWidth="40" maxWidth="1000" id="xfd-w0-col">
+                                        <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border">
+                                            <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog" />
+                                        </tableHeaderCell>
+                                        <textFieldCell key="dataCell" lineBreakMode="truncatingTail" selectable="YES" title="Text Cell" id="xfd-a0-119">
+                                            <font key="font" metaFont="system" />
+                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                        <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" />
+                                    </tableColumn>
+                                </tableColumns>
+                                <connections>
+                                    <outlet property="dataSource" destination="-2" id="xfd-a0-120" />
+                                    <outlet property="delegate" destination="-2" id="xfd-a0-121" />
+                                </connections>
+                            </outlineView>
+                        </subviews>
+                    </clipView>
+                    <scroller key="horizontalScroller" hidden="YES" verticalHuggingPriority="750" horizontal="YES" id="xfd-a0-122">
+                        <rect key="frame" x="0.0" y="0.0" width="240" height="16" />
+                        <autoresizingMask key="autoresizingMask" />
+                    </scroller>
+                    <scroller key="verticalScroller" hidden="YES" verticalHuggingPriority="750" horizontal="NO" id="xfd-a0-123">
+                        <rect key="frame" x="224" y="0.0" width="16" height="692" />
+                        <autoresizingMask key="autoresizingMask" />
+                    </scroller>
+                </scrollView>
+                <segmentedControl verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-w0-seg">
+                    <rect key="frame" x="6" y="4" width="70" height="20" />
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES" />
+                    <segmentedCell key="cell" controlSize="small" borderStyle="border" alignment="left" style="rounded" trackingMode="momentary" id="xfd-a0-124">
+                        <font key="font" metaFont="smallSystem" />
+                        <segments>
+                            <segment label="+" width="30" />
+                            <segment label="−" width="30" tag="1" />
+                        </segments>
+                    </segmentedCell>
+                    <connections>
+                        <action selector="plusMinusClicked:" target="-2" id="xfd-a0-125" />
+                    </connections>
+                </segmentedControl>
+            </subviews>
+        </customView>
+    </objects>
+</document>

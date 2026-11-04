@@ -1,8 +1,8 @@
 /* Editing view-models for the designer inspector — one per selection
    kind (the ModelBuilder pattern). Each wraps (host XFXMLElement +
-   XFDDocument) and exposes plain KVC properties whose setters write host
+   XFDFormEditor) and exposes plain KVC properties whose setters write host
    XML through XFHostEdit: every set is undoable and notifies the
-   processor in place. The window controller copies control values in and
+   processor in place. The inspectors' pages copy control values in and
    out; nothing here touches a view.
 
    The selection IS the host element, never a runtime XFControl — repeat
@@ -14,14 +14,14 @@
 #import <Foundation/Foundation.h>
 #import <XFormsKit/XFXMLTypes.h>
 
-@class XFDDocument;
+@class XFDFormEditor;
 
 @interface XFDElementEditor : NSObject
 
-+ (instancetype)editorForElement:(XFXMLElement *)element document:(XFDDocument *)document;
++ (instancetype)editorForElement:(XFXMLElement *)element formEditor:(XFDFormEditor *)formEditor;
 
 @property (nonatomic, strong, readonly) XFXMLElement *element;
-@property (nonatomic, strong, readonly) XFDDocument *document;
+@property (nonatomic, strong, readonly) XFDFormEditor *formEditor;
 
 /// "xf:input — input-3" (the inspector's title line).
 @property (nonatomic, copy, readonly) NSString *title;

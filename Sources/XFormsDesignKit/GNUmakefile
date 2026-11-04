@@ -2,7 +2,8 @@
 # XFormsDesignKit -- the designer's editor as a framework (XFormsDesignKit.h):
 # XFormsDesigner.app is main.m and a menu over it, and other apps host it
 # to edit forms of their own. Built after XFormsKit (`make designkit` at
-# the top); the window's xib goes in as it is, loaded through GSXib5.
+# the top); the window's and the parts' xibs go in as they are, loaded
+# through GSXib5.
 #
 
 ifeq ($(GNUSTEP_MAKEFILES),)
@@ -22,17 +23,22 @@ XFormsDesignKit_CURRENT_VERSION_NAME = A
 XFormsDesignKit_DEPLOY_WITH_CURRENT_VERSION = yes
 
 XFormsDesignKit_OBJC_FILES = \
+	XFDFormEditor.m \
 	XFDDocument.m \
 	XFDEditors.m \
+	XFDPartViewController.m \
+	XFDOutlineViewController.m \
+	XFDPreviewViewController.m \
+	XFDInspectorViewController.m \
+	XFDIdentityInspector.m \
+	XFDAttributesInspector.m \
+	XFDInspectorPages.m \
+	XFDEventsInspector.m \
+	XFDLibraryViewController.m \
 	XFDWindowController.m \
-	XFDWindowController+Outline.m \
-	XFDWindowController+Inspector.m \
-	XFDWindowController+Preview.m \
 	XFDInspectorSpecs.m \
 	XFDPalettePanel.m \
 	XFDInstanceXMLEditor.m \
-	XFDEventsPane.m \
-	XFDActionRowsPane.m \
 	XFDSubmissionTester.m \
 	XFDEventsConsole.m \
 	XFDXPathField.m \
@@ -48,7 +54,18 @@ XFormsDesignKit_OBJC_FILES = \
 	ThirdParty/JUInspectorView/JUInspectorViewContainer.m \
 	ThirdParty/JUInspectorView/JUInspectorViewHeader.m
 
-XFormsDesignKit_RESOURCE_FILES = XFDDocumentWindow.xib
+XFormsDesignKit_RESOURCE_FILES = \
+	XFDDocumentWindow.xib \
+	XFDOutlineViewController.xib \
+	XFDPreviewViewController.xib \
+	XFDInspectorViewController.xib \
+	XFDIdentityInspector.xib \
+	XFDAttributesInspector.xib \
+	XFDEventsInspector.xib \
+	XFDLibrary.xib \
+	XFDPalettePanel.xib \
+	XFDEventsConsole.xib \
+	XFDEventsConsolePanel.xib
 
 # Its headers, installed where the framework is, laid out as here: what
 # builds on an installed XFormsDesignKit (WorkflowKit's designer) includes
@@ -56,17 +73,25 @@ XFormsDesignKit_RESOURCE_FILES = XFDDocumentWindow.xib
 # ThirdParty/DMTabBar as a checkout of it would.
 XFormsDesignKit_HEADER_FILES_DIR = .
 XFormsDesignKit_HEADER_FILES = \
-	XFDActionRowsPane.h \
+	XFDAttributesInspector.h \
 	XFDDesignOverlay.h \
 	XFDDocument.h \
 	XFDEditors.h \
 	XFDEventsConsole.h \
-	XFDEventsPane.h \
+	XFDEventsInspector.h \
 	XFDExpressionField.h \
+	XFDFormEditor.h \
 	XFDIDRefField.h \
+	XFDIdentityInspector.h \
+	XFDInspectorPages.h \
 	XFDInspectorSpecs.h \
+	XFDInspectorViewController.h \
 	XFDInstanceXMLEditor.h \
+	XFDLibraryViewController.h \
+	XFDOutlineViewController.h \
 	XFDPalettePanel.h \
+	XFDPartViewController.h \
+	XFDPreviewViewController.h \
 	XFDRichTextField.h \
 	XFDSubmissionTester.h \
 	XFDWindowController.h \

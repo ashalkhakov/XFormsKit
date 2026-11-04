@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24127" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+    <dependencies>
+        <deployment identifier="macosx" />
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24127" />
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0" />
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="XFDPalettePanel">
+            <connections>
+                <outlet property="panel" destination="xfd-pp-pnl" id="xfd-pp-001" />
+                <outlet property="libraryHost" destination="xfd-pp-hst" id="xfd-pp-002" />
+                <outlet property="insertButton" destination="xfd-pp-ins" id="xfd-pp-003" />
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder" />
+        <customObject id="-3" userLabel="Application" customClass="NSObject" />
+        <window title="Insert" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="xfd-pp-pnl" customClass="NSPanel">
+            <windowStyleMask key="styleMask" titled="YES" closable="YES" />
+            <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES" />
+            <rect key="contentRect" x="0.0" y="0.0" width="420" height="520" />
+            <rect key="screenRect" x="0.0" y="0.0" width="1920" height="1055" />
+            <view key="contentView" id="xfd-pp-cnt">
+                <rect key="frame" x="0.0" y="0.0" width="420" height="520" />
+                <autoresizingMask key="autoresizingMask" />
+                <subviews>
+                    <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-pp-hst">
+                        <rect key="frame" x="12" y="46" width="396" height="460" />
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                    </customView>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-pp-can">
+                        <rect key="frame" x="230" y="8" width="84" height="28" />
+                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES" />
+                        <buttonCell key="cell" type="push" title="Cancel" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="xfd-pp-cnc">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES" />
+                            <font key="font" metaFont="system" />
+                            <string key="keyEquivalent" base64-UTF8="YES">
+Gw
+</string>
+                        </buttonCell>
+                        <connections>
+                            <action selector="cancelClicked:" target="-2" id="xfd-pp-cna" />
+                        </connections>
+                    </button>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-pp-ins">
+                        <rect key="frame" x="320" y="8" width="84" height="28" />
+                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES" />
+                        <buttonCell key="cell" type="push" title="Insert" bezelStyle="rounded" alignment="center" enabled="NO" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="xfd-pp-inc">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES" />
+                            <font key="font" metaFont="system" />
+                            <string key="keyEquivalent" base64-UTF8="YES">
+DQ
+</string>
+                        </buttonCell>
+                        <connections>
+                            <action selector="insertClicked:" target="-2" id="xfd-pp-ina" />
+                        </connections>
+                    </button>
+                </subviews>
+            </view>
+            <connections>
+                <outlet property="delegate" destination="-2" id="xfd-pp-dlg" />
+            </connections>
+        </window>
+    </objects>
+</document>
