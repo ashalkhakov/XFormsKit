@@ -118,21 +118,25 @@ static BOOL XFDHeaderIsSecret(NSString *name)
         || [name caseInsensitiveCompare:@"Set-Cookie"] == NSOrderedSame;
 }
 
+@interface XFDSubmissionTester ()
+@property (nonatomic, strong) IBOutlet NSPanel *panel;
+@property (nonatomic, strong) IBOutlet NSPopUpButton *submissionPopup;
+@property (nonatomic, strong) IBOutlet NSPopUpButton *transportPopup;
+@property (nonatomic, strong) IBOutlet NSPopUpButton *historyPopup;
+@property (nonatomic, strong) IBOutlet NSTextField *requestLine;
+@property (nonatomic, strong) IBOutlet NSTableView *headersTable;
+@property (nonatomic, strong) IBOutlet NSTextView *bodyView;
+@property (nonatomic, strong) IBOutlet NSTextField *extraHeadersField;
+@property (nonatomic, strong) IBOutlet NSTextField *statusLine;
+@property (nonatomic, strong) IBOutlet NSTableView *responseHeadersTable;
+@property (nonatomic, strong) IBOutlet NSTextView *responseView;
+@end
+
 @implementation XFDSubmissionTester {
-    NSPanel *_panel;
+    NSArray *_topLevelObjects;
     XFProcessor *_processor;
-    NSPopUpButton *_submissionPopup;
-    NSPopUpButton *_transportPopup;
-    NSPopUpButton *_historyPopup;
-    NSTextField *_requestLine;
-    NSTableView *_headersTable;
     NSArray *_headerRows;          /* dicts: name / value / source */
-    NSTextView *_bodyView;
-    NSTextField *_extraHeadersField;
-    NSTextField *_statusLine;
-    NSTableView *_responseHeadersTable;
     NSArray *_responseHeaderRows;
-    NSTextView *_responseView;
     NSMutableArray *_history;      /* summary dicts, newest first */
 }
 
@@ -240,7 +244,7 @@ static BOOL XFDHeaderIsSecret(NSString *name)
 
 #pragma mark send
 
-- (void)sendClicked:(id)sender
+- (IBAction)sendClicked:(id)sender
 {
     (void)sender;
     XFSubmission *sub = [self chosenSubmission];
@@ -329,7 +333,7 @@ static BOOL XFDHeaderIsSecret(NSString *name)
     }
 }
 
-- (void)historyPicked:(id)sender
+- (IBAction)historyPicked:(id)sender
 {
     (void)sender;
     NSInteger i = [_historyPopup indexOfSelectedItem] - 1;
@@ -372,149 +376,39 @@ static BOOL XFDHeaderIsSecret(NSString *name)
 
 #pragma mark build
 
-- (NSTextField *)label:(NSString *)text frame:(NSRect)frame in:(NSView *)content
+/// The panel from its XIB (XFDSubmissionTester.xib), its submissions the
+/// form's, its text the fixed-pitch font.
+- (BOOL)loadPanel
 {
-    NSTextField *l = [[NSTextField alloc] initWithFrame:frame];
-    [l setEditable:NO];
-    [l setBordered:NO];
-    [l setDrawsBackground:NO];
-    [l setFont:[NSFont systemFontOfSize:11]];
-    [l setStringValue:text];
-    [content addSubview:l];
-    return l;
-}
-
-- (NSTableView *)headerTableIn:(NSView *)content frame:(NSRect)frame withSource:(BOOL)withSource
-{
-    NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:frame];
-    [scroll setHasVerticalScroller:YES];
-    [scroll setBorderType:NSBezelBorder];
-    NSTableView *table = [[NSTableView alloc] initWithFrame:
-        NSMakeRect(0, 0, NSWidth(frame), NSHeight(frame))];
-    struct { NSString *ident; NSString *title; CGFloat width; } cols[] = {
-        { @"name", @"Header", 150 },
-        { @"value", @"Value", withSource ? 330 : 420 },
-        { @"source", @"Source", 70 },
-    };
-    for (NSUInteger i = 0; i < (withSource ? 3u : 2u); i++) {
-        NSTableColumn *c = [[NSTableColumn alloc] initWithIdentifier:cols[i].ident];
-        [[c headerCell] setStringValue:cols[i].title];
-        [c setWidth:cols[i].width];
-        [[c dataCell] setEditable:NO];
-        [[c dataCell] setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-        [table addTableColumn:c];
+    NSArray *objects = nil;
+    NSNib *nib = [[NSNib alloc] initWithNibNamed:@"XFDSubmissionTester"
+                                          bundle:[NSBundle bundleForClass:[XFDSubmissionTester class]]];
+    if (![nib instantiateWithOwner:self topLevelObjects:&objects] || _panel == nil) {
+        NSLog(@"XFormsDesignKit: XFDSubmissionTester did not load");
+        return NO;
     }
-    [table setDataSource:self];
-    [table setDelegate:self];
-    [scroll setDocumentView:table];
-    [content addSubview:scroll];
-    return table;
-}
-
-- (NSTextView *)textViewIn:(NSView *)content frame:(NSRect)frame
-{
-    NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:frame];
-    [scroll setHasVerticalScroller:YES];
-    [scroll setBorderType:NSBezelBorder];
-    NSTextView *tv = [[NSTextView alloc] initWithFrame:
-        NSMakeRect(0, 0, NSWidth(frame), NSHeight(frame))];
-    [tv setFont:[NSFont userFixedPitchFontOfSize:11]];
-    [tv setEditable:NO];
-    [tv setVerticallyResizable:YES];
-    [tv setAutoresizingMask:NSViewWidthSizable];
-    [[tv textContainer] setWidthTracksTextView:YES];
-    [scroll setDocumentView:tv];
-    [content addSubview:scroll];
-    return tv;
-}
-
-- (void)buildPanel
-{
-    const CGFloat W = 820, H = 640;
-    _panel = [[NSPanel alloc] initWithContentRect:NSMakeRect(0, 0, W, H)
-                                        styleMask:NSTitledWindowMask | NSClosableWindowMask
-                                          backing:NSBackingStoreBuffered
-                                            defer:NO];
-    [_panel setTitle:@"Submission Tester"];
-    NSView *content = [_panel contentView];
-
-    // top bar
-    [self label:@"Submission:" frame:NSMakeRect(12, H - 34, 78, 17) in:content];
-    _submissionPopup = [[NSPopUpButton alloc]
-        initWithFrame:NSMakeRect(92, H - 39, 170, 26) pullsDown:NO];
+    _topLevelObjects = objects;
+    [_submissionPopup removeAllItems];
     for (XFSubmission *sub in [self submissions]) {
-        [_submissionPopup addItemWithTitle:sub.identifier.length
-            ? sub.identifier : @"(unnamed)"];
+        [_submissionPopup addItemWithTitle:sub.identifier.length ? sub.identifier : @"(unnamed)"];
     }
-    [_submissionPopup setTarget:self];
-    [_submissionPopup setAction:@selector(submissionPicked:)];
-    [content addSubview:_submissionPopup];
-
-    _transportPopup = [[NSPopUpButton alloc]
-        initWithFrame:NSMakeRect(270, H - 39, 130, 26) pullsDown:NO];
-    [_transportPopup addItemsWithTitles:@[ @"Live HTTP", @"Echo", @"Offline" ]];
-    [_transportPopup setToolTip:
-        @"Live HTTP = the document's transport (cookie jar included). "
-        @"Echo answers with the request body (offline replace round-trips). "
-        @"Offline fails fast — the xforms-submit-error path."];
-    [content addSubview:_transportPopup];
-
-    _historyPopup = [[NSPopUpButton alloc]
-        initWithFrame:NSMakeRect(408, H - 39, 190, 26) pullsDown:NO];
-    [_historyPopup setTarget:self];
-    [_historyPopup setAction:@selector(historyPicked:)];
-    [content addSubview:_historyPopup];
-
-    NSButton *send = [[NSButton alloc] initWithFrame:NSMakeRect(W - 108, H - 42, 96, 30)];
-    [send setTitle:@"Send"];
-    [send setBezelStyle:NSRoundedBezelStyle];
-    [send setKeyEquivalent:@"\r"];
-    [send setTarget:self];
-    [send setAction:@selector(sendClicked:)];
-    [content addSubview:send];
-
-    // request side
-    _requestLine = [self label:@"" frame:NSMakeRect(12, H - 64, W - 24, 18) in:content];
+    [_historyPopup removeAllItems];
     [_requestLine setFont:[NSFont userFixedPitchFontOfSize:12]];
-    _headersTable = [self headerTableIn:content
-                                  frame:NSMakeRect(12, H - 188, W - 24, 116)
-                             withSource:YES];
-    [self label:@"Extra headers (Name: value; Name: value) — injected like a host session:"
-          frame:NSMakeRect(12, H - 212, W - 24, 17) in:content];
-    _extraHeadersField = [[NSTextField alloc] initWithFrame:NSMakeRect(12, H - 236, W - 24, 22)];
     [_extraHeadersField setFont:[NSFont userFixedPitchFontOfSize:11]];
-    [[_extraHeadersField cell] setSendsActionOnEndEditing:YES];
-    [_extraHeadersField setTarget:self];
-    [_extraHeadersField setAction:@selector(submissionPicked:)];
-    [content addSubview:_extraHeadersField];
-    [self label:@"Body (as the runtime serializes it):"
-          frame:NSMakeRect(12, H - 260, W - 24, 17) in:content];
-    _bodyView = [self textViewIn:content frame:NSMakeRect(12, H - 372, W - 24, 108)];
-
-    // response side
-    _statusLine = [self label:@"" frame:NSMakeRect(12, H - 398, W - 24, 18) in:content];
-    _responseHeadersTable = [self headerTableIn:content
-                                          frame:NSMakeRect(12, H - 480, W - 24, 76)
-                                     withSource:NO];
-    _responseView = [self textViewIn:content frame:NSMakeRect(12, 44, W - 24, H - 532)];
-
-    NSButton *close = [[NSButton alloc] initWithFrame:NSMakeRect(W - 100, 8, 84, 28)];
-    [close setTitle:@"Close"];
-    [close setBezelStyle:NSRoundedBezelStyle];
-    [close setKeyEquivalent:@"\033"];
-    [close setTarget:self];
-    [close setAction:@selector(closeClicked:)];
-    [content addSubview:close];
-    [_panel setDelegate:(id)self];
+    for (NSTextView *text in @[ _bodyView, _responseView ]) {
+        [text setFont:[NSFont userFixedPitchFontOfSize:11]];
+        [[text textContainer] setWidthTracksTextView:YES];
+    }
+    return YES;
 }
 
-- (void)submissionPicked:(id)sender
+- (IBAction)submissionPicked:(id)sender
 {
     (void)sender;
     [self refreshPreview];
 }
 
-- (void)closeClicked:(id)sender
+- (IBAction)closeClicked:(id)sender
 {
     (void)sender;
     [NSApp stopModal];
@@ -534,8 +428,7 @@ static BOOL XFDHeaderIsSecret(NSString *name)
     XFDSubmissionTester *tester = [[XFDSubmissionTester alloc] init];
     tester->_processor = processor;
     tester->_history = [NSMutableArray array];
-    [tester buildPanel];
-    if ([tester submissions].count == 0) {
+    if ([tester submissions].count == 0 || ![tester loadPanel]) {
         XFDBeep();
         return;
     }

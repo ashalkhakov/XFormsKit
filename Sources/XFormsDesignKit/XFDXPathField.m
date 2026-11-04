@@ -217,11 +217,13 @@ NSDictionary *XFDPredicatePreview(NSString *baseExpression,
 /// candidate set, exactly as they will at refresh time.
 @interface XFDPredicateEditor : NSObject <NSTextFieldDelegate, NSTableViewDataSource, NSTableViewDelegate>
 {
-    NSPanel *_panel;
-    XFDExpressionField *_field;
-    NSTextField *_statusField;
-    NSTableView *_table;
-    NSButton *_okButton;
+    IBOutlet NSPanel *_panel;
+    IBOutlet NSTextField *_introField;
+    IBOutlet XFDExpressionField *_field;
+    IBOutlet NSTextField *_statusField;
+    IBOutlet NSTableView *_table;
+    IBOutlet NSButton *_okButton;
+    NSArray *_topLevelObjects;
     NSString *_baseExpression;
     XFXMLElement *_hostElement;
     XFXMLNode *_contextNode;
@@ -238,82 +240,36 @@ NSDictionary *XFDPredicatePreview(NSString *baseExpression,
                               model:(XFModel *)model;
 @end
 
+// Its outlets (its XIB's connections), on the ivars above.
+@interface XFDPredicateEditor ()
+@property (nonatomic, strong) IBOutlet NSPanel *panel;
+@property (nonatomic, strong) IBOutlet NSTextField *introField;
+@property (nonatomic, strong) IBOutlet XFDExpressionField *field;
+@property (nonatomic, strong) IBOutlet NSTextField *statusField;
+@property (nonatomic, strong) IBOutlet NSTableView *table;
+@property (nonatomic, strong) IBOutlet NSButton *okButton;
+@end
+
 @implementation XFDPredicateEditor
 
-- (void)buildPanel
+/// The panel from its XIB (XFDPredicateEditor.xib), told what it filters.
+- (BOOL)loadPanel
 {
-    const CGFloat W = 500, H = 420;
-    _panel = [[NSPanel alloc] initWithContentRect:NSMakeRect(0, 0, W, H)
-                                        styleMask:NSTitledWindowMask | NSClosableWindowMask
-                                          backing:NSBackingStoreBuffered
-                                            defer:NO];
-    [_panel setTitle:@"Edit Predicates"];
-    NSView *content = [_panel contentView];
-
-    NSTextField * (^label)(NSString *, NSRect) = ^NSTextField *(NSString *text, NSRect frame) {
-        NSTextField *l = [[NSTextField alloc] initWithFrame:frame];
-        [l setEditable:NO];
-        [l setBordered:NO];
-        [l setDrawsBackground:NO];
-        [l setFont:[NSFont systemFontOfSize:11]];
-        [[l cell] setWraps:YES];
-        [l setStringValue:text];
-        [content addSubview:l];
-        return l;
-    };
-    label([NSString stringWithFormat:
+    NSArray *objects = nil;
+    NSNib *nib = [[NSNib alloc] initWithNibNamed:@"XFDPredicateEditor"
+                                          bundle:[NSBundle bundleForClass:[XFDPredicateEditor class]]];
+    if (![nib instantiateWithOwner:self topLevelObjects:&objects] || _panel == nil) {
+        NSLog(@"XFormsDesignKit: XFDPredicateEditor did not load");
+        return NO;
+    }
+    _topLevelObjects = objects;
+    [_introField setStringValue:[NSString stringWithFormat:
         @"Filters the nodes  %@  selects \u2014 the predicates run per node; "
-        @"position() and last() see the candidate set below.", _baseExpression],
-        NSMakeRect(12, H - 48, W - 24, 32));
-
-    label(@"Predicates:", NSMakeRect(12, H - 74, 80, 17));
-    _field = [[XFDExpressionField alloc] initWithFrame:NSMakeRect(96, H - 78, W - 108, 22)];
+        @"position() and last() see the candidate set below.", _baseExpression]];
     [_field setFont:[NSFont userFixedPitchFontOfSize:11]];
     [_field setPlaceholderString:@"[price > 10]  \u2014 or a bare expression"];
     [_field setDelegate:self];
-    [content addSubview:_field];
-
-    _statusField = label(@"", NSMakeRect(12, H - 100, W - 24, 17));
-
-    NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:
-        NSMakeRect(12, 44, W - 24, H - 152)];
-    [scroll setHasVerticalScroller:YES];
-    [scroll setBorderType:NSBezelBorder];
-    _table = [[NSTableView alloc] initWithFrame:NSMakeRect(0, 0, W - 24, H - 152)];
-    struct { NSString *ident; NSString *title; CGFloat width; } cols[] = {
-        { @"match", @"\u2713", 28 },
-        { @"index", @"#", 36 },
-        { @"node", @"Node", 210 },
-        { @"value", @"Value", 170 },
-    };
-    for (NSUInteger i = 0; i < 4; i++) {
-        NSTableColumn *c = [[NSTableColumn alloc] initWithIdentifier:cols[i].ident];
-        [[c headerCell] setStringValue:cols[i].title];
-        [c setWidth:cols[i].width];
-        [[c dataCell] setEditable:NO];
-        [[c dataCell] setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-        [_table addTableColumn:c];
-    }
-    [_table setDataSource:self];
-    [_table setDelegate:self];
-    [scroll setDocumentView:_table];
-    [content addSubview:scroll];
-
-    NSButton *cancel = [[NSButton alloc] initWithFrame:NSMakeRect(W - 190, 8, 84, 28)];
-    [cancel setTitle:@"Cancel"];
-    [cancel setBezelStyle:NSRoundedBezelStyle];
-    [cancel setKeyEquivalent:@"\033"];
-    [cancel setTarget:self];
-    [cancel setAction:@selector(cancelClicked:)];
-    [content addSubview:cancel];
-    _okButton = [[NSButton alloc] initWithFrame:NSMakeRect(W - 100, 8, 84, 28)];
-    [_okButton setTitle:@"OK"];
-    [_okButton setBezelStyle:NSRoundedBezelStyle];
-    [_okButton setKeyEquivalent:@"\r"];
-    [_okButton setTarget:self];
-    [_okButton setAction:@selector(okClicked:)];
-    [content addSubview:_okButton];
-    [_panel setDelegate:(id)self];
+    return YES;
 }
 
 - (void)preview
@@ -377,7 +333,7 @@ NSDictionary *XFDPredicatePreview(NSString *baseExpression,
     return NO;
 }
 
-- (void)okClicked:(id)sender
+- (IBAction)okClicked:(id)sender
 {
     (void)sender;
     if (!_valid) {
@@ -389,7 +345,7 @@ NSDictionary *XFDPredicatePreview(NSString *baseExpression,
     [_panel orderOut:nil];
 }
 
-- (void)cancelClicked:(id)sender
+- (IBAction)cancelClicked:(id)sender
 {
     (void)sender;
     _result = nil;
@@ -415,7 +371,9 @@ NSDictionary *XFDPredicatePreview(NSString *baseExpression,
     editor->_hostElement = hostElement;
     editor->_contextNode = contextNode;
     editor->_model = model;
-    [editor buildPanel];
+    if (![editor loadPanel]) {
+        return nil;
+    }
     // brackets stripped for the common single-predicate case: the field
     // edits the EXPRESSION, the brackets come back on OK
     NSString *initial = predicates ?: @"";
@@ -541,18 +499,19 @@ NSArray *XFDEventContextProperties(NSString *eventName)
 /// compiles.
 @interface XFDXPathPicker : NSObject <NSTableViewDataSource, NSTableViewDelegate>
 {
-    NSPanel *_panel;
-    NSTextField *_contextField;
-    NSPopUpButton *_instancePopup;
-    NSSegmentedControl *_styleControl;
-    NSOutlineView *_tree;
-    NSTableView *_stepsTable;
-    NSSegmentedControl *_stepsControl;
-    NSTextField *_stepsStatusField;
-    XFDExpressionField *_pathField;
-    NSTextField *_statusField;
-    NSTableView *_resultTable;
-    NSButton *_okButton;
+    IBOutlet NSPanel *_panel;
+    IBOutlet NSTextField *_contextField;
+    IBOutlet NSPopUpButton *_instancePopup;
+    IBOutlet NSSegmentedControl *_styleControl;
+    IBOutlet NSOutlineView *_tree;
+    IBOutlet NSTableView *_stepsTable;
+    IBOutlet NSSegmentedControl *_stepsControl;
+    IBOutlet NSTextField *_stepsStatusField;
+    IBOutlet XFDExpressionField *_pathField;
+    IBOutlet NSTextField *_statusField;
+    IBOutlet NSTableView *_resultTable;
+    IBOutlet NSButton *_okButton;
+    NSArray *_topLevelObjects;
     XFProcessor *_processor;
     XFXMLNode *_contextNode;
     XFXMLElement *_hostElement;
@@ -565,10 +524,10 @@ NSArray *XFDEventContextProperties(NSString *eventName)
     NSArray *_treeRows;             /* computed-expression mode: dicts
                                        label / source / path / depth /
                                        editable */
-    NSButton *_editPathButton;
-    NSButton *_predicateButton;
-    NSPopUpButton *_suggestPopup;
-    NSTextField *_functionInfoField;
+    IBOutlet NSButton *_editPathButton;
+    IBOutlet NSButton *_predicateButton;
+    IBOutlet NSPopUpButton *_suggestPopup;
+    IBOutlet NSTextField *_functionInfoField;
     BOOL _syncing;
 }
 + (NSString *)runForProcessor:(XFProcessor *)processor
@@ -577,6 +536,26 @@ NSArray *XFDEventContextProperties(NSString *eventName)
                         title:(NSString *)title
                       initial:(NSString *)initial
                   expectation:(XFDXPathExpectation)expectation;
+@end
+
+// Its outlets (its XIB's connections), on the ivars above.
+@interface XFDXPathPicker ()
+@property (nonatomic, strong) IBOutlet NSPanel *panel;
+@property (nonatomic, strong) IBOutlet NSTextField *contextField;
+@property (nonatomic, strong) IBOutlet NSPopUpButton *instancePopup;
+@property (nonatomic, strong) IBOutlet NSSegmentedControl *styleControl;
+@property (nonatomic, strong) IBOutlet NSOutlineView *tree;
+@property (nonatomic, strong) IBOutlet NSTableView *stepsTable;
+@property (nonatomic, strong) IBOutlet NSSegmentedControl *stepsControl;
+@property (nonatomic, strong) IBOutlet NSTextField *stepsStatusField;
+@property (nonatomic, strong) IBOutlet XFDExpressionField *pathField;
+@property (nonatomic, strong) IBOutlet NSTextField *statusField;
+@property (nonatomic, strong) IBOutlet NSTableView *resultTable;
+@property (nonatomic, strong) IBOutlet NSButton *okButton;
+@property (nonatomic, strong) IBOutlet NSButton *editPathButton;
+@property (nonatomic, strong) IBOutlet NSButton *predicateButton;
+@property (nonatomic, strong) IBOutlet NSPopUpButton *suggestPopup;
+@property (nonatomic, strong) IBOutlet NSTextField *functionInfoField;
 @end
 
 /// Flatten a structure tree for the table: location paths and path
@@ -668,27 +647,20 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
 
 #pragma mark panel construction
 
-- (NSTextField *)makeLabel:(NSString *)text frame:(NSRect)frame in:(NSView *)parent
+/// The panel from its XIB (XFDXPathPicker.xib), and what is the form's:
+/// the context it says, the instances, the axes a step may take, the
+/// suggestions.
+- (BOOL)loadPanelWithTitle:(NSString *)title
 {
-    NSTextField *l = [[NSTextField alloc] initWithFrame:frame];
-    [l setEditable:NO];
-    [l setBordered:NO];
-    [l setDrawsBackground:NO];
-    [l setStringValue:text];
-    [l setFont:[NSFont systemFontOfSize:11]];
-    [parent addSubview:l];
-    return l;
-}
-
-- (void)buildPanelWithTitle:(NSString *)title
-{
-    const CGFloat W = 560, H = 700;
-    _panel = [[NSPanel alloc] initWithContentRect:NSMakeRect(0, 0, W, H)
-                                        styleMask:NSTitledWindowMask
-                                          backing:NSBackingStoreBuffered
-                                            defer:NO];
+    NSArray *objects = nil;
+    NSNib *nib = [[NSNib alloc] initWithNibNamed:@"XFDXPathPicker"
+                                          bundle:[NSBundle bundleForClass:[XFDXPathPicker class]]];
+    if (![nib instantiateWithOwner:self topLevelObjects:&objects] || _panel == nil) {
+        NSLog(@"XFormsDesignKit: XFDXPathPicker did not load");
+        return NO;
+    }
+    _topLevelObjects = objects;
     [_panel setTitle:title];
-    NSView *content = [_panel contentView];
 
     // context awareness: where relative expressions start, and what the
     // attribute wants back
@@ -707,12 +679,9 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
     if (expectLabel != nil) {
         ctxText = [ctxText stringByAppendingFormat:@"  —  expects %@", expectLabel];
     }
-    NSTextField *ctx = [self makeLabel:ctxText frame:NSMakeRect(12, H - 30, W - 24, 17) in:content];
-    [[ctx cell] setLineBreakMode:NSLineBreakByTruncatingMiddle];
-    _contextField = ctx;
+    [_contextField setStringValue:ctxText];
 
-    [self makeLabel:@"Instance:" frame:NSMakeRect(12, H - 56, 70, 17) in:content];
-    _instancePopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(86, H - 60, 250, 24) pullsDown:NO];
+    [_instancePopup removeAllItems];
     NSUInteger n = 0;
     for (XFModel *model in _processor.models) {
         for (XFInstance *instance in model.instances) {
@@ -722,163 +691,24 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
             [_instancePopup addItemWithTitle:[NSString stringWithFormat:@"%@  (%@)", name, owner]];
         }
     }
-    [_instancePopup setTarget:self];
-    [_instancePopup setAction:@selector(instanceChanged:)];
-    [content addSubview:_instancePopup];
-
-    [self makeLabel:@"Start:" frame:NSMakeRect(12, H - 84, 50, 17) in:content];
-    _styleControl = [[NSSegmentedControl alloc] initWithFrame:NSMakeRect(86, H - 88, 280, 24)];
-    [_styleControl setSegmentCount:3];
-    [_styleControl setLabel:@"Relative" forSegment:0];
-    [_styleControl setLabel:@"/" forSegment:1];
-    [_styleControl setLabel:@"instance()" forSegment:2];
     [_styleControl setSelectedSegment:_contextNode != nil ? 0 : 2];
-    [_styleControl setTarget:self];
-    [_styleControl setAction:@selector(styleChanged:)];
-    [content addSubview:_styleControl];
-
-    _suggestPopup = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(W - 172, H - 88, 160, 24)
-                                               pullsDown:YES];
-    [[_suggestPopup cell] setControlSize:NSSmallControlSize];
-    [_suggestPopup setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
     [self populateSuggestions];
-    [content addSubview:_suggestPopup];
 
-    // the data tree: click a node for a base path in the current style
-    NSScrollView *treeScroll = [[NSScrollView alloc] initWithFrame:
-        NSMakeRect(12, H - 240, W - 24, 144)];
-    [treeScroll setHasVerticalScroller:YES];
-    [treeScroll setBorderType:NSBezelBorder];
-    _tree = [[NSOutlineView alloc] initWithFrame:NSMakeRect(0, 0, W - 24, 144)];
-    NSTableColumn *col = [[NSTableColumn alloc] initWithIdentifier:@"node"];
-    [col setWidth:W - 60];
-    [[col dataCell] setEditable:NO];
-    [_tree addTableColumn:col];
-    [_tree setOutlineTableColumn:col];
-    [_tree setHeaderView:nil];
-    [_tree setDataSource:(id)self];
-    [_tree setDelegate:(id)self];
-    [treeScroll setDocumentView:_tree];
-    [content addSubview:treeScroll];
-
-    // editable steps
-    [self makeLabel:@"Steps:" frame:NSMakeRect(12, H - 264, 50, 17) in:content];
-    _stepsStatusField = [self makeLabel:@"" frame:NSMakeRect(64, H - 264, W - 286, 17) in:content];
-    _stepsControl = [[NSSegmentedControl alloc] initWithFrame:NSMakeRect(W - 82, H - 268, 70, 24)];
-    [_stepsControl setSegmentCount:2];
-    [_stepsControl setLabel:@"+" forSegment:0];
-    [_stepsControl setLabel:@"−" forSegment:1];
-    [(NSSegmentedCell *)[_stepsControl cell] setTrackingMode:NSSegmentSwitchTrackingMomentary];
-    [_stepsControl setTarget:self];
-    [_stepsControl setAction:@selector(stepsPlusMinusClicked:)];
-    [content addSubview:_stepsControl];
-
-    _predicateButton = [[NSButton alloc] initWithFrame:NSMakeRect(W - 198, H - 268, 110, 24)];
-    [_predicateButton setTitle:@"Predicate\u2026"];
-    [_predicateButton setBezelStyle:NSRoundedBezelStyle];
-    [[_predicateButton cell] setControlSize:NSSmallControlSize];
-    [_predicateButton setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-    [_predicateButton setToolTip:@"Edit the selected step's predicates with live per-node match preview."];
-    [_predicateButton setTarget:self];
-    [_predicateButton setAction:@selector(predicateClicked:)];
-    [_predicateButton setEnabled:NO];
-    [content addSubview:_predicateButton];
-
-    _editPathButton = [[NSButton alloc] initWithFrame:NSMakeRect(W - 122, H - 268, 110, 24)];
-    [_editPathButton setTitle:@"Edit Path…"];
-    [_editPathButton setBezelStyle:NSRoundedBezelStyle];
-    [[_editPathButton cell] setControlSize:NSSmallControlSize];
-    [_editPathButton setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-    [_editPathButton setTarget:self];
-    [_editPathButton setAction:@selector(editPathClicked:)];
-    [_editPathButton setHidden:YES];
-    [content addSubview:_editPathButton];
-
-    NSScrollView *stepsScroll = [[NSScrollView alloc] initWithFrame:
-        NSMakeRect(12, H - 388, W - 24, 116)];
-    [stepsScroll setHasVerticalScroller:YES];
-    [stepsScroll setBorderType:NSBezelBorder];
-    _stepsTable = [[NSTableView alloc] initWithFrame:NSMakeRect(0, 0, W - 24, 116)];
-    NSTableColumn *axisCol = [[NSTableColumn alloc] initWithIdentifier:@"axis"];
-    [[axisCol headerCell] setStringValue:@"Axis"];
-    [axisCol setWidth:140];
+    // a step's axis is chosen from the axes XPath has
     NSPopUpButtonCell *axisCell = [[NSPopUpButtonCell alloc] initTextCell:@"" pullsDown:NO];
     [axisCell setBordered:NO];
     [axisCell setControlSize:NSSmallControlSize];
     [axisCell setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
     [axisCell addItemsWithTitles:XFDKnownAxes()];
-    [axisCol setDataCell:axisCell];
-    [_stepsTable addTableColumn:axisCol];
-    NSTableColumn *testCol = [[NSTableColumn alloc] initWithIdentifier:@"test"];
-    [[testCol headerCell] setStringValue:@"Node"];
-    [testCol setWidth:150];
-    [[testCol dataCell] setEditable:YES];
-    [[testCol dataCell] setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-    [_stepsTable addTableColumn:testCol];
-    NSTableColumn *predCol = [[NSTableColumn alloc] initWithIdentifier:@"predicates"];
-    [[predCol headerCell] setStringValue:@"Predicates"];
-    [predCol setWidth:200];
-    [[predCol dataCell] setEditable:YES];
-    [[predCol dataCell] setFont:[NSFont userFixedPitchFontOfSize:11]];
-    [_stepsTable addTableColumn:predCol];
-    [_stepsTable setDataSource:self];
-    [_stepsTable setDelegate:self];
-    [_stepsTable setAllowsMultipleSelection:NO];
-    [stepsScroll setDocumentView:_stepsTable];
-    [content addSubview:stepsScroll];
+    [[_stepsTable tableColumnWithIdentifier:@"axis"] setDataCell:axisCell];
+    [[[_stepsTable tableColumnWithIdentifier:@"predicates"] dataCell] setFont:[NSFont userFixedPitchFontOfSize:11]];
 
-    // the expression itself — always editable
-    [self makeLabel:@"Expression:" frame:NSMakeRect(12, H - 412, 90, 17) in:content];
-    _pathField = [[XFDExpressionField alloc] initWithFrame:NSMakeRect(12, H - 436, W - 24, 22)];
     [_pathField setFont:[NSFont userFixedPitchFontOfSize:11]];
     [_pathField setTarget:self];
     [_pathField setAction:@selector(expressionEdited:)];
     [_pathField setDelegate:(id)self];
-    [content addSubview:_pathField];
-
-    _statusField = [self makeLabel:@"" frame:NSMakeRect(12, H - 458, W - 24, 17) in:content];
-    _functionInfoField = [self makeLabel:@"" frame:NSMakeRect(12, H - 488, W - 24, 28) in:content];
-    [[_functionInfoField cell] setWraps:YES];
     [_functionInfoField setTextColor:[NSColor disabledControlTextColor]];
-
-    // live result
-    NSScrollView *resultScroll = [[NSScrollView alloc] initWithFrame:
-        NSMakeRect(12, 44, W - 24, H - 540)];
-    [resultScroll setHasVerticalScroller:YES];
-    [resultScroll setBorderType:NSBezelBorder];
-    _resultTable = [[NSTableView alloc] initWithFrame:NSMakeRect(0, 0, W - 24, H - 540)];
-    struct { NSString *ident; NSString *title; CGFloat width; } cols[] = {
-        { @"index", @"#", 36 },
-        { @"node", @"Node", 220 },
-        { @"value", @"Value", 230 },
-    };
-    for (NSUInteger i = 0; i < 3; i++) {
-        NSTableColumn *c = [[NSTableColumn alloc] initWithIdentifier:cols[i].ident];
-        [[c headerCell] setStringValue:cols[i].title];
-        [c setWidth:cols[i].width];
-        [[c dataCell] setEditable:NO];
-        [[c dataCell] setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-        [_resultTable addTableColumn:c];
-    }
-    [_resultTable setDataSource:self];
-    [_resultTable setDelegate:self];
-    [resultScroll setDocumentView:_resultTable];
-    [content addSubview:resultScroll];
-
-    NSButton *cancel = [[NSButton alloc] initWithFrame:NSMakeRect(W - 190, 8, 84, 28)];
-    [cancel setTitle:@"Cancel"];
-    [cancel setBezelStyle:NSRoundedBezelStyle];
-    [cancel setTarget:self];
-    [cancel setAction:@selector(cancelClicked:)];
-    [content addSubview:cancel];
-    _okButton = [[NSButton alloc] initWithFrame:NSMakeRect(W - 100, 8, 84, 28)];
-    [_okButton setTitle:@"OK"];
-    [_okButton setBezelStyle:NSRoundedBezelStyle];
-    [_okButton setKeyEquivalent:@"\r"];
-    [_okButton setTarget:self];
-    [_okButton setAction:@selector(okClicked:)];
-    [_okButton setEnabled:NO];
-    [content addSubview:_okButton];
+    return YES;
 }
 
 #pragma mark suggestions & function info
@@ -1249,7 +1079,7 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
 
 #pragma mark actions
 
-- (void)expressionEdited:(id)sender
+- (IBAction)expressionEdited:(id)sender
 {
     (void)sender;
     if (!_syncing) {
@@ -1264,7 +1094,7 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
     }
 }
 
-- (void)styleChanged:(id)sender
+- (IBAction)styleChanged:(id)sender
 {
     (void)sender;
     // keep the steps, swap the start — the explicit context override
@@ -1285,7 +1115,7 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
     [self stepsChanged];
 }
 
-- (void)instanceChanged:(id)sender
+- (IBAction)instanceChanged:(id)sender
 {
     (void)sender;
     [_tree reloadData];
@@ -1295,7 +1125,7 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
     }
 }
 
-- (void)stepsPlusMinusClicked:(NSSegmentedControl *)sender
+- (IBAction)stepsPlusMinusClicked:(NSSegmentedControl *)sender
 {
     if (_steps == nil) {
         return;
@@ -1320,7 +1150,7 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
     }
 }
 
-- (void)okClicked:(id)sender
+- (IBAction)okClicked:(id)sender
 {
     (void)sender;
     _result = [self expression];
@@ -1328,7 +1158,7 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
     [_panel orderOut:nil];
 }
 
-- (void)cancelClicked:(id)sender
+- (IBAction)cancelClicked:(id)sender
 {
     (void)sender;
     _result = nil;
@@ -1569,7 +1399,7 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
 /// The predicate sub-editor on the selected step: candidates = the path
 /// THROUGH that step with its own predicates stripped (what the
 /// predicates will filter), evaluated in the picker's context.
-- (void)predicateClicked:(id)sender
+- (IBAction)predicateClicked:(id)sender
 {
     (void)sender;
     NSInteger row = [_stepsTable selectedRow];
@@ -1612,7 +1442,7 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
 
 /// Sub-picker on an embedded location path of a computed expression, the
 /// result spliced back through the AST (sourceReplacingNodeAtPath:).
-- (void)editPathClicked:(id)sender
+- (IBAction)editPathClicked:(id)sender
 {
     (void)sender;
     NSInteger row = [_stepsTable selectedRow];
@@ -1664,7 +1494,9 @@ static NSString *XFDExpectationLabel(XFDXPathExpectation e)
         XFDBeep();
         return nil;
     }
-    [picker buildPanelWithTitle:title];
+    if (![picker loadPanelWithTitle:title]) {
+        return nil;
+    }
     [picker->_tree reloadData];
     [picker->_tree expandItem:[[picker chosenInstance] documentElement] expandChildren:YES];
     picker->_syncing = YES;

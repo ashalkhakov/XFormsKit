@@ -12,6 +12,7 @@ XU...):
 
 The XForms scheme (xcshareddata) builds the one and runs the other.
 Idempotent."""
+import re
 import sys
 
 path = sys.argv[1] if len(sys.argv) > 1 else 'XFormsKit.xcodeproj/project.pbxproj'
@@ -56,12 +57,15 @@ def insert_section(name, text):
 
 
 def add_to_list(owner, key, entries, comment=True):
+    """`entries` appended to the list `key` of the object `owner` (its
+    definition, not a mention of it in another list)."""
     global s
-    head = owner + (' /*' if comment else ' = {')
-    k = s.index(head)
-    k = s.index('\t' + key + ' = (', k)
+    m = re.search(re.escape(owner) + r'( /\*[^*]*\*/)? = \{', s)
+    assert m, owner
+    k = s.index('\t' + key + ' = (', m.end())
     close = s.index(');', k)
-    s = s[:close] + ''.join('\t\t\t\t%s,\n' % e for e in entries) + '\t\t\t' + s[close:]
+    line = s.rindex('\n', 0, close) + 1
+    s = s[:line] + ''.join('\t\t\t\t%s,\n' % e for e in entries) + s[line:]
 
 
 def file_ref(name, kind, path=None, tree='"<group>"'):

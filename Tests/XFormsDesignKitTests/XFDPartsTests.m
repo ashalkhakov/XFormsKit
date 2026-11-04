@@ -24,6 +24,12 @@
 - (BOOL)loadPanelIfNeeded;
 @end
 
+// The modal panels' (some private to their fields' files, so by name).
+@interface NSObject (XFDPanelLoading)
+- (BOOL)loadPanel;
+- (BOOL)loadPanelWithTitle:(NSString *)title;
+@end
+
 @interface XFDPartsTests : XCTestCase
 @end
 
@@ -167,6 +173,42 @@
     XCTAssertTrue([console loadPanelIfNeeded]);
     XCTAssertNotNil(console.panel);
     XCTAssertEqual([[[console.panel contentView] subviews] count], 1u, @"the console's view in it");
+}
+
+- (void)testTheModalPanelsLoadFromTheirXIBs
+{
+    NSDictionary<NSString *, NSArray *> *panels = @{
+        @"XFDInstanceXMLEditor": @[ @"panel", @"text", @"statusField", @"okButton" ],
+        @"XFDSubmissionTester": @[ @"panel", @"submissionPopup", @"transportPopup", @"historyPopup",
+                                   @"requestLine", @"headersTable", @"bodyView", @"extraHeadersField",
+                                   @"statusLine", @"responseHeadersTable", @"responseView" ],
+        @"XFDRichTextPanel": @[ @"panel", @"viewControl", @"insertOutputButton", @"tabs", @"richHost",
+                                @"richEditor", @"sourceView", @"statusField", @"okButton" ],
+        @"XFDPredicateEditor": @[ @"panel", @"introField", @"field", @"statusField", @"table", @"okButton" ],
+        @"XFDXPathPicker": @[ @"panel", @"contextField", @"instancePopup", @"styleControl", @"tree",
+                              @"stepsTable", @"stepsControl", @"stepsStatusField", @"pathField", @"statusField",
+                              @"resultTable", @"okButton", @"editPathButton", @"predicateButton",
+                              @"suggestPopup", @"functionInfoField" ],
+    };
+    for (NSString *name in panels) {
+        Class cls = NSClassFromString(name);
+        XCTAssertNotNil(cls, @"%@", name);
+        id panel = [[cls alloc] init];
+        BOOL loaded = [panel respondsToSelector:@selector(loadPanelWithTitle:)]
+            ? [panel loadPanelWithTitle:@"A Title"] : [panel loadPanel];
+        XCTAssertTrue(loaded, @"%@ loads from its XIB", name);
+        [self assertOutlets:panels[name] of:panel];
+    }
+    // what the XIB cannot say, the code does: the steps' axes, the rich
+    // editor in its host
+    id picker = [[NSClassFromString(@"XFDXPathPicker") alloc] init];
+    [picker loadPanelWithTitle:@"XPath"];
+    NSTableView *steps = [picker valueForKey:@"stepsTable"];
+    XCTAssertTrue([[[steps tableColumnWithIdentifier:@"axis"] dataCell] isKindOfClass:[NSPopUpButtonCell class]]);
+    XCTAssertEqualObjects([[picker valueForKey:@"panel"] title], @"XPath");
+    id rich = [[NSClassFromString(@"XFDRichTextPanel") alloc] init];
+    [rich loadPanelWithTitle:@"Label"];
+    XCTAssertEqual([[rich valueForKey:@"richEditor"] superview], [rich valueForKey:@"richHost"]);
 }
 
 - (void)testEveryTipIsInTheXIB

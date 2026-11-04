@@ -231,14 +231,16 @@ static NSString *XFDUnwrapSingleParagraph(NSString *html)
 /// dropping markup.
 @interface XFDRichTextPanel : NSObject
 {
-    NSPanel *_panel;
-    NSSegmentedControl *_viewControl;
-    NSButton *_insertOutputButton;
-    NSTabView *_tabs;
+    IBOutlet NSPanel *_panel;
+    IBOutlet NSSegmentedControl *_viewControl;
+    IBOutlet NSButton *_insertOutputButton;
+    IBOutlet NSTabView *_tabs;
+    IBOutlet NSView *_richHost;
     XFRichTextEditor *_richEditor;
-    NSTextView *_sourceView;
-    NSTextField *_statusField;
-    NSButton *_okButton;
+    IBOutlet NSTextView *_sourceView;
+    IBOutlet NSTextField *_statusField;
+    IBOutlet NSButton *_okButton;
+    NSArray *_topLevelObjects;
     NSString *_result;
     XFProcessor *_processor;
     XFXMLNode *_contextNode;
@@ -252,83 +254,41 @@ static NSString *XFDUnwrapSingleParagraph(NSString *html)
                   hostElement:(XFXMLElement *)hostElement;
 @end
 
+// Its outlets (its XIB's connections), on the ivars above.
+@interface XFDRichTextPanel ()
+@property (nonatomic, strong) IBOutlet NSPanel *panel;
+@property (nonatomic, strong) IBOutlet NSSegmentedControl *viewControl;
+@property (nonatomic, strong) IBOutlet NSButton *insertOutputButton;
+@property (nonatomic, strong) IBOutlet NSTabView *tabs;
+@property (nonatomic, strong) IBOutlet NSView *richHost;
+@property (nonatomic, strong) IBOutlet NSTextView *sourceView;
+@property (nonatomic, strong) IBOutlet NSTextField *statusField;
+@property (nonatomic, strong) IBOutlet NSButton *okButton;
+@end
+
 @implementation XFDRichTextPanel
 
-- (void)buildPanelWithTitle:(NSString *)title
+/// The panel from its XIB (XFDRichTextPanel.xib), the rich editor (made
+/// with its base font, which a XIB cannot give it) in its host.
+- (BOOL)loadPanelWithTitle:(NSString *)title
 {
-    const CGFloat W = 520, H = 380;
-    _panel = [[NSPanel alloc] initWithContentRect:NSMakeRect(0, 0, W, H)
-                                        styleMask:NSTitledWindowMask
-                                          backing:NSBackingStoreBuffered
-                                            defer:NO];
+    NSArray *objects = nil;
+    NSNib *nib = [[NSNib alloc] initWithNibNamed:@"XFDRichTextPanel"
+                                          bundle:[NSBundle bundleForClass:[XFDRichTextPanel class]]];
+    if (![nib instantiateWithOwner:self topLevelObjects:&objects] || _panel == nil) {
+        NSLog(@"XFormsDesignKit: XFDRichTextPanel did not load");
+        return NO;
+    }
+    _topLevelObjects = objects;
     [_panel setTitle:title];
-    NSView *content = [_panel contentView];
-
-    _viewControl = [[NSSegmentedControl alloc] initWithFrame:NSMakeRect(12, H - 34, 160, 24)];
-    [_viewControl setSegmentCount:2];
-    [_viewControl setLabel:@"Rich" forSegment:0];
-    [_viewControl setLabel:@"Source" forSegment:1];
-    [_viewControl setTarget:self];
-    [_viewControl setAction:@selector(viewChanged:)];
-    [content addSubview:_viewControl];
-
-    _insertOutputButton = [[NSButton alloc] initWithFrame:NSMakeRect(184, H - 36, 130, 28)];
-    [_insertOutputButton setTitle:@"Insert Output…"];
-    [_insertOutputButton setBezelStyle:NSRoundedBezelStyle];
-    [[_insertOutputButton cell] setControlSize:NSSmallControlSize];
-    [_insertOutputButton setFont:[NSFont systemFontOfSize:[NSFont smallSystemFontSize]]];
-    [_insertOutputButton setTarget:self];
-    [_insertOutputButton setAction:@selector(insertOutputClicked:)];
-    [content addSubview:_insertOutputButton];
-
-    _tabs = [[NSTabView alloc] initWithFrame:NSMakeRect(12, 70, W - 24, H - 112)];
-    [_tabs setTabViewType:NSNoTabsNoBorder];
-
-    NSTabViewItem *richItem = [[NSTabViewItem alloc] initWithIdentifier:@"rich"];
-    _richEditor = [[XFRichTextEditor alloc] initWithFrame:NSMakeRect(0, 0, W - 24, H - 112)
+    _richEditor = [[XFRichTextEditor alloc] initWithFrame:[_richHost bounds]
                                                  baseFont:[NSFont systemFontOfSize:13]];
     [_richEditor setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
     [[_richEditor textView] setDelegate:(id)self];
-    [richItem setView:_richEditor];
-    [_tabs addTabViewItem:richItem];
-
-    NSTabViewItem *sourceItem = [[NSTabViewItem alloc] initWithIdentifier:@"source"];
-    NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:NSMakeRect(0, 0, W - 24, H - 112)];
-    [scroll setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
-    [scroll setHasVerticalScroller:YES];
-    [scroll setBorderType:NSBezelBorder];
-    _sourceView = [[NSTextView alloc] initWithFrame:NSMakeRect(0, 0, W - 24, H - 112)];
+    [_richHost addSubview:_richEditor];
     [_sourceView setFont:[NSFont userFixedPitchFontOfSize:11]];
-    [_sourceView setRichText:NO];
-    [_sourceView setAutoresizingMask:NSViewWidthSizable];
-    [_sourceView setVerticallyResizable:YES];
-    [_sourceView setHorizontallyResizable:NO];
     [[_sourceView textContainer] setWidthTracksTextView:YES];
-    [_sourceView setDelegate:(id)self];
-    [scroll setDocumentView:_sourceView];
-    [sourceItem setView:scroll];
-    [_tabs addTabViewItem:sourceItem];
-    [content addSubview:_tabs];
-
-    _statusField = [[NSTextField alloc] initWithFrame:NSMakeRect(12, 44, W - 24, 17)];
-    [_statusField setEditable:NO];
-    [_statusField setBordered:NO];
-    [_statusField setDrawsBackground:NO];
-    [_statusField setFont:[NSFont systemFontOfSize:11]];
-    [content addSubview:_statusField];
-
-    NSButton *cancel = [[NSButton alloc] initWithFrame:NSMakeRect(W - 190, 8, 84, 28)];
-    [cancel setTitle:@"Cancel"];
-    [cancel setBezelStyle:NSRoundedBezelStyle];
-    [cancel setTarget:self];
-    [cancel setAction:@selector(cancelClicked:)];
-    [content addSubview:cancel];
-    _okButton = [[NSButton alloc] initWithFrame:NSMakeRect(W - 100, 8, 84, 28)];
-    [_okButton setTitle:@"OK"];
-    [_okButton setBezelStyle:NSRoundedBezelStyle];
-    [_okButton setTarget:self];
-    [_okButton setAction:@selector(okClicked:)];
-    [content addSubview:_okButton];
+    return YES;
 }
 
 - (BOOL)onRichView
@@ -494,7 +454,7 @@ static NSString *XFDUnwrapSingleParagraph(NSString *html)
     return XFDDetokenizeFragment(XFDUnwrapSingleParagraph([_richEditor HTML]));
 }
 
-- (void)viewChanged:(id)sender
+- (IBAction)viewChanged:(id)sender
 {
     (void)sender;
     if ([self onRichView]) {
@@ -516,7 +476,7 @@ static NSString *XFDUnwrapSingleParagraph(NSString *html)
     [self refreshGate];
 }
 
-- (void)insertOutputClicked:(id)sender
+- (IBAction)insertOutputClicked:(id)sender
 {
     (void)sender;
     if (_processor == nil) {
@@ -548,7 +508,7 @@ static NSString *XFDUnwrapSingleParagraph(NSString *html)
     [self refreshOutputButton];
 }
 
-- (void)okClicked:(id)sender
+- (IBAction)okClicked:(id)sender
 {
     (void)sender;
     _result = [self onRichView]
@@ -557,7 +517,7 @@ static NSString *XFDUnwrapSingleParagraph(NSString *html)
     [NSApp stopModal];
 }
 
-- (void)cancelClicked:(id)sender
+- (IBAction)cancelClicked:(id)sender
 {
     (void)sender;
     _result = nil;
@@ -621,7 +581,9 @@ static NSString *XFDUnwrapSingleParagraph(NSString *html)
     panel->_processor = processor;
     panel->_contextNode = contextNode;
     panel->_hostElement = hostElement;
-    [panel buildPanelWithTitle:title];
+    if (![panel loadPanelWithTitle:title]) {
+        return nil;
+    }
     [panel->_sourceView setString:fragment ?: @""];
     if (XFDFragmentIsRichEditable(fragment)) {
         [panel showRichWithFragment:fragment ?: @""];

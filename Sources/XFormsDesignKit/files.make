@@ -44,4 +44,9 @@ XFORMSDESIGNKIT_RESOURCE_FILES = \
 	XFDLibrary.xib \
 	XFDPalettePanel.xib \
 	XFDEventsConsole.xib \
-	XFDEventsConsolePanel.xib
+	XFDEventsConsolePanel.xib \
+	XFDInstanceXMLEditor.xib \
+	XFDSubmissionTester.xib \
+	XFDRichTextPanel.xib \
+	XFDPredicateEditor.xib \
+	XFDXPathPicker.xib

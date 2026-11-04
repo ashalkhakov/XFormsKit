@@ -5,74 +5,33 @@
 
 #pragma mark - Instance XML editor panel
 
+@interface XFDInstanceXMLEditor ()
+@property (nonatomic, strong) IBOutlet NSPanel *panel;
+@property (nonatomic, strong) IBOutlet NSTextView *text;
+@property (nonatomic, strong) IBOutlet NSTextField *statusField;
+@property (nonatomic, strong) IBOutlet NSButton *okButton;
+@end
+
 @implementation XFDInstanceXMLEditor {
-    NSPanel *_panel;
-    NSTextView *_text;
-    NSTextField *_statusField;
-    NSButton *_okButton;
+    NSArray *_topLevelObjects;
     NSString *_result;
 }
 
-- (void)buildPanelWithTitle:(NSString *)title
+/// The panel from its XIB (XFDInstanceXMLEditor.xib).
+- (BOOL)loadPanelWithTitle:(NSString *)title
 {
-    const CGFloat W = 560, H = 500;
-    _panel = [[NSPanel alloc] initWithContentRect:NSMakeRect(0, 0, W, H)
-                                        styleMask:NSTitledWindowMask
-                                          backing:NSBackingStoreBuffered
-                                            defer:NO];
+    NSArray *objects = nil;
+    NSNib *nib = [[NSNib alloc] initWithNibNamed:@"XFDInstanceXMLEditor"
+                                          bundle:[NSBundle bundleForClass:[XFDInstanceXMLEditor class]]];
+    if (![nib instantiateWithOwner:self topLevelObjects:&objects] || _panel == nil) {
+        NSLog(@"XFormsDesignKit: XFDInstanceXMLEditor did not load");
+        return NO;
+    }
+    _topLevelObjects = objects;
     [_panel setTitle:title];
-    NSView *content = [_panel contentView];
-
-    NSScrollView *scroll = [[NSScrollView alloc] initWithFrame:NSMakeRect(12, 72, W - 24, H - 84)];
-    [scroll setHasVerticalScroller:YES];
-    [scroll setBorderType:NSBezelBorder];
-    _text = [[NSTextView alloc] initWithFrame:
-        NSMakeRect(0, 0, [scroll contentSize].width, [scroll contentSize].height)];
     [_text setFont:[NSFont userFixedPitchFontOfSize:11]];
-    [_text setRichText:NO];
-    [_text setAllowsUndo:YES];
-    [_text setVerticallyResizable:YES];
-    [_text setHorizontallyResizable:NO];
-    [_text setAutoresizingMask:NSViewWidthSizable];
     [[_text textContainer] setWidthTracksTextView:YES];
-    [_text setDelegate:(id)self];
-    [scroll setDocumentView:_text];
-    [content addSubview:scroll];
-
-    _statusField = [[NSTextField alloc] initWithFrame:NSMakeRect(12, 46, W - 24, 17)];
-    [_statusField setEditable:NO];
-    [_statusField setBordered:NO];
-    [_statusField setDrawsBackground:NO];
-    [_statusField setFont:[NSFont systemFontOfSize:11]];
-    [content addSubview:_statusField];
-
-    NSButton *load = [[NSButton alloc] initWithFrame:NSMakeRect(12, 8, 110, 28)];
-    [load setTitle:@"Load File…"];
-    [load setBezelStyle:NSRoundedBezelStyle];
-    [load setTarget:self];
-    [load setAction:@selector(loadClicked:)];
-    [content addSubview:load];
-    NSButton *blank = [[NSButton alloc] initWithFrame:NSMakeRect(126, 8, 100, 28)];
-    [blank setTitle:@"Blankify"];
-    [blank setBezelStyle:NSRoundedBezelStyle];
-    [blank setToolTip:@"Clear every leaf value and attribute — real data becomes initial data"];
-    [blank setTarget:self];
-    [blank setAction:@selector(blankifyClicked:)];
-    [content addSubview:blank];
-
-    NSButton *cancel = [[NSButton alloc] initWithFrame:NSMakeRect(W - 190, 8, 84, 28)];
-    [cancel setTitle:@"Cancel"];
-    [cancel setBezelStyle:NSRoundedBezelStyle];
-    [cancel setTarget:self];
-    [cancel setAction:@selector(cancelClicked:)];
-    [content addSubview:cancel];
-    _okButton = [[NSButton alloc] initWithFrame:NSMakeRect(W - 100, 8, 84, 28)];
-    [_okButton setTitle:@"OK"];
-    [_okButton setBezelStyle:NSRoundedBezelStyle];
-    [_okButton setKeyEquivalent:@"\r"];
-    [_okButton setTarget:self];
-    [_okButton setAction:@selector(okClicked:)];
-    [content addSubview:_okButton];
+    return YES;
 }
 
 - (XFXMLDocument *)parsedDocument:(NSError **)error
@@ -121,7 +80,7 @@ static void XFDBlankify(XFXMLElement *element)
     }
 }
 
-- (void)blankifyClicked:(id)sender
+- (IBAction)blankifyClicked:(id)sender
 {
     (void)sender;
     NSError *error = nil;
@@ -135,7 +94,7 @@ static void XFDBlankify(XFXMLElement *element)
     [self validateNow];
 }
 
-- (void)loadClicked:(id)sender
+- (IBAction)loadClicked:(id)sender
 {
     (void)sender;
     NSOpenPanel *open = [NSOpenPanel openPanel];
@@ -155,7 +114,7 @@ static void XFDBlankify(XFXMLElement *element)
     [self validateNow];
 }
 
-- (void)okClicked:(id)sender
+- (IBAction)okClicked:(id)sender
 {
     (void)sender;
     _result = [_text string];
@@ -163,7 +122,7 @@ static void XFDBlankify(XFXMLElement *element)
     [_panel orderOut:nil];
 }
 
-- (void)cancelClicked:(id)sender
+- (IBAction)cancelClicked:(id)sender
 {
     (void)sender;
     _result = nil;
@@ -174,7 +133,9 @@ static void XFDBlankify(XFXMLElement *element)
 + (NSString *)runWithXML:(NSString *)xml title:(NSString *)title
 {
     XFDInstanceXMLEditor *editor = [[XFDInstanceXMLEditor alloc] init];
-    [editor buildPanelWithTitle:title];
+    if (![editor loadPanelWithTitle:title]) {
+        return nil;
+    }
     [editor->_text setString:xml.length ? xml : @"<data xmlns=\"\">\n</data>"];
     [editor validateNow];
     [editor->_panel center];

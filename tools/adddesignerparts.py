@@ -65,14 +65,16 @@ def insert_section(name, text):
     s = s[:i] + text + s[i:]
 
 
-def add_to_list(owner, key, entries):
-    """`entries` appended to the list `key` of the object `owner`."""
+def add_to_list(owner, key, entries, comment=True):
+    """`entries` appended to the list `key` of the object `owner` (its
+    definition, not a mention of it in another list)."""
     global s
-    m = re.search(re.escape(owner) + r' /\*[^*]*\*/ = \{', s)
+    m = re.search(re.escape(owner) + r'( /\*[^*]*\*/)? = \{', s)
     assert m, owner
     k = s.index('\t' + key + ' = (', m.end())
     close = s.index(');', k)
-    s = s[:close] + ''.join('\t\t\t\t%s,\n' % e for e in entries) + '\t\t\t' + s[close:]
+    line = s.rindex('\n', 0, close) + 1
+    s = s[:line] + ''.join('\t\t\t\t%s,\n' % e for e in entries) + s[line:]
 
 
 # the files that went: every line naming them

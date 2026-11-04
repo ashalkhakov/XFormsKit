@@ -331,6 +331,11 @@
 		XU0000000000000000000036 /* UDCodeKit.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = XU000000000000000000000D /* UDCodeKit.xcframework */; };
 		XU0000000000000000000037 /* UDPieceTable.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = XU000000000000000000000E /* UDPieceTable.xcframework */; };
 		XU0000000000000000000038 /* LSPKit.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = XU000000000000000000000F /* LSPKit.xcframework */; };
+		DQ0000000000000000000002 /* XFDInstanceXMLEditor.xib in Resources */ = {isa = PBXBuildFile; fileRef = DQ0000000000000000000001 /* XFDInstanceXMLEditor.xib */; };
+		DQ0000000000000000000004 /* XFDSubmissionTester.xib in Resources */ = {isa = PBXBuildFile; fileRef = DQ0000000000000000000003 /* XFDSubmissionTester.xib */; };
+		DQ0000000000000000000006 /* XFDRichTextPanel.xib in Resources */ = {isa = PBXBuildFile; fileRef = DQ0000000000000000000005 /* XFDRichTextPanel.xib */; };
+		DQ0000000000000000000008 /* XFDPredicateEditor.xib in Resources */ = {isa = PBXBuildFile; fileRef = DQ0000000000000000000007 /* XFDPredicateEditor.xib */; };
+		DQ000000000000000000000A /* XFDXPathPicker.xib in Resources */ = {isa = PBXBuildFile; fileRef = DQ0000000000000000000009 /* XFDXPathPicker.xib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -795,6 +800,11 @@
 		XU000000000000000000000F /* LSPKit.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = LSPKit.xcframework; path = .deps/LSPKit.xcframework; sourceTree = SOURCE_ROOT; };
 		XU0000000000000000000011 /* XForms.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XForms.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
 		XU0000000000000000000012 /* XFUTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = XFUTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DQ0000000000000000000001 /* XFDInstanceXMLEditor.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDInstanceXMLEditor.xib; sourceTree = "<group>"; };
+		DQ0000000000000000000003 /* XFDSubmissionTester.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDSubmissionTester.xib; sourceTree = "<group>"; };
+		DQ0000000000000000000005 /* XFDRichTextPanel.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDRichTextPanel.xib; sourceTree = "<group>"; };
+		DQ0000000000000000000007 /* XFDPredicateEditor.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDPredicateEditor.xib; sourceTree = "<group>"; };
+		DQ0000000000000000000009 /* XFDXPathPicker.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDXPathPicker.xib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -905,7 +915,7 @@
 				GG000001000000000000000A /* Apps */,
 				BB00000100000000000000F0 /* Samples */,
 				GG0000010000000000000004 /* Products */,
-							XU0000000000000000000010 /* UDCodeExtension */,
+				XU0000000000000000000010 /* UDCodeExtension */,
 			);
 			sourceTree = "<group>";
 		};
@@ -914,8 +924,6 @@
 			children = (
 				GG0000010000000000000005 /* XFormsKit */,
 				DK0000000000000000000009 /* XFormsDesignKit */,
-							XU0000000000000000000011 /* XForms.bundle */,
-				XU0000000000000000000012 /* XFUTests.xctest */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -926,7 +934,7 @@
 				GG0000010000000000000006 /* XFormsKitTests */,
 				GG0000010000000000000007 /* Fixtures */,
 				GG0000030000000000000001 /* W3CTests */,
-							DP0000000000000000000045 /* XFormsDesignKitTests */,
+				DP0000000000000000000045 /* XFormsDesignKitTests */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -941,7 +949,9 @@
 				MM0000010000000000000021 /* XFormsMobile.app */,
 				BB0000020000000000000030 /* XFormsDesigner.app */,
 				DK0000000000000000000002 /* XFormsDesignKit.framework */,
-							DP000000000000000000003E /* XFormsDesignKitTests.xctest */,
+				DP000000000000000000003E /* XFormsDesignKitTests.xctest */,
+				XU0000000000000000000011 /* XForms.bundle */,
+				XU0000000000000000000012 /* XFUTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1339,7 +1349,7 @@
 				BB0000020000000000000022 /* XFDDocumentWindow.xib */,
 				GG0000020000000000000002 /* ThirdParty/DMTabBar */,
 				GG0000020000000000000003 /* ThirdParty/JUInspectorView */,
-							DP0000000000000000000001 /* XFDFormEditor.m */,
+				DP0000000000000000000001 /* XFDFormEditor.m */,
 				DP0000000000000000000002 /* XFDPartViewController.m */,
 				DP0000000000000000000003 /* XFDOutlineViewController.m */,
 				DP0000000000000000000004 /* XFDPreviewViewController.m */,
@@ -1369,6 +1379,11 @@
 				DP000000000000000000001C /* XFDPalettePanel.xib */,
 				DP000000000000000000001D /* XFDEventsConsole.xib */,
 				DP000000000000000000001E /* XFDEventsConsolePanel.xib */,
+				DQ0000000000000000000001 /* XFDInstanceXMLEditor.xib */,
+				DQ0000000000000000000003 /* XFDSubmissionTester.xib */,
+				DQ0000000000000000000005 /* XFDRichTextPanel.xib */,
+				DQ0000000000000000000007 /* XFDPredicateEditor.xib */,
+				DQ0000000000000000000009 /* XFDXPathPicker.xib */,
 			);
 			path = XFormsDesignKit;
 			sourceTree = "<group>";
@@ -1509,7 +1524,7 @@
 				PH0000000000000000000115 /* JUInspectorView.h in Headers */,
 				PH0000000000000000000116 /* JUInspectorViewContainer.h in Headers */,
 				PH0000000000000000000117 /* JUInspectorViewHeader.h in Headers */,
-							DP0000000000000000000029 /* XFDFormEditor.h in Headers */,
+				DP0000000000000000000029 /* XFDFormEditor.h in Headers */,
 				DP000000000000000000002A /* XFDPartViewController.h in Headers */,
 				DP000000000000000000002B /* XFDOutlineViewController.h in Headers */,
 				DP000000000000000000002C /* XFDPreviewViewController.h in Headers */,
@@ -1748,9 +1763,9 @@
 				EE0000020000000000000001 /* XFormsDesigner */,
 				EE0000030000000000000001 /* XFW3CTests */,
 				EE0000040000000000000001 /* XFormsMobile */,
-							DP000000000000000000003D /* XFormsDesignKitTests */,
-							XU0000000000000000000027 /* XForms */,
-							XU000000000000000000003D /* XFUTests */,
+				DP000000000000000000003D /* XFormsDesignKitTests */,
+				XU0000000000000000000027 /* XForms */,
+				XU000000000000000000003D /* XFUTests */,
 			);
 		};
 /* End PBXProject section */
@@ -1795,7 +1810,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0000020000000000000022 /* XFDDocumentWindow.xib in Resources */,
-							DP0000000000000000000033 /* XFDOutlineViewController.xib in Resources */,
+				DP0000000000000000000033 /* XFDOutlineViewController.xib in Resources */,
 				DP0000000000000000000034 /* XFDPreviewViewController.xib in Resources */,
 				DP0000000000000000000035 /* XFDInspectorViewController.xib in Resources */,
 				DP0000000000000000000036 /* XFDIdentityInspector.xib in Resources */,
@@ -1805,6 +1820,11 @@
 				DP000000000000000000003A /* XFDPalettePanel.xib in Resources */,
 				DP000000000000000000003B /* XFDEventsConsole.xib in Resources */,
 				DP000000000000000000003C /* XFDEventsConsolePanel.xib in Resources */,
+				DQ0000000000000000000002 /* XFDInstanceXMLEditor.xib in Resources */,
+				DQ0000000000000000000004 /* XFDSubmissionTester.xib in Resources */,
+				DQ0000000000000000000006 /* XFDRichTextPanel.xib in Resources */,
+				DQ0000000000000000000008 /* XFDPredicateEditor.xib in Resources */,
+				DQ000000000000000000000A /* XFDXPathPicker.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2038,7 +2058,7 @@
 				AA0000020000000000000008 /* JUInspectorView.m in Sources */,
 				AA0000020000000000000009 /* JUInspectorViewContainer.m in Sources */,
 				AA000002000000000000000A /* JUInspectorViewHeader.m in Sources */,
-							DP000000000000000000001F /* XFDFormEditor.m in Sources */,
+				DP000000000000000000001F /* XFDFormEditor.m in Sources */,
 				DP0000000000000000000020 /* XFDPartViewController.m in Sources */,
 				DP0000000000000000000021 /* XFDOutlineViewController.m in Sources */,
 				DP0000000000000000000022 /* XFDPreviewViewController.m in Sources */,
