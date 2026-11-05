@@ -32,6 +32,7 @@ XFormsDesignKit_RESOURCE_FILES = $(XFORMSDESIGNKIT_RESOURCE_FILES)
 # ThirdParty/DMTabBar as a checkout of it would.
 XFormsDesignKit_HEADER_FILES_DIR = .
 XFormsDesignKit_HEADER_FILES = \
+	XFDActionPage.h \
 	XFDAttributesInspector.h \
 	XFDDesignOverlay.h \
 	XFDDocument.h \

@@ -15,6 +15,9 @@
                 <outlet property="previewHost" destination="xfd-w0-pvh" id="XFDPre-008" />
                 <outlet property="sourceHost" destination="xfd-w0-srh" id="XFDPre-009" />
                 <outlet property="consoleButton" destination="xfd-pv-con" id="XFDPre-010" />
+                <outlet property="previewScrollView" destination="xfd-pv-psc" id="XFDPre-011" />
+                <outlet property="designOverlay" destination="xfd-pv-ovl" id="XFDPre-012" />
+                <outlet property="sourceView" destination="xfd-pv-src" id="XFDPre-013" />
             </connections>
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder" />
@@ -72,6 +75,30 @@
                                     <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-w0-pvh">
                                         <rect key="frame" x="0.0" y="0.0" width="578" height="690" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                        <subviews>
+                                            <scrollView fixedFrame="YES" borderType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-pv-psc">
+                                                <rect key="frame" x="0.0" y="0.0" width="578" height="690" />
+                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                                <clipView key="contentView" id="xfd-pv-pcl">
+                                                    <rect key="frame" x="0.0" y="0.0" width="578" height="690" />
+                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                                </clipView>
+                                                <scroller key="horizontalScroller" verticalHuggingPriority="750" horizontal="YES" id="xfd-pv-phs">
+                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                                </scroller>
+                                                <scroller key="verticalScroller" verticalHuggingPriority="750" horizontal="NO" id="xfd-pv-pvs">
+                                                    <autoresizingMask key="autoresizingMask" flexibleMinX="YES" heightSizable="YES" />
+                                                </scroller>
+                                            </scrollView>
+                                            <customView hidden="YES" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-pv-ovl" customClass="XFDDesignOverlay" userLabel="Design Overlay">
+                                                <rect key="frame" x="0.0" y="0.0" width="578" height="690" />
+                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                                <connections>
+                                                    <outlet property="delegate" destination="-2" id="xfd-pv-o01" />
+                                                    <outlet property="scrollView" destination="xfd-pv-psc" id="xfd-pv-o02" />
+                                                </connections>
+                                            </customView>
+                                        </subviews>
                                     </customView>
                                 </subviews>
                             </view>
@@ -84,6 +111,29 @@
                                     <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-w0-srh">
                                         <rect key="frame" x="0.0" y="30" width="578" height="660" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                        <subviews>
+                                            <scrollView fixedFrame="YES" borderType="none" horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-pv-ssc">
+                                                <rect key="frame" x="0.0" y="0.0" width="578" height="660" />
+                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                                <clipView key="contentView" id="xfd-pv-scl">
+                                                    <rect key="frame" x="0.0" y="0.0" width="578" height="660" />
+                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                                    <subviews>
+                                                        <textView importsGraphics="NO" richText="NO" verticallyResizable="YES" allowsUndo="YES" id="xfd-pv-src">
+                                                            <rect key="frame" x="0.0" y="0.0" width="578" height="660" />
+                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                                            <color key="textColor" name="textColor" catalog="System" colorSpace="catalog" />
+                                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                                            <size key="minSize" width="578" height="660" />
+                                                            <size key="maxSize" width="10000" height="10000000" />
+                                                        </textView>
+                                                    </subviews>
+                                                </clipView>
+                                                <scroller key="verticalScroller" verticalHuggingPriority="750" horizontal="NO" id="xfd-pv-svs">
+                                                    <autoresizingMask key="autoresizingMask" flexibleMinX="YES" heightSizable="YES" />
+                                                </scroller>
+                                            </scrollView>
+                                        </subviews>
                                     </customView>
                                     <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-134">
                                         <rect key="frame" x="488" y="3" width="84" height="24" />

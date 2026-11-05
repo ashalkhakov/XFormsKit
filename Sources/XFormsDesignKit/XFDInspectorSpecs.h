@@ -10,6 +10,9 @@
 /// The Action page's row specs, per action local name (XForms 1.1 Â§10
 /// plus the XSLTForms show/hide pair); see the .m for the row keys.
 NSDictionary *XFDActionSpecs(void);
+/// The rows every action has before its own (the trigger, its
+/// redirections, the conditionals), in the same shape.
+NSArray *XFDActionCommonSpecs(void);
 /// Widget-bearing element kinds â the Control inspector page.
 NSSet *XFDControlKinds(void);
 /// Value-carrying kinds that need a binding to keep what the user types.

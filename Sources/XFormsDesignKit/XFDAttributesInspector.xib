@@ -24,6 +24,7 @@
         <customObject id="-3" userLabel="Application" customClass="NSObject" />
         <customObject id="xfd-pg-control" userLabel="Control Page" customClass="XFDControlPage">
             <connections>
+                <outlet property="editorController" destination="xfd-ec-control" id="xfd-bd-062" />
                 <outlet property="view" destination="xfd-a0-138" id="xfd-pg-013" />
                 <outlet property="controlRefField" destination="xfd-f0-002" id="xfd-pg-014" />
                 <outlet property="controlValueField" destination="xfd-f0-003" id="xfd-pg-015" />
@@ -44,6 +45,7 @@
         </customObject>
         <customObject id="xfd-pg-bind" userLabel="Bind Page" customClass="XFDBindPage">
             <connections>
+                <outlet property="editorController" destination="xfd-ec-bind" id="xfd-bd-063" />
                 <outlet property="view" destination="xfd-a0-140" id="xfd-pg-029" />
                 <outlet property="bindNodesetField" destination="xfd-f0-016" id="xfd-pg-030" />
                 <outlet property="bindTypeField" destination="xfd-f0-017" id="xfd-pg-031" />
@@ -57,6 +59,7 @@
         </customObject>
         <customObject id="xfd-pg-submission" userLabel="Submission Page" customClass="XFDSubmissionPage">
             <connections>
+                <outlet property="editorController" destination="xfd-ec-submission" id="xfd-bd-064" />
                 <outlet property="view" destination="xfd-a0-142" id="xfd-pg-038" />
                 <outlet property="submissionResourceField" destination="xfd-f0-023" id="xfd-pg-039" />
                 <outlet property="submissionMethodField" destination="xfd-f0-024" id="xfd-pg-040" />
@@ -69,6 +72,7 @@
         </customObject>
         <customObject id="xfd-pg-instance" userLabel="Instance Page" customClass="XFDInstancePage">
             <connections>
+                <outlet property="editorController" destination="xfd-ec-instance" id="xfd-bd-065" />
                 <outlet property="view" destination="xfd-a0-144" id="xfd-pg-046" />
                 <outlet property="instanceSrcField" destination="xfd-f0-029" id="xfd-pg-047" />
                 <outlet property="inspector" destination="-2" id="xfd-pg-048" />
@@ -76,6 +80,8 @@
         </customObject>
         <customObject id="xfd-pg-element" userLabel="Element Page" customClass="XFDElementPage">
             <connections>
+                <outlet property="controlKindMenu" destination="xfd-km-000" id="xfd-bd-070" />
+                <outlet property="editorController" destination="xfd-ec-element" id="xfd-bd-066" />
                 <outlet property="view" destination="xfd-a0-146" id="xfd-pg-049" />
                 <outlet property="hostNewControlButton" destination="xfd-f0-039" id="xfd-pg-050" />
                 <outlet property="inspector" destination="-2" id="xfd-pg-051" />
@@ -83,6 +89,7 @@
         </customObject>
         <customObject id="xfd-pg-action" userLabel="Action Page" customClass="XFDActionPage">
             <connections>
+                <outlet property="editorController" destination="xfd-ec-action" id="xfd-bd-067" />
                 <outlet property="view" destination="xfd-a0-148" id="xfd-pg-052" />
                 <outlet property="actionRowsHost" destination="xfd-f0-031" id="xfd-pg-053" />
                 <outlet property="inspector" destination="-2" id="xfd-pg-054" />
@@ -90,6 +97,7 @@
         </customObject>
         <customObject id="xfd-pg-item" userLabel="Item Page" customClass="XFDItemPage">
             <connections>
+                <outlet property="editorController" destination="xfd-ec-item" id="xfd-bd-068" />
                 <outlet property="view" destination="xfd-a0-150" id="xfd-pg-055" />
                 <outlet property="itemLabelField" destination="xfd-f0-032" id="xfd-pg-056" />
                 <outlet property="itemValueField" destination="xfd-f0-033" id="xfd-pg-057" />
@@ -98,6 +106,7 @@
         </customObject>
         <customObject id="xfd-pg-itemset" userLabel="Itemset Page" customClass="XFDItemsetPage">
             <connections>
+                <outlet property="editorController" destination="xfd-ec-itemset" id="xfd-bd-069" />
                 <outlet property="view" destination="xfd-a0-152" id="xfd-pg-059" />
                 <outlet property="itemsetNodesetField" destination="xfd-f0-034" id="xfd-pg-060" />
                 <outlet property="itemsetBindField" destination="xfd-f0-035" id="xfd-pg-061" />
@@ -106,6 +115,58 @@
                 <outlet property="inspector" destination="-2" id="xfd-pg-064" />
             </connections>
         </customObject>
+        <objectController objectClassName="XFDControlEditor" editable="YES" id="xfd-ec-control" userLabel="Control Editor" />
+        <objectController objectClassName="XFDBindEditor" editable="YES" id="xfd-ec-bind" userLabel="Bind Editor" />
+        <objectController objectClassName="XFDSubmissionEditor" editable="YES" id="xfd-ec-submission" userLabel="Submission Editor" />
+        <objectController objectClassName="XFDInstanceEditor" editable="YES" id="xfd-ec-instance" userLabel="Instance Editor" />
+        <objectController objectClassName="XFDElementEditor" editable="YES" id="xfd-ec-element" userLabel="Element Editor" />
+        <objectController objectClassName="XFDActionEditor" editable="YES" id="xfd-ec-action" userLabel="Action Editor" />
+        <objectController objectClassName="XFDItemEditor" editable="YES" id="xfd-ec-item" userLabel="Item Editor" />
+        <objectController objectClassName="XFDItemsetEditor" editable="YES" id="xfd-ec-itemset" userLabel="Itemset Editor" />
+        <menu title="Control Kind" id="xfd-km-000" userLabel="Control Kind Menu">
+            <items>
+                <menuItem title="input" id="xfd-km-001">
+                    <connections>
+                        <action selector="boundControlKindPicked:" target="xfd-pg-element" id="xfd-km-002" />
+                    </connections>
+                </menuItem>
+                <menuItem title="textarea" id="xfd-km-003">
+                    <connections>
+                        <action selector="boundControlKindPicked:" target="xfd-pg-element" id="xfd-km-004" />
+                    </connections>
+                </menuItem>
+                <menuItem title="secret" id="xfd-km-005">
+                    <connections>
+                        <action selector="boundControlKindPicked:" target="xfd-pg-element" id="xfd-km-006" />
+                    </connections>
+                </menuItem>
+                <menuItem title="select1" id="xfd-km-007">
+                    <connections>
+                        <action selector="boundControlKindPicked:" target="xfd-pg-element" id="xfd-km-008" />
+                    </connections>
+                </menuItem>
+                <menuItem title="select" id="xfd-km-009">
+                    <connections>
+                        <action selector="boundControlKindPicked:" target="xfd-pg-element" id="xfd-km-010" />
+                    </connections>
+                </menuItem>
+                <menuItem title="range" id="xfd-km-011">
+                    <connections>
+                        <action selector="boundControlKindPicked:" target="xfd-pg-element" id="xfd-km-012" />
+                    </connections>
+                </menuItem>
+                <menuItem title="output" id="xfd-km-013">
+                    <connections>
+                        <action selector="boundControlKindPicked:" target="xfd-pg-element" id="xfd-km-014" />
+                    </connections>
+                </menuItem>
+                <menuItem title="upload" id="xfd-km-015">
+                    <connections>
+                        <action selector="boundControlKindPicked:" target="xfd-pg-element" id="xfd-km-016" />
+                    </connections>
+                </menuItem>
+            </items>
+        </menu>
         <customView id="xfd-a0-156" translatesAutoresizingMaskIntoConstraints="NO" userLabel="Attributes">
             <rect key="frame" x="0.0" y="0.0" width="280" height="672" />
             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
@@ -132,6 +193,19 @@
                                     <customView toolTip="Binding expression selecting the node this control edits, evaluated in the parent's context (§3.2.3). A repeat's ref selects the node-set it iterates." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-002" customClass="XFDXPathField">
                                         <rect key="frame" x="98" y="638" width="174" height="21" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="expectation">
+                                                <integer key="value" value="2" />
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-control" id="xfd-bd-001" />
+                                            <binding destination="xfd-ec-control" name="value" keyPath="content.ref" id="xfd-bd-002">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-010">
                                         <rect key="frame" x="0" y="616" width="92" height="14" />
@@ -145,6 +219,20 @@
                                     <customView toolTip="xf:output only: display a COMPUTED expression instead of a bound node (§8.1.5) — mutually exclusive with Ref/Bind." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-003" customClass="XFDXPathField">
                                         <rect key="frame" x="98" y="612" width="174" height="21" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="expectation">
+                                                <integer key="value" value="3" />
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-control" id="xfd-bd-003" />
+                                            <binding destination="xfd-ec-control" name="value" keyPath="content.valueExpression" id="xfd-bd-004">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                            <binding destination="xfd-ec-control" name="enabled" keyPath="content.takesValueExpression" id="xfd-bd-005" />
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-012">
                                         <rect key="frame" x="0" y="590" width="92" height="14" />
@@ -158,6 +246,17 @@
                                     <customView toolTip="Reference an xf:bind by id instead of binding in place; when set, it overrides Ref." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-004" customClass="XFDIDRefField">
                                         <rect key="frame" x="98" y="585" width="174" height="23" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="string" keyPath="kind" value="bind" />
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-control" id="xfd-bd-006" />
+                                            <binding destination="xfd-ec-control" name="value" keyPath="content.bind" id="xfd-bd-007">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-005">
                                         <rect key="frame" x="8" y="564" width="264" height="14" />
@@ -167,6 +266,10 @@
                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
                                         </textFieldCell>
+                                        <connections>
+                                            <binding destination="xfd-ec-control" name="value" keyPath="content.bindingStatus" id="xfd-bd-008" />
+                                            <binding destination="xfd-ec-control" name="textColor" keyPath="content.bindingStatusColor" id="xfd-bd-009" />
+                                        </connections>
                                     </textField>
                                     <button toolTip="Move this control's Ref into a new named xf:bind under the model and reference it by id." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-006">
                                         <rect key="frame" x="98" y="533" width="184" height="24" />
@@ -177,6 +280,7 @@
                                         </buttonCell>
                                         <connections>
                                             <action selector="createBindFromRef:" target="xfd-pg-control" id="xfd-a0-016" />
+                                            <binding destination="xfd-ec-control" name="enabled" keyPath="content.canCreateBind" id="xfd-bd-010" />
                                         </connections>
                                     </button>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-017">
@@ -191,6 +295,17 @@
                                     <customView toolTip="Id of the model the Ref evaluates against (defaults to the first model; only meaningful with Ref)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-007" customClass="XFDIDRefField">
                                         <rect key="frame" x="98" y="507" width="174" height="23" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="string" keyPath="kind" value="model" />
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-control" id="xfd-bd-011" />
+                                            <binding destination="xfd-ec-control" name="value" keyPath="content.model" id="xfd-bd-012">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-019">
                                         <rect key="frame" x="0" y="486" width="92" height="14" />
@@ -204,6 +319,18 @@
                                     <customView toolTip="Id of the xf:submission this submit button starts (§10.11)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-008" customClass="XFDIDRefField">
                                         <rect key="frame" x="98" y="481" width="174" height="23" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="string" keyPath="kind" value="submission" />
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-control" id="xfd-bd-013" />
+                                            <binding destination="xfd-ec-control" name="value" keyPath="content.submission" id="xfd-bd-014">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                            <binding destination="xfd-ec-control" name="enabled" keyPath="content.takesSubmission" id="xfd-bd-015" />
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-021">
                                         <rect key="frame" x="0" y="460" width="92" height="14" />
@@ -230,7 +357,7 @@
                                             </menu>
                                         </popUpButtonCell>
                                         <connections>
-                                            <action selector="inspectorChanged:" target="-2" id="xfd-a0-029" />
+                                            <binding destination="xfd-ec-control" name="selectedValue" keyPath="content.appearanceTitle" id="xfd-bd-016" />
                                         </connections>
                                     </popUpButton>
                                     <button toolTip="Commit on every keystroke instead of on leaving the field — xforms-value-changed fires per change (§8.1.1)." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-010">
@@ -241,7 +368,7 @@
                                             <font key="font" metaFont="smallSystem" />
                                         </buttonCell>
                                         <connections>
-                                            <action selector="inspectorChanged:" target="-2" id="xfd-a0-031" />
+                                            <binding destination="xfd-ec-control" name="value" keyPath="content.incremental" id="xfd-bd-017" />
                                         </connections>
                                     </button>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-032">
@@ -262,7 +389,11 @@
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
                                         </textFieldCell>
                                         <connections>
-                                            <action selector="inspectorChanged:" target="-2" id="xfd-a0-034" />
+                                            <binding destination="xfd-ec-control" name="value" keyPath="content.mediatype" id="xfd-bd-018">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
                                         </connections>
                                     </textField>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-036">
@@ -286,6 +417,14 @@
                                     <customView toolTip="The control's label (§8.3.3): plain text, inline markup, or dynamic output content." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-012" customClass="XFDRichTextField">
                                         <rect key="frame" x="98" y="352" width="174" height="21" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-control" id="xfd-bd-019" />
+                                            <binding destination="xfd-ec-control" name="value" keyPath="content.labelContent" id="xfd-bd-020">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-040">
                                         <rect key="frame" x="0" y="330" width="92" height="14" />
@@ -299,6 +438,14 @@
                                     <customView toolTip='Hint shown on hover/focus (§8.3.5); appearance="minimal" renders it as placeholder text.' fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-013" customClass="XFDRichTextField">
                                         <rect key="frame" x="98" y="326" width="174" height="21" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-control" id="xfd-bd-021" />
+                                            <binding destination="xfd-ec-control" name="value" keyPath="content.hintContent" id="xfd-bd-022">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-042">
                                         <rect key="frame" x="0" y="304" width="92" height="14" />
@@ -312,6 +459,14 @@
                                     <customView toolTip="Help shown on request (§8.3.4)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-014" customClass="XFDRichTextField">
                                         <rect key="frame" x="98" y="300" width="174" height="21" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-control" id="xfd-bd-023" />
+                                            <binding destination="xfd-ec-control" name="value" keyPath="content.helpContent" id="xfd-bd-024">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-044">
                                         <rect key="frame" x="0" y="278" width="92" height="14" />
@@ -325,6 +480,14 @@
                                     <customView toolTip="Message shown while the bound value is invalid (§8.3.6)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-015" customClass="XFDRichTextField">
                                         <rect key="frame" x="98" y="274" width="174" height="21" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-control" id="xfd-bd-025" />
+                                            <binding destination="xfd-ec-control" name="value" keyPath="content.alertContent" id="xfd-bd-026">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                 </subviews>
                             </view>
@@ -346,6 +509,19 @@
                                     <customView toolTip="The nodes this bind applies to (§7.4), evaluated in the outer bind's context — nested binds chain." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-016" customClass="XFDXPathField">
                                         <rect key="frame" x="98" y="638" width="174" height="21" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="expectation">
+                                                <integer key="value" value="1" />
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-bind" id="xfd-bd-027" />
+                                            <binding destination="xfd-ec-bind" name="value" keyPath="content.nodeset" id="xfd-bd-028">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-048">
                                         <rect key="frame" x="0" y="616" width="92" height="14" />
@@ -365,7 +541,11 @@
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
                                         </textFieldCell>
                                         <connections>
-                                            <action selector="inspectorChanged:" target="-2" id="xfd-a0-050" />
+                                            <binding destination="xfd-ec-bind" name="value" keyPath="content.typeName" id="xfd-bd-029">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
                                         </connections>
                                     </textField>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-052">
@@ -380,6 +560,19 @@
                                     <customView toolTip="Computes the value from other nodes; calculated nodes become readonly unless overridden (§6.1.3)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-018" customClass="XFDXPathField">
                                         <rect key="frame" x="98" y="586" width="174" height="21" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="expectation">
+                                                <integer key="value" value="3" />
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-bind" id="xfd-bd-030" />
+                                            <binding destination="xfd-ec-bind" name="value" keyPath="content.calculate" id="xfd-bd-031">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-054">
                                         <rect key="frame" x="0" y="564" width="92" height="14" />
@@ -393,6 +586,19 @@
                                     <customView toolTip="Validity condition, evaluated per node (§6.1.1)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-019" customClass="XFDXPathField">
                                         <rect key="frame" x="98" y="560" width="174" height="21" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="expectation">
+                                                <integer key="value" value="3" />
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-bind" id="xfd-bd-032" />
+                                            <binding destination="xfd-ec-bind" name="value" keyPath="content.constraint" id="xfd-bd-033">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-056">
                                         <rect key="frame" x="0" y="538" width="92" height="14" />
@@ -406,6 +612,19 @@
                                     <customView toolTip="XPath deciding whether a value is required (§6.1.2)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-020" customClass="XFDXPathField">
                                         <rect key="frame" x="98" y="534" width="174" height="21" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="expectation">
+                                                <integer key="value" value="3" />
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-bind" id="xfd-bd-034" />
+                                            <binding destination="xfd-ec-bind" name="value" keyPath="content.required" id="xfd-bd-035">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-058">
                                         <rect key="frame" x="0" y="512" width="92" height="14" />
@@ -419,6 +638,19 @@
                                     <customView toolTip="XPath deciding whether the nodes are relevant — irrelevant controls disappear (§6.1.4)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-021" customClass="XFDXPathField">
                                         <rect key="frame" x="98" y="508" width="174" height="21" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="expectation">
+                                                <integer key="value" value="3" />
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-bind" id="xfd-bd-036" />
+                                            <binding destination="xfd-ec-bind" name="value" keyPath="content.relevant" id="xfd-bd-037">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-060">
                                         <rect key="frame" x="0" y="486" width="92" height="14" />
@@ -432,6 +664,19 @@
                                     <customView toolTip="XPath deciding whether the nodes are read-only (§6.1.5)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-022" customClass="XFDXPathField">
                                         <rect key="frame" x="98" y="482" width="174" height="21" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="expectation">
+                                                <integer key="value" value="3" />
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-bind" id="xfd-bd-038" />
+                                            <binding destination="xfd-ec-bind" name="value" keyPath="content.readonly" id="xfd-bd-039">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                 </subviews>
                             </view>
@@ -470,7 +715,11 @@
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
                                         </textFieldCell>
                                         <connections>
-                                            <action selector="inspectorChanged:" target="-2" id="xfd-a0-064" />
+                                            <binding destination="xfd-ec-submission" name="value" keyPath="content.resource" id="xfd-bd-040">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
                                         </connections>
                                     </textField>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-066">
@@ -491,7 +740,11 @@
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
                                         </textFieldCell>
                                         <connections>
-                                            <action selector="inspectorChanged:" target="-2" id="xfd-a0-068" />
+                                            <binding destination="xfd-ec-submission" name="value" keyPath="content.method" id="xfd-bd-041">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
                                         </connections>
                                     </textField>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-070">
@@ -519,7 +772,7 @@
                                             </menu>
                                         </popUpButtonCell>
                                         <connections>
-                                            <action selector="inspectorChanged:" target="-2" id="xfd-a0-078" />
+                                            <binding destination="xfd-ec-submission" name="selectedValue" keyPath="content.replaceTitle" id="xfd-bd-042" />
                                         </connections>
                                     </popUpButton>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-079">
@@ -534,6 +787,17 @@
                                     <customView toolTip="Id of the instance the response replaces when Replace = instance (§11.2)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-026" customClass="XFDIDRefField">
                                         <rect key="frame" x="98" y="559" width="174" height="23" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="string" keyPath="kind" value="instance" />
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-submission" id="xfd-bd-043" />
+                                            <binding destination="xfd-ec-submission" name="value" keyPath="content.instance" id="xfd-bd-044">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-081">
                                         <rect key="frame" x="0" y="538" width="92" height="14" />
@@ -547,6 +811,19 @@
                                     <customView toolTip="Root of the submitted data; defaults to the default instance's root." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-027" customClass="XFDXPathField">
                                         <rect key="frame" x="98" y="534" width="174" height="21" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="expectation">
+                                                <integer key="value" value="2" />
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-submission" id="xfd-bd-045" />
+                                            <binding destination="xfd-ec-submission" name="value" keyPath="content.ref" id="xfd-bd-046">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-083">
                                         <rect key="frame" x="0" y="512" width="92" height="14" />
@@ -560,6 +837,17 @@
                                     <customView toolTip="Bind selecting the submitted data, by id (overrides Ref)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-028" customClass="XFDIDRefField">
                                         <rect key="frame" x="98" y="507" width="174" height="23" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="string" keyPath="kind" value="bind" />
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-submission" id="xfd-bd-047" />
+                                            <binding destination="xfd-ec-submission" name="value" keyPath="content.bind" id="xfd-bd-048">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                 </subviews>
                             </view>
@@ -587,7 +875,11 @@
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
                                         </textFieldCell>
                                         <connections>
-                                            <action selector="inspectorChanged:" target="-2" id="xfd-a0-087" />
+                                            <binding destination="xfd-ec-instance" name="value" keyPath="content.src" id="xfd-bd-049">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
                                         </connections>
                                     </textField>
                                     <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-030">
@@ -636,6 +928,7 @@
                                         </buttonCell>
                                         <connections>
                                             <action selector="elementCreateBoundControl:" target="xfd-pg-element" id="xfd-a0-114" />
+                                            <binding destination="xfd-ec-element" name="enabled" keyPath="content.takesBoundControl" id="xfd-bd-061" />
                                         </connections>
                                     </button>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-115">
@@ -679,6 +972,14 @@
                                     <customView toolTip="The choice's visible label (§8.3.3)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-032" customClass="XFDRichTextField">
                                         <rect key="frame" x="98" y="638" width="174" height="21" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-item" id="xfd-bd-050" />
+                                            <binding destination="xfd-ec-item" name="value" keyPath="content.labelContent" id="xfd-bd-051">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-095">
                                         <rect key="frame" x="0" y="616" width="92" height="14" />
@@ -698,7 +999,11 @@
                                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
                                         </textFieldCell>
                                         <connections>
-                                            <action selector="inspectorChanged:" target="-2" id="xfd-a0-097" />
+                                            <binding destination="xfd-ec-item" name="value" keyPath="content.valueText" id="xfd-bd-052">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
                                         </connections>
                                     </textField>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-099">
@@ -730,6 +1035,19 @@
                                     <customView toolTip="One choice per node in this set (§9.3.3)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-034" customClass="XFDXPathField">
                                         <rect key="frame" x="98" y="638" width="174" height="21" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="expectation">
+                                                <integer key="value" value="1" />
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-itemset" id="xfd-bd-053" />
+                                            <binding destination="xfd-ec-itemset" name="value" keyPath="content.nodeset" id="xfd-bd-054">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-103">
                                         <rect key="frame" x="0" y="616" width="92" height="14" />
@@ -743,6 +1061,17 @@
                                     <customView toolTip="Bind selecting the choice nodes, by id." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-035" customClass="XFDIDRefField">
                                         <rect key="frame" x="98" y="611" width="174" height="23" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="string" keyPath="kind" value="bind" />
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-itemset" id="xfd-bd-055" />
+                                            <binding destination="xfd-ec-itemset" name="value" keyPath="content.bind" id="xfd-bd-056">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-105">
                                         <rect key="frame" x="0" y="590" width="92" height="14" />
@@ -756,6 +1085,19 @@
                                     <customView toolTip="Each choice's label, evaluated relative to its node (§9.3.3)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-036" customClass="XFDXPathField">
                                         <rect key="frame" x="98" y="586" width="174" height="21" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="expectation">
+                                                <integer key="value" value="2" />
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-itemset" id="xfd-bd-057" />
+                                            <binding destination="xfd-ec-itemset" name="value" keyPath="content.labelRef" id="xfd-bd-058">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-107">
                                         <rect key="frame" x="0" y="564" width="92" height="14" />
@@ -769,6 +1111,19 @@
                                     <customView toolTip="Each choice's stored value, evaluated relative to its node (§9.3.3)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-037" customClass="XFDXPathField">
                                         <rect key="frame" x="98" y="560" width="174" height="21" />
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="expectation">
+                                                <integer key="value" value="2" />
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <outlet property="provider" destination="xfd-pg-itemset" id="xfd-bd-059" />
+                                            <binding destination="xfd-ec-itemset" name="value" keyPath="content.valueRef" id="xfd-bd-060">
+                                                <dictionary key="options">
+                                                    <bool key="NSValidatesImmediately" value="YES" />
+                                                </dictionary>
+                                            </binding>
+                                        </connections>
                                     </customView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-109">
                                         <rect key="frame" x="8" y="538" width="260" height="14" />

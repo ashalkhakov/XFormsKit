@@ -240,6 +240,7 @@ XFormsKitTests_OBJC_FILES = \
 	Tests/XFormsKitTests/XFRepeatGroupTests.m \
 	Tests/XFormsKitTests/XFInsertDeleteTests.m \
 	Tests/XFormsKitTests/XFUIControlTests.m \
+	Tests/XFormsKitTests/XFHostEditTests.m \
 	Tests/XFormsKitTests/XFTypeTests.m
 
 XFormsKitTests_RESOURCE_FILES = Tests/Fixtures/hello.xhtml

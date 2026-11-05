@@ -1,12 +1,24 @@
 #import "XFDIDRefField.h"
+#import "XFDFieldBinding.h"
 #import <XFormsKit/XFXMLTypes.h>
 
-@interface XFDIDRefField ()
+@interface XFDIDRefField () <XFDBindableField>
 @property (nonatomic, strong) NSComboBox *combo;
 @property (nonatomic, assign, readwrite, getter=isValid) BOOL valid;
 @end
 
-@implementation XFDIDRefField
+@implementation XFDIDRefField {
+    NSMutableDictionary<NSString *, XFDFieldBinding *> *_bindings;
+}
+
++ (void)initialize
+{
+    if (self == [XFDIDRefField class]) {
+        [self exposeBinding:NSValueBinding];
+        [self exposeBinding:NSEnabledBinding];
+    }
+}
+
 
 /// Common event names for the "#event" pseudo-kind: suggestions, never a
 /// validity boundary — custom events dispatched by name are legitimate.
@@ -97,6 +109,7 @@ static void XFDCollectIDs(XFXMLElement *element, NSSet *localNames, NSMutableArr
         return;
     }
     _valid = YES;
+    _bindings = [NSMutableDictionary dictionary];
     self.combo = [[NSComboBox alloc] initWithFrame:[self bounds]];
     [self.combo setAutoresizingMask:NSViewWidthSizable];
     [[self.combo cell] setControlSize:NSSmallControlSize];
@@ -107,6 +120,7 @@ static void XFDCollectIDs(XFXMLElement *element, NSSet *localNames, NSMutableArr
     [[self.combo cell] setSendsActionOnEndEditing:YES];
     [self.combo setTarget:self];
     [self.combo setAction:@selector(comboEdited:)];
+    [self.combo setDelegate:(id)self];
     [self addSubview:self.combo];
 
     NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
@@ -180,6 +194,48 @@ static void XFDCollectIDs(XFXMLElement *element, NSSet *localNames, NSMutableArr
     }
 }
 
+#pragma mark bindings
+
+- (void)bind:(NSString *)binding toObject:(id)object withKeyPath:(NSString *)keyPath
+     options:(NSDictionary *)options
+{
+    if (!XFDFieldBind(self, _bindings, binding, object, keyPath, options)) {
+        [super bind:binding toObject:object withKeyPath:keyPath options:options];
+    }
+}
+
+- (void)unbind:(NSString *)binding
+{
+    if (!XFDFieldUnbind(_bindings, binding)) {
+        [super unbind:binding];
+    }
+}
+
+- (NSDictionary *)infoForBinding:(NSString *)binding
+{
+    return _bindings[binding] ? _bindings[binding].info : [super infoForBinding:binding];
+}
+
+- (void)setBoundValue:(id)value
+{
+    [self setStringValue:[value isKindOfClass:[NSString class]] ? value : @""];
+}
+
+/// The id given to the bound object; NO when refused.
+- (BOOL)commitEditing
+{
+    XFDFieldBinding *binding = _bindings[NSValueBinding];
+    return binding == nil || [binding commitValue:[self stringValue]];
+}
+
+/// Editing ends only once the bound object has taken the id.
+- (BOOL)control:(NSControl *)control textShouldEndEditing:(NSText *)text
+{
+    (void)control;
+    (void)text;
+    return [self commitEditing];
+}
+
 #pragma mark editing
 
 - (void)sendAction
@@ -196,7 +252,9 @@ static void XFDCollectIDs(XFXMLElement *element, NSSet *localNames, NSMutableArr
 {
     (void)sender;
     [self validate];
-    [self sendAction];
+    if ([self commitEditing]) {
+        [self sendAction];
+    }
 }
 
 - (void)comboWillPopUp:(NSNotification *)note
@@ -217,7 +275,9 @@ static void XFDCollectIDs(XFXMLElement *element, NSSet *localNames, NSMutableArr
     id picked = [self.combo itemObjectValueAtIndex:index];
     [self.combo setStringValue:[picked description] ?: @""];
     [self validate];
-    [self sendAction];
+    if ([self commitEditing]) {
+        [self sendAction];
+    }
 }
 
 @end

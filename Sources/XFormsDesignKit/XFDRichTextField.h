@@ -72,4 +72,9 @@ XFORMSDESIGNKIT_EXPORT NSString *XFDDetokenizeFragment(NSString *fragment);
 
 - (void)setEnabled:(BOOL)enabled;
 
+/// Bound (value, enabled), it shows the bound value and gives it back
+/// when its editing ends, as a control does (XFDFieldBinding.h); this
+/// gives it now. NO when the bound object refuses it.
+- (BOOL)commitEditing;
+
 @end

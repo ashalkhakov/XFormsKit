@@ -1,10 +1,11 @@
 /* The Attributes inspector (XFDAttributesInspector.xib): the page for
-   the selection's kind, filled from it, and every change in a field
-   applied to it (one undoable change per field).
+   the selection's kind, showing the selection's editor; its fields are
+   bound to it, so every change in a field is one undoable change.
    Copyright (c) 2026 the XFormsKit contributors. LGPL 2.1. */
 #pragma once
 #import "XFDPartViewController.h"
 #import "XFDInspectorPages.h"
+#import "XFDActionPage.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -36,9 +37,6 @@ typedef NS_ENUM(NSInteger, XFDInspectorPageKind) {
 + (XFDInspectorPageKind)pageKindForElement:(nullable XFXMLElement *)element;
 /// The page shown.
 - (XFDInspectorPage *)currentPage;
-
-/// The current page applied to the selection (every field's action).
-- (IBAction)inspectorChanged:(nullable id)sender;
 
 @end
 

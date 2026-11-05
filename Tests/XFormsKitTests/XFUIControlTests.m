@@ -1333,91 +1333,6 @@
     XCTAssertNil([xp evaluateInContext:ctx error:&error]);
 }
 
-// The drag-reorder command: one undoable move preserving element
-// identity, with the same-parent index arithmetic and the zone guards.
-- (void)testHostEditMove
-{
-    NSString *xml =
-        @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
-        @"      xmlns:xf=\"http://www.w3.org/2002/xforms\">"
-        @"<head><xf:model id=\"m\">"
-        @"<xf:instance><data xmlns=\"\"><one/><two/><three/></data></xf:instance>"
-        @"</xf:model></head>"
-        @"<body>"
-        @"<xf:input id=\"a\" ref=\"one\"><xf:label>A</xf:label></xf:input>"
-        @"<xf:input id=\"b\" ref=\"two\"><xf:label>B</xf:label></xf:input>"
-        @"<xf:group id=\"g\"><xf:label>G</xf:label>"
-        @"<xf:input id=\"c\" ref=\"three\"><xf:label>C</xf:label></xf:input>"
-        @"</xf:group>"
-        @"</body></html>";
-    NSError *error = nil;
-    XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
-    XCTAssertNotNil(p, @"%@", error);
-    XFXMLElement * (^byID)(NSString *) = ^XFXMLElement *(NSString *ident) {
-        return [XFXML elementWithID:ident inNode:p.hostDocument];
-    };
-    XFXMLElement *a = byID(@"a"), *b = byID(@"b"), *g = byID(@"g");
-    XFXMLElement *body = (XFXMLElement *)[a parent];
-    NSArray * (^order)(XFXMLElement *) = ^NSArray *(XFXMLElement *parent) {
-        NSMutableArray *ids = [NSMutableArray array];
-        for (XFXMLNode *c in [parent children]) {
-            if ([c kind] == XFXMLElementKind) {
-                [ids addObject:[[(XFXMLElement *)c attributeForName:@"id"] stringValue] ?: @"?"];
-            }
-        }
-        return ids;
-    };
-    NSUndoManager *undo = [[NSUndoManager alloc] init];
-    [undo setGroupsByEvent:NO];
-    XFHostEdit *edit = [XFHostEdit editWithProcessor:p undoManager:undo];
-    NSUInteger controls = p.controls.count;
-
-    // append within the same parent (index arithmetic across the detach)
-    [undo beginUndoGrouping];
-    XCTAssertTrue([edit moveElement:a underParent:body atIndex:-1]);
-    [undo endUndoGrouping];
-    XCTAssertEqualObjects(order(body), (@[ @"b", @"g", @"a" ]));
-    XCTAssertEqual(p.controls.count, controls);
-    XCTAssertNotNil([p controlForElement:a], @"the moved element stays attached");
-
-    // back up before b (same parent, moving toward the front)
-    [undo beginUndoGrouping];
-    XCTAssertTrue([edit moveElement:a underParent:body atIndex:(NSInteger)[b index]]);
-    [undo endUndoGrouping];
-    XCTAssertEqualObjects(order(body), (@[ @"a", @"b", @"g" ]));
-
-    // across parents: into the group
-    [undo beginUndoGrouping];
-    XCTAssertTrue([edit moveElement:b underParent:g atIndex:-1]);
-    [undo endUndoGrouping];
-    XCTAssertEqualObjects(order(body), (@[ @"a", @"g" ]));
-    XCTAssertEqualObjects(order(g), (@[ @"?", @"c", @"b" ]));   // "?" = the label
-    XCTAssertNotNil([p controlForElement:b]);
-
-    // refusals change nothing: into itself / its own subtree, a zone that
-    // rejects the kind, and dropping right where it already is
-    XCTAssertFalse([edit moveElement:g underParent:g atIndex:-1]);
-    XCTAssertFalse([edit moveElement:g underParent:(XFXMLElement *)[byID(@"c") parent] atIndex:0]);
-    XCTAssertFalse([edit moveElement:a underParent:(XFXMLElement *)p.model.element atIndex:-1]);
-    XCTAssertFalse([edit moveElement:a underParent:body atIndex:(NSInteger)[a index]]);
-    XCTAssertEqualObjects(order(body), (@[ @"a", @"g" ]));
-
-    // the undo chain walks every move back
-    [undo undo];
-    XCTAssertEqualObjects(order(body), (@[ @"a", @"b", @"g" ]));
-    XCTAssertEqualObjects(order(g), (@[ @"?", @"c" ]));
-    [undo undo];
-    XCTAssertEqualObjects(order(body), (@[ @"b", @"g", @"a" ]));
-    [undo undo];
-    XCTAssertEqualObjects(order(body), (@[ @"a", @"b", @"g" ]));
-    XCTAssertEqual(p.controls.count, controls);
-
-    // and the moved-again layout still resolves for the form view
-    [NSApplication sharedApplication];
-    XFFormView *fv = [[XFFormView alloc] initWithProcessor:p];
-    XCTAssertFalse(NSIsEmptyRect([fv layoutFrameOfControl:[p controlForElement:a]]));
-}
-
 // A full-appearance select1 draws ONE caption above its radio buttons —
 // the per-item widgets share the control, so a caption per widget would
 // repeat the label once for every item.
@@ -1511,158 +1426,6 @@
     XCTAssertNil([fv controlAtPoint:NSMakePoint(0.5, 0.5)]);
 }
 
-// The designer's command layer: insert / delete / attribute / support-child
-// edits notify the processor in place and undo losslessly (element identity
-// survives the round trip).
-- (void)testHostEditCommands
-{
-    NSString *xml =
-        @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
-        @"      xmlns:xf=\"http://www.w3.org/2002/xforms\">"
-        @"<head><xf:model id=\"m\">"
-        @"<xf:instance><data xmlns=\"\"><name>Ada</name><age>7</age></data></xf:instance>"
-        @"</xf:model></head>"
-        @"<body><xf:input id=\"taken-1\" ref=\"name\"><xf:label>Name</xf:label></xf:input></body>"
-        @"</html>";
-    NSError *error = nil;
-    XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
-    XCTAssertNotNil(p, @"%@", error);
-    XFXMLElement *body = [XFXML childElementWithLocalName:@"body"
-                                             namespaceURI:XFXHTMLNamespaceURI
-                                                ofElement:[p.hostDocument rootElement]];
-    XCTAssertNotNil(body);
-    XFXMLElement *modelEl = (XFXMLElement *)p.model.element;
-
-    NSUndoManager *undo = [[NSUndoManager alloc] init];
-    [undo setGroupsByEvent:NO];
-    XFHostEdit *edit = [XFHostEdit editWithProcessor:p undoManager:undo];
-    __block NSUInteger changes = 0;
-    edit.changedHandler = ^(XFXMLElement *e) { (void)e; changes++; };
-
-    // insertion zones
-    XCTAssertTrue([[XFHostEdit insertableNamesUnderParent:body] containsObject:@"input"]);
-    NSArray *modelNames = [XFHostEdit insertableNamesUnderParent:modelEl];
-    XCTAssertEqualObjects([modelNames subarrayWithRange:NSMakeRange(0, 3)],
-                          (@[ @"instance", @"bind", @"submission" ]));
-    XCTAssertTrue([modelNames containsObject:@"action"]);   // model event handlers
-    XCTAssertFalse([XFHostEdit canInsertElementNamed:@"input" underParent:modelEl]);
-    XFXMLElement *data = (XFXMLElement *)[[p.defaultInstance.document rootElement] copy];
-    XCTAssertEqual([XFHostEdit insertableNamesUnderParent:data].count, (NSUInteger)0);
-
-    // unique ids skip taken ones
-    XCTAssertEqualObjects([edit uniqueIdentifierWithPrefix:@"taken"], @"taken-2");
-
-    // insert an input under the body
-    NSUInteger before = p.controls.count;
-    [undo beginUndoGrouping];
-    XFXMLElement *input = [edit insertElementNamed:@"input" underParent:body atIndex:-1 error:&error];
-    [undo endUndoGrouping];
-    XCTAssertNotNil(input, @"%@", error);
-    XCTAssertEqual(p.controls.count, before + 1);
-    XCTAssertNotNil([p controlForElement:input]);
-    XCTAssertEqualObjects([[input attributeForName:@"id"] stringValue], @"input-1");
-    XCTAssertEqualObjects([edit supportChildText:@"label" onElement:input], @"Input");
-    XCTAssertEqual(changes, (NSUInteger)1);
-
-    // attribute edit + undo
-    [undo beginUndoGrouping];
-    [edit setAttribute:@"ref" value:@"age" onElement:input];
-    [undo endUndoGrouping];
-    XCTAssertEqualObjects([[input attributeForName:@"ref"] stringValue], @"age");
-    [undo undo];
-    XCTAssertNil([input attributeForName:@"ref"]);
-    [undo redo];
-    XCTAssertEqualObjects([[input attributeForName:@"ref"] stringValue], @"age");
-
-    // support child edit + undo
-    [undo beginUndoGrouping];
-    [edit setSupportChild:@"hint" text:@"Years" onElement:input];
-    [undo endUndoGrouping];
-    XCTAssertEqualObjects([edit supportChildText:@"hint" onElement:input], @"Years");
-    [undo undo];
-    XCTAssertNil([edit supportChildText:@"hint" onElement:input]);
-
-    // rich support child: inline markup + xf:output (XForms 1.1 label
-    // content), read back as XML, flattened text still available, undo
-    // restores the plain text version
-    [undo beginUndoGrouping];
-    [edit setSupportChild:@"hint" text:@"Years" onElement:input];
-    [undo endUndoGrouping];
-    NSError *richErr = nil;
-    XCTAssertFalse([edit setSupportChild:@"hint" contentXML:@"<broken"
-                               onElement:input error:&richErr]);
-    XCTAssertNotNil(richErr);
-    XCTAssertEqualObjects([edit supportChildText:@"hint" onElement:input], @"Years");
-    [undo beginUndoGrouping];
-    XCTAssertTrue([edit setSupportChild:@"hint"
-                             contentXML:@"Age in <strong>years</strong>: <xf:output value=\"'7'\"/>"
-                              onElement:input error:&error], @"%@", error);
-    [undo endUndoGrouping];
-    NSString *hintXML = [edit supportChildXML:@"hint" onElement:input];
-    XCTAssertTrue([hintXML containsString:@"Age in <strong>years</strong>: "], @"%@", hintXML);
-    XCTAssertTrue([hintXML containsString:@"output"], @"%@", hintXML);
-    XCTAssertFalse([hintXML containsString:@"xmlns"], @"%@", hintXML);
-    XCTAssertTrue([[p.hostDocument XMLString] containsString:@"<strong>years</strong>"]);
-    [undo undo];
-    XCTAssertEqualObjects([edit supportChildText:@"hint" onElement:input], @"Years");
-    XCTAssertEqualObjects([edit supportChildXML:@"hint" onElement:input], @"Years");
-    // a rich label lands as the FIRST child even when created fresh
-    [undo beginUndoGrouping];
-    [edit setSupportChild:@"hint" text:nil onElement:input];
-    [edit setSupportChild:@"label" text:nil onElement:input];
-    XCTAssertTrue([edit setSupportChild:@"label" contentXML:@"<em>Nom</em>"
-                              onElement:input error:&error], @"%@", error);
-    [undo endUndoGrouping];
-    XCTAssertEqualObjects([(XFXMLElement *)[input childAtIndex:0] localName], @"label");
-    XCTAssertEqualObjects([edit supportChildText:@"label" onElement:input], @"Nom");
-    [undo beginUndoGrouping];
-    [edit setSupportChild:@"label" text:@"Input" onElement:input];
-    [undo endUndoGrouping];
-
-    // delete + undo brings back the SAME element at the same place
-    NSInteger index = (NSInteger)[input index];
-    [undo beginUndoGrouping];
-    [edit deleteElement:input];
-    [undo endUndoGrouping];
-    XCTAssertEqual(p.controls.count, before);
-    XCTAssertNil([p controlForElement:input]);
-    [undo undo];
-    XCTAssertEqual(p.controls.count, before + 1);
-    XCTAssertEqual((NSInteger)[input index], index);
-    XCTAssertNotNil([p controlForElement:input]);
-    XCTAssertEqual([input parent], body);
-
-    // a bind inserted under the model reaches the model
-    [undo beginUndoGrouping];
-    XFXMLElement *bind = [edit insertElementNamed:@"bind" underParent:modelEl atIndex:-1 error:&error];
-    [undo endUndoGrouping];
-    XCTAssertNotNil(bind, @"%@", error);
-    [undo beginUndoGrouping];
-    [edit setAttribute:@"nodeset" value:@"age" onElement:bind];
-    [edit setAttribute:@"required" value:@"true()" onElement:bind];
-    [undo endUndoGrouping];
-    XCTAssertTrue([[p.hostDocument XMLString] containsString:@"required=\"true()\""]);
-
-    // instance-data replacement re-adopts the instance; undo restores it
-    XFXMLElement *instanceEl = [XFXML childElementWithLocalName:@"instance"
-                                                   namespaceURI:XFXFormsNamespaceURI
-                                                      ofElement:modelEl];
-    XCTAssertNotNil(instanceEl);
-    NSError *bad = nil;
-    XCTAssertFalse([edit setContentXML:@"<broken" onElement:instanceEl error:&bad]);
-    XCTAssertNotNil(bad);
-    [undo beginUndoGrouping];
-    XCTAssertTrue([edit setContentXML:@"<data xmlns=\"\"><name>Zed</name><city/></data>"
-                            onElement:instanceEl error:&error], @"%@", error);
-    [undo endUndoGrouping];
-    XFXMLElement *root = [[p defaultInstance] documentElement];
-    XCTAssertEqualObjects([[root childAtIndex:0] stringValue], @"Zed");
-    XCTAssertEqual([root childCount], (NSUInteger)2);
-    [undo undo];
-    root = [[p defaultInstance] documentElement];
-    XCTAssertEqualObjects([[root childAtIndex:0] stringValue], @"Ada");
-}
-
 // The AST's structure/rendering API (the designer's picker is built on
 // it): kinds, canonical source, precedence-preserving parentheses, and
 // subexpression replacement by structure path.
@@ -1737,200 +1500,6 @@
     XCTAssertEqualObjects([star2 lastObject][@"kind"], @"name");
     // half-typed expressions still tokenize (no parse required)
     XCTAssertTrue([XFXPath highlightTokensForString:@"concat('a"].count > 0);
-}
-
-// Itemset authoring: insertable under selects with a compilable starter,
-// and the child-attribute command (label/@ref, value/@ref) round-trips.
-- (void)testItemsetAuthoring
-{
-    NSString *xml =
-        @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
-        @"      xmlns:xf=\"http://www.w3.org/2002/xforms\">"
-        @"<head><xf:model id=\"m\">"
-        @"<xf:instance><data xmlns=\"\"><color>red</color>"
-        @"<option>red</option><option>blue</option></data></xf:instance>"
-        @"</xf:model></head>"
-        @"<body><xf:select1 id=\"s\" ref=\"color\"><xf:label>Color</xf:label>"
-        @"<xf:item><xf:label>None</xf:label><xf:value/></xf:item>"
-        @"</xf:select1></body>"
-        @"</html>";
-    NSError *error = nil;
-    XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
-    XCTAssertNotNil(p, @"%@", error);
-    XFXMLElement *select = nil;
-    for (XFControl *c in p.controls) {
-        if ([[c.element localName] isEqualToString:@"select1"]) {
-            select = c.element;
-        }
-    }
-    XCTAssertNotNil(select);
-    XCTAssertTrue([[XFHostEdit insertableNamesUnderParent:select] containsObject:@"itemset"]);
-
-    NSUndoManager *undo = [[NSUndoManager alloc] init];
-    [undo setGroupsByEvent:NO];
-    XFHostEdit *edit = [XFHostEdit editWithProcessor:p undoManager:undo];
-    [undo beginUndoGrouping];
-    XFXMLElement *itemset = [edit insertElementNamed:@"itemset" underParent:select
-                                             atIndex:-1 error:&error];
-    [undo endUndoGrouping];
-    XCTAssertNotNil(itemset, @"%@", error);
-    XCTAssertEqualObjects([[itemset attributeForName:@"nodeset"] stringValue], @".");
-    XCTAssertEqualObjects([edit supportChildAttribute:@"ref" child:@"label"
-                                            onElement:itemset], @".");
-
-    [undo beginUndoGrouping];
-    [edit setAttribute:@"nodeset" value:@"../option" onElement:itemset];
-    [edit setSupportChildAttribute:@"ref" child:@"value" value:@"." onElement:itemset];
-    [edit setSupportChildAttribute:@"ref" child:@"label" value:@"." onElement:itemset];
-    [undo endUndoGrouping];
-    XCTAssertTrue([[p.hostDocument XMLString] containsString:@"nodeset=\"../option\""]);
-    // the select's items now include the two option nodes
-    XFSelectControl *sc = (XFSelectControl *)[p controlForElement:select];
-    XCTAssertGreaterThanOrEqual((NSInteger)sc.items.count, 3);
-
-    [undo undo];
-    XCTAssertEqualObjects([edit supportChildAttribute:@"ref" child:@"label"
-                                            onElement:itemset], @".");
-    [undo undo];
-    XCTAssertNil([itemset parent]);
-}
-
-// Action authoring: insertion zones offer the action module, inserts get
-// an ev:event starter, attribute edits recompile the handler, delete
-// unhooks it (the listener would otherwise keep firing).
-- (void)testActionAuthoring
-{
-    NSString *xml =
-        @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
-        @"      xmlns:xf=\"http://www.w3.org/2002/xforms\""
-        @"      xmlns:ev=\"http://www.w3.org/2001/xml-events\">"
-        @"<head><xf:model id=\"m\">"
-        @"<xf:instance><data xmlns=\"\"><name>Ada</name></data></xf:instance>"
-        @"</xf:model></head>"
-        @"<body><xf:trigger id=\"t\"><xf:label>Go</xf:label></xf:trigger></body>"
-        @"</html>";
-    NSError *error = nil;
-    XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
-    XCTAssertNotNil(p, @"%@", error);
-    XFXMLElement *trigger = nil;
-    for (XFControl *c in p.controls) {
-        if ([[c.element localName] isEqualToString:@"trigger"]) {
-            trigger = c.element;
-        }
-    }
-    XCTAssertNotNil(trigger);
-
-    NSUndoManager *undo = [[NSUndoManager alloc] init];
-    [undo setGroupsByEvent:NO];
-    XFHostEdit *edit = [XFHostEdit editWithProcessor:p undoManager:undo];
-
-    // zones: the action module hangs off controls, models, submissions,
-    // and nests inside xf:action — never inside instance data
-    XCTAssertTrue([[XFHostEdit insertableNamesUnderParent:trigger] containsObject:@"setvalue"]);
-    XFXMLElement *modelEl = (XFXMLElement *)p.model.element;
-    XCTAssertTrue([[XFHostEdit insertableNamesUnderParent:modelEl] containsObject:@"action"]);
-    XFXMLElement *data = (XFXMLElement *)[[p.defaultInstance.document rootElement] copy];
-    XCTAssertFalse([XFHostEdit canInsertElementNamed:@"setvalue" underParent:data]);
-
-    // insert under the trigger: ev:event starter + live compilation
-    NSUInteger actionsBefore = p.actions.count;
-    [undo beginUndoGrouping];
-    XFXMLElement *setvalue = [edit insertElementNamed:@"setvalue" underParent:trigger
-                                              atIndex:-1 error:&error];
-    [undo endUndoGrouping];
-    XCTAssertNotNil(setvalue, @"%@", error);
-    XCTAssertEqualObjects([[setvalue attributeForName:@"ev:event"] stringValue], @"DOMActivate");
-    XCTAssertEqual(p.actions.count, actionsBefore + 1);
-    [undo beginUndoGrouping];
-    [edit setAttribute:@"ref" value:@"name" onElement:setvalue];
-    [edit setAttribute:@"value" value:@"'Zed'" onElement:setvalue];
-    [undo endUndoGrouping];
-    XCTAssertEqual(p.actions.count, actionsBefore + 1);   // recompiled, not duplicated
-
-    // the handler actually fires: activating the trigger sets the node
-    XFTriggerControl *triggerControl = (XFTriggerControl *)[p controlForElement:trigger];
-    [triggerControl activate];
-    XCTAssertEqualObjects([[[p defaultInstance] documentElement] stringValue], @"Zed");
-
-    // inline content command: message-style mixed content on the element
-    [undo beginUndoGrouping];
-    XFXMLElement *message = [edit insertElementNamed:@"message" underParent:trigger
-                                             atIndex:-1 error:&error];
-    XCTAssertNotNil(message, @"%@", error);
-    XCTAssertTrue([edit setInlineContentXML:@"Saved <strong>OK</strong>"
-                                  onElement:message error:&error], @"%@", error);
-    [undo endUndoGrouping];
-    XCTAssertTrue([[edit inlineContentXMLOfElement:message] containsString:@"<strong>OK</strong>"]);
-    [undo undo];
-    XCTAssertNil([message parent]);
-
-    // delete unhooks the compiled handler and its listener
-    [undo beginUndoGrouping];
-    [edit deleteElement:setvalue];
-    [undo endUndoGrouping];
-    XCTAssertEqual(p.actions.count, actionsBefore);
-    [[[p defaultInstance] documentElement] setStringValue:@"Ada"];
-    [triggerControl activate];
-    XCTAssertEqualObjects([[[p defaultInstance] documentElement] stringValue], @"Ada");
-
-    // ev:observer redirects a handler to listen elsewhere (XML Events
-    // attribute module): a setvalue living under the MODEL but observing
-    // the trigger fires when the trigger activates — authored live, so
-    // the attribute change must reinstall the listener on the new observer.
-    // (ref="." — the earlier setStringValue on the root ate the <name>
-    // child, so the root itself is the only stable target left.)
-    [undo beginUndoGrouping];
-    XFXMLElement *remote = [edit insertElementNamed:@"setvalue" underParent:modelEl
-                                            atIndex:-1 error:&error];
-    XCTAssertNotNil(remote, @"%@", error);
-    [edit setAttribute:@"ref" value:@"." onElement:remote];
-    [edit setAttribute:@"value" value:@"'Observed'" onElement:remote];
-    [edit setAttribute:@"ev:event" value:@"DOMActivate" onElement:remote];
-    [edit setAttribute:@"ev:observer" value:@"t" onElement:remote];
-    [undo endUndoGrouping];
-    [triggerControl activate];
-    XCTAssertEqualObjects([[[p defaultInstance] documentElement] stringValue], @"Observed");
-    [undo beginUndoGrouping];
-    [edit deleteElement:remote];
-    [undo endUndoGrouping];
-    XCTAssertEqual(p.actions.count, actionsBefore);
-    [[[p defaultInstance] documentElement] setStringValue:@"Ada"];
-    [triggerControl activate];
-    XCTAssertEqualObjects([[[p defaultInstance] documentElement] stringValue], @"Ada");
-}
-
-// The node picker's step builder: relative paths with ../, positional
-// predicates only where needed, attributes, and the below-root tail for
-// instance('id')/… expressions.
-- (void)testXPathStepBuilding
-{
-    NSString *xml =
-        @"<order xmlns=\"\">"
-        @"<customer><name>Ada</name><city>Kyzylorda</city></customer>"
-        @"<line qty=\"2\"><sku>A-1</sku></line>"
-        @"<line qty=\"5\"><sku>B-2</sku></line>"
-        @"</order>";
-    NSError *error = nil;
-    XFXMLDocument *doc = [[XFXMLDocument alloc] initWithXMLString:xml options:0 error:&error];
-    XCTAssertNotNil(doc, @"%@", error);
-    XFXMLElement *order = [doc rootElement];
-    XFXMLElement *customer = (XFXMLElement *)[order childAtIndex:0];
-    XFXMLElement *name = (XFXMLElement *)[customer childAtIndex:0];
-    XFXMLElement *line2 = (XFXMLElement *)[order childAtIndex:2];
-    XFXMLElement *sku2 = (XFXMLElement *)[line2 childAtIndex:0];
-    XFXMLNode *qty2 = [line2 attributeForName:@"qty"];
-
-    XCTAssertEqualObjects([XFHostEdit pathFromNode:order toNode:order], @".");
-    XCTAssertEqualObjects([XFHostEdit pathFromNode:order toNode:name], @"customer/name");
-    XCTAssertEqualObjects([XFHostEdit pathFromNode:order toNode:sku2], @"line[2]/sku");
-    XCTAssertEqualObjects([XFHostEdit pathFromNode:name toNode:sku2], @"../../line[2]/sku");
-    XCTAssertEqualObjects([XFHostEdit pathFromNode:customer toNode:qty2], @"../line[2]/@qty");
-    XCTAssertEqualObjects([XFHostEdit pathFromNode:sku2 toNode:customer], @"../../customer");
-    XCTAssertEqualObjects([XFHostEdit stepsBelowRootToNode:order], @"");
-    XCTAssertEqualObjects([XFHostEdit stepsBelowRootToNode:sku2], @"line[2]/sku");
-    // a node from another document has no relative path
-    XFXMLDocument *other = [[XFXMLDocument alloc] initWithXMLString:@"<x/>" options:0 error:NULL];
-    XCTAssertNil([XFHostEdit pathFromNode:order toNode:[other rootElement]]);
 }
 
 
@@ -2151,6 +1720,34 @@
         }
     }
     XCTAssertNil(box, @"the box should be released once the event is over");
+}
+
+// A control moved by XFHostEdit still has a frame in the form view (the
+// moves themselves are XFHostEditTests').
+- (void)testAMovedControlStillLaysOut
+{
+    NSString *xml =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
+        @"      xmlns:xf=\"http://www.w3.org/2002/xforms\">"
+        @"<head><xf:model id=\"m\">"
+        @"<xf:instance><data xmlns=\"\"><one/><two/></data></xf:instance>"
+        @"</xf:model></head>"
+        @"<body>"
+        @"<xf:input id=\"a\" ref=\"one\"><xf:label>A</xf:label></xf:input>"
+        @"<xf:group id=\"g\"><xf:label>G</xf:label>"
+        @"<xf:input id=\"b\" ref=\"two\"><xf:label>B</xf:label></xf:input>"
+        @"</xf:group>"
+        @"</body></html>";
+    NSError *error = nil;
+    XFProcessor *p = [XFProcessor processorWithXMLString:xml error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFXMLElement *a = [XFXML elementWithID:@"a" inNode:p.hostDocument];
+    XFXMLElement *g = [XFXML elementWithID:@"g" inNode:p.hostDocument];
+    XFHostEdit *edit = [XFHostEdit editWithProcessor:p undoManager:[[NSUndoManager alloc] init]];
+    XCTAssertTrue([edit moveElement:a underParent:g atIndex:-1]);
+    [NSApplication sharedApplication];
+    XFFormView *fv = [[XFFormView alloc] initWithProcessor:p];
+    XCTAssertFalse(NSIsEmptyRect([fv layoutFrameOfControl:[p controlForElement:a]]));
 }
 
 @end

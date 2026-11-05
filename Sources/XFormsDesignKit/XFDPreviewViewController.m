@@ -6,13 +6,14 @@
 
 @interface XFDPreviewViewController ()
 @property (nonatomic, strong, readwrite) XFFormView *formView;
-@property (nonatomic, strong, readwrite) XFDDesignOverlay *designOverlay;
-@property (nonatomic, strong, readwrite) NSTextView *sourceView;
+@property (nonatomic, strong, readwrite) IBOutlet XFDDesignOverlay *designOverlay;
+@property (nonatomic, strong, readwrite) IBOutlet NSTextView *sourceView;
+/// The live preview's scroll view; the form view, made for the processor,
+/// is its document.
+@property (nonatomic, strong) IBOutlet NSScrollView *previewScrollView;
 @end
 
-@implementation XFDPreviewViewController {
-    NSScrollView *_previewScroll;
-}
+@implementation XFDPreviewViewController
 
 - (instancetype)initWithFormEditor:(XFDFormEditor *)formEditor nibName:(NSString *)nibName
 {
@@ -27,39 +28,9 @@
 {
     [self.modeControl setSelectedSegment:0];
 
-    // the live preview and the source text view are code: the XIB keeps
-    // their hosts
-    _previewScroll = [[NSScrollView alloc] initWithFrame:[self.previewHost bounds]];
-    [_previewScroll setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
-    [_previewScroll setHasVerticalScroller:YES];
-    [_previewScroll setHasHorizontalScroller:YES];
-    [_previewScroll setBorderType:NSNoBorder];
-    [self.previewHost addSubview:_previewScroll];
-
-    // the design overlay: a sibling ABOVE the scroll view, hidden until
-    // the Design checkbox turns the element picker on
-    self.designOverlay = [[XFDDesignOverlay alloc] initWithFrame:[self.previewHost bounds]];
-    [self.designOverlay setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
-    self.designOverlay.delegate = self;
-    self.designOverlay.scrollView = _previewScroll;
-    [self.previewHost addSubview:self.designOverlay];
-
-    NSScrollView *sourceScroll = [[NSScrollView alloc] initWithFrame:[self.sourceHost bounds]];
-    [sourceScroll setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
-    [sourceScroll setHasVerticalScroller:YES];
-    [sourceScroll setBorderType:NSNoBorder];
-    NSTextView *text = [[NSTextView alloc] initWithFrame:
-        NSMakeRect(0, 0, [sourceScroll contentSize].width, [sourceScroll contentSize].height)];
-    [text setFont:[NSFont userFixedPitchFontOfSize:11]];
-    [text setRichText:NO];
-    [text setAllowsUndo:YES];
-    [text setVerticallyResizable:YES];
-    [text setHorizontallyResizable:NO];
-    [text setAutoresizingMask:NSViewWidthSizable];
-    [[text textContainer] setWidthTracksTextView:YES];
-    [sourceScroll setDocumentView:text];
-    [self.sourceHost addSubview:sourceScroll];
-    self.sourceView = text;
+    // no font the XIB could name is fixed-pitch on both toolkits
+    [self.sourceView setFont:[NSFont userFixedPitchFontOfSize:11]];
+    [[self.sourceView textContainer] setWidthTracksTextView:YES];
 
     [self buildFormView];
     [self showControls];
@@ -102,7 +73,7 @@
 - (void)buildFormView
 {
     self.formView = [[XFFormView alloc] initWithProcessor:self.formEditor.processor];
-    [_previewScroll setDocumentView:self.formView];
+    [self.previewScrollView setDocumentView:self.formView];
 }
 
 - (void)refreshSourceText

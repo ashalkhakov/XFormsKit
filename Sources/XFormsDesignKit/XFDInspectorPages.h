@@ -1,10 +1,12 @@
 /* The Attributes inspector's pages, one per kind of element: a control,
    a bind, a submission, an instance, an action, an item, an itemset, any
    other element. Each page is its fields (XFDAttributesInspector.xib's
-   tab view items, and a page object there with outlets to them): it fills
-   them from the selection's editor facade (XFDEditors) and applies them
-   to it, and it is what its XPath, rich text and IDREF fields ask for the
-   element, processor and context node they evaluate against.
+   tab view items, and a page object there with outlets to them), bound
+   in the XIB to its editor controller (an NSObjectController there) whose
+   content is the selection's editor (XFDEditors). The page is also what
+   its XPath, rich text and IDREF fields ask for the element, processor
+   and context node they evaluate against (their providers, XIB outlets).
+   The action page, whose rows depend on the action, is XFDActionPage.
    Copyright (c) 2026 the XFormsKit contributors. LGPL 2.1. */
 #pragma once
 #import <AppKit/AppKit.h>
@@ -21,25 +23,18 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong) IBOutlet NSView *view;
 @property (nonatomic, weak) IBOutlet XFDAttributesInspector *inspector;
+/// What the page's fields are bound to: `content.<key>` of the editor.
+@property (nonatomic, strong) IBOutlet NSObjectController *editorController;
 @property (nonatomic, weak, readonly, nullable) XFDFormEditor *formEditor;
 
-/// Its fields given their providers, targets and expectations, once the
-/// XIB is loaded.
-- (void)setUp;
-/// Its fields filled from the selection; applied to it.
-- (void)fill;
-- (void)apply;
-
-/// The fields of each kind it has (the defaults: none).
-- (NSArray<XFDXPathField *> *)xpathFields;
-- (NSArray<XFDRichTextField *> *)richTextFields;
-/// IDREF fields, each with the kind of id it takes.
-- (NSDictionary<NSString *, NSString *> *)idRefFieldKinds;
-
-/// A rich text row applied: rich content through the XML property (the
-/// markup kept), plain text through the text property — never the other
-/// way round, so a rich label is not flattened by the apply pass.
-- (void)applyRichField:(XFDRichTextField *)field name:(NSString *)name toEditor:(XFDElementEditor *)editor;
+/// The editor the page shows, its controller's content.
+@property (nonatomic, strong, readonly, nullable) XFDElementEditor *editor;
+/// `element` shown: a new editor for a new element, the same one told to
+/// reload for the same element (it changed); nil shows nothing.
+- (void)showElement:(nullable XFXMLElement *)element;
+/// The editor set: what the page does beyond its bindings (the defaults:
+/// nothing).
+- (void)editorDidChange;
 
 @end
 
@@ -88,14 +83,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (IBAction)editInstanceXML:(nullable id)sender;
 @end
 
-/// An action's rows are made for the action selected, from its kind's
-/// spec (XFDActionSpecs): `rows` is what is shown, each
-/// {attr, kind, view}.
-@interface XFDActionPage : XFDInspectorPage
-@property (nonatomic, strong) IBOutlet NSView *actionRowsHost;
-@property (nonatomic, copy, readonly) NSArray<NSDictionary *> *rows;
-@end
-
 @interface XFDItemPage : XFDInspectorPage
 @property (nonatomic, strong) IBOutlet XFDRichTextField *itemLabelField;
 @property (nonatomic, strong) IBOutlet NSTextField *itemValueField;
@@ -111,8 +98,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// Any other element; instance data offers a control bound to it.
 @interface XFDElementPage : XFDInspectorPage
 @property (nonatomic, strong) IBOutlet NSButton *hostNewControlButton;
-/// A menu of control kinds; the one chosen made, bound to the selection.
+/// The kinds of control it offers (its items' titles), from the XIB.
+@property (nonatomic, strong) IBOutlet NSMenu *controlKindMenu;
+/// The kind menu shown; the one chosen made, bound to the selection.
 - (IBAction)elementCreateBoundControl:(nullable id)sender;
+/// A kind menu item chosen: a control of its title's kind made.
+- (IBAction)boundControlKindPicked:(nullable id)sender;
 /// A control of `kind` bound to the selected instance data.
 - (void)createBoundControlOfKind:(NSString *)kind;
 @end

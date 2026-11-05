@@ -100,6 +100,11 @@ static inline void XFDBeep(void)
 /// Recompile the current text (call after the validation context moved).
 - (void)validate;
 
+/// Bound (value, enabled), it shows the bound value and gives it back
+/// when its editing ends, as a control does (XFDFieldBinding.h); this
+/// gives it now. NO when the bound object refuses it.
+- (BOOL)commitEditing;
+
 /// The node-picker modal itself, for other components that need a path
 /// chosen the same way (the rich text field's Insert Output). Returns the
 /// chosen expression, nil on cancel.
