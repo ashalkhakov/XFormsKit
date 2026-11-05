@@ -1,0 +1,11 @@
+{
+  "name": "xforms",
+  "publisher": "ashalkhakov",
+  "displayName": "XForms",
+  "description": "XHTML+XForms forms (.xhtml) edited with XFormsDesigner's designer: the form running live, design mode, the outline, the Identity, Attributes and Events inspectors, the library of controls, the events console",
+  "version": "0.0.0",
+  "license": "LGPL-2.1-only",
+  "repository": "https://github.com/ashalkhakov/XFormsKit",
+  "engines": { "udcode": "^0.19.0" },
+  "main": "./XForms.bundle"
+}

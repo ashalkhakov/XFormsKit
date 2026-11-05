@@ -5,6 +5,9 @@ A native XForms 1.1 engine in Objective-C for macOS, iOS and Linux
 form. `Sources/XFormsKit/` is the engine, `Sources/XFormsDesignKit/` the
 designer's editor as a framework that apps host (`XFormsDesignKit.h`),
 `Apps/` holds the viewer, designer, launcher and the mobile shell.
+The designer also runs in UDCode as its XForms extension (`UDCodeExtension/`,
+[docs/UDCODE.md](docs/UDCODE.md)), its parts (XFDFormEditor's view
+controllers) in UDCode's panes, the form its document's text.
 
 ## GNUstep patches live elsewhere
 

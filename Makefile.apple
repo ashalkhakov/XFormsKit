@@ -2,10 +2,15 @@
 # macos.yml and ios.yml run the same):
 #
 #   make -f Makefile.apple            XFormsViewer and XFormsDesigner, universal
-#                                     (Release), with the frameworks they embed
+#                                     (Release), with the frameworks they embed;
+#                                     and, where .deps has UDCode's SDK, UDCode's
+#                                     XForms extension (XForms.bundle, which
+#                                     Scripts/udcx.sh packages)
 #   make -f Makefile.apple check      the sources checked (Scripts/check-sources.sh),
-#                                     the unit tests and the W3C XForms 1.1 suite
-#                                     (green since the port, so a gate)
+#                                     the unit tests, the designer's, the XForms
+#                                     extension's where it is built, and the W3C
+#                                     XForms 1.1 suite (green since the port, so a
+#                                     gate)
 #   make -f Makefile.apple install DESTDIR=<dir>       both apps, and
 #                                     XFormsKit.xcframework and
 #                                     XFormsDesignKit.xcframework (what an app
@@ -21,7 +26,8 @@
 #   make -f Makefile.apple ios-install DESTDIR=<dir>   <dir>/iphoneos and
 #                                     <dir>/iphonesimulator/XFormsMobile.app
 #
-# Sparkle's XCFramework is in .deps/, by the version .github/pins.env names
+# Sparkle's XCFramework is in .deps/, and UDCode's SDK (UDCodeKit,
+# UDPieceTable, LSPKit), by the versions .github/pins.env names
 # (gnustep-release-actions' scripts/deps.sh apple). GNUstep: GNUmakefile.
 
 BUILD = build
@@ -35,11 +41,14 @@ APPS = XFormsViewer XFormsDesigner
 # x86_64, made from the Release frameworks (WorkflowKit's apps pin them).
 FRAMEWORKS = XFormsKit XFormsDesignKit
 RELEASE = $(PRODUCTS)/Release
+# UDCode's XForms extension, where UDCode's SDK is in .deps (.github/pins.env's
+# UDCODEKIT_VERSION): its bundle, and its scheme's tests (XFUTests).
+EXTENSION = $(if $(wildcard .deps/UDCodeKit.xcframework),XForms)
 
 all:
 	@test -d .deps/Sparkle.xcframework \
 	  || { echo "no Sparkle in .deps: gnustep-release-actions' scripts/deps.sh apple fetches what .github/pins.env names"; exit 1; }
-	@for scheme in $(FRAMEWORKS) $(APPS); do \
+	@for scheme in $(FRAMEWORKS) $(APPS) $(EXTENSION); do \
 	  $(XCODEBUILD) -scheme $$scheme -configuration Release -destination 'generic/platform=macOS' build || exit 1; \
 	done
 	@for fw in $(FRAMEWORKS); do \
@@ -50,7 +59,7 @@ all:
 
 check:
 	Scripts/check-sources.sh
-	@for scheme in XFormsKit XFW3CTests; do \
+	@for scheme in XFormsKit XFormsDesignKit $(EXTENSION) XFW3CTests; do \
 	  rm -rf $(RESULTS)/$$scheme.xcresult; \
 	  $(XCODEBUILD) -scheme $$scheme -configuration Debug -destination 'platform=macOS' \
 	    -resultBundlePath $(RESULTS)/$$scheme.xcresult test || exit 1; \

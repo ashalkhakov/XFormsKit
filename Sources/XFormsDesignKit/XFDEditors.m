@@ -1,22 +1,22 @@
 #import "XFDEditors.h"
 #import <XFormsKit/XFXMLTypes.h>
-#import "XFDDocument.h"
+#import "XFDFormEditor.h"
 
 @interface XFDElementEditor ()
 @property (nonatomic, strong, readwrite) XFXMLElement *element;
-@property (nonatomic, strong, readwrite) XFDDocument *document;
+@property (nonatomic, strong, readwrite) XFDFormEditor *formEditor;
 @end
 
 @implementation XFDElementEditor
 
-+ (instancetype)editorForElement:(XFXMLElement *)element document:(XFDDocument *)document
++ (instancetype)editorForElement:(XFXMLElement *)element formEditor:(XFDFormEditor *)formEditor
 {
-    if (element == nil || document == nil) {
+    if (element == nil || formEditor == nil) {
         return nil;
     }
     XFDElementEditor *e = [[self alloc] init];
     e.element = element;
-    e.document = document;
+    e.formEditor = formEditor;
     return e;
 }
 
@@ -41,7 +41,7 @@
 
 - (void)setAttribute:(NSString *)name value:(NSString *)value
 {
-    [self.document.hostEdit setAttribute:name value:value onElement:self.element];
+    [self.formEditor.hostEdit setAttribute:name value:value onElement:self.element];
 }
 
 - (NSString *)identifier { return [self attribute:@"id"]; }
@@ -49,12 +49,12 @@
 
 - (NSString *)supportText:(NSString *)name
 {
-    return [self.document.hostEdit supportChildText:name onElement:self.element] ?: @"";
+    return [self.formEditor.hostEdit supportChildText:name onElement:self.element] ?: @"";
 }
 
 - (void)setSupportText:(NSString *)name to:(NSString *)text
 {
-    [self.document.hostEdit setSupportChild:name text:text onElement:self.element];
+    [self.formEditor.hostEdit setSupportChild:name text:text onElement:self.element];
 }
 
 - (NSString *)labelText { return [self supportText:@"label"]; }
@@ -68,12 +68,12 @@
 
 - (NSString *)supportXML:(NSString *)name
 {
-    return [self.document.hostEdit supportChildXML:name onElement:self.element];
+    return [self.formEditor.hostEdit supportChildXML:name onElement:self.element];
 }
 
 - (void)setSupportXML:(NSString *)name to:(NSString *)xml
 {
-    [self.document.hostEdit setSupportChild:name contentXML:xml
+    [self.formEditor.hostEdit setSupportChild:name contentXML:xml
                                   onElement:self.element error:NULL];
 }
 
@@ -219,13 +219,13 @@
 
 - (NSString *)childAttribute:(NSString *)attr of:(NSString *)child
 {
-    return [self.document.hostEdit supportChildAttribute:attr child:child
+    return [self.formEditor.hostEdit supportChildAttribute:attr child:child
                                                onElement:self.element] ?: @"";
 }
 
 - (void)setChildAttribute:(NSString *)attr of:(NSString *)child to:(NSString *)v
 {
-    [self.document.hostEdit setSupportChildAttribute:attr child:child
+    [self.formEditor.hostEdit setSupportChildAttribute:attr child:child
                                                value:v onElement:self.element];
 }
 

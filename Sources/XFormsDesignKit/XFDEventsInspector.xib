@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24127" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+    <dependencies>
+        <deployment identifier="macosx" />
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24127" />
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0" />
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="XFDEventsInspector">
+            <connections>
+                <outlet property="view" destination="xfd-a0-160" id="xfd-ev-001" />
+                <outlet property="table" destination="xfd-ev-tbl" id="xfd-ev-002" />
+                <outlet property="plusMinusControl" destination="xfd-ev-seg" id="xfd-ev-003" />
+                <outlet property="noteField" destination="xfd-ev-not" id="xfd-ev-004" />
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder" />
+        <customObject id="-3" userLabel="Application" customClass="NSObject" />
+        <customView id="xfd-a0-160" translatesAutoresizingMaskIntoConstraints="NO" userLabel="Events">
+            <rect key="frame" x="0.0" y="0.0" width="280" height="672" />
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+            <subviews>
+                <textField focusRingType="none" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-ev-not">
+                    <rect key="frame" x="8" y="638" width="264" height="28" />
+                    <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                    <textFieldCell key="cell" lineBreakMode="charWrapping" title="Handlers below listen on this element's events." id="xfd-ev-noc">
+                        <font key="font" metaFont="smallSystem" />
+                        <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                    </textFieldCell>
+                </textField>
+                <scrollView fixedFrame="YES" borderType="bezel" horizontalLineScroll="19" horizontalPageScroll="10" verticalLineScroll="19" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-ev-scr">
+                    <rect key="frame" x="8" y="40" width="264" height="592" />
+                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                    <clipView key="contentView" id="xfd-ev-clp">
+                        <rect key="frame" x="1" y="1" width="262" height="590" />
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                        <subviews>
+                            <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" multipleSelection="NO" autosaveColumns="NO" rowHeight="17" id="xfd-ev-tbl">
+                                <rect key="frame" x="0.0" y="0.0" width="262" height="590" />
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                <size key="intercellSpacing" width="3" height="2" />
+                                <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog" />
+                                <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog" />
+                                <tableColumns>
+                                    <tableColumn identifier="event" editable="NO" width="96" minWidth="40" maxWidth="1000" id="xfd-ev-c01">
+                                        <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" title="Event">
+                                            <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog" />
+                                        </tableHeaderCell>
+                                        <textFieldCell key="dataCell" lineBreakMode="truncatingTail" title="Text Cell" id="xfd-ev-d01">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </tableColumn>
+                                    <tableColumn identifier="action" editable="NO" width="64" minWidth="40" maxWidth="1000" id="xfd-ev-c02">
+                                        <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" title="Action">
+                                            <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog" />
+                                        </tableHeaderCell>
+                                        <textFieldCell key="dataCell" lineBreakMode="truncatingTail" title="Text Cell" id="xfd-ev-d02">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </tableColumn>
+                                    <tableColumn identifier="detail" editable="NO" width="90" minWidth="40" maxWidth="1000" id="xfd-ev-c03">
+                                        <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" title="Detail">
+                                            <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog" />
+                                        </tableHeaderCell>
+                                        <textFieldCell key="dataCell" lineBreakMode="truncatingTail" title="Text Cell" id="xfd-ev-d03">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                        <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" />
+                                    </tableColumn>
+                                </tableColumns>
+                                <connections>
+                                    <action trigger="doubleAction" selector="rowDoubleClicked:" target="-2" id="xfd-ev-dbl" />
+                                    <outlet property="dataSource" destination="-2" id="xfd-ev-ds" />
+                                    <outlet property="delegate" destination="-2" id="xfd-ev-dl" />
+                                </connections>
+                            </tableView>
+                        </subviews>
+                    </clipView>
+                    <scroller key="horizontalScroller" hidden="YES" verticalHuggingPriority="750" horizontal="YES" id="xfd-ev-hsc">
+                        <rect key="frame" x="1" y="575" width="262" height="16" />
+                        <autoresizingMask key="autoresizingMask" />
+                    </scroller>
+                    <scroller key="verticalScroller" hidden="YES" verticalHuggingPriority="750" horizontal="NO" id="xfd-ev-vsc">
+                        <rect key="frame" x="247" y="1" width="16" height="590" />
+                        <autoresizingMask key="autoresizingMask" />
+                    </scroller>
+                </scrollView>
+                <segmentedControl verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-ev-seg">
+                    <rect key="frame" x="8" y="8" width="68" height="24" />
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES" />
+                    <segmentedCell key="cell" borderStyle="border" alignment="left" style="rounded" trackingMode="momentary" id="xfd-ev-sgc">
+                        <font key="font" metaFont="system" />
+                        <segments>
+                            <segment label="+" width="30" />
+                            <segment label="−" width="30" tag="1" />
+                        </segments>
+                    </segmentedCell>
+                    <connections>
+                        <action selector="plusMinusClicked:" target="-2" id="xfd-ev-sga" />
+                    </connections>
+                </segmentedControl>
+            </subviews>
+        </customView>
+    </objects>
+</document>

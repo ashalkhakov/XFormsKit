@@ -1,0 +1,790 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24127" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+    <dependencies>
+        <deployment identifier="macosx" />
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24127" />
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0" />
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="XFDAttributesInspector">
+            <connections>
+                <outlet property="view" destination="xfd-a0-156" id="XFDAtt-065" />
+                <outlet property="kindTabView" destination="xfd-w0-ktb" id="XFDAtt-066" />
+                <outlet property="controlPage" destination="xfd-pg-control" id="XFDAtt-067" />
+                <outlet property="bindPage" destination="xfd-pg-bind" id="XFDAtt-068" />
+                <outlet property="submissionPage" destination="xfd-pg-submission" id="XFDAtt-069" />
+                <outlet property="instancePage" destination="xfd-pg-instance" id="XFDAtt-070" />
+                <outlet property="elementPage" destination="xfd-pg-element" id="XFDAtt-071" />
+                <outlet property="actionPage" destination="xfd-pg-action" id="XFDAtt-072" />
+                <outlet property="itemPage" destination="xfd-pg-item" id="XFDAtt-073" />
+                <outlet property="itemsetPage" destination="xfd-pg-itemset" id="XFDAtt-074" />
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder" />
+        <customObject id="-3" userLabel="Application" customClass="NSObject" />
+        <customObject id="xfd-pg-control" userLabel="Control Page" customClass="XFDControlPage">
+            <connections>
+                <outlet property="view" destination="xfd-a0-138" id="xfd-pg-013" />
+                <outlet property="controlRefField" destination="xfd-f0-002" id="xfd-pg-014" />
+                <outlet property="controlValueField" destination="xfd-f0-003" id="xfd-pg-015" />
+                <outlet property="controlAppearancePopup" destination="xfd-f0-009" id="xfd-pg-016" />
+                <outlet property="controlIncrementalCheckbox" destination="xfd-f0-010" id="xfd-pg-017" />
+                <outlet property="controlMediatypeField" destination="xfd-f0-011" id="xfd-pg-018" />
+                <outlet property="controlLabelField" destination="xfd-f0-012" id="xfd-pg-019" />
+                <outlet property="controlHintField" destination="xfd-f0-013" id="xfd-pg-020" />
+                <outlet property="controlHelpField" destination="xfd-f0-014" id="xfd-pg-021" />
+                <outlet property="controlAlertField" destination="xfd-f0-015" id="xfd-pg-022" />
+                <outlet property="controlBindField" destination="xfd-f0-004" id="xfd-pg-023" />
+                <outlet property="controlCreateBindButton" destination="xfd-f0-006" id="xfd-pg-024" />
+                <outlet property="controlModelField" destination="xfd-f0-007" id="xfd-pg-025" />
+                <outlet property="controlSubmissionField" destination="xfd-f0-008" id="xfd-pg-026" />
+                <outlet property="controlBindingStatusField" destination="xfd-f0-005" id="xfd-pg-027" />
+                <outlet property="inspector" destination="-2" id="xfd-pg-028" />
+            </connections>
+        </customObject>
+        <customObject id="xfd-pg-bind" userLabel="Bind Page" customClass="XFDBindPage">
+            <connections>
+                <outlet property="view" destination="xfd-a0-140" id="xfd-pg-029" />
+                <outlet property="bindNodesetField" destination="xfd-f0-016" id="xfd-pg-030" />
+                <outlet property="bindTypeField" destination="xfd-f0-017" id="xfd-pg-031" />
+                <outlet property="bindCalculateField" destination="xfd-f0-018" id="xfd-pg-032" />
+                <outlet property="bindConstraintField" destination="xfd-f0-019" id="xfd-pg-033" />
+                <outlet property="bindRequiredField" destination="xfd-f0-020" id="xfd-pg-034" />
+                <outlet property="bindRelevantField" destination="xfd-f0-021" id="xfd-pg-035" />
+                <outlet property="bindReadonlyField" destination="xfd-f0-022" id="xfd-pg-036" />
+                <outlet property="inspector" destination="-2" id="xfd-pg-037" />
+            </connections>
+        </customObject>
+        <customObject id="xfd-pg-submission" userLabel="Submission Page" customClass="XFDSubmissionPage">
+            <connections>
+                <outlet property="view" destination="xfd-a0-142" id="xfd-pg-038" />
+                <outlet property="submissionResourceField" destination="xfd-f0-023" id="xfd-pg-039" />
+                <outlet property="submissionMethodField" destination="xfd-f0-024" id="xfd-pg-040" />
+                <outlet property="submissionReplacePopup" destination="xfd-f0-025" id="xfd-pg-041" />
+                <outlet property="submissionInstanceField" destination="xfd-f0-026" id="xfd-pg-042" />
+                <outlet property="submissionRefField" destination="xfd-f0-027" id="xfd-pg-043" />
+                <outlet property="submissionBindField" destination="xfd-f0-028" id="xfd-pg-044" />
+                <outlet property="inspector" destination="-2" id="xfd-pg-045" />
+            </connections>
+        </customObject>
+        <customObject id="xfd-pg-instance" userLabel="Instance Page" customClass="XFDInstancePage">
+            <connections>
+                <outlet property="view" destination="xfd-a0-144" id="xfd-pg-046" />
+                <outlet property="instanceSrcField" destination="xfd-f0-029" id="xfd-pg-047" />
+                <outlet property="inspector" destination="-2" id="xfd-pg-048" />
+            </connections>
+        </customObject>
+        <customObject id="xfd-pg-element" userLabel="Element Page" customClass="XFDElementPage">
+            <connections>
+                <outlet property="view" destination="xfd-a0-146" id="xfd-pg-049" />
+                <outlet property="hostNewControlButton" destination="xfd-f0-039" id="xfd-pg-050" />
+                <outlet property="inspector" destination="-2" id="xfd-pg-051" />
+            </connections>
+        </customObject>
+        <customObject id="xfd-pg-action" userLabel="Action Page" customClass="XFDActionPage">
+            <connections>
+                <outlet property="view" destination="xfd-a0-148" id="xfd-pg-052" />
+                <outlet property="actionRowsHost" destination="xfd-f0-031" id="xfd-pg-053" />
+                <outlet property="inspector" destination="-2" id="xfd-pg-054" />
+            </connections>
+        </customObject>
+        <customObject id="xfd-pg-item" userLabel="Item Page" customClass="XFDItemPage">
+            <connections>
+                <outlet property="view" destination="xfd-a0-150" id="xfd-pg-055" />
+                <outlet property="itemLabelField" destination="xfd-f0-032" id="xfd-pg-056" />
+                <outlet property="itemValueField" destination="xfd-f0-033" id="xfd-pg-057" />
+                <outlet property="inspector" destination="-2" id="xfd-pg-058" />
+            </connections>
+        </customObject>
+        <customObject id="xfd-pg-itemset" userLabel="Itemset Page" customClass="XFDItemsetPage">
+            <connections>
+                <outlet property="view" destination="xfd-a0-152" id="xfd-pg-059" />
+                <outlet property="itemsetNodesetField" destination="xfd-f0-034" id="xfd-pg-060" />
+                <outlet property="itemsetBindField" destination="xfd-f0-035" id="xfd-pg-061" />
+                <outlet property="itemsetLabelRefField" destination="xfd-f0-036" id="xfd-pg-062" />
+                <outlet property="itemsetValueRefField" destination="xfd-f0-037" id="xfd-pg-063" />
+                <outlet property="inspector" destination="-2" id="xfd-pg-064" />
+            </connections>
+        </customObject>
+        <customView id="xfd-a0-156" translatesAutoresizingMaskIntoConstraints="NO" userLabel="Attributes">
+            <rect key="frame" x="0.0" y="0.0" width="280" height="672" />
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+            <subviews>
+                <tabView fixedFrame="YES" type="noTabsNoBorder" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-w0-ktb">
+                    <rect key="frame" x="0.0" y="0.0" width="280" height="672" />
+                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                    <font key="font" metaFont="system" />
+                    <tabViewItems>
+                        <tabViewItem label="Control" identifier="" id="xfd-a0-137">
+                            <view key="view" id="xfd-a0-138">
+                                <rect key="frame" x="0.0" y="0.0" width="280" height="672" />
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                <subviews>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-008">
+                                        <rect key="frame" x="0" y="642" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Ref" id="xfd-a0-009">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="Binding expression selecting the node this control edits, evaluated in the parent's context (§3.2.3). A repeat's ref selects the node-set it iterates." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-002" customClass="XFDXPathField">
+                                        <rect key="frame" x="98" y="638" width="174" height="21" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-010">
+                                        <rect key="frame" x="0" y="616" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Value" id="xfd-a0-011">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="xf:output only: display a COMPUTED expression instead of a bound node (§8.1.5) — mutually exclusive with Ref/Bind." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-003" customClass="XFDXPathField">
+                                        <rect key="frame" x="98" y="612" width="174" height="21" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-012">
+                                        <rect key="frame" x="0" y="590" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Bind" id="xfd-a0-013">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="Reference an xf:bind by id instead of binding in place; when set, it overrides Ref." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-004" customClass="XFDIDRefField">
+                                        <rect key="frame" x="98" y="585" width="174" height="23" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-005">
+                                        <rect key="frame" x="8" y="564" width="264" height="14" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="truncatingTail" selectable="YES" title="" id="xfd-a0-014">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <button toolTip="Move this control's Ref into a new named xf:bind under the model and reference it by id." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-006">
+                                        <rect key="frame" x="98" y="533" width="184" height="24" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <buttonCell key="cell" type="push" title="Create Bind from Ref" bezelStyle="rounded" alignment="center" controlSize="small" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="xfd-a0-015">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES" />
+                                            <font key="font" metaFont="smallSystem" />
+                                        </buttonCell>
+                                        <connections>
+                                            <action selector="createBindFromRef:" target="xfd-pg-control" id="xfd-a0-016" />
+                                        </connections>
+                                    </button>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-017">
+                                        <rect key="frame" x="0" y="512" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Model" id="xfd-a0-018">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="Id of the model the Ref evaluates against (defaults to the first model; only meaningful with Ref)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-007" customClass="XFDIDRefField">
+                                        <rect key="frame" x="98" y="507" width="174" height="23" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-019">
+                                        <rect key="frame" x="0" y="486" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Submission" id="xfd-a0-020">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="Id of the xf:submission this submit button starts (§10.11)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-008" customClass="XFDIDRefField">
+                                        <rect key="frame" x="98" y="481" width="174" height="23" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-021">
+                                        <rect key="frame" x="0" y="460" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Appearance" id="xfd-a0-022">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <popUpButton toolTip="Appearance hint (§8.1.2): minimal / compact / full pick different widget styles per control." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-009">
+                                        <rect key="frame" x="98" y="455" width="174" height="22" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <popUpButtonCell key="cell" type="push" title="(default)" bezelStyle="rounded" alignment="left" controlSize="small" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="xfd-a0-023" id="xfd-a0-027">
+                                            <behavior key="behavior" lightByBackground="YES" lightByGray="YES" />
+                                            <font key="font" metaFont="smallSystem" />
+                                            <menu key="menu" id="xfd-a0-028">
+                                                <items>
+                                                    <menuItem title="(default)" state="on" id="xfd-a0-023" />
+                                                    <menuItem title="minimal" id="xfd-a0-024" />
+                                                    <menuItem title="compact" id="xfd-a0-025" />
+                                                    <menuItem title="full" id="xfd-a0-026" />
+                                                </items>
+                                            </menu>
+                                        </popUpButtonCell>
+                                        <connections>
+                                            <action selector="inspectorChanged:" target="-2" id="xfd-a0-029" />
+                                        </connections>
+                                    </popUpButton>
+                                    <button toolTip="Commit on every keystroke instead of on leaving the field — xforms-value-changed fires per change (§8.1.1)." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-010">
+                                        <rect key="frame" x="98" y="434" width="170" height="16" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMinY="YES" />
+                                        <buttonCell key="cell" type="check" title="Incremental" bezelStyle="regularSquare" imagePosition="left" controlSize="small" inset="2" id="xfd-a0-030">
+                                            <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES" />
+                                            <font key="font" metaFont="smallSystem" />
+                                        </buttonCell>
+                                        <connections>
+                                            <action selector="inspectorChanged:" target="-2" id="xfd-a0-031" />
+                                        </connections>
+                                    </button>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-032">
+                                        <rect key="frame" x="0" y="408" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Media Type" id="xfd-a0-033">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <textField toolTip="Media type of the bound content — image/* on upload, application/xhtml+xml for the rich textarea." focusRingType="none" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-011">
+                                        <rect key="frame" x="98" y="405" width="174" height="19" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" id="xfd-a0-035">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                        <connections>
+                                            <action selector="inspectorChanged:" target="-2" id="xfd-a0-034" />
+                                        </connections>
+                                    </textField>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-036">
+                                        <rect key="frame" x="8" y="382" width="200" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="left" title="Texts" id="xfd-a0-037">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-038">
+                                        <rect key="frame" x="0" y="356" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Label" id="xfd-a0-039">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="The control's label (§8.3.3): plain text, inline markup, or dynamic output content." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-012" customClass="XFDRichTextField">
+                                        <rect key="frame" x="98" y="352" width="174" height="21" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-040">
+                                        <rect key="frame" x="0" y="330" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Hint" id="xfd-a0-041">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip='Hint shown on hover/focus (§8.3.5); appearance="minimal" renders it as placeholder text.' fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-013" customClass="XFDRichTextField">
+                                        <rect key="frame" x="98" y="326" width="174" height="21" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-042">
+                                        <rect key="frame" x="0" y="304" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Help" id="xfd-a0-043">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="Help shown on request (§8.3.4)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-014" customClass="XFDRichTextField">
+                                        <rect key="frame" x="98" y="300" width="174" height="21" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-044">
+                                        <rect key="frame" x="0" y="278" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Alert" id="xfd-a0-045">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="Message shown while the bound value is invalid (§8.3.6)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-015" customClass="XFDRichTextField">
+                                        <rect key="frame" x="98" y="274" width="174" height="21" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                </subviews>
+                            </view>
+                        </tabViewItem>
+                        <tabViewItem label="Bind" identifier="" id="xfd-a0-139">
+                            <view key="view" id="xfd-a0-140">
+                                <rect key="frame" x="0.0" y="0.0" width="280" height="672" />
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                <subviews>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-046">
+                                        <rect key="frame" x="0" y="642" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Nodeset" id="xfd-a0-047">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="The nodes this bind applies to (§7.4), evaluated in the outer bind's context — nested binds chain." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-016" customClass="XFDXPathField">
+                                        <rect key="frame" x="98" y="638" width="174" height="21" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-048">
+                                        <rect key="frame" x="0" y="616" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Type" id="xfd-a0-049">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <textField toolTip="xsd datatype applied to the nodes (xsd:date, xsd:integer, …) — drives widget choice and validation (§6.1.6)." focusRingType="none" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-017">
+                                        <rect key="frame" x="98" y="613" width="174" height="19" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" id="xfd-a0-051">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                        <connections>
+                                            <action selector="inspectorChanged:" target="-2" id="xfd-a0-050" />
+                                        </connections>
+                                    </textField>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-052">
+                                        <rect key="frame" x="0" y="590" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Calculate" id="xfd-a0-053">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="Computes the value from other nodes; calculated nodes become readonly unless overridden (§6.1.3)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-018" customClass="XFDXPathField">
+                                        <rect key="frame" x="98" y="586" width="174" height="21" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-054">
+                                        <rect key="frame" x="0" y="564" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Constraint" id="xfd-a0-055">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="Validity condition, evaluated per node (§6.1.1)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-019" customClass="XFDXPathField">
+                                        <rect key="frame" x="98" y="560" width="174" height="21" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-056">
+                                        <rect key="frame" x="0" y="538" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Required" id="xfd-a0-057">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="XPath deciding whether a value is required (§6.1.2)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-020" customClass="XFDXPathField">
+                                        <rect key="frame" x="98" y="534" width="174" height="21" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-058">
+                                        <rect key="frame" x="0" y="512" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Relevant" id="xfd-a0-059">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="XPath deciding whether the nodes are relevant — irrelevant controls disappear (§6.1.4)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-021" customClass="XFDXPathField">
+                                        <rect key="frame" x="98" y="508" width="174" height="21" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-060">
+                                        <rect key="frame" x="0" y="486" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Readonly" id="xfd-a0-061">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="XPath deciding whether the nodes are read-only (§6.1.5)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-022" customClass="XFDXPathField">
+                                        <rect key="frame" x="98" y="482" width="174" height="21" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                </subviews>
+                            </view>
+                        </tabViewItem>
+                        <tabViewItem label="Submission" identifier="" id="xfd-a0-141">
+                            <view key="view" id="xfd-a0-142">
+                                <rect key="frame" x="0.0" y="0.0" width="280" height="672" />
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                <subviews>
+                                    <button toolTip="Postman-style test run: preview the exact request, send it through the real xforms-submit path, inspect the response." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-pg-tst">
+                                        <rect key="frame" x="12" y="8" width="150" height="26" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES" />
+                                        <buttonCell key="cell" type="push" title="Test Submission…" bezelStyle="rounded" alignment="center" controlSize="small" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="xfd-pg-tsc">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES" />
+                                            <font key="font" metaFont="smallSystem" />
+                                        </buttonCell>
+                                        <connections>
+                                            <action selector="testSubmission:" target="xfd-pg-submission" id="xfd-pg-tsa" />
+                                        </connections>
+                                    </button>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-062">
+                                        <rect key="frame" x="0" y="642" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Resource" id="xfd-a0-063">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <textField toolTip="Where to submit (URI); the legacy @action spelling is preserved when the document uses it (§11.1)." focusRingType="none" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-023">
+                                        <rect key="frame" x="98" y="639" width="174" height="19" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" id="xfd-a0-065">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                        <connections>
+                                            <action selector="inspectorChanged:" target="-2" id="xfd-a0-064" />
+                                        </connections>
+                                    </textField>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-066">
+                                        <rect key="frame" x="0" y="616" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Method" id="xfd-a0-067">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <textField toolTip="Serialization + protocol: post, get, put, delete, urlencoded-post, … (§11.1)." focusRingType="none" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-024">
+                                        <rect key="frame" x="98" y="613" width="174" height="19" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" id="xfd-a0-069">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                        <connections>
+                                            <action selector="inspectorChanged:" target="-2" id="xfd-a0-068" />
+                                        </connections>
+                                    </textField>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-070">
+                                        <rect key="frame" x="0" y="590" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Replace" id="xfd-a0-071">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <popUpButton toolTip="What the response replaces: none, all (the page), an instance, or text (§11.1)." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-025">
+                                        <rect key="frame" x="98" y="585" width="174" height="22" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <popUpButtonCell key="cell" type="push" title="none" bezelStyle="rounded" alignment="left" controlSize="small" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="xfd-a0-072" id="xfd-a0-076">
+                                            <behavior key="behavior" lightByBackground="YES" lightByGray="YES" />
+                                            <font key="font" metaFont="smallSystem" />
+                                            <menu key="menu" id="xfd-a0-077">
+                                                <items>
+                                                    <menuItem title="none" state="on" id="xfd-a0-072" />
+                                                    <menuItem title="all" id="xfd-a0-073" />
+                                                    <menuItem title="instance" id="xfd-a0-074" />
+                                                    <menuItem title="text" id="xfd-a0-075" />
+                                                </items>
+                                            </menu>
+                                        </popUpButtonCell>
+                                        <connections>
+                                            <action selector="inspectorChanged:" target="-2" id="xfd-a0-078" />
+                                        </connections>
+                                    </popUpButton>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-079">
+                                        <rect key="frame" x="0" y="564" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Instance" id="xfd-a0-080">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="Id of the instance the response replaces when Replace = instance (§11.2)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-026" customClass="XFDIDRefField">
+                                        <rect key="frame" x="98" y="559" width="174" height="23" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-081">
+                                        <rect key="frame" x="0" y="538" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Ref" id="xfd-a0-082">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="Root of the submitted data; defaults to the default instance's root." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-027" customClass="XFDXPathField">
+                                        <rect key="frame" x="98" y="534" width="174" height="21" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-083">
+                                        <rect key="frame" x="0" y="512" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Bind" id="xfd-a0-084">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="Bind selecting the submitted data, by id (overrides Ref)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-028" customClass="XFDIDRefField">
+                                        <rect key="frame" x="98" y="507" width="174" height="23" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                </subviews>
+                            </view>
+                        </tabViewItem>
+                        <tabViewItem label="Instance" identifier="" id="xfd-a0-143">
+                            <view key="view" id="xfd-a0-144">
+                                <rect key="frame" x="0.0" y="0.0" width="280" height="672" />
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                <subviews>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-085">
+                                        <rect key="frame" x="0" y="642" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Src" id="xfd-a0-086">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <textField toolTip="External URI for the instance data; when set, inline content is ignored (§3.3.2)." focusRingType="none" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-029">
+                                        <rect key="frame" x="98" y="639" width="174" height="19" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" id="xfd-a0-088">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                        <connections>
+                                            <action selector="inspectorChanged:" target="-2" id="xfd-a0-087" />
+                                        </connections>
+                                    </textField>
+                                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-030">
+                                        <rect key="frame" x="98" y="611" width="110" height="24" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <buttonCell key="cell" type="push" title="Edit XML…" bezelStyle="rounded" alignment="center" controlSize="small" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="xfd-a0-089">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES" />
+                                            <font key="font" metaFont="smallSystem" />
+                                        </buttonCell>
+                                        <connections>
+                                            <action selector="editInstanceXML:" target="xfd-pg-instance" id="xfd-a0-090" />
+                                        </connections>
+                                    </button>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-091">
+                                        <rect key="frame" x="8" y="590" width="260" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="left" title="Double-clicking the instance in the outline works too." id="xfd-a0-092">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                </subviews>
+                            </view>
+                        </tabViewItem>
+                        <tabViewItem label="Element" identifier="" id="xfd-a0-145">
+                            <view key="view" id="xfd-a0-146">
+                                <rect key="frame" x="0.0" y="0.0" width="280" height="672" />
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                <subviews>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-111">
+                                        <rect key="frame" x="8" y="642" width="260" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="left" title="No editable attributes for this element." id="xfd-a0-112">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <button toolTip="Add a control at the end of the body bound to the selected data node." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-039">
+                                        <rect key="frame" x="98" y="611" width="168" height="24" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <buttonCell key="cell" type="push" title="New Bound Control…" bezelStyle="rounded" alignment="center" controlSize="small" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="xfd-a0-113">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES" />
+                                            <font key="font" metaFont="smallSystem" />
+                                        </buttonCell>
+                                        <connections>
+                                            <action selector="elementCreateBoundControl:" target="xfd-pg-element" id="xfd-a0-114" />
+                                        </connections>
+                                    </button>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-115">
+                                        <rect key="frame" x="8" y="590" width="260" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="left" title="Instance data only: adds a control bound to this node." id="xfd-a0-116">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                </subviews>
+                            </view>
+                        </tabViewItem>
+                        <tabViewItem label="Action" identifier="" id="xfd-a0-147">
+                            <view key="view" id="xfd-a0-148">
+                                <rect key="frame" x="0.0" y="0.0" width="280" height="672" />
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                <subviews>
+                                    <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-031">
+                                        <rect key="frame" x="0.0" y="0.0" width="280" height="672" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                    </customView>
+                                </subviews>
+                            </view>
+                        </tabViewItem>
+                        <tabViewItem label="Item" identifier="" id="xfd-a0-149">
+                            <view key="view" id="xfd-a0-150">
+                                <rect key="frame" x="0.0" y="0.0" width="280" height="672" />
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                <subviews>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-093">
+                                        <rect key="frame" x="0" y="642" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Label" id="xfd-a0-094">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="The choice's visible label (§8.3.3)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-032" customClass="XFDRichTextField">
+                                        <rect key="frame" x="98" y="638" width="174" height="21" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-095">
+                                        <rect key="frame" x="0" y="616" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Value" id="xfd-a0-096">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <textField toolTip="Value stored in the bound node when this choice is selected (§8.2.2)." focusRingType="none" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-033">
+                                        <rect key="frame" x="98" y="613" width="174" height="19" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" id="xfd-a0-098">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                        <connections>
+                                            <action selector="inspectorChanged:" target="-2" id="xfd-a0-097" />
+                                        </connections>
+                                    </textField>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-099">
+                                        <rect key="frame" x="8" y="590" width="260" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="left" title="A fixed choice: label shown, value stored." id="xfd-a0-100">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                </subviews>
+                            </view>
+                        </tabViewItem>
+                        <tabViewItem label="Itemset" identifier="" id="xfd-a0-151">
+                            <view key="view" id="xfd-a0-152">
+                                <rect key="frame" x="0.0" y="0.0" width="280" height="672" />
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                <subviews>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-101">
+                                        <rect key="frame" x="0" y="642" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Nodeset" id="xfd-a0-102">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="One choice per node in this set (§9.3.3)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-034" customClass="XFDXPathField">
+                                        <rect key="frame" x="98" y="638" width="174" height="21" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-103">
+                                        <rect key="frame" x="0" y="616" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Bind" id="xfd-a0-104">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="Bind selecting the choice nodes, by id." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-035" customClass="XFDIDRefField">
+                                        <rect key="frame" x="98" y="611" width="174" height="23" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-105">
+                                        <rect key="frame" x="0" y="590" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Label Ref" id="xfd-a0-106">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="Each choice's label, evaluated relative to its node (§9.3.3)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-036" customClass="XFDXPathField">
+                                        <rect key="frame" x="98" y="586" width="174" height="21" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-107">
+                                        <rect key="frame" x="0" y="564" width="92" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="right" title="Value Ref" id="xfd-a0-108">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                    <customView toolTip="Each choice's stored value, evaluated relative to its node (§9.3.3)." fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-f0-037" customClass="XFDXPathField">
+                                        <rect key="frame" x="98" y="560" width="174" height="21" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                                    </customView>
+                                    <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-109">
+                                        <rect key="frame" x="8" y="538" width="260" height="14" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                                        <textFieldCell key="cell" controlSize="small" lineBreakMode="clipping" alignment="left" title="One choice per node; label / value evaluate per node." id="xfd-a0-110">
+                                            <font key="font" metaFont="smallSystem" />
+                                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                    </textField>
+                                </subviews>
+                            </view>
+                        </tabViewItem>
+                    </tabViewItems>
+                </tabView>
+            </subviews>
+        </customView>
+    </objects>
+</document>

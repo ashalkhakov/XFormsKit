@@ -2,7 +2,8 @@
 # XFormsDesignKit -- the designer's editor as a framework (XFormsDesignKit.h):
 # XFormsDesigner.app is main.m and a menu over it, and other apps host it
 # to edit forms of their own. Built after XFormsKit (`make designkit` at
-# the top); the window's xib goes in as it is, loaded through GSXib5.
+# the top); the window's and the parts' xibs go in as they are, loaded
+# through GSXib5.
 #
 
 ifeq ($(GNUSTEP_MAKEFILES),)
@@ -21,34 +22,9 @@ XFormsDesignKit_NEEDS_GUI = yes
 XFormsDesignKit_CURRENT_VERSION_NAME = A
 XFormsDesignKit_DEPLOY_WITH_CURRENT_VERSION = yes
 
-XFormsDesignKit_OBJC_FILES = \
-	XFDDocument.m \
-	XFDEditors.m \
-	XFDWindowController.m \
-	XFDWindowController+Outline.m \
-	XFDWindowController+Inspector.m \
-	XFDWindowController+Preview.m \
-	XFDInspectorSpecs.m \
-	XFDPalettePanel.m \
-	XFDInstanceXMLEditor.m \
-	XFDEventsPane.m \
-	XFDActionRowsPane.m \
-	XFDSubmissionTester.m \
-	XFDEventsConsole.m \
-	XFDXPathField.m \
-	XFDXPathTextStorage.m \
-	XFDExpressionField.m \
-	XFDRichTextField.m \
-	XFDIDRefField.m \
-	XFDDesignOverlay.m \
-	ThirdParty/DMTabBar/DMTabBar.m \
-	ThirdParty/DMTabBar/DMTabBarItem.m \
-	ThirdParty/JUInspectorView/JUInspectorBaseView.m \
-	ThirdParty/JUInspectorView/JUInspectorView.m \
-	ThirdParty/JUInspectorView/JUInspectorViewContainer.m \
-	ThirdParty/JUInspectorView/JUInspectorViewHeader.m
-
-XFormsDesignKit_RESOURCE_FILES = XFDDocumentWindow.xib
+include files.make
+XFormsDesignKit_OBJC_FILES = $(XFORMSDESIGNKIT_OBJC_FILES)
+XFormsDesignKit_RESOURCE_FILES = $(XFORMSDESIGNKIT_RESOURCE_FILES)
 
 # Its headers, installed where the framework is, laid out as here: what
 # builds on an installed XFormsDesignKit (WorkflowKit's designer) includes
@@ -56,17 +32,25 @@ XFormsDesignKit_RESOURCE_FILES = XFDDocumentWindow.xib
 # ThirdParty/DMTabBar as a checkout of it would.
 XFormsDesignKit_HEADER_FILES_DIR = .
 XFormsDesignKit_HEADER_FILES = \
-	XFDActionRowsPane.h \
+	XFDAttributesInspector.h \
 	XFDDesignOverlay.h \
 	XFDDocument.h \
 	XFDEditors.h \
 	XFDEventsConsole.h \
-	XFDEventsPane.h \
+	XFDEventsInspector.h \
 	XFDExpressionField.h \
+	XFDFormEditor.h \
 	XFDIDRefField.h \
+	XFDIdentityInspector.h \
+	XFDInspectorPages.h \
 	XFDInspectorSpecs.h \
+	XFDInspectorViewController.h \
 	XFDInstanceXMLEditor.h \
+	XFDLibraryViewController.h \
+	XFDOutlineViewController.h \
 	XFDPalettePanel.h \
+	XFDPartViewController.h \
+	XFDPreviewViewController.h \
 	XFDRichTextField.h \
 	XFDSubmissionTester.h \
 	XFDWindowController.h \

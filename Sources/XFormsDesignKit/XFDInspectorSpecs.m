@@ -218,5 +218,3 @@ NSImage *XFDBadge(NSString *letters, CGFloat r, CGFloat g, CGFloat b)
     cache[key] = image;
     return image;
 }
-
-void XFDInspectorSpecsFilePresent(void) {}

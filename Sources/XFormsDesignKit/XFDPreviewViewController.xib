@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24127" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+    <dependencies>
+        <deployment identifier="macosx" />
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24127" />
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0" />
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="XFDPreviewViewController">
+            <connections>
+                <outlet property="view" destination="xfd-p0-ctr" id="XFDPre-004" />
+                <outlet property="modeControl" destination="xfd-w0-mod" id="XFDPre-005" />
+                <outlet property="designModeCheckbox" destination="xfd-w0-dsn" id="XFDPre-006" />
+                <outlet property="centerTabView" destination="xfd-w0-ctb" id="XFDPre-007" />
+                <outlet property="previewHost" destination="xfd-w0-pvh" id="XFDPre-008" />
+                <outlet property="sourceHost" destination="xfd-w0-srh" id="XFDPre-009" />
+                <outlet property="consoleButton" destination="xfd-pv-con" id="XFDPre-010" />
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder" />
+        <customObject id="-3" userLabel="Application" customClass="NSObject" />
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="xfd-p0-ctr" userLabel="Preview">
+            <rect key="frame" x="0.0" y="0.0" width="578" height="720" />
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+            <subviews>
+                <segmentedControl verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-w0-mod">
+                    <rect key="frame" x="8" y="694" width="140" height="20" />
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                    <segmentedCell key="cell" controlSize="small" borderStyle="border" alignment="left" style="rounded" trackingMode="selectOne" id="xfd-a0-126">
+                        <font key="font" metaFont="smallSystem" />
+                        <segments>
+                            <segment label="Form" width="60" />
+                            <segment label="Source" width="60" tag="1" />
+                        </segments>
+                    </segmentedCell>
+                    <connections>
+                        <action selector="modeChanged:" target="-2" id="xfd-a0-127" />
+                    </connections>
+                </segmentedControl>
+                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-w0-dsn">
+                    <rect key="frame" x="156" y="696" width="76" height="16" />
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                    <buttonCell key="cell" type="check" title="Design" bezelStyle="regularSquare" imagePosition="left" controlSize="small" inset="2" id="xfd-a0-128">
+                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES" />
+                        <font key="font" metaFont="smallSystem" />
+                    </buttonCell>
+                    <connections>
+                        <action selector="toggleDesignMode:" target="-2" id="xfd-a0-129" />
+                    </connections>
+                </button>
+                <button toolTip="The XSLTForms events console: every dispatched event, handler run, and engine action, live." verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-pv-con">
+                    <rect key="frame" x="240" y="693" width="130" height="22" />
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES" />
+                    <buttonCell key="cell" type="push" title="Events Console" bezelStyle="rounded" alignment="center" controlSize="small" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="xfd-pv-cnc">
+                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES" />
+                        <font key="font" metaFont="smallSystem" />
+                    </buttonCell>
+                    <connections>
+                        <action selector="toggleEventsConsole:" target="-2" id="xfd-pv-cna" />
+                    </connections>
+                </button>
+                <tabView fixedFrame="YES" type="noTabsNoBorder" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-w0-ctb">
+                    <rect key="frame" x="0.0" y="0.0" width="578" height="690" />
+                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                    <font key="font" metaFont="system" />
+                    <tabViewItems>
+                        <tabViewItem label="Form" identifier="" id="xfd-a0-130">
+                            <view key="view" id="xfd-a0-131">
+                                <rect key="frame" x="0.0" y="0.0" width="578" height="690" />
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                <subviews>
+                                    <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-w0-pvh">
+                                        <rect key="frame" x="0.0" y="0.0" width="578" height="690" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                    </customView>
+                                </subviews>
+                            </view>
+                        </tabViewItem>
+                        <tabViewItem label="Source" identifier="" id="xfd-a0-132">
+                            <view key="view" id="xfd-a0-133">
+                                <rect key="frame" x="0.0" y="0.0" width="578" height="690" />
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                <subviews>
+                                    <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-w0-srh">
+                                        <rect key="frame" x="0.0" y="30" width="578" height="660" />
+                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                    </customView>
+                                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-a0-134">
+                                        <rect key="frame" x="488" y="3" width="84" height="24" />
+                                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES" />
+                                        <buttonCell key="cell" type="push" title="Apply" bezelStyle="rounded" alignment="center" controlSize="small" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="xfd-a0-135">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES" />
+                                            <font key="font" metaFont="smallSystem" />
+                                        </buttonCell>
+                                        <connections>
+                                            <action selector="applySource:" target="-2" id="xfd-a0-136" />
+                                        </connections>
+                                    </button>
+                                </subviews>
+                            </view>
+                        </tabViewItem>
+                    </tabViewItems>
+                </tabView>
+            </subviews>
+        </customView>
+    </objects>
+</document>

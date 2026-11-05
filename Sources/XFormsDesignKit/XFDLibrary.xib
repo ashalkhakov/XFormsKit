@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24127" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+    <dependencies>
+        <deployment identifier="macosx" />
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24127" />
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0" />
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="XFDLibraryViewController">
+            <connections>
+                <outlet property="view" destination="xfd-lb-vw" id="xfd-lb-001" />
+                <outlet property="filterField" destination="xfd-lb-flt" id="xfd-lb-002" />
+                <outlet property="table" destination="xfd-lb-tbl" id="xfd-lb-003" />
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder" />
+        <customObject id="-3" userLabel="Application" customClass="NSObject" />
+        <customView translatesAutoresizingMaskIntoConstraints="NO" id="xfd-lb-vw" userLabel="Library">
+            <rect key="frame" x="0.0" y="0.0" width="396" height="460" />
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+            <subviews>
+                <textField focusRingType="none" verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-lb-flt">
+                    <rect key="frame" x="0.0" y="438" width="396" height="22" />
+                    <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES" />
+                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" placeholderString="Filter" drawsBackground="YES" id="xfd-lb-flc">
+                        <font key="font" metaFont="system" size="12" />
+                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog" />
+                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog" />
+                    </textFieldCell>
+                    <connections>
+                        <outlet property="delegate" destination="-2" id="xfd-lb-fld" />
+                    </connections>
+                </textField>
+                <scrollView fixedFrame="YES" borderType="bezel" horizontalLineScroll="34" horizontalPageScroll="10" verticalLineScroll="34" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="xfd-lb-scr">
+                    <rect key="frame" x="0.0" y="0.0" width="396" height="428" />
+                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                    <clipView key="contentView" id="xfd-lb-clp">
+                        <rect key="frame" x="1" y="1" width="394" height="426" />
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                        <subviews>
+                            <tableView verticalHuggingPriority="750" allowsExpansionToolTips="YES" columnAutoresizingStyle="lastColumnOnly" multipleSelection="NO" autosaveColumns="NO" rowHeight="32" id="xfd-lb-tbl">
+                                <rect key="frame" x="0.0" y="0.0" width="394" height="426" />
+                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" />
+                                <size key="intercellSpacing" width="3" height="2" />
+                                <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog" />
+                                <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog" />
+                                <tableColumns>
+                                    <tableColumn identifier="icon" editable="NO" width="24" minWidth="24" maxWidth="24" id="xfd-lb-c01">
+                                        <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border">
+                                            <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog" />
+                                        </tableHeaderCell>
+                                        <imageCell key="dataCell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" id="xfd-lb-d01" />
+                                    </tableColumn>
+                                    <tableColumn identifier="text" editable="NO" width="340" minWidth="40" maxWidth="1000" id="xfd-lb-c02">
+                                        <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border">
+                                            <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="headerColor" catalog="System" colorSpace="catalog" />
+                                        </tableHeaderCell>
+                                        <textFieldCell key="dataCell" lineBreakMode="charWrapping" title="Text Cell" id="xfd-lb-d02">
+                                            <font key="font" metaFont="system" />
+                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog" />
+                                            <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog" />
+                                        </textFieldCell>
+                                        <tableColumnResizingMask key="resizingMask" resizeWithTable="YES" />
+                                    </tableColumn>
+                                </tableColumns>
+                                <connections>
+                                    <action trigger="doubleAction" selector="rowDoubleClicked:" target="-2" id="xfd-lb-dbl" />
+                                    <outlet property="dataSource" destination="-2" id="xfd-lb-ds" />
+                                    <outlet property="delegate" destination="-2" id="xfd-lb-dl" />
+                                </connections>
+                            </tableView>
+                        </subviews>
+                    </clipView>
+                    <scroller key="horizontalScroller" hidden="YES" verticalHuggingPriority="750" horizontal="YES" id="xfd-lb-hsc">
+                        <rect key="frame" x="1" y="411" width="394" height="16" />
+                        <autoresizingMask key="autoresizingMask" />
+                    </scroller>
+                    <scroller key="verticalScroller" hidden="YES" verticalHuggingPriority="750" horizontal="NO" id="xfd-lb-vsc">
+                        <rect key="frame" x="379" y="1" width="16" height="426" />
+                        <autoresizingMask key="autoresizingMask" />
+                    </scroller>
+                </scrollView>
+            </subviews>
+        </customView>
+    </objects>
+</document>

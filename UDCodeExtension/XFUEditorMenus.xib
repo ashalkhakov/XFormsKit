@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="24127" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+    <dependencies>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24127"/>
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="NSObject"/>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
+        <customObject id="-3" userLabel="Application" customClass="NSObject"/>
+        <!-- The designer's Form menu in UDCode's Editor menu (XFUExtension's
+             -editorMenuItemsForWorkbench:), as XFormsDesigner's
+             (+[XFDDocument formMenuItem]). Its items go to the first
+             responder: in a form's tab, its editor. No keys: UDCode's
+             own are taken. -->
+        <menu title="Form Menus" id="formMenus">
+            <items>
+                <menuItem title="Form" id="formMenuItem">
+                    <menu key="submenu" title="Form" id="formMenu">
+                        <items>
+                            <menuItem title="Insert Element…" id="formInsertElement">
+                                <connections>
+                                    <action selector="insertElement:" target="-1" id="formInsertElementAction"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Delete Element" id="formDeleteElement">
+                                <connections>
+                                    <action selector="deleteElement:" target="-1" id="formDeleteElementAction"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="formMenuSeparator"/>
+                            <menuItem title="Reset Instance Data" id="formResetInstances">
+                                <connections>
+                                    <action selector="resetInstances:" target="-1" id="formResetInstancesAction"/>
+                                </connections>
+                            </menuItem>
+                        </items>
+                    </menu>
+                </menuItem>
+            </items>
+        </menu>
+    </objects>
+</document>

@@ -3,9 +3,7 @@
 #import "XFDWindowController.h"
 
 @interface XFDDocument ()
-@property (nonatomic, strong, readwrite) XFProcessor *processor;
-@property (nonatomic, strong, readwrite) XFHostEdit *hostEdit;
-@property (nonatomic, copy) NSString *pendingXML;   // set by readFromData:, consumed once
+@property (nonatomic, strong, readwrite) XFDFormEditor *formEditor;
 /// Where the document came from — captured in readFromURL: (fileURL is
 /// set only after the read returns) so relative instance/@src, includes
 /// and schemas resolve on the very first processor build.
@@ -14,26 +12,12 @@
 
 @implementation XFDDocument
 
-/// The window's nib in this framework's bundle, not the host app's: compiled
-/// (.nib) by Xcode, the xib itself on GNUstep, which loads it through GSXib5.
-static NSString *XFDWindowNibPath(void)
-{
-    NSBundle *bundle = [NSBundle bundleForClass:[XFDWindowController class]];
-    return [bundle pathForResource:@"XFDDocumentWindow" ofType:@"nib"]
-        ?: [bundle pathForResource:@"XFDDocumentWindow" ofType:@"xib"];
-}
-
 - (void)makeWindowControllers
 {
-    NSString *path = XFDWindowNibPath();
-    if (path == nil) {
-        NSLog(@"XFormsDesignKit: XFDDocumentWindow is not in %@",
-              [[NSBundle bundleForClass:[XFDWindowController class]] bundlePath]);
-        return;
+    XFDWindowController *controller = [[XFDWindowController alloc] initWithFormEditor:self.formEditor];
+    if (controller != nil) {
+        [self addWindowController:controller];
     }
-    XFDWindowController *controller = [XFDWindowController alloc];
-    controller = [controller initWithWindowNibPath:path owner:controller];
-    [self addWindowController:controller];
 }
 
 + (NSMenuItem *)formMenuItem
@@ -48,27 +32,28 @@ static NSString *XFDWindowNibPath(void)
     return item;
 }
 
-- (BOOL)adoptProcessorFromXML:(NSString *)xml error:(NSError **)error
+- (XFProcessor *)processor
 {
-    // relative instance/@src, includes and schemas resolve DURING
-    // construction — the base URL must ride in, never be set after
-    XFProcessor *p = [XFProcessor processorWithXMLString:xml
-                                                 baseURL:[self fileURL] ?: self.documentBaseURL
-                                                   error:error];
-    if (p == nil) {
-        return NO;
+    return self.formEditor.processor;
+}
+
+- (XFHostEdit *)hostEdit
+{
+    return self.formEditor.hostEdit;
+}
+
+/// The form read from `xml`: a form editor the first time, read again after.
+- (BOOL)readXMLString:(NSString *)xml error:(NSError **)error
+{
+    if (self.formEditor != nil) {
+        return [self.formEditor replaceWithXMLString:xml error:error];
     }
-    self.processor = p;
-    XFHostEdit *edit = [XFHostEdit editWithProcessor:p undoManager:[self undoManager]];
-    __weak XFDDocument *weakSelf = self;
-    edit.changedHandler = ^(XFXMLElement *element) {
-        XFDDocument *doc = weakSelf;
-        if (doc.hostChangedHandler) {
-            doc.hostChangedHandler(element);
-        }
-    };
-    self.hostEdit = edit;
-    return YES;
+    XFDFormEditor *editor = [[XFDFormEditor alloc] initWithXMLString:xml
+                                                             baseURL:[self fileURL] ?: self.documentBaseURL
+                                                         undoManager:[self undoManager]
+                                                               error:error];
+    self.formEditor = editor;
+    return editor != nil;
 }
 
 - (BOOL)readFromURL:(NSURL *)url ofType:(NSString *)typeName error:(NSError **)error
@@ -91,9 +76,8 @@ static NSString *XFDWindowNibPath(void)
         }
         return NO;
     }
-    // windows may not exist yet (fileURL is set after this returns); the
-    // window controller reads `processor` in windowDidLoad
-    return [self adoptProcessorFromXML:xml error:error];
+    // windows may not exist yet (fileURL is set after this returns)
+    return [self readXMLString:xml error:error];
 }
 
 /// An empty starter form for File > New.
@@ -121,7 +105,7 @@ static NSString *XFDWindowNibPath(void)
 - (instancetype)initWithType:(NSString *)typeName error:(NSError **)error
 {
     self = [super initWithType:typeName error:error];
-    if (self && ![self adoptProcessorFromXML:[self starterXML] error:error]) {
+    if (self && ![self readXMLString:[self starterXML] error:error]) {
         return nil;
     }
     return self;
@@ -129,8 +113,7 @@ static NSString *XFDWindowNibPath(void)
 
 - (NSString *)hostXMLString
 {
-    NSString *xml = [self.processor.hostDocument XMLString];
-    return [xml hasSuffix:@"\n"] ? xml : [xml stringByAppendingString:@"\n"];
+    return [self.formEditor hostXMLString];
 }
 
 - (NSData *)dataOfType:(NSString *)typeName error:(NSError **)error
@@ -142,28 +125,16 @@ static NSString *XFDWindowNibPath(void)
 
 - (BOOL)applySourceXML:(NSString *)xml error:(NSError **)error
 {
-    if (![self adoptProcessorFromXML:xml error:error]) {
+    if (![self.formEditor replaceWithXMLString:xml error:error]) {
         return NO;
     }
-    [[self undoManager] removeAllActions];
     [self updateChangeCount:NSChangeDone];
-    if (self.processorReplacedHandler) {
-        self.processorReplacedHandler();
-    }
     return YES;
 }
 
 - (BOOL)resetPreview:(NSError **)error
 {
-    NSString *xml = [self hostXMLString];
-    if (![self adoptProcessorFromXML:xml error:error]) {
-        return NO;
-    }
-    [[self undoManager] removeAllActions];
-    if (self.processorReplacedHandler) {
-        self.processorReplacedHandler();
-    }
-    return YES;
+    return [self.formEditor resetPreview:error];
 }
 
 @end

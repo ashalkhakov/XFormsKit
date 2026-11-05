@@ -2,11 +2,16 @@
 # GNUmakefile — XFormsKit on GNUstep: the framework, the designer's editor
 # (XFormsDesignKit), the apps, and their tests.
 #
-#   make            the framework and its test bundles, then XFormsDesignKit
-#                   and the apps (XFormsViewer, XFormsDesigner, XFormsLauncher)
+#   make            the framework and its test bundles, then XFormsDesignKit,
+#                   its tests (Tests/XFormsDesignKitTests) and the apps
+#                   (XFormsViewer, XFormsDesigner, XFormsLauncher); and, where
+#                   UDCode's SDK is installed, UDCode's XForms extension
+#                   (UDCodeExtension, docs/UDCODE.md)
 #   make check      the sources checked (Scripts/check-sources.sh), the unit
-#                   tests and the W3C XForms 1.1 suite (under Xvfb when there
-#                   is no display: the widget tests and some W3C cases draw)
+#                   tests, the designer's, and the W3C XForms 1.1 suite (under
+#                   Xvfb when there is no display: the widget tests, the
+#                   designer's and some W3C cases draw); and the XForms
+#                   extension's tests where it is built (UDCodeExtension/Tests)
 #   make install    the framework, XFormsDesignKit and the apps; not the test
 #                   bundles
 #
@@ -292,10 +297,15 @@ include $(GNUSTEP_MAKEFILES)/framework.make
 include $(GNUSTEP_MAKEFILES)/bundle.make
 -include GNUmakefile.postamble
 
-# The rest, on the framework: the designer's editor and the apps.
+# The rest, on the framework: the designer's editor and the apps; and UDCode's
+# XForms extension, where UDCode's SDK is installed (.github/pins.env's
+# UDCODEKIT_VERSION; UDCodeExtension/GNUmakefile).
 XF_APPS = Apps/XFormsViewer Apps/XFormsDesigner Apps/XFormsLauncher
+UDCODE_SDK = $(wildcard $(GNUSTEP_LOCAL_HEADERS)/UDCodeKit/UDExtension.h $(GNUSTEP_SYSTEM_HEADERS)/UDCodeKit/UDExtension.h)
 after-all::
 	$(MAKE) -C Sources/XFormsDesignKit
+	$(MAKE) -C Tests/XFormsDesignKitTests
+	$(if $(UDCODE_SDK),$(MAKE) -C UDCodeExtension)
 	@for app in $(XF_APPS); do $(MAKE) -C $$app || exit 1; done
 
 after-install::
@@ -304,6 +314,9 @@ after-install::
 
 after-clean::
 	$(MAKE) -C Sources/XFormsDesignKit clean
+	$(MAKE) -C Tests/XFormsDesignKitTests clean
+	-$(MAKE) -C UDCodeExtension clean
+	-$(MAKE) -C UDCodeExtension/Tests clean
 	@for app in $(XF_APPS); do $(MAKE) -C $$app clean || exit 1; done
 
 XVFB = $(if $(DISPLAY),,$(shell command -v xvfb-run >/dev/null 2>&1 && echo xvfb-run -a))
@@ -314,11 +327,15 @@ check:: all
 	@if command -v xctest >/dev/null 2>&1; then \
 	  LD_LIBRARY_PATH="$(CURDIR)/XFormsKit.framework/Versions/Current:$$LD_LIBRARY_PATH" \
 	  PATH="$(CURDIR)/XFormsKit.framework:$$PATH" \
-	  $(XVFB) xctest ./XFormsKitTests.bundle; \
+	  $(XVFB) xctest ./XFormsKitTests.bundle && \
+	  LD_LIBRARY_PATH="$(CURDIR)/Sources/XFormsDesignKit/XFormsDesignKit.framework/Versions/Current:$(CURDIR)/XFormsKit.framework/Versions/Current:$$LD_LIBRARY_PATH" \
+	  PATH="$(CURDIR)/Sources/XFormsDesignKit/XFormsDesignKit.framework:$(CURDIR)/XFormsKit.framework:$$PATH" \
+	  $(XVFB) xctest ./Tests/XFormsDesignKitTests/XFormsDesignKitTests.bundle; \
 	else \
 	  echo "xctest not on PATH. Install gnustep/tools-xctest and re-run make check."; \
 	  exit 1; \
 	fi
+	$(if $(UDCODE_SDK),$(XVFB) $(MAKE) -C UDCodeExtension/Tests run-tests)
 	$(XVFB) $(MAKE) w3ccheck
 
 viewer: all

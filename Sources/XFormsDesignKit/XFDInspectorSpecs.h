@@ -23,5 +23,3 @@ NSArray *XFDPaletteCatalog(void);
 /// Round badge for a tab bar / outline / palette row (the ModelBuilder
 /// pattern â drawn, no image resources).
 NSImage *XFDBadge(NSString *letters, CGFloat r, CGFloat g, CGFloat b);
-
-void XFDInspectorSpecsFilePresent(void);
