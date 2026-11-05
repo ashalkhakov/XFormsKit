@@ -336,6 +336,11 @@
 		DQ0000000000000000000006 /* XFDRichTextPanel.xib in Resources */ = {isa = PBXBuildFile; fileRef = DQ0000000000000000000005 /* XFDRichTextPanel.xib */; };
 		DQ0000000000000000000008 /* XFDPredicateEditor.xib in Resources */ = {isa = PBXBuildFile; fileRef = DQ0000000000000000000007 /* XFDPredicateEditor.xib */; };
 		DQ000000000000000000000A /* XFDXPathPicker.xib in Resources */ = {isa = PBXBuildFile; fileRef = DQ0000000000000000000009 /* XFDXPathPicker.xib */; };
+		DS0000000000000000000002 /* XFDXPathPaths.m in Sources */ = {isa = PBXBuildFile; fileRef = DS0000000000000000000001 /* XFDXPathPaths.m */; };
+		DS0000000000000000000004 /* XFDPredicateEditor.m in Sources */ = {isa = PBXBuildFile; fileRef = DS0000000000000000000003 /* XFDPredicateEditor.m */; };
+		DS0000000000000000000006 /* XFDXPathPicker.m in Sources */ = {isa = PBXBuildFile; fileRef = DS0000000000000000000005 /* XFDXPathPicker.m */; };
+		DS0000000000000000000008 /* XFDRichFragment.m in Sources */ = {isa = PBXBuildFile; fileRef = DS0000000000000000000007 /* XFDRichFragment.m */; };
+		DS000000000000000000000A /* XFDRichTextPanel.m in Sources */ = {isa = PBXBuildFile; fileRef = DS0000000000000000000009 /* XFDRichTextPanel.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -805,6 +810,16 @@
 		DQ0000000000000000000005 /* XFDRichTextPanel.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDRichTextPanel.xib; sourceTree = "<group>"; };
 		DQ0000000000000000000007 /* XFDPredicateEditor.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDPredicateEditor.xib; sourceTree = "<group>"; };
 		DQ0000000000000000000009 /* XFDXPathPicker.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDXPathPicker.xib; sourceTree = "<group>"; };
+		DS0000000000000000000001 /* XFDXPathPaths.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDXPathPaths.m; sourceTree = "<group>"; };
+		DS0000000000000000000003 /* XFDPredicateEditor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDPredicateEditor.m; sourceTree = "<group>"; };
+		DS0000000000000000000005 /* XFDXPathPicker.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDXPathPicker.m; sourceTree = "<group>"; };
+		DS0000000000000000000007 /* XFDRichFragment.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDRichFragment.m; sourceTree = "<group>"; };
+		DS0000000000000000000009 /* XFDRichTextPanel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDRichTextPanel.m; sourceTree = "<group>"; };
+		DS000000000000000000000B /* XFDXPathPaths.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDXPathPaths.h; sourceTree = "<group>"; };
+		DS000000000000000000000C /* XFDPredicateEditor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDPredicateEditor.h; sourceTree = "<group>"; };
+		DS000000000000000000000D /* XFDXPathPicker.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDXPathPicker.h; sourceTree = "<group>"; };
+		DS000000000000000000000E /* XFDRichFragment.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDRichFragment.h; sourceTree = "<group>"; };
+		DS000000000000000000000F /* XFDRichTextPanel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDRichTextPanel.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1384,6 +1399,16 @@
 				DQ0000000000000000000005 /* XFDRichTextPanel.xib */,
 				DQ0000000000000000000007 /* XFDPredicateEditor.xib */,
 				DQ0000000000000000000009 /* XFDXPathPicker.xib */,
+				DS0000000000000000000001 /* XFDXPathPaths.m */,
+				DS0000000000000000000003 /* XFDPredicateEditor.m */,
+				DS0000000000000000000005 /* XFDXPathPicker.m */,
+				DS0000000000000000000007 /* XFDRichFragment.m */,
+				DS0000000000000000000009 /* XFDRichTextPanel.m */,
+				DS000000000000000000000B /* XFDXPathPaths.h */,
+				DS000000000000000000000C /* XFDPredicateEditor.h */,
+				DS000000000000000000000D /* XFDXPathPicker.h */,
+				DS000000000000000000000E /* XFDRichFragment.h */,
+				DS000000000000000000000F /* XFDRichTextPanel.h */,
 			);
 			path = XFormsDesignKit;
 			sourceTree = "<group>";
@@ -2068,6 +2093,11 @@
 				DP0000000000000000000026 /* XFDInspectorPages.m in Sources */,
 				DP0000000000000000000027 /* XFDEventsInspector.m in Sources */,
 				DP0000000000000000000028 /* XFDLibraryViewController.m in Sources */,
+				DS0000000000000000000002 /* XFDXPathPaths.m in Sources */,
+				DS0000000000000000000004 /* XFDPredicateEditor.m in Sources */,
+				DS0000000000000000000006 /* XFDXPathPicker.m in Sources */,
+				DS0000000000000000000008 /* XFDRichFragment.m in Sources */,
+				DS000000000000000000000A /* XFDRichTextPanel.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

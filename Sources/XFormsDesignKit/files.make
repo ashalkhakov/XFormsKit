@@ -20,9 +20,14 @@ XFORMSDESIGNKIT_OBJC_FILES = \
 	XFDInstanceXMLEditor.m \
 	XFDSubmissionTester.m \
 	XFDEventsConsole.m \
+	XFDXPathPaths.m \
+	XFDPredicateEditor.m \
+	XFDXPathPicker.m \
 	XFDXPathField.m \
 	XFDXPathTextStorage.m \
 	XFDExpressionField.m \
+	XFDRichFragment.m \
+	XFDRichTextPanel.m \
 	XFDRichTextField.m \
 	XFDIDRefField.m \
 	XFDDesignOverlay.m \
