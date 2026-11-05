@@ -2,10 +2,7 @@
 #import "XFDAttributesInspector.h"
 #import "XFDInspectorSpecs.h"
 
-@implementation XFDAttributesInspector {
-    /// A page being filled or applied: the changes it makes are its own.
-    BOOL _updating;
-}
+@implementation XFDAttributesInspector
 
 - (instancetype)initWithFormEditor:(XFDFormEditor *)formEditor nibName:(NSString *)nibName
 {
@@ -23,9 +20,6 @@
 
 - (void)viewDidLoadFromNib
 {
-    for (XFDInspectorPage *page in [self pages]) {
-        [page setUp];
-    }
     [self show];
 }
 
@@ -65,20 +59,18 @@
     return [self pages][(NSUInteger)[[self class] pageKindForElement:self.formEditor.selection]];
 }
 
-/// The selection's page shown and filled.
+/// The selection's page shown, with the selection; the others empty.
 - (void)show
 {
     if (![self isViewLoaded]) {
         return;
     }
-    [self.kindTabView selectTabViewItemAtIndex:[[self class] pageKindForElement:self.formEditor.selection]];
-    _updating = YES;
-    XFDInspectorPage *page = [self currentPage];
-    [page fill];
-    for (XFDXPathField *field in [page xpathFields]) {
-        [field validate];
+    XFXMLElement *selection = self.formEditor.selection;
+    [self.kindTabView selectTabViewItemAtIndex:[[self class] pageKindForElement:selection]];
+    XFDInspectorPage *current = [self currentPage];
+    for (XFDInspectorPage *page in [self pages]) {
+        [page showElement:page == current ? selection : nil];
     }
-    _updating = NO;
 }
 
 #pragma mark The form editor's news
@@ -89,12 +81,14 @@
     [self show];
 }
 
+/// The selection may have changed under its editor (an undo, another
+/// inspector), which is told to reload.
 - (void)formEditor:(XFDFormEditor *)editor hostDidChange:(XFXMLElement *)element
 {
     (void)editor;
     (void)element;
-    if (!_updating) {
-        [self show];
+    if ([self isViewLoaded]) {
+        [[self currentPage] showElement:self.formEditor.selection];
     }
 }
 
@@ -102,21 +96,6 @@
 {
     (void)editor;
     [self show];
-}
-
-#pragma mark Applying
-
-- (IBAction)inspectorChanged:(id)sender
-{
-    (void)sender;
-    if (_updating || self.formEditor.selection == nil) {
-        return;
-    }
-    // the facades tell the form editor of each set: one refill after them
-    _updating = YES;
-    [[self currentPage] apply];
-    _updating = NO;
-    [self.formEditor selectionMayHaveChanged];
 }
 
 @end

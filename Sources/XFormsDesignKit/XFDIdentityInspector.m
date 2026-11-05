@@ -2,9 +2,7 @@
 #import "XFDIdentityInspector.h"
 #import "XFDEditors.h"
 
-@implementation XFDIdentityInspector {
-    BOOL _updating;
-}
+@implementation XFDIdentityInspector
 
 - (instancetype)initWithFormEditor:(XFDFormEditor *)formEditor nibName:(NSString *)nibName
 {
@@ -18,54 +16,46 @@
 {
     // the bold title line, which the XIB leaves out
     [self.identityTitleField setFont:[NSFont boldSystemFontOfSize:[NSFont smallSystemFontSize]]];
-    [self fill];
+    [self show];
 }
 
-- (void)fill
+- (XFDElementEditor *)editor
+{
+    return [self.editorController content];
+}
+
+/// The selection shown: its editor, or the same one reloaded.
+- (void)show
 {
     if (![self isViewLoaded]) {
         return;
     }
-    XFDElementEditor *e = [XFDElementEditor editorForElement:self.formEditor.selection
-                                                  formEditor:self.formEditor];
-    [self.identityTitleField setStringValue:e.title ?: @"No Selection"];
-    [self.identityIdField setStringValue:e ? e.identifier : @""];
-    [self.identityIdField setEnabled:e != nil];
+    XFXMLElement *selection = self.formEditor.selection;
+    if (selection != nil && self.editor.element == selection) {
+        [self.editor reload];
+        return;
+    }
+    [self.editorController commitEditing];
+    [self.editorController setContent:[XFDElementEditor editorForElement:selection formEditor:self.formEditor]];
 }
 
 - (void)formEditorSelectionDidChange:(XFDFormEditor *)editor
 {
     (void)editor;
-    [self fill];
+    [self show];
 }
 
 - (void)formEditor:(XFDFormEditor *)editor hostDidChange:(XFXMLElement *)element
 {
     (void)editor;
     (void)element;
-    if (!_updating) {
-        [self fill];
-    }
+    [self show];
 }
 
 - (void)formEditorProcessorWasReplaced:(XFDFormEditor *)editor
 {
     (void)editor;
-    [self fill];
-}
-
-- (IBAction)inspectorChanged:(id)sender
-{
-    (void)sender;
-    XFDElementEditor *e = [XFDElementEditor editorForElement:self.formEditor.selection
-                                                  formEditor:self.formEditor];
-    if (e == nil || [e.identifier isEqualToString:[self.identityIdField stringValue]]) {
-        return;
-    }
-    _updating = YES;
-    e.identifier = [self.identityIdField stringValue];
-    _updating = NO;
-    [self.formEditor selectionMayHaveChanged];
+    [self show];
 }
 
 @end

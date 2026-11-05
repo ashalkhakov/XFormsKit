@@ -6,7 +6,7 @@
 /// plus the XSLTForms show/hide pair). Row keys: label, attr, kind
 /// (xpath | idref | field | popup | content), idkind for idref rows,
 /// options for popup rows (first item = attribute removed). Every action
-/// additionally gets the Event (ev:event) row, prepended at build time.
+/// has XFDActionCommonSpecs()' rows first.
 NSDictionary *XFDActionSpecs(void)
 {
     static NSDictionary *specs;
@@ -85,6 +85,28 @@ NSDictionary *XFDActionSpecs(void)
 }
 
 /// Widget-bearing element kinds — the Control inspector page.
+/// The rows every action has before its own: its trigger, the XML Events
+/// attribute module's observer/target redirections, and the XForms 1.1
+/// §10.1.1 conditionals, if (condition) and while (iteration), plus
+/// iterate, the XSLTForms / 2.0 extension the engine also compiles.
+NSArray *XFDActionCommonSpecs(void)
+{
+    return @[
+        @{ @"label": @"Event", @"attr": @"ev:event", @"kind": @"idref", @"idkind": @"#event",
+           @"tip": @"The event this handler listens for — on its parent element, or on the Observer when set (XML Events)." },
+        @{ @"label": @"Observer", @"attr": @"ev:observer", @"kind": @"idref", @"idkind": @"*",
+           @"tip": @"Listen on this element instead of the parent — id of the observer (XML Events attribute module)." },
+        @{ @"label": @"Target filter", @"attr": @"ev:target", @"kind": @"idref", @"idkind": @"*",
+           @"tip": @"Only fire when the event's original target is this element — id filter for bubbled events (XML Events attribute module)." },
+        @{ @"label": @"If", @"attr": @"if", @"kind": @"xpath", @"expect": @"value",
+           @"tip": @"Condition: the action runs only when this is true (§10.1.1)." },
+        @{ @"label": @"While", @"attr": @"while", @"kind": @"xpath", @"expect": @"value",
+           @"tip": @"Loop: the action repeats while this stays true (§10.1.1)." },
+        @{ @"label": @"Iterate", @"attr": @"iterate", @"kind": @"xpath", @"expect": @"nodeset",
+           @"tip": @"Run once per node in this set, each as context (XSLTForms / XForms 2.0)." },
+    ];
+}
+
 NSSet *XFDControlKinds(void)
 {
     static NSSet *set;

@@ -1,8 +1,8 @@
 /* The designer's parts: every XIB loads with its outlets connected, the
    parts follow the form editor, and the edits the designer makes (the
-   inspectors, the outline, the library, design mode and its drag) land
-   in the host document and undo. Each edit test runs on hello.xhtml and
-   on piechart.xhtml, whose SVG design mode hit-tests too.
+   outline, the library, design mode and its drag) land in the host
+   document and undo; on hello.xhtml, and on piechart.xhtml for SVG's
+   hit-testing. The inspectors' edits are XFDInspectorTests'.
    Copyright (c) 2026 the XFormsKit contributors. LGPL 2.1. */
 #import <XCTest/XCTest.h>
 #import <AppKit/AppKit.h>
@@ -125,11 +125,16 @@
     XFDInspectorViewController *inspector = _window.inspectorViewController;
     [self assertOutlets:@[ @"inspectorTabBar", @"inspectorTabView" ] of:inspector];
     XCTAssertEqual([inspector.inspectorTabView numberOfTabViewItems], 3, @"Identity, Attributes, Events");
-    [self assertOutlets:@[ @"identityTitleField", @"identityIdField" ] of:inspector.identityInspector];
+    [self assertOutlets:@[ @"identityTitleField", @"identityIdField", @"editorController" ]
+                     of:inspector.identityInspector];
     XFDAttributesInspector *attributes = [self attributes];
     [self assertOutlets:@[ @"kindTabView", @"controlPage", @"bindPage", @"submissionPage", @"instancePage",
                            @"elementPage", @"actionPage", @"itemPage", @"itemsetPage" ] of:attributes];
     XCTAssertEqual([attributes.kindTabView numberOfTabViewItems], 8);
+    for (NSString *page in @[ @"controlPage", @"bindPage", @"submissionPage", @"instancePage",
+                              @"elementPage", @"actionPage", @"itemPage", @"itemsetPage" ]) {
+        [self assertOutlets:@[ @"view", @"inspector", @"editorController" ] of:[attributes valueForKey:page]];
+    }
     [self assertOutlets:@[ @"view", @"inspector", @"controlRefField", @"controlValueField", @"controlBindField",
                            @"controlBindingStatusField", @"controlCreateBindButton", @"controlModelField",
                            @"controlSubmissionField", @"controlAppearancePopup", @"controlIncrementalCheckbox",
@@ -146,7 +151,7 @@
     [self assertOutlets:@[ @"view", @"itemLabelField", @"itemValueField" ] of:attributes.itemPage];
     [self assertOutlets:@[ @"view", @"itemsetNodesetField", @"itemsetBindField", @"itemsetLabelRefField",
                            @"itemsetValueRefField" ] of:attributes.itemsetPage];
-    [self assertOutlets:@[ @"view", @"hostNewControlButton" ] of:attributes.elementPage];
+    [self assertOutlets:@[ @"view", @"hostNewControlButton", @"controlKindMenu" ] of:attributes.elementPage];
     [self assertOutlets:@[ @"table", @"plusMinusControl", @"noteField" ] of:inspector.eventsInspector];
 
     XFDLibraryViewController *library = [[XFDLibraryViewController alloc] initWithFormEditor:_editor];
@@ -304,286 +309,193 @@
     XCTAssertEqual(editor.processor.controls.count, before, @"undone with the host's undo");
 }
 
-#pragma mark The edits
+#pragma mark The edits (the inspectors' are XFDInspectorTests')
 
-/// The self-test's edit pass, on one form.
-- (void)runEditPassOnForm:(NSString *)name
+/// A new `name` under `parent`, inserted.
+- (XFXMLElement *)insert:(NSString *)name under:(XFXMLElement *)parent
 {
-    [self openForm:name];
-    NSError *error = nil;
-    NSOutlineView *outline = _window.outlineViewController.outline;
-    XCTAssertGreaterThanOrEqual([outline numberOfRows], 4);
-    XFXMLElement *body = [_editor bodyElement];
+    __block XFXMLElement *element = nil;
+    [self edit:^{
+        element = [self->_editor.hostEdit insertElementNamed:name underParent:parent atIndex:-1 error:NULL];
+    }];
+    XCTAssertNotNil(element);
+    return element;
+}
+
+/// A new input under the body, on the name.
+- (XFXMLElement *)nameInput
+{
+    XFXMLElement *input = [self insert:@"input" under:[_editor bodyElement]];
+    [self edit:^{ [self->_editor.hostEdit setAttribute:@"ref" value:@"name" onElement:input]; }];
+    return input;
+}
+
+/// Design mode on, its overlay armed.
+- (XFDDesignOverlay *)designMode
+{
+    XFDPreviewViewController *preview = [self preview];
+    [preview.designModeCheckbox setState:NSOnState];
+    [preview toggleDesignMode:nil];
+    return preview.designOverlay;
+}
+
+- (void)testAnInsertIsAControlInTheHost
+{
+    [self openForm:@"hello"];
     NSUInteger before = _document.processor.controls.count;
-
-    __block XFXMLElement *input = nil;
-    [self edit:^{
-        input = [self->_editor.hostEdit insertElementNamed:@"input" underParent:body atIndex:-1 error:NULL];
-    }];
-    XCTAssertNotNil(input);
+    [self nameInput];
     XCTAssertEqual(_document.processor.controls.count, before + 1);
-    [self edit:^{
-        [self->_editor.hostEdit setAttribute:@"ref" value:@"name" onElement:input];
-    }];
     XCTAssertTrue([[_document hostXMLString] containsString:@"ref=\"name\""]);
+}
 
-    // the inspector: selecting the input fills its ref; a label applied
-    // lands in the host
-    XFDAttributesInspector *attributes = [self attributes];
-    XFDControlPage *control = attributes.controlPage;
-    _editor.selection = input;
-    XCTAssertEqualObjects([control.controlRefField stringValue], @"name");
-    [control.controlLabelField setStringValue:@"Your name"];
-    [self edit:^{ [attributes inspectorChanged:control.controlLabelField]; }];
-    XCTAssertEqualObjects([_editor.hostEdit supportChildText:@"label" onElement:input], @"Your name");
+- (void)testTheLibraryInsertsAtTheSelection
+{
+    [self openForm:@"hello"];
+    NSUInteger before = _document.processor.controls.count;
+    _editor.selection = [_editor bodyElement];
+    [self edit:^{ [self->_editor insertElementNamed:@"trigger" error:NULL]; }];
+    XCTAssertEqual(_document.processor.controls.count, before + 1);
+}
 
-    // rich label content: flagged rich, shown flattened, never flattened
-    // by a later apply
-    [self edit:^{
-        [self->_editor.hostEdit setSupportChild:@"label"
-                                     contentXML:@"Nom <strong>complet</strong> <xf:output value=\"'x'\"/>"
-                                      onElement:input error:NULL];
-    }];
-    _editor.selection = input;
-    XCTAssertTrue([control.controlLabelField isRich]);
-    XCTAssertTrue([[control.controlLabelField stringValue] containsString:@"Nom complet"]);
-    [self edit:^{ [attributes inspectorChanged:control.controlLabelField]; }];
-    XCTAssertTrue([[_editor.hostEdit supportChildXML:@"label" onElement:input]
-                      containsString:@"<strong>complet</strong>"]);
-    [self edit:^{ [self->_editor.hostEdit setSupportChild:@"label" text:@"Your name" onElement:input]; }];
-    _editor.selection = input;
-    XCTAssertFalse([control.controlLabelField isRich]);
-
-    // the outline flags an unbound control, not an output computing @value
+- (void)testTheOutlineFlagsAnUnboundControl
+{
+    [self openForm:@"hello"];
     XFXMLElement *computed = [XFXMLElement elementWithName:@"xf:output"];
     [computed addAttribute:[XFXMLNode attributeWithName:@"value" stringValue:@"event('xforms-insert')/position"]];
-    XCTAssertFalse([[_window.outlineViewController titleOfElement:computed] containsString:@"unbound"]);
+    XCTAssertFalse([[_window.outlineViewController titleOfElement:computed] containsString:@"unbound"],
+                   @"an output computing @value is bound enough");
     [computed removeAttributeForName:@"value"];
     XCTAssertTrue([[_window.outlineViewController titleOfElement:computed] containsString:@"unbound"]);
+}
 
-    // the library's insert (the palette and the Library both)
-    NSUInteger beforeLibrary = _document.processor.controls.count;
-    [self edit:^{ [self->_editor insertElementNamed:@"trigger" error:NULL]; }];
-    XCTAssertEqual(_document.processor.controls.count, beforeLibrary + 1);
-
-    // IDREFs: a new bind's id is live, picked it lands as @bind, a
-    // dangling one is flagged
+- (void)testANewBindsIdIsLive
+{
+    [self openForm:@"hello"];
     XFXMLElement *model = (XFXMLElement *)_document.processor.model.element;
-    __block XFXMLElement *bind = nil;
-    [self edit:^{
-        bind = [self->_editor.hostEdit insertElementNamed:@"bind" underParent:model atIndex:-1 error:NULL];
-    }];
-    XCTAssertNotNil(bind);
-    NSString *bindID = [[bind attributeForName:@"id"] stringValue];
-    XCTAssertTrue([[XFDIDRefField identifiersOfKind:@"bind" inProcessor:_document.processor] containsObject:bindID]);
-    _editor.selection = input;
-    [control.controlBindField setStringValue:bindID];
-    XCTAssertTrue([control.controlBindField isValid]);
-    [self edit:^{ [attributes inspectorChanged:control.controlBindField]; }];
-    XCTAssertEqualObjects([[input attributeForName:@"bind"] stringValue], bindID);
-    [control.controlBindField setStringValue:@"no-such-bind"];
-    XCTAssertFalse([control.controlBindField isValid]);
-    [control.controlBindField setStringValue:bindID];
+    XFXMLElement *bind = [self insert:@"bind" under:model];
+    XCTAssertTrue([[XFDIDRefField identifiersOfKind:@"bind" inProcessor:_document.processor]
+                      containsObject:[[bind attributeForName:@"id"] stringValue]]);
+}
 
-    // actions: a setvalue under a trigger gets its ev:event, the Action
-    // page, and its rows apply
-    __block XFXMLElement *trigger = nil;
-    __block XFXMLElement *setvalue = nil;
-    [self edit:^{
-        trigger = [self->_editor.hostEdit insertElementNamed:@"trigger" underParent:body atIndex:-1 error:NULL];
-        setvalue = [self->_editor.hostEdit insertElementNamed:@"setvalue" underParent:trigger atIndex:-1 error:NULL];
-    }];
-    XCTAssertNotNil(setvalue);
+- (void)testAnActionGetsItsEvent
+{
+    [self openForm:@"hello"];
+    XFXMLElement *trigger = [self insert:@"trigger" under:[_editor bodyElement]];
+    XFXMLElement *setvalue = [self insert:@"setvalue" under:trigger];
     XCTAssertEqualObjects([[setvalue attributeForName:@"ev:event"] stringValue], @"DOMActivate");
-    _editor.selection = setvalue;
-    XCTAssertEqual([self pageShown], XFDPageAction);
-    XFDActionPage *action = attributes.actionPage;
-    XCTAssertGreaterThanOrEqual(action.rows.count, 4u);
-    id (^row)(NSString *) = ^id(NSString *attr) {
-        for (NSDictionary *r in action.rows) {
-            if ([r[@"attr"] isEqualToString:attr]) {
-                return r[@"view"];
-            }
-        }
-        return nil;
-    };
-    [row(@"ref") setStringValue:@"name"];
-    [self edit:^{ [attributes inspectorChanged:row(@"ref")]; }];
-    XCTAssertEqualObjects([[setvalue attributeForName:@"ref"] stringValue], @"name");
-    XCTAssertNotNil(row(@"if"), @"the XForms 1.1 conditionals on every action");
-    [row(@"if") setStringValue:@"name != ''"];
-    [self edit:^{ [attributes inspectorChanged:row(@"if")]; }];
-    XCTAssertEqualObjects([[setvalue attributeForName:@"if"] stringValue], @"name != ''");
-
-    // the Events inspector lists the trigger's handlers; ev:observer
-    // takes one to the element it names
     XFDEventsInspector *events = _window.inspectorViewController.eventsInspector;
     _editor.selection = trigger;
     XCTAssertEqual(events.handlerElements.count, 1u);
     XCTAssertEqual(events.handlerElements.firstObject, setvalue);
     XCTAssertEqual([events.table numberOfRows], 1);
-    [self edit:^{ [self->_editor.hostEdit setAttribute:@"id" value:@"obs-target" onElement:input]; }];
-    _editor.selection = setvalue;
-    XCTAssertNotNil(row(@"ev:observer"));
-    [row(@"ev:observer") setStringValue:@"obs-target"];
-    [self edit:^{ [attributes inspectorChanged:row(@"ev:observer")]; }];
-    _editor.selection = input;
-    XCTAssertEqual(events.handlerElements.count, 1u);
-    XCTAssertEqual(events.handlerElements.firstObject, setvalue, @"the observed element's");
-    _editor.selection = trigger;
-    XCTAssertEqual(events.handlerElements.count, 0u, @"no longer its parent's");
+}
 
-    // a dispatch's bubbles row, a popup
-    __block XFXMLElement *dispatch = nil;
-    [self edit:^{
-        dispatch = [self->_editor.hostEdit insertElementNamed:@"dispatch" underParent:trigger atIndex:-1 error:NULL];
-    }];
-    _editor.selection = dispatch;
-    XCTAssertNotNil(row(@"bubbles"));
-    [(NSPopUpButton *)row(@"bubbles") selectItemWithTitle:@"false"];
-    [self edit:^{ [attributes inspectorChanged:row(@"bubbles")]; }];
-    XCTAssertEqualObjects([[dispatch attributeForName:@"bubbles"] stringValue], @"false");
-
-    // design mode: the overlay armed, a widget hit-tested to its host
-    // element, a pick selected
+- (void)testDesignModeArmsTheOverlay
+{
+    [self openForm:@"hello"];
     XFDPreviewViewController *preview = [self preview];
-    XFDDesignOverlay *overlay = preview.designOverlay;
-    XCTAssertTrue([overlay isHidden]);
-    [preview.designModeCheckbox setState:NSOnState];
-    [preview toggleDesignMode:nil];
-    XCTAssertFalse([overlay isHidden]);
-    XFFormView *form = preview.formView;
-    XFControl *inputControl = [_document.processor controlForElement:input];
-    NSRect inputRect = [form layoutFrameOfControl:inputControl];
-    XCTAssertFalse(NSIsEmptyRect(inputRect));
-    XFControl *hit = [form controlAtPoint:NSMakePoint(NSMidX(inputRect), NSMidY(inputRect))];
-    XCTAssertEqual(hit.element, input);
-    _editor.selection = trigger;
-    [preview overlay:overlay pickedElement:hit.element];
-    XCTAssertEqual(_editor.selection, input);
-
-    // a drag: the trigger's bottom band drops the input after it; undo
-    // takes it back
-    NSRect triggerRect = [form layoutFrameOfControl:[_document.processor controlForElement:trigger]];
-    XCTAssertFalse(NSIsEmptyRect(triggerRect));
-    NSDictionary *slot = [preview overlay:overlay
-                      dropSlotAtFormPoint:NSMakePoint(NSMidX(triggerRect), NSMaxY(triggerRect) - 2)
-                               forElement:input];
-    XCTAssertEqual(slot[@"parent"], body);
-    XCTAssertNotNil(slot[@"line"]);
-    NSInteger inputBefore = (NSInteger)[input index];
-    [preview overlay:overlay dropElement:input slot:slot];
-    XCTAssertEqual([input parent], body);
-    XCTAssertEqual((NSInteger)[input index], (NSInteger)[trigger index] + 1);
-    [_undo undo];
-    XCTAssertEqual((NSInteger)[input index], inputBefore);
-    NSRect selfRect = [form layoutFrameOfControl:inputControl];
-    XCTAssertNil([preview overlay:overlay dropSlotAtFormPoint:NSMakePoint(NSMidX(selfRect), NSMidY(selfRect))
-                       forElement:input], @"onto its own middle: nowhere");
-
-    // SVG: a painted shape hit-tested back to its element, and picked
-    BOOL hasSVG = NO;
-    for (NSView *sub in [form subviews]) {
-        hasSVG = hasSVG || [sub isKindOfClass:[XFSVGView class]];
-    }
-    if (hasSVG) {
-        XFXMLElement *painted = nil;
-        NSRect paintedRect = NSZeroRect;
-        for (NSString *shape in @[ @"path", @"rect" ]) {
-            for (XFXMLElement *e in [XFXML elementsWithLocalName:shape namespaceURI:@"http://www.w3.org/2000/svg"
-                                                          inNode:_document.processor.hostDocument]) {
-                NSRect r = [form layoutFrameOfSVGElement:e];
-                if (painted == nil && !NSIsEmptyRect(r)) {
-                    painted = e;
-                    paintedRect = r;
-                }
-            }
-        }
-        XCTAssertNotNil(painted, @"a shape painted a frame");
-        XFXMLElement *svgHit = [form svgElementAtPoint:NSMakePoint(NSMidX(paintedRect), NSMidY(paintedRect))];
-        XCTAssertNotNil(svgHit);
-        [preview overlay:overlay pickedElement:svgHit];
-        XCTAssertEqual(_editor.selection, svgHit);
-    }
+    XCTAssertTrue([preview.designOverlay isHidden]);
+    [self designMode];
+    XCTAssertFalse([preview.designOverlay isHidden]);
     [preview.designModeCheckbox setState:NSOffState];
     [preview toggleDesignMode:nil];
-    XCTAssertTrue([overlay isHidden]);
+    XCTAssertTrue([preview.designOverlay isHidden]);
+}
 
-    // item and itemset pages
-    __block XFXMLElement *select1 = nil;
-    __block XFXMLElement *itemset = nil;
-    [self edit:^{
-        select1 = [self->_editor.hostEdit insertElementNamed:@"select1" underParent:body atIndex:-1 error:NULL];
-        itemset = [self->_editor.hostEdit insertElementNamed:@"itemset" underParent:select1 atIndex:-1 error:NULL];
-    }];
-    _editor.selection = itemset;
-    XCTAssertEqual([self pageShown], XFDPageItemset);
-    [attributes.itemsetPage.itemsetLabelRefField setStringValue:@"name"];
-    [self edit:^{ [attributes inspectorChanged:attributes.itemsetPage.itemsetLabelRefField]; }];
-    XCTAssertEqualObjects([_editor.hostEdit supportChildAttribute:@"ref" child:@"label" onElement:itemset], @"name");
-    __block XFXMLElement *item = nil;
-    [self edit:^{
-        item = [self->_editor.hostEdit insertElementNamed:@"item" underParent:select1 atIndex:-1 error:NULL];
-    }];
-    _editor.selection = item;
-    XCTAssertEqual([self pageShown], XFDPageItem);
-    XCTAssertEqualObjects([attributes.itemPage.itemValueField stringValue], @"item");
+- (void)testDesignModePicksTheWidgetsElement
+{
+    [self openForm:@"hello"];
+    XFXMLElement *input = [self nameInput];
+    XFDDesignOverlay *overlay = [self designMode];
+    XFFormView *form = [self preview].formView;
+    NSRect rect = [form layoutFrameOfControl:[_document.processor controlForElement:input]];
+    XCTAssertFalse(NSIsEmptyRect(rect));
+    XFControl *hit = [form controlAtPoint:NSMakePoint(NSMidX(rect), NSMidY(rect))];
+    XCTAssertEqual(hit.element, input);
+    _editor.selection = [_editor bodyElement];
+    [[self preview] overlay:overlay pickedElement:hit.element];
+    XCTAssertEqual(_editor.selection, input);
+}
 
-    // a ref made a named bind in one gesture
-    __block XFXMLElement *input2 = nil;
-    [self edit:^{
-        input2 = [self->_editor.hostEdit insertElementNamed:@"input" underParent:body atIndex:-1 error:NULL];
-        [self->_editor.hostEdit setAttribute:@"ref" value:@"name" onElement:input2];
-    }];
-    _editor.selection = input2;
-    [self edit:^{ [control createBindFromRef:nil]; }];
-    NSString *newBindID = [[input2 attributeForName:@"bind"] stringValue];
-    XCTAssertGreaterThan(newBindID.length, 0u);
-    XCTAssertEqual([[[input2 attributeForName:@"ref"] stringValue] length], 0u);
-    XFXMLElement *createdBind = nil;
-    for (XFXMLElement *b in [XFXML elementsWithLocalName:@"bind" namespaceURI:XFXFormsNamespaceURI inNode:model]) {
-        if ([[[b attributeForName:@"id"] stringValue] isEqualToString:newBindID]) {
-            createdBind = b;
+- (void)testADragDropsAfterAndUndoes
+{
+    [self openForm:@"hello"];
+    XFXMLElement *body = [_editor bodyElement];
+    XFXMLElement *input = [self nameInput];
+    XFXMLElement *trigger = [self insert:@"trigger" under:body];
+    XFDDesignOverlay *overlay = [self designMode];
+    XFFormView *form = [self preview].formView;
+    NSRect triggerRect = [form layoutFrameOfControl:[_document.processor controlForElement:trigger]];
+    XCTAssertFalse(NSIsEmptyRect(triggerRect));
+    NSDictionary *slot = [[self preview] overlay:overlay
+                             dropSlotAtFormPoint:NSMakePoint(NSMidX(triggerRect), NSMaxY(triggerRect) - 2)
+                                      forElement:input];
+    XCTAssertEqual(slot[@"parent"], body);
+    XCTAssertNotNil(slot[@"line"]);
+    NSInteger before = (NSInteger)[input index];
+    [[self preview] overlay:overlay dropElement:input slot:slot];
+    XCTAssertEqual((NSInteger)[input index], (NSInteger)[trigger index] + 1, @"the trigger's bottom band: after it");
+    [_undo undo];
+    XCTAssertEqual((NSInteger)[input index], before);
+}
+
+- (void)testADropOntoItselfIsNowhere
+{
+    [self openForm:@"hello"];
+    XFXMLElement *input = [self nameInput];
+    XFDDesignOverlay *overlay = [self designMode];
+    NSRect rect = [[self preview].formView layoutFrameOfControl:[_document.processor controlForElement:input]];
+    XCTAssertNil([[self preview] overlay:overlay dropSlotAtFormPoint:NSMakePoint(NSMidX(rect), NSMidY(rect))
+                              forElement:input]);
+}
+
+- (void)testDesignModePicksAPaintedShape
+{
+    [self openForm:@"piechart"];
+    XFDDesignOverlay *overlay = [self designMode];
+    XFFormView *form = [self preview].formView;
+    XFXMLElement *painted = nil;
+    NSRect paintedRect = NSZeroRect;
+    for (NSString *shape in @[ @"path", @"rect" ]) {
+        for (XFXMLElement *e in [XFXML elementsWithLocalName:shape namespaceURI:@"http://www.w3.org/2000/svg"
+                                                      inNode:_document.processor.hostDocument]) {
+            NSRect r = [form layoutFrameOfSVGElement:e];
+            if (painted == nil && !NSIsEmptyRect(r)) {
+                painted = e;
+                paintedRect = r;
+            }
         }
     }
-    XCTAssertEqualObjects([[createdBind attributeForName:@"nodeset"] stringValue], @"name");
+    XCTAssertNotNil(painted, @"a shape painted a frame");
+    XFXMLElement *hit = [form svgElementAtPoint:NSMakePoint(NSMidX(paintedRect), NSMidY(paintedRect))];
+    XCTAssertNotNil(hit);
+    [[self preview] overlay:overlay pickedElement:hit];
+    XCTAssertEqual(_editor.selection, hit);
+}
 
-    // a control made of instance data
-    XFXMLElement *instance = [XFXML childElementWithLocalName:@"instance" namespaceURI:XFXFormsNamespaceURI
-                                                    ofElement:model];
-    XFXMLElement *dataRoot = [_editor elementChildrenOf:instance].firstObject;
-    XFXMLElement *dataNode = [_editor elementChildrenOf:dataRoot].firstObject;
-    if (dataNode != nil) {
-        NSUInteger beforeBound = _document.processor.controls.count;
-        _editor.selection = dataNode;
-        XCTAssertEqual([self pageShown], XFDPageElement);
-        XCTAssertTrue([attributes.elementPage.hostNewControlButton isEnabled]);
-        [self edit:^{ [attributes.elementPage createBoundControlOfKind:@"input"]; }];
-        XCTAssertEqual(_document.processor.controls.count, beforeBound + 1);
-    }
+- (void)testAnXPathFieldMarksWhatDoesNotCompile
+{
+    [self openForm:@"hello"];
+    XFXMLElement *input = [self nameInput];
+    _editor.selection = input;
+    XFDXPathField *field = [self attributes].controlPage.controlRefField;
+    [field setStringValue:@"//[bad(("];
+    XCTAssertFalse([field isValid]);
+    [field setStringValue:@"name"];
+    XCTAssertTrue([field isValid]);
+}
 
-    // the XPath fields validate
-    [control.controlRefField setStringValue:@"//[bad(("];
-    XCTAssertFalse([control.controlRefField isValid]);
-    [control.controlRefField setStringValue:@"name"];
-    XCTAssertTrue([control.controlRefField isValid]);
-
-    // every edit undone: the form as it was
+- (void)testEveryEditUndoes
+{
+    [self openForm:@"hello"];
+    NSUInteger before = _document.processor.controls.count;
+    XFXMLElement *trigger = [self insert:@"trigger" under:[_editor bodyElement]];
+    [self insert:@"setvalue" under:trigger];
+    [self nameInput];
     while ([_undo canUndo]) {
         [_undo undo];
     }
     XCTAssertEqual(_document.processor.controls.count, before);
-    (void)error;
-}
-
-- (void)testTheEditsOnHello
-{
-    [self runEditPassOnForm:@"hello"];
-}
-
-- (void)testTheEditsOnPiechart
-{
-    [self runEditPassOnForm:@"piechart"];
 }
 
 @end

@@ -1,7 +1,8 @@
 #
 # XFormsDesignKitTests -- the designer's parts and what they are built on
-# (XFDPartsTests, XFDServicesTests). Built after XFormsDesignKit, which the
-# top GNUmakefile makes after its own bundles; `make check` there runs it.
+# (XFDPartsTests, XFDInspectorTests, XFDEditorsTests, XFDServicesTests).
+# Built after XFormsDesignKit, which the top GNUmakefile makes after its
+# own bundles; `make check` there runs it.
 #
 
 ifeq ($(GNUSTEP_MAKEFILES),)
@@ -20,6 +21,8 @@ BUNDLE_EXTENSION = .bundle
 XFormsDesignKitTests_NEEDS_GUI = yes
 XFormsDesignKitTests_OBJC_FILES = \
 	XFDPartsTests.m \
+	XFDInspectorTests.m \
+	XFDEditorsTests.m \
 	XFDServicesTests.m
 
 # The forms the edit tests open: a small one, and one that paints SVG.

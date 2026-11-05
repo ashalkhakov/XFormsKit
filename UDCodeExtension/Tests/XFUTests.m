@@ -167,7 +167,7 @@
   XCTAssertEqualObjects([control.controlRefField stringValue], @"name");
   _edits = 0;
   [control.controlLabelField setStringValue:@"Your name"];
-  [_tab.attributesInspector inspectorChanged:control.controlLabelField];
+  XCTAssertTrue([control.controlLabelField commitEditing]);
   [self spin:0.1];
   NSString *changed = [_document.textModel getValue];
   XCTAssertTrue([changed containsString:@"<xf:label>Your name</xf:label>"]);
@@ -180,7 +180,7 @@
   XCTAssertTrue([((XFUTextChange *)changes.lastObject).text containsString:@"Your name"]);
   // after it, a change is its own lines
   [control.controlLabelField setStringValue:@"Full name"];
-  [_tab.attributesInspector inspectorChanged:control.controlLabelField];
+  XCTAssertTrue([control.controlLabelField commitEditing]);
   [self spin:0.1];
   NSArray *second = XFULineChanges(changed, [_document.textModel getValue]);
   XCTAssertEqual(second.count, 1u, @"only the label's line");

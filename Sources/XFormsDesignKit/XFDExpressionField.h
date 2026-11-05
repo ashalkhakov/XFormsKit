@@ -12,7 +12,8 @@
    it replaces: `fieldEditor = YES` gives Return and Tab their field
    meanings, and the control re-posts NSControl's editing notifications so
    existing -controlTextDidChange: / -controlTextDidEndEditing: delegates
-   keep working unchanged.
+   keep working unchanged, and asks -control:textShouldEndEditing: before
+   editing ends, as a control asks its delegate.
    Copyright (c) 2026 the XFormsKit contributors. LGPL 2.1. */
 #pragma once
 #import <AppKit/AppKit.h>

@@ -12,6 +12,7 @@ XFORMSDESIGNKIT_OBJC_FILES = \
 	XFDIdentityInspector.m \
 	XFDAttributesInspector.m \
 	XFDInspectorPages.m \
+	XFDActionPage.m \
 	XFDEventsInspector.m \
 	XFDLibraryViewController.m \
 	XFDWindowController.m \
@@ -29,6 +30,7 @@ XFORMSDESIGNKIT_OBJC_FILES = \
 	XFDRichFragment.m \
 	XFDRichTextPanel.m \
 	XFDRichTextField.m \
+	XFDFieldBinding.m \
 	XFDIDRefField.m \
 	XFDDesignOverlay.m \
 	ThirdParty/DMTabBar/DMTabBar.m \
@@ -45,6 +47,7 @@ XFORMSDESIGNKIT_RESOURCE_FILES = \
 	XFDInspectorViewController.xib \
 	XFDIdentityInspector.xib \
 	XFDAttributesInspector.xib \
+	XFDActionRow.xib \
 	XFDEventsInspector.xib \
 	XFDLibrary.xib \
 	XFDPalettePanel.xib \

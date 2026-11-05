@@ -165,6 +165,14 @@
     }
 }
 
+- (BOOL)textShouldEndEditing:(NSText *)text
+{
+    if ([self.delegate respondsToSelector:@selector(control:textShouldEndEditing:)]) {
+        return [self.delegate control:(id)self textShouldEndEditing:text];
+    }
+    return YES;
+}
+
 - (void)textDidEndEditing:(NSNotification *)note
 {
     (void)note;

@@ -2,15 +2,26 @@
 #import "XFDXPathPicker.h"
 #import "XFDXPathTextStorage.h"
 #import "XFDExpressionField.h"
+#import "XFDFieldBinding.h"
 #import <XFormsKit/XFXMLTypes.h>
 
-@interface XFDXPathField () <NSTextFieldDelegate>
+@interface XFDXPathField () <NSTextFieldDelegate, XFDBindableField>
 @property (nonatomic, strong) XFDExpressionField *field;
 @property (nonatomic, strong) NSButton *pickButton;
 @property (nonatomic, assign, readwrite, getter=isValid) BOOL valid;
 @end
 
-@implementation XFDXPathField
+@implementation XFDXPathField {
+    NSMutableDictionary<NSString *, XFDFieldBinding *> *_bindings;
+}
+
++ (void)initialize
+{
+    if (self == [XFDXPathField class]) {
+        [self exposeBinding:NSValueBinding];
+        [self exposeBinding:NSEnabledBinding];
+    }
+}
 
 - (instancetype)initWithFrame:(NSRect)frame
 {
@@ -36,6 +47,7 @@
         return;
     }
     _valid = YES;
+    _bindings = [NSMutableDictionary dictionary];
     NSRect bounds = [self bounds];
     CGFloat buttonWidth = 22;
     self.field = [[XFDExpressionField alloc] initWithFrame:
@@ -106,6 +118,48 @@
     }
 }
 
+#pragma mark bindings
+
+- (void)bind:(NSString *)binding toObject:(id)object withKeyPath:(NSString *)keyPath
+     options:(NSDictionary *)options
+{
+    if (!XFDFieldBind(self, _bindings, binding, object, keyPath, options)) {
+        [super bind:binding toObject:object withKeyPath:keyPath options:options];
+    }
+}
+
+- (void)unbind:(NSString *)binding
+{
+    if (!XFDFieldUnbind(_bindings, binding)) {
+        [super unbind:binding];
+    }
+}
+
+- (NSDictionary *)infoForBinding:(NSString *)binding
+{
+    return _bindings[binding] ? _bindings[binding].info : [super infoForBinding:binding];
+}
+
+- (void)setBoundValue:(id)value
+{
+    [self setStringValue:[value isKindOfClass:[NSString class]] ? value : @""];
+}
+
+/// The expression given to the bound object; NO when refused.
+- (BOOL)commitEditing
+{
+    XFDFieldBinding *binding = _bindings[NSValueBinding];
+    return binding == nil || [binding commitValue:[self stringValue]];
+}
+
+/// Editing ends only once the bound object has taken the expression.
+- (BOOL)control:(id)control textShouldEndEditing:(NSText *)text
+{
+    (void)control;
+    (void)text;
+    return [self commitEditing];
+}
+
 - (void)sendAction
 {
     if (self.target != nil && self.action != NULL) {
@@ -174,6 +228,9 @@
     }
     [self.field setStringValue:path];
     [self validate];
+    if (![self commitEditing]) {
+        return;
+    }
     [self sendAction];
 }
 

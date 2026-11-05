@@ -342,6 +342,12 @@
 		DS0000000000000000000008 /* XFDRichFragment.m in Sources */ = {isa = PBXBuildFile; fileRef = DS0000000000000000000007 /* XFDRichFragment.m */; };
 		DS000000000000000000000A /* XFDRichTextPanel.m in Sources */ = {isa = PBXBuildFile; fileRef = DS0000000000000000000009 /* XFDRichTextPanel.m */; };
 		DT0000000000000000000002 /* XFHostEditTests.m in Sources */ = {isa = PBXBuildFile; fileRef = DT0000000000000000000001 /* XFHostEditTests.m */; };
+		DU0000000000000000000002 /* XFDActionPage.m in Sources */ = {isa = PBXBuildFile; fileRef = DU0000000000000000000001 /* XFDActionPage.m */; };
+		DU0000000000000000000004 /* XFDFieldBinding.m in Sources */ = {isa = PBXBuildFile; fileRef = DU0000000000000000000003 /* XFDFieldBinding.m */; };
+		DU0000000000000000000006 /* XFDActionPage.h in Headers */ = {isa = PBXBuildFile; fileRef = DU0000000000000000000005 /* XFDActionPage.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		DU0000000000000000000009 /* XFDActionRow.xib in Resources */ = {isa = PBXBuildFile; fileRef = DU0000000000000000000008 /* XFDActionRow.xib */; };
+		DU000000000000000000000B /* XFDEditorsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = DU000000000000000000000A /* XFDEditorsTests.m */; };
+		DU000000000000000000000D /* XFDInspectorTests.m in Sources */ = {isa = PBXBuildFile; fileRef = DU000000000000000000000C /* XFDInspectorTests.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -822,6 +828,13 @@
 		DS000000000000000000000E /* XFDRichFragment.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDRichFragment.h; sourceTree = "<group>"; };
 		DS000000000000000000000F /* XFDRichTextPanel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDRichTextPanel.h; sourceTree = "<group>"; };
 		DT0000000000000000000001 /* XFHostEditTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFHostEditTests.m; sourceTree = "<group>"; };
+		DU0000000000000000000001 /* XFDActionPage.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDActionPage.m; sourceTree = "<group>"; };
+		DU0000000000000000000003 /* XFDFieldBinding.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDFieldBinding.m; sourceTree = "<group>"; };
+		DU0000000000000000000005 /* XFDActionPage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDActionPage.h; sourceTree = "<group>"; };
+		DU0000000000000000000007 /* XFDFieldBinding.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFDFieldBinding.h; sourceTree = "<group>"; };
+		DU0000000000000000000008 /* XFDActionRow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = XFDActionRow.xib; sourceTree = "<group>"; };
+		DU000000000000000000000A /* XFDEditorsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDEditorsTests.m; sourceTree = "<group>"; };
+		DU000000000000000000000C /* XFDInspectorTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = XFDInspectorTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1412,6 +1425,11 @@
 				DS000000000000000000000D /* XFDXPathPicker.h */,
 				DS000000000000000000000E /* XFDRichFragment.h */,
 				DS000000000000000000000F /* XFDRichTextPanel.h */,
+				DU0000000000000000000001 /* XFDActionPage.m */,
+				DU0000000000000000000003 /* XFDFieldBinding.m */,
+				DU0000000000000000000005 /* XFDActionPage.h */,
+				DU0000000000000000000007 /* XFDFieldBinding.h */,
+				DU0000000000000000000008 /* XFDActionRow.xib */,
 			);
 			path = XFormsDesignKit;
 			sourceTree = "<group>";
@@ -1422,6 +1440,8 @@
 				DP000000000000000000004D /* XFDPartsTests.m */,
 				DP000000000000000000004E /* XFDServicesTests.m */,
 				DP000000000000000000004C /* piechart.xhtml */,
+				DU000000000000000000000A /* XFDEditorsTests.m */,
+				DU000000000000000000000C /* XFDInspectorTests.m */,
 			);
 			path = XFormsDesignKitTests;
 			sourceTree = "<group>";
@@ -1562,6 +1582,7 @@
 				DP0000000000000000000030 /* XFDInspectorPages.h in Headers */,
 				DP0000000000000000000031 /* XFDEventsInspector.h in Headers */,
 				DP0000000000000000000032 /* XFDLibraryViewController.h in Headers */,
+				DU0000000000000000000006 /* XFDActionPage.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1853,6 +1874,7 @@
 				DQ0000000000000000000006 /* XFDRichTextPanel.xib in Resources */,
 				DQ0000000000000000000008 /* XFDPredicateEditor.xib in Resources */,
 				DQ000000000000000000000A /* XFDXPathPicker.xib in Resources */,
+				DU0000000000000000000009 /* XFDActionRow.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2102,6 +2124,8 @@
 				DS0000000000000000000006 /* XFDXPathPicker.m in Sources */,
 				DS0000000000000000000008 /* XFDRichFragment.m in Sources */,
 				DS000000000000000000000A /* XFDRichTextPanel.m in Sources */,
+				DU0000000000000000000002 /* XFDActionPage.m in Sources */,
+				DU0000000000000000000004 /* XFDFieldBinding.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2111,6 +2135,8 @@
 			files = (
 				DP000000000000000000004F /* XFDPartsTests.m in Sources */,
 				DP0000000000000000000050 /* XFDServicesTests.m in Sources */,
+				DU000000000000000000000B /* XFDEditorsTests.m in Sources */,
+				DU000000000000000000000D /* XFDInspectorTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
