@@ -368,10 +368,7 @@
     XCTAssertTrue([window makeFirstResponder:field]);
     NSText *text = [field currentEditor];
     XCTAssertNotNil(text, @"the field edited");
-    // typed, as a key press inserts: setting the text is no edit to AppKit;
-    // the typing's own undo, which would open groups of its own on the
-    // document's undo manager, is no part of this
-    [(NSTextView *)text setAllowsUndo:NO];
+    // typed, as a key press inserts: setting the text is no edit to AppKit
     [text selectAll:nil];
     [(NSTextView *)text insertText:@"your-name" replacementRange:NSMakeRange(NSNotFound, 0)];
     [self edit:^{ XCTAssertTrue([window makeFirstResponder:nil]); }];
