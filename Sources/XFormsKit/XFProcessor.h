@@ -136,6 +136,21 @@ NS_ASSUME_NONNULL_BEGIN
                                           error:(NSError **)error;
 + (nullable instancetype)processorWithXMLString:(NSString *)xml
                                           error:(NSError **)error;
+/// The same with the host's transport, given to every model before
+/// anything loads: an instance `src` of a scheme the processor does not
+/// read itself (form:read) and every submission are asked of it, from
+/// construction on (an xforms-ready handler's submission included).
+/// Setting `model.transport` afterwards is too late for those.
++ (nullable instancetype)processorWithXMLString:(NSString *)xml
+                                        baseURL:(nullable NSURL *)baseURL
+                                      transport:(nullable id<XFSubmissionTransport>)transport
+                                          error:(NSError **)error;
++ (nullable instancetype)processorWithContentsOfURL:(NSURL *)url
+                                          transport:(nullable id<XFSubmissionTransport>)transport
+                                              error:(NSError **)error;
+/// The transport the host constructed the processor with (nil: none);
+/// subforms' models get it too.
+@property (nonatomic, strong, readonly, nullable) id<XFSubmissionTransport> transport;
 
 - (nullable XFInstance *)defaultInstance;
 - (BOOL)refresh:(NSError **)error;

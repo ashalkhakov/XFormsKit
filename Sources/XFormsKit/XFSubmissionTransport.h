@@ -115,4 +115,23 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy) NSDictionary<NSString *, NSString *> *extraHeaders;
 @end
 
+/// A host's answer to a request of a scheme it owns.
+typedef XFSubmissionResponse *_Nullable (^XFSubmissionHandler)(XFSubmissionRequest *request,
+                                                              NSError *_Nullable *_Nullable error);
+
+/// Wrapper transport (layer 3): the host answers the schemes it owns
+/// itself (form:read, form:save: its store or service behind them) and
+/// every other request goes on to `inner`. Given to a processor at
+/// construction (+[XFProcessor processorWithXMLString:baseURL:transport:error:])
+/// it answers instance `src` too. Asynchronous submissions call it off the
+/// main thread: a handler that touches main-thread state (a managed object
+/// context) answers synchronous ones only, or hops itself.
+@interface XFSchemeTransport : NSObject <XFSubmissionTransport>
+/// Where the other schemes go: an XFHTTPSubmissionTransport unless set.
+@property (nonatomic, strong, null_resettable) id<XFSubmissionTransport> inner;
+/// `scheme` without its colon ("form"), case-insensitive; nil removes it.
+- (void)setHandler:(nullable XFSubmissionHandler)handler forScheme:(NSString *)scheme;
+- (void)setTransport:(nullable id<XFSubmissionTransport>)transport forScheme:(NSString *)scheme;
+@end
+
 NS_ASSUME_NONNULL_END

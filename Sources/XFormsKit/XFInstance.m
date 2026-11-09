@@ -3,6 +3,7 @@
 #import "XFErrors.h"
 #import "XFXML.h"
 #import "XFModel.h"
+#import "XFSubmissionTransport.h"
 #import "XFBind.h"
 #import "XFNodeState.h"
 #import "XFMIPBinding.h"
@@ -108,6 +109,14 @@
     self.originalDocument = [doc copy];
 }
 
+/// The schemes an instance reads itself, as it always has: anything else
+/// is asked of the model's transport, when the host gave it one.
++ (BOOL)isLoadedDirectly:(NSURL *)url
+{
+    NSString *scheme = [url.scheme lowercaseString] ?: @"file";
+    return [@[ @"file", @"http", @"https", @"data" ] containsObject:scheme];
+}
+
 - (BOOL)loadFromSrc:(NSError **)error
 {
     if (self.src.length == 0) {
@@ -124,7 +133,25 @@
         }
     }
     NSError *inner = nil;
-    NSData *data = [NSData dataWithContentsOfURL:url options:0 error:&inner];
+    NSData *data = nil;
+    id<XFSubmissionTransport> transport = self.model.transport;
+    if (transport != nil && ![XFInstance isLoadedDirectly:url]) {
+        // A scheme only the host knows (form:read): its transport answers,
+        // as it answers the model's submissions.
+        XFSubmissionRequest *request = [[XFSubmissionRequest alloc] init];
+        request.method = @"get";
+        request.URLString = [url absoluteString];
+        XFSubmissionResponse *response = [transport performRequest:request error:&inner];
+        if (response != nil && (response.statusCode == 0 || (response.statusCode >= 200 && response.statusCode < 300))) {
+            data = [response.body dataUsingEncoding:NSUTF8StringEncoding];
+            if (self.mediatype.length == 0 && response.mediaType.length) {
+                self.mediatype = [[response.mediaType componentsSeparatedByString:@";"].firstObject
+                    stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+            }
+        }
+    } else {
+        data = [NSData dataWithContentsOfURL:url options:0 error:&inner];
+    }
     if (data == nil) {
         if (error) {
             *error = inner ?: [NSError errorWithDomain:XFErrorDomain

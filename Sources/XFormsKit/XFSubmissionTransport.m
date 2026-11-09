@@ -769,3 +769,81 @@ static NSString * const XFHTTPTransportRunLoopMode = @"XFHTTPSubmissionTransport
 }
 
 @end
+
+#pragma mark - Schemes the host answers
+
+/// One handler as a transport.
+@interface XFHandlerTransport : NSObject <XFSubmissionTransport>
+@property (nonatomic, copy) XFSubmissionHandler handler;
+@end
+
+@implementation XFHandlerTransport
+
+- (XFSubmissionResponse *)performRequest:(XFSubmissionRequest *)request error:(NSError **)error
+{
+    return self.handler(request, error);
+}
+
+@end
+
+@implementation XFSchemeTransport
+{
+    NSMutableDictionary<NSString *, id<XFSubmissionTransport>> *_schemes;
+    id<XFSubmissionTransport> _inner;
+}
+
+- (instancetype)init
+{
+    self = [super init];
+    if (self) {
+        _schemes = [NSMutableDictionary dictionary];
+    }
+    return self;
+}
+
+- (id<XFSubmissionTransport>)inner
+{
+    if (_inner == nil) {
+        _inner = [[XFHTTPSubmissionTransport alloc] init];
+    }
+    return _inner;
+}
+
+- (void)setInner:(id<XFSubmissionTransport>)inner
+{
+    _inner = inner;
+}
+
+- (void)setHandler:(XFSubmissionHandler)handler forScheme:(NSString *)scheme
+{
+    XFHandlerTransport *transport = nil;
+    if (handler != nil) {
+        transport = [[XFHandlerTransport alloc] init];
+        transport.handler = handler;
+    }
+    [self setTransport:transport forScheme:scheme];
+}
+
+- (void)setTransport:(id<XFSubmissionTransport>)transport forScheme:(NSString *)scheme
+{
+    @synchronized (self) {
+        if (transport != nil) {
+            _schemes[[scheme lowercaseString]] = transport;
+        } else {
+            [_schemes removeObjectForKey:[scheme lowercaseString]];
+        }
+    }
+}
+
+- (XFSubmissionResponse *)performRequest:(XFSubmissionRequest *)request error:(NSError **)error
+{
+    NSRange colon = [request.URLString rangeOfString:@":"];
+    NSString *scheme = colon.location != NSNotFound ? [[request.URLString substringToIndex:colon.location] lowercaseString] : @"";
+    id<XFSubmissionTransport> transport = nil;
+    @synchronized (self) {
+        transport = _schemes[scheme];
+    }
+    return [transport ?: self.inner performRequest:request error:error];
+}
+
+@end
