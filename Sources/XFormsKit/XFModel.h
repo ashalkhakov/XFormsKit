@@ -70,6 +70,33 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setRebuilded:(BOOL)rebuilded;
 - (void)swapChangeLists;
 
+#pragma mark Host-reported errors and warnings
+
+/// What the host found wrong after a refused submission (a server's 400,
+/// a store's validation), said of the node: the controls bound to it are
+/// invalid and show `message` as their alert until its value changes, or
+/// until a submission that sends data is done. nil takes it away. It is no
+/// MIP: a submission is not blocked by it (the host refuses again if it
+/// must). The UI is refreshed.
+- (void)setHostError:(nullable NSString *)message forNode:(XFXMLNode *)node;
+/// The same for each path, an XPath from the default instance's document
+/// element ("mileage", "items/item[2]/price"); "" or one that selects no
+/// node is said of the form as a whole. Replaces the errors set before.
+/// Returns the messages said of the form.
+- (NSArray<NSString *> *)setHostErrors:(NSDictionary<NSString *, NSString *> *)errors;
+/// Every host error taken away, the form's messages too.
+- (void)clearHostErrors;
+/// The host's errors that no node holds, in the order they were set.
+@property (nonatomic, copy, readonly) NSArray<NSString *> *hostMessages;
+/// A warning said of the node: shown at its controls, which stay valid;
+/// never in the way of a submission. nil takes it away.
+- (void)setHostWarning:(nullable NSString *)message forNode:(XFXMLNode *)node;
+/// The document's warnings: each `xfk:warning ref="…" test="…"`'s text,
+/// on each node `ref` selects (from the default instance's document
+/// element) for which `test` holds, its context that node. Evaluated at
+/// every revalidate.
+- (void)evaluateWarnings;
+
 - (void)construct;
 - (void)rebuild;
 - (void)recalculate;

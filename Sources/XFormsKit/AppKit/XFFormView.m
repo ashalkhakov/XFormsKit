@@ -159,11 +159,14 @@ NSColor *XFInvalidTextColor(void)
     NSColor *fill = self.kind == XFBadgeAlert
         ? (dark ? [NSColor colorWithCalibratedRed:0.85 green:0.25 blue:0.25 alpha:1.0]
                 : [NSColor colorWithCalibratedRed:0.80 green:0.10 blue:0.10 alpha:1.0])
+        : self.kind == XFBadgeWarning
+        ? (dark ? [NSColor colorWithCalibratedRed:0.90 green:0.65 blue:0.20 alpha:1.0]
+                : [NSColor colorWithCalibratedRed:0.85 green:0.55 blue:0.05 alpha:1.0])
         : (dark ? [NSColor colorWithCalibratedRed:0.45 green:0.55 blue:0.75 alpha:1.0]
                 : [NSColor colorWithCalibratedRed:0.35 green:0.45 blue:0.65 alpha:1.0]);
     [fill setFill];
     [[NSBezierPath bezierPathWithOvalInRect:r] fill];
-    NSString *glyph = self.kind == XFBadgeAlert ? @"!" : @"i";
+    NSString *glyph = self.kind == XFBadgeHint ? @"i" : @"!";
     NSDictionary *attrs = @{
         NSFontAttributeName: [NSFont boldSystemFontOfSize:10],
         NSForegroundColorAttributeName: [NSColor whiteColor],
@@ -293,7 +296,8 @@ NSView *XFKeyViewOf(NSView *view)
         // repeated here so hovering the invalid field also shows it.
         NSMutableArray *bits = [NSMutableArray array];
         if (control.hint.length && control.hintMinimal) [bits addObject:control.hint];
-        if (!control.valid && control.alert.length) [bits addObject:control.alert];
+        if (!control.valid && [control shownAlert].length) [bits addObject:[control shownAlert]];
+        if (control.warning.length) [bits addObject:control.warning];
         [view setToolTip:bits.count ? [bits componentsJoinedByString:@"\n"] : nil];
     }
 }
@@ -330,15 +334,28 @@ NSView *XFKeyViewOf(NSView *view)
         // its badge at the rebuild that follows a commit
         // (.xforms-invalid span.xforms-alert { display: inline }).
         if (w.alertBadge == nil) {
-            w.alertBadge = [XFBadgeView badgeWithKind:XFBadgeAlert text:control.alert];
+            w.alertBadge = [XFBadgeView badgeWithKind:XFBadgeAlert text:[control shownAlert] ?: @""];
         }
-        w.alertBadge.markup = control.alertMarkup;
+        w.alertBadge.markup = [control shownAlertMarkup];
         [w.alertBadge setFrameOrigin:NSMakePoint(x, y)];
         [self keepView:w.alertBadge];
         [w.alertBadge refreshTracking];
         x += kBadgeSize + 2;
     } else {
         w.alertBadge = nil;
+    }
+    if (control.warning.length
+        && ![control isKindOfClass:[XFTriggerControl class]]
+        && ![control isKindOfClass:[XFGroup class]]) {
+        if (w.warningBadge == nil) {
+            w.warningBadge = [XFBadgeView badgeWithKind:XFBadgeWarning text:control.warning];
+        }
+        [w.warningBadge setFrameOrigin:NSMakePoint(x, y)];
+        [self keepView:w.warningBadge];
+        [w.warningBadge refreshTracking];
+        x += kBadgeSize + 2;
+    } else {
+        w.warningBadge = nil;
     }
     [self updateBadgesForWidget:w];
     return x - 4;
@@ -354,11 +371,15 @@ NSView *XFKeyViewOf(NSView *view)
     }
     if (w.alertBadge) {
         [w.alertBadge setHidden:control.valid || !control.relevant];
-        w.alertBadge.text = control.alert ?: @"";
-        w.alertBadge.markup = control.alertMarkup;
+        w.alertBadge.text = [control shownAlert] ?: @"";
+        w.alertBadge.markup = [control shownAlertMarkup];
+    }
+    if (w.warningBadge) {
+        [w.warningBadge setHidden:!control.relevant];
+        w.warningBadge.text = control.warning ?: @"";
     }
     XFBadgeView *shown = self.badgePopupBadge;
-    if (shown != nil && (shown == w.hintBadge || shown == w.alertBadge) && [shown isHidden]) {
+    if (shown != nil && (shown == w.hintBadge || shown == w.alertBadge || shown == w.warningBadge) && [shown isHidden]) {
         [self hideBadgeInfo];
     }
 }
@@ -371,10 +392,14 @@ NSView *XFKeyViewOf(NSView *view)
     if (XFDarkTheme()) {
         return kind == XFBadgeAlert
             ? [NSColor colorWithCalibratedRed:0.33 green:0.16 blue:0.16 alpha:1.0]
+            : kind == XFBadgeWarning
+            ? [NSColor colorWithCalibratedRed:0.33 green:0.25 blue:0.12 alpha:1.0]
             : [NSColor colorWithCalibratedRed:0.27 green:0.26 blue:0.16 alpha:1.0];
     }
     return kind == XFBadgeAlert
         ? [NSColor colorWithCalibratedRed:1.0 green:0.93 blue:0.93 alpha:1.0]
+        : kind == XFBadgeWarning
+        ? [NSColor colorWithCalibratedRed:1.0 green:0.96 blue:0.88 alpha:1.0]
         : [NSColor colorWithCalibratedRed:1.0 green:1.0 blue:0.93 alpha:1.0];
 }
 
@@ -951,6 +976,7 @@ static NSComparisonResult XFCompareLayers(NSView *a, NSView *b, void *context)
     for (XFWidget *w in self.widgets) {
         [w.hintBadge refreshTracking];
         [w.alertBadge refreshTracking];
+        [w.warningBadge refreshTracking];
     }
 }
 

@@ -27,6 +27,17 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL hintMinimal;
 @property (nonatomic, copy, nullable) NSString *help;
 @property (nonatomic, copy, nullable) NSString *alert;
+/// What the host said of the bound node after a refused submission
+/// (XFNodeState.hostError): while it is set the control is invalid and
+/// shows it in place of its alert.
+@property (nonatomic, copy, readonly, nullable) NSString *hostError;
+/// The bound node's warning (the host's, else the document's
+/// `xfk:warning`): shown at the control, which stays valid.
+@property (nonatomic, copy, readonly, nullable) NSString *warning;
+/// The alert to show while invalid: the host's error, else the form's own.
+- (nullable NSString *)shownAlert;
+/// Its markup: nil while the host's error, which is plain text, is shown.
+- (nullable NSString *)shownAlertMarkup;
 
 /* The same three as MARKUP, when the form wrote any: `<xf:hint>Enter your
    <b>full</b> name</xf:hint>` keeps its emphasis here while `hint` holds

@@ -83,6 +83,7 @@ typedef NS_ENUM(NSInteger, XFAtomKind) {
 typedef NS_ENUM(NSInteger, XFBadgeKind) {
     XFBadgeHint,    // grey ⓘ — xf:hint (non-minimal appearance)
     XFBadgeAlert,   // red ! — xf:alert, shown while the control is invalid
+    XFBadgeWarning, // amber ! — a warning, shown while the bound node has one
 };
 
 /// A 14×14 icon after a widget, the port of XSLTForms' hint / alert icons
@@ -136,6 +137,9 @@ typedef NS_ENUM(NSInteger, XFBadgeKind) {
 @property (nonatomic, strong) XFBadgeView *hintBadge;
 /// Red ! after the widget, hidden unless the control is invalid.
 @property (nonatomic, strong) XFBadgeView *alertBadge;
+/// Amber ! after the widget while its node has a warning (the host's or
+/// an xfk:warning's); the control stays valid.
+@property (nonatomic, strong) XFBadgeView *warningBadge;
 @end
 
 @class XFFormView;

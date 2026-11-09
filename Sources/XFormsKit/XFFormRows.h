@@ -66,6 +66,9 @@ typedef NS_ENUM(NSInteger, XFFormRowKind) {
 /// then takes its plain path.
 @property (nonatomic, copy, nullable) NSString *noteMarkup;
 @property (nonatomic, assign) BOOL noteIsProblem;
+/// A warning (the host's, or an xfk:warning's): told apart from guidance,
+/// but the control is valid.
+@property (nonatomic, assign) BOOL noteIsWarning;
 /// The repeat this row belongs to, and which of its items (1-based),
 /// where the row came from one — what a host's own add / remove gesture
 /// acts on. `repeatPosition` is 0 on the section's RepeatAdd row, which
