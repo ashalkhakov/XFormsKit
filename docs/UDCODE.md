@@ -22,7 +22,7 @@ Each XFormsKit release attaches a package for each platform:
 Install it with **UDCode > Extensions… > Install from Package…**, or from a
 shell with `UDCode --install-extension xforms-<version>-<platform>.udcx`, then
 start UDCode again. A package states which UDCode versions it is for
-(`engines.udcode` in its `package.json`: 0.19 and later), and UDCode refuses
+(`engines.udcode` in its `package.json`: 0.22.2 and later 0.22 releases), and UDCode refuses
 one built for another version or another platform.
 
 ## Using it

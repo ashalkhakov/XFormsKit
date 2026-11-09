@@ -24,7 +24,7 @@ Download from [Releases](https://github.com/ashalkhakov/XFormsKit/releases/lates
 | Linux x86_64 | `XFormsKit-*.AppImage` | Viewer + designer; opens a chooser (`… designer`, `… form.xhtml` go straight in); updated by Gear Lever or AppImageUpdate |
 | Windows x64 | `XFormsKit-*-win64.msi` | Viewer + designer, and the chooser the Start menu opens; they update themselves (*Check for Updates…*) |
 | iOS 15+ | `XFormsMobile-*-unsigned.ipa`, `XFormsMobile-Simulator-*.zip` | Unsigned: sign the `.ipa` yourself to install it on a device; the zip runs in the iOS Simulator |
-| UDCode 0.19+ | `xforms-*-<platform>.udcx` | The designer as a UDCode extension ([docs/UDCODE.md](docs/UDCODE.md)) |
+| UDCode 0.22 | `xforms-*-<platform>.udcx` | The designer as a UDCode extension ([docs/UDCODE.md](docs/UDCODE.md)) |
 
 Every push also uploads unsigned builds to its [Actions run](https://github.com/ashalkhakov/XFormsKit/actions), kept two weeks.
 
