@@ -125,7 +125,7 @@ flowchart LR
 
 - [Building](docs/building.md) and [packaging](docs/packaging.md)
 - [XSLTForms → XFormsKit class map](docs/XSLTForms-mapping.md) and [gap list](docs/XSLTForms-gaps.md)
-- [iOS port plan](docs/ios-port-plan.md) · [W3C suite as XCTests](docs/w3c-xctests.md) · [Submission authentication](docs/submission-auth.md)
+- [iOS port plan](docs/ios-port-plan.md) · [W3C suite as XCTests](docs/w3c-xctests.md) · [Submission authentication](docs/submission-auth.md) · [Forms a host answers](docs/host-forms.md)
 - [GNUstep patches for Linux](https://github.com/ashalkhakov/gnustep-patches)
 
 ## License
