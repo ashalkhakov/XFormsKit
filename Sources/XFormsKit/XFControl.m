@@ -32,6 +32,8 @@
 @property (nonatomic, strong, readwrite) XFBinding *binding;
 @property (nonatomic, strong) XFBinding *hintBinding;
 @property (nonatomic, strong) XFBinding *helpBinding;
+@property (nonatomic, copy, readwrite, nullable) NSString *hostError;
+@property (nonatomic, copy, readwrite, nullable) NSString *warning;
 @property (nonatomic, strong) XFBinding *alertBinding;
 /// The label as parts: NSString literals and XFBinding for nested
 /// xf:output elements / the label's own ref|value|bind (G-23).
@@ -522,6 +524,16 @@
         && [element attributeForName:@"bind"] == nil;
 }
 
+- (NSString *)shownAlert
+{
+    return self.hostError ?: self.alert;
+}
+
+- (NSString *)shownAlertMarkup
+{
+    return self.hostError != nil ? nil : self.alertMarkup;
+}
+
 - (void)applyMIPsFromBoundNode
 {
     [self applyMIPsFromNode:self.boundNode];
@@ -538,13 +550,15 @@
         relevant = state.relevant;
         readonly = state.readonly;
         required = state.required;
-        valid = state.valid;
+        valid = state.valid && state.hostError == nil;
     } else if (node == nil && self.binding != nil) {
         // A single-node binding that selects nothing makes the control
         // non-relevant (XForms 1.1 8.1.1). A `value` binding has no node of
         // its own; callers pass the in-scope evaluation context node instead.
         relevant = NO;
     }
+    self.hostError = state.hostError;
+    self.warning = state.hostWarning ?: state.documentWarning;
     BOOL known = self.mipKnown;
     BOOL ready = [self modelIsReady];
     void (^flip)(BOOL *, BOOL, NSString *, NSString *) = ^(BOOL *slot, BOOL value, NSString *onT, NSString *onF) {

@@ -1092,6 +1092,11 @@ static void XFCollectUsedPrefixes(XFXMLElement *element,
         return;
     }
     self.lastEventContext = evcontext;
+    // Data sent and taken: what the host said of the values it refused
+    // before no longer holds.
+    if (self.lastBodyData.length > 0) {
+        [self.model clearHostErrors];
+    }
     [XFXMLEvents dispatch:self name:@"xforms-submit-done" context:evcontext];
     [du closeAction:@"submission-finish"];
     self.pending = NO;

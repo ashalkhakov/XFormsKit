@@ -9,6 +9,10 @@
 #import "XFXML.h"
 #import "XFErrors.h"
 #import "XFXMLEvents.h"
+#import "XFNodeState.h"
+#import "XFXPath.h"
+#import "XFXPathValue.h"
+#import "XFExprContext.h"
 #import <XFormsKit/XFXMLTypes.h>
 
 @interface XFModel ()
@@ -20,6 +24,13 @@
 @property (nonatomic, strong) NSMutableArray<XFBind *> *mutableBinds;
 @property (nonatomic, strong, readwrite) NSMutableArray<XFXMLNode *> *nodesChanged;
 @property (nonatomic, strong, readwrite) NSMutableArray<XFXMLNode *> *pendingNodesChanged;
+@property (nonatomic, copy, readwrite) NSArray<NSString *> *hostMessages;
+/// The nodes holding a host error or warning, to take them away.
+@property (nonatomic, strong) NSMutableArray<XFXMLNode *> *hostNodes;
+/// The document's xfk:warning elements.
+@property (nonatomic, copy) NSArray<XFXMLElement *> *warningElements;
+/// The nodes the document's warnings were last said of.
+@property (nonatomic, strong) NSMutableArray<XFXMLNode *> *warnedNodes;
 @end
 
 @implementation XFModel
@@ -35,6 +46,12 @@
     model.mutableRepeats = [NSMutableArray array];
     model.nodesChanged = [NSMutableArray array];
     model.pendingNodesChanged = [NSMutableArray array];
+    model.hostMessages = @[];
+    model.hostNodes = [NSMutableArray array];
+    model.warnedNodes = [NSMutableArray array];
+    model.warningElements = [XFXML childElementsWithLocalName:@"warning"
+                                                 namespaceURI:XFKitNamespaceURI
+                                                    ofElement:modelElement];
 
     NSArray<XFXMLElement *> *instanceElements =
         [XFXML childElementsWithLocalName:@"instance"
@@ -427,6 +444,12 @@ static void XFCollectRefAttributes(XFXMLNode *node, NSMutableArray<XFXMLNode *> 
             }
         }
     }
+    // A node whose value changed no longer holds what the host said of
+    // the value it had.
+    XFNodeState *changed = [XFNodeState existingStateOnNode:node];
+    if (changed.hostError != nil) {
+        changed.hostError = nil;
+    }
     // XsltForms_model.addChange: pick the list by the global `building`
     // state and register the model with the deferred-update queue.
     XFDeferredUpdates *du = [XFDeferredUpdates sharedUpdates];
@@ -531,8 +554,124 @@ static void XFCollectRefAttributes(XFXMLNode *node, NSMutableArray<XFXMLNode *> 
     for (XFInstance *instance in self.instances) {
         [instance revalidate];
     }
+    [self evaluateWarnings];
     if (self.ready) {
         [XFXMLEvents dispatch:self name:@"xforms-refresh"];
+    }
+}
+
+#pragma mark Host-reported errors and warnings
+
+- (void)setHostError:(NSString *)message forNode:(XFXMLNode *)node
+{
+    if (node == nil) {
+        return;
+    }
+    [XFNodeState stateOnNode:node].hostError = message;
+    if (message != nil && [self.hostNodes indexOfObjectIdenticalTo:node] == NSNotFound) {
+        [self.hostNodes addObject:node];
+    }
+    [self.owner refreshControls];
+}
+
+- (NSArray<NSString *> *)setHostErrors:(NSDictionary<NSString *, NSString *> *)errors
+{
+    [self dropHostErrors];
+    NSMutableArray<NSString *> *messages = [NSMutableArray array];
+    XFXMLNode *root = [[self defaultInstance] documentElement];
+    for (NSString *path in [[errors allKeys] sortedArrayUsingSelector:@selector(compare:)]) {
+        NSString *message = errors[path];
+        NSArray<XFXMLNode *> *nodes = nil;
+        if (path.length > 0 && root != nil) {
+            XFXPath *xpath = [XFXPath xpathWithString:path element:self.element error:NULL];
+            XFExprContext *ctx = [[XFExprContext alloc] initWithNode:root];
+            ctx.model = self;
+            nodes = [xpath nodesInContext:ctx error:NULL];
+        }
+        if (nodes.count == 0) {
+            [messages addObject:message];
+            continue;
+        }
+        for (XFXMLNode *node in nodes) {
+            [XFNodeState stateOnNode:node].hostError = message;
+            if ([self.hostNodes indexOfObjectIdenticalTo:node] == NSNotFound) {
+                [self.hostNodes addObject:node];
+            }
+        }
+    }
+    self.hostMessages = messages;
+    [self.owner refreshControls];
+    return messages;
+}
+
+/// The host's errors taken away, without refreshing.
+- (void)dropHostErrors
+{
+    for (XFXMLNode *node in self.hostNodes) {
+        [XFNodeState existingStateOnNode:node].hostError = nil;
+    }
+    NSMutableArray *warned = [NSMutableArray array];
+    for (XFXMLNode *node in self.hostNodes) {
+        if ([XFNodeState existingStateOnNode:node].hostWarning != nil) {
+            [warned addObject:node];
+        }
+    }
+    [self.hostNodes setArray:warned];
+    self.hostMessages = @[];
+}
+
+- (void)clearHostErrors
+{
+    if (self.hostNodes.count == 0 && self.hostMessages.count == 0) {
+        return;
+    }
+    [self dropHostErrors];
+    [self.owner refreshControls];
+}
+
+- (void)setHostWarning:(NSString *)message forNode:(XFXMLNode *)node
+{
+    if (node == nil) {
+        return;
+    }
+    [XFNodeState stateOnNode:node].hostWarning = message;
+    if (message != nil && [self.hostNodes indexOfObjectIdenticalTo:node] == NSNotFound) {
+        [self.hostNodes addObject:node];
+    }
+    [self.owner refreshControls];
+}
+
+- (void)evaluateWarnings
+{
+    if (self.warningElements.count == 0) {
+        return;
+    }
+    for (XFXMLNode *node in self.warnedNodes) {
+        [XFNodeState existingStateOnNode:node].documentWarning = nil;
+    }
+    [self.warnedNodes removeAllObjects];
+    XFXMLNode *root = [[self defaultInstance] documentElement];
+    if (root == nil) {
+        return;
+    }
+    for (XFXMLElement *warning in self.warningElements) {
+        NSString *ref = [[warning attributeForName:@"ref"] stringValue] ?: @".";
+        NSString *test = [[warning attributeForName:@"test"] stringValue];
+        XFXPath *refPath = [XFXPath xpathWithString:ref element:warning error:NULL];
+        XFXPath *testPath = test.length ? [XFXPath xpathWithString:test element:warning error:NULL] : nil;
+        XFExprContext *ctx = [[XFExprContext alloc] initWithNode:root];
+        ctx.model = self;
+        NSString *text = [[XFXML stringValueOfNode:warning] stringByTrimmingCharactersInSet:
+                          [NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        for (XFXMLNode *node in [refPath nodesInContext:ctx error:NULL] ?: @[]) {
+            XFExprContext *at = [[XFExprContext alloc] initWithNode:node];
+            at.model = self;
+            if (testPath != nil && ![[testPath evaluateInContext:at error:NULL] booleanValue]) {
+                continue;
+            }
+            [XFNodeState stateOnNode:node].documentWarning = text;
+            [self.warnedNodes addObject:node];
+        }
     }
 }
 

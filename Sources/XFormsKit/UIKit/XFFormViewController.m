@@ -955,6 +955,7 @@ static UIView *XFInlineWidgetForControl(XFControl *control, id<XFInlineWidgetHos
     [super bindRow:row];
     self.textLabel.text = nil;
     UIColor *colour = row.noteIsProblem ? [UIColor systemRedColor]
+                    : row.noteIsWarning ? [UIColor systemOrangeColor]
                                         : [UIColor secondaryLabelColor];
     self.note.textColor = colour;
     // a hint or alert may carry host markup (XForms 1.1 §9.3.1); the
@@ -965,7 +966,8 @@ static UIView *XFInlineWidgetForControl(XFControl *control, id<XFInlineWidgetHos
                                       baseFont:[UIFont preferredFontForTextStyle:UIFontTextStyleFootnote]
                                      textColor:colour];
     self.accessibilityLabel = row.noteIsProblem
-        ? [NSString stringWithFormat:@"Error: %@", row.note ?: @""] : row.note;
+        ? [NSString stringWithFormat:@"Error: %@", row.note ?: @""]
+        : row.noteIsWarning ? [NSString stringWithFormat:@"Warning: %@", row.note ?: @""] : row.note;
 }
 
 @end

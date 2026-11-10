@@ -216,6 +216,31 @@
     XCTAssertNil(note.noteMarkup);
 }
 
+/// What the host said of a refused value is the note under the field, as
+/// an alert is; a warning is a note of its own kind, the field valid.
+- (void)testHostErrorsAndWarningsAreNotes
+{
+    XFProcessor *p = [self formWithBody:
+        @"<xf:input ref=\"name\"><xf:label>Name</xf:label><xf:alert>Required.</xf:alert></xf:input>"
+        @"<xf:input ref=\"colour\"><xf:label>Colour</xf:label></xf:input>"];
+    XFXMLElement *data = [[p.model defaultInstance] documentElement];
+    [p.model setHostError:@"Taken by another account." forNode:[data elementsForName:@"name"].firstObject];
+    [p.model setHostWarning:@"Red cars cost more to insure." forNode:[data elementsForName:@"colour"].firstObject];
+    NSMutableArray<XFFormRow *> *notes = [NSMutableArray array];
+    for (XFFormRow *row in [XFFormRows sectionsForProcessor:p].firstObject.rows) {
+        if (row.kind == XFFormRowKindNote) {
+            [notes addObject:row];
+        }
+    }
+    XCTAssertEqual(notes.count, (NSUInteger)2);
+    XCTAssertEqualObjects(notes[0].note, @"Taken by another account.", @"in place of the form's own alert");
+    XCTAssertTrue(notes[0].noteIsProblem);
+    XCTAssertNil(notes[0].noteMarkup);
+    XCTAssertEqualObjects(notes[1].note, @"Red cars cost more to insure.");
+    XCTAssertTrue(notes[1].noteIsWarning);
+    XCTAssertFalse(notes[1].noteIsProblem);
+}
+
 - (void)testEachControlKindPicksItsRow
 {
     NSArray<XFFormSection *> *sections = [self sectionsForBody:

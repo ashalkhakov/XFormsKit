@@ -16,5 +16,7 @@ XFORMSKIT_EXPORT NSString * const XFXMLSchemaNamespaceURI;
 XFORMSKIT_EXPORT NSString * const XFXMLSchemaInstanceNamespaceURI;
 /// XSLTForms extensions (ajx:confirm, …): http://www.ajaxforms.net/2006/ajx
 XFORMSKIT_EXPORT NSString * const XFAJXNamespaceURI;
+/// XFormsKit's own extensions (xfk:warning): urn:xformskit:extensions
+XFORMSKIT_EXPORT NSString * const XFKitNamespaceURI;
 
 NS_ASSUME_NONNULL_END

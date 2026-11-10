@@ -71,6 +71,13 @@
 
 + (instancetype)processorWithContentsOfURL:(NSURL *)url error:(NSError **)error
 {
+    return [self processorWithContentsOfURL:url transport:nil error:error];
+}
+
++ (instancetype)processorWithContentsOfURL:(NSURL *)url
+                                 transport:(id<XFSubmissionTransport>)transport
+                                     error:(NSError **)error
+{
     NSError *inner = nil;
     NSData *data = [NSData dataWithContentsOfURL:url options:0 error:&inner];
     if (data == nil) {
@@ -83,7 +90,7 @@
     if (doc == nil) {
         return nil;
     }
-    return [[self alloc] initWithHostDocument:doc baseURL:url error:error];
+    return [[self alloc] initWithHostDocument:doc baseURL:url transport:transport error:error];
 }
 
 + (instancetype)processorWithXMLString:(NSString *)xml error:(NSError **)error
@@ -95,12 +102,20 @@
                                baseURL:(NSURL *)baseURL
                                  error:(NSError **)error
 {
+    return [self processorWithXMLString:xml baseURL:baseURL transport:nil error:error];
+}
+
++ (instancetype)processorWithXMLString:(NSString *)xml
+                               baseURL:(NSURL *)baseURL
+                             transport:(id<XFSubmissionTransport>)transport
+                                 error:(NSError **)error
+{
     NSData *data = [xml dataUsingEncoding:NSUTF8StringEncoding];
     XFXMLDocument *doc = [self documentFromData:data error:error];
     if (doc == nil) {
         return nil;
     }
-    return [[self alloc] initWithHostDocument:doc baseURL:baseURL error:error];
+    return [[self alloc] initWithHostDocument:doc baseURL:baseURL transport:transport error:error];
 }
 
 - (instancetype)initWithHostDocument:(XFXMLDocument *)document error:(NSError **)error
@@ -154,12 +169,21 @@
                              baseURL:(NSURL *)baseURL
                                error:(NSError **)error
 {
+    return [self initWithHostDocument:document baseURL:baseURL transport:nil error:error];
+}
+
+- (instancetype)initWithHostDocument:(XFXMLDocument *)document
+                             baseURL:(NSURL *)baseURL
+                           transport:(id<XFSubmissionTransport>)transport
+                               error:(NSError **)error
+{
     self = [super init];
     if (self == nil) {
         return nil;
     }
     _hostDocument = document;
     _baseURL = baseURL;
+    _transport = transport;
     [self expandIncludesIn:document];
 
     // XForms 1.1 8.3.3: label/help/hint/alert carry a linking @src whose
@@ -208,6 +232,7 @@
             return nil;
         }
         model.owner = self;
+        model.transport = transport;
         [models addObject:model];
         [[XFXMLEvents sharedEvents] registerElement:model.element xfElement:model];
         for (XFInstance *instance in model.instances) {
@@ -1066,6 +1091,7 @@ static NSError *XFSubformError(NSString *message)
             return nil;
         }
         model.owner = self;
+        model.transport = self.transport;
         model.subform = sf;
         [models addObject:model];
         [[XFXMLEvents sharedEvents] registerElement:model.element xfElement:model];

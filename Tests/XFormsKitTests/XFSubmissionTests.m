@@ -1100,4 +1100,188 @@
         @"10", @"the calculate ran after the submission");
 }
 
+#pragma mark - A host's own scheme, its errors and warnings
+
+/// A form as ORMKit generates one (docs/host-forms.md): its data read
+/// from form:read, a reference's choices from form:choices/<name> once
+/// the form is ready (not validated: a new form's required fields are
+/// still empty), and saved to form:save; the host's transport given at
+/// construction answers all three.
+- (XFProcessor *)hostForm:(XFSchemeTransport *)transport error:(NSError **)error
+{
+    NSString *xml =
+        @"<html xmlns=\"http://www.w3.org/1999/xhtml\""
+        @"      xmlns:xf=\"http://www.w3.org/2002/xforms\""
+        @"      xmlns:ev=\"http://www.w3.org/2001/xml-events\""
+        @"      xmlns:xfk=\"urn:xformskit:extensions\">"
+        @"  <xf:model id=\"m\">"
+        @"    <xf:instance id=\"form\" src=\"form:read\"/>"
+        @"    <xf:instance id=\"choices-driver\"><items xmlns=\"\"/></xf:instance>"
+        @"    <xf:bind nodeset=\"instance('form')/mileage\" type=\"xsd:decimal\" required=\"true()\"/>"
+        @"    <xf:submission id=\"choices-driver\" ref=\"instance('form')\" method=\"get\" replace=\"instance\""
+        @"                   instance=\"choices-driver\" resource=\"form:choices/driver\" validate=\"false\"/>"
+        @"    <xf:submission id=\"save\" ref=\"instance('form')\" method=\"post\" replace=\"none\" resource=\"form:save\"/>"
+        @"    <xfk:warning ref=\"fuel\" test=\". = 'Diesel'\">This car does not use that fuel.</xfk:warning>"
+        @"    <xf:action ev:event=\"xforms-ready\"><xf:send submission=\"choices-driver\"/></xf:action>"
+        @"  </xf:model>"
+        @"  <xf:input id=\"mileage\" ref=\"mileage\"><xf:label>Odometer</xf:label></xf:input>"
+        @"  <xf:input id=\"fuel\" ref=\"fuel\"><xf:label>Fuel</xf:label></xf:input>"
+        @"  <xf:select1 id=\"driver\" ref=\"driver\"><xf:label>Driver</xf:label>"
+        @"    <xf:itemset nodeset=\"instance('choices-driver')/item\"><xf:label ref=\"key\"/><xf:value ref=\"key\"/></xf:itemset>"
+        @"  </xf:select1>"
+        @"  <xf:send id=\"go\" submission=\"save\"/>"
+        @"</html>";
+    return [XFProcessor processorWithXMLString:xml baseURL:nil transport:transport error:error];
+}
+
+- (XFSubmissionResponse *)responseWithStatus:(NSInteger)status body:(NSString *)body
+{
+    XFSubmissionResponse *response = [[XFSubmissionResponse alloc] init];
+    response.statusCode = status;
+    response.body = body;
+    response.mediaType = @"application/xml";
+    return response;
+}
+
+- (void)testAHostSchemeIsAnsweredFromConstruction
+{
+    NSMutableArray<NSString *> *asked = [NSMutableArray array];
+    XFSchemeTransport *transport = [[XFSchemeTransport alloc] init];
+    [transport setHandler:^XFSubmissionResponse *(XFSubmissionRequest *request, NSError **error) {
+        (void)error;
+        [asked addObject:[NSString stringWithFormat:@"%@ %@", request.method, request.URLString]];
+        if ([request.URLString isEqualToString:@"form:read"]) {
+            return [self responseWithStatus:200
+                                       body:@"<FillUp xmlns=\"\"><vehicle>V1</vehicle><mileage/><fuel/><driver/></FillUp>"];
+        }
+        if ([request.URLString hasPrefix:@"form:choices/driver"]) {
+            return [self responseWithStatus:200 body:@"<items xmlns=\"\"><item><key>ada@example.test</key></item>"
+                                                     @"<item><key>bob@example.test</key></item></items>"];
+        }
+        return [self responseWithStatus:404 body:@""];
+    } forScheme:@"form"];
+    NSError *error = nil;
+    XFProcessor *p = [self hostForm:transport error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XCTAssertEqualObjects(p.transport, transport);
+    XCTAssertEqualObjects(asked.firstObject, @"get form:read", @"the instance's src, asked of the host");
+    XFXMLNode *vehicle = [[[p.model instanceWithIdentifier:@"form"] documentElement] elementsForName:@"vehicle"].firstObject;
+    XCTAssertEqualObjects([XFXML stringValueOfNode:vehicle], @"V1");
+    XCTAssertEqual(asked.count, (NSUInteger)2, @"%@", asked);
+    XCTAssertTrue([asked[1] hasPrefix:@"get form:choices/driver?"], @"%@", asked[1]);
+    XCTAssertTrue([asked[1] containsString:@"vehicle=V1"], @"what the choices depend on goes with them: %@", asked[1]);
+    NSArray *items = [[[p.model instanceWithIdentifier:@"choices-driver"] documentElement] elementsForName:@"item"];
+    XCTAssertEqual(items.count, (NSUInteger)2, @"the choices replaced");
+}
+
+- (void)testARefusedSavesErrorsAreShownAtTheirNodesUntilEdited
+{
+    __block NSString *saved = nil;
+    __block NSInteger status = 400;
+    XFSchemeTransport *transport = [[XFSchemeTransport alloc] init];
+    [transport setHandler:^XFSubmissionResponse *(XFSubmissionRequest *request, NSError **error) {
+        (void)error;
+        if ([request.URLString isEqualToString:@"form:read"]) {
+            return [self responseWithStatus:200
+                                       body:@"<FillUp xmlns=\"\"><vehicle>V1</vehicle><mileage>100</mileage><fuel/><driver/></FillUp>"];
+        }
+        if ([request.URLString isEqualToString:@"form:save"]) {
+            saved = request.body;
+            return [self responseWithStatus:status body:@""];
+        }
+        return [self responseWithStatus:200 body:@"<items xmlns=\"\"/>"];
+    } forScheme:@"form"];
+    NSError *error = nil;
+    XFProcessor *p = [self hostForm:transport error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    [self send:p identifier:@"go"];
+    XCTAssertTrue([saved containsString:@"<mileage>100</mileage>"], @"the instance is the body: %@", saved);
+    XCTAssertEqualObjects(p.model.defaultSubmission.lastEventContext[@"error-type"], nil);
+    XCTAssertEqualObjects([p.model submissionWithIdentifier:@"save"].lastEventContext[@"error-type"], @"resource-error");
+
+    // The host maps the refusal to elements and says so.
+    NSArray *messages = [p.model setHostErrors:@{ @"mileage" : @"Each meter reading is above the one before.",
+                                                  @"" : @"The vehicle was sold." }];
+    XCTAssertEqualObjects(messages, @[ @"The vehicle was sold." ]);
+    XCTAssertEqualObjects(p.model.hostMessages, @[ @"The vehicle was sold." ]);
+    XFControl *mileage = [p controlWithIdentifier:@"mileage"];
+    XCTAssertFalse(mileage.valid, @"the host's error makes it invalid");
+    XCTAssertEqualObjects([mileage shownAlert], @"Each meter reading is above the one before.");
+    XCTAssertTrue([p controlWithIdentifier:@"fuel"].valid);
+
+    // Edited: what the host said of the old value is gone.
+    XCTAssertTrue([p setValue:@"150" ofControl:mileage error:&error], @"%@", error);
+    XCTAssertTrue(mileage.valid);
+    XCTAssertNil(mileage.hostError);
+
+    // Said again, then a save that is taken clears every error.
+    [p.model setHostErrors:@{ @"fuel" : @"Unknown fuel." }];
+    XCTAssertFalse([p controlWithIdentifier:@"fuel"].valid);
+    status = 200;
+    [self send:p identifier:@"go"];
+    XCTAssertTrue([p controlWithIdentifier:@"fuel"].valid, @"cleared by the save");
+    XCTAssertEqualObjects(p.model.hostMessages, @[]);
+}
+
+- (void)testAWarningIsShownAndNeverBlocks
+{
+    __block NSUInteger saves = 0;
+    XFSchemeTransport *transport = [[XFSchemeTransport alloc] init];
+    [transport setHandler:^XFSubmissionResponse *(XFSubmissionRequest *request, NSError **error) {
+        (void)error;
+        if ([request.URLString isEqualToString:@"form:read"]) {
+            return [self responseWithStatus:200
+                                       body:@"<FillUp xmlns=\"\"><vehicle>V1</vehicle><mileage>100</mileage><fuel/><driver/></FillUp>"];
+        }
+        if ([request.URLString isEqualToString:@"form:save"]) {
+            saves++;
+        }
+        return [self responseWithStatus:200 body:@"<items xmlns=\"\"/>"];
+    } forScheme:@"form"];
+    NSError *error = nil;
+    XFProcessor *p = [self hostForm:transport error:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFControl *fuel = [p controlWithIdentifier:@"fuel"];
+    XCTAssertNil(fuel.warning);
+    XCTAssertTrue([p setValue:@"Diesel" ofControl:fuel error:&error], @"%@", error);
+    XCTAssertEqualObjects(fuel.warning, @"This car does not use that fuel.", @"the document's warning, its test holding");
+    XCTAssertTrue(fuel.valid, @"a warning is not invalid");
+    [self send:p identifier:@"go"];
+    XCTAssertEqual(saves, (NSUInteger)1, @"nor in the way of a submission");
+    XCTAssertTrue([p setValue:@"Petrol" ofControl:fuel error:&error], @"%@", error);
+    XCTAssertNil(fuel.warning, @"its test no longer holds");
+
+    XFControl *mileage = [p controlWithIdentifier:@"mileage"];
+    [p.model setHostWarning:@"Longer than usual since the last fill-up." forNode:mileage.boundNode];
+    XCTAssertEqualObjects(mileage.warning, @"Longer than usual since the last fill-up.");
+    XCTAssertTrue(mileage.valid);
+    [p.model setHostWarning:nil forNode:mileage.boundNode];
+    XCTAssertNil(mileage.warning);
+}
+
+- (void)testASchemeTransportPassesTheRestOn
+{
+    XFMapSubmissionTransport *map = [[XFMapSubmissionTransport alloc] init];
+    [map setXML:@"<data xmlns=\"\"><n>Bob</n></data>" forURL:@"http://example.test/echo"];
+    XFSchemeTransport *transport = [[XFSchemeTransport alloc] init];
+    transport.inner = map;
+    __block NSUInteger answered = 0;
+    [transport setHandler:^XFSubmissionResponse *(XFSubmissionRequest *request, NSError **error) {
+        (void)request; (void)error;
+        answered++;
+        return [self responseWithStatus:200 body:@""];
+    } forScheme:@"FORM"];
+    XFSubmissionRequest *http = [[XFSubmissionRequest alloc] init];
+    http.method = @"get";
+    http.URLString = @"http://example.test/echo";
+    XCTAssertTrue([[transport performRequest:http error:NULL].body containsString:@"Bob"]);
+    XFSubmissionRequest *form = [[XFSubmissionRequest alloc] init];
+    form.URLString = @"form:save";
+    [transport performRequest:form error:NULL];
+    XCTAssertEqual(answered, (NSUInteger)1, @"schemes are matched without case");
+    [transport setHandler:nil forScheme:@"form"];
+    XCTAssertNotNil([transport performRequest:form error:NULL], @"removed: the inner transport answers");
+    XCTAssertEqual(answered, (NSUInteger)1);
+}
+
 @end

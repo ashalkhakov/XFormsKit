@@ -7,3 +7,4 @@ NSString * const XFXMLNamespaceURI                 = @"http://www.w3.org/XML/199
 NSString * const XFXMLSchemaNamespaceURI           = @"http://www.w3.org/2001/XMLSchema";
 NSString * const XFXMLSchemaInstanceNamespaceURI   = @"http://www.w3.org/2001/XMLSchema-instance";
 NSString * const XFAJXNamespaceURI                 = @"http://www.ajaxforms.net/2006/ajx";
+NSString * const XFKitNamespaceURI                 = @"urn:xformskit:extensions";

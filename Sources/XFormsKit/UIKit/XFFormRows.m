@@ -138,11 +138,14 @@ static const NSUInteger kXFMaxSegments = 4;
 {
     NSString *text = nil;
     NSString *markup = nil;
-    BOOL problem = NO;
+    BOOL problem = NO, warning = NO;
     if (!control.valid && ![control isKindOfClass:[XFTriggerControl class]]) {
-        text = control.alert.length ? control.alert : @"This value is not valid.";
-        markup = control.alert.length ? control.alertMarkup : nil;
+        text = [control shownAlert].length ? [control shownAlert] : @"This value is not valid.";
+        markup = [control shownAlert].length ? [control shownAlertMarkup] : nil;
         problem = YES;
+    } else if (control.warning.length && ![control isKindOfClass:[XFTriggerControl class]]) {
+        text = control.warning;
+        warning = YES;
     } else if (control.hint.length && !control.hintMinimal) {
         text = control.hint;
         markup = control.hintMarkup;
@@ -157,6 +160,7 @@ static const NSUInteger kXFMaxSegments = 4;
     note.note = text;
     note.noteMarkup = markup;
     note.noteIsProblem = problem;
+    note.noteIsWarning = warning;
     [rows addObject:note];
 }
 
