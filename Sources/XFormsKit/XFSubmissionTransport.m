@@ -3,7 +3,11 @@
 #if defined(__APPLE__)
 #import <CommonCrypto/CommonDigest.h>
 #else
-#import <openssl/evp.h>
+/* Nettle, GnuTLS's: GNUstep links GnuTLS, so it is there, and kept in step
+   with it (not OpenSSL, whose DLL a Windows build is tied to the version
+   of, and MSYS2 moves on). */
+#include <nettle/md5.h>
+#include <nettle/version.h>
 #endif
 
 @implementation XFSubmissionRequest
@@ -53,8 +57,14 @@ static NSString *XFMD5Hex(NSString *input)
     CC_MD5(bytes.bytes, (CC_LONG)bytes.length, digest);
 #pragma clang diagnostic pop
 #else
-    unsigned int outlen = 16;
-    EVP_Digest(bytes.bytes, bytes.length, digest, &outlen, EVP_md5(), NULL);
+    struct md5_ctx ctx;
+    md5_init(&ctx);
+    md5_update(&ctx, bytes.length, bytes.bytes);
+#if NETTLE_VERSION_MAJOR >= 4
+    md5_digest(&ctx, digest);  /* Nettle 4 (MSYS2): the whole digest */
+#else
+    md5_digest(&ctx, MD5_DIGEST_SIZE, digest);
+#endif
 #endif
     NSMutableString *hex = [NSMutableString stringWithCapacity:32];
     for (int i = 0; i < 16; i++) {

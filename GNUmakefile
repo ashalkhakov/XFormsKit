@@ -213,7 +213,7 @@ XFormsKit_OBJCFLAGS += -fobjc-arc -Wall -Wextra
 # arguments with CFSTR, and those two live in corebase rather than in
 # Opal -- without it the framework loads and then dies at the first
 # <text> it paints.
-XFormsKit_LIBRARIES_DEPEND_UPON += -ldispatch -lcrypto -lopal -lgnustep-corebase
+XFormsKit_LIBRARIES_DEPEND_UPON += -ldispatch -lnettle -lopal -lgnustep-corebase
 # Windows: a DLL exports what it marks, and once the runtime marks its
 # classes, its C constants and functions must be marked too: XFORMSKIT_EXPORT
 # (in its headers) is "export" while it is built, an import elsewhere.
