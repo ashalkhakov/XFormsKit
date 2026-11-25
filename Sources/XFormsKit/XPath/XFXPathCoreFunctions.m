@@ -17,10 +17,13 @@
 #import <CommonCrypto/CommonDigest.h>
 #import <CommonCrypto/CommonHMAC.h>
 #define XF_HAS_COMMONCRYPTO 1
-#elif __has_include(<openssl/evp.h>)
-#include <openssl/evp.h>
-#include <openssl/hmac.h>
-#define XF_HAS_OPENSSL 1
+#elif __has_include(<nettle/nettle-meta.h>)
+/* Nettle, GnuTLS's: GNUstep links GnuTLS, so it is there, and kept in step
+   with it (not OpenSSL, whose DLL a Windows build is tied to the version
+   of, and MSYS2 moves on). */
+#include <nettle/nettle-meta.h>
+#include <nettle/hmac.h>
+#define XF_HAS_NETTLE 1
 #endif
 
 static NSString *XFLocalName(NSString *qname)
@@ -275,24 +278,27 @@ static NSString *XFDigestString(NSString *data, NSString *alg, NSString *enc, NS
         }
         out = [NSData dataWithBytes:buf length:len];
     }
-#elif defined(XF_HAS_OPENSSL)
+#elif defined(XF_HAS_NETTLE)
     NSString *a = [[alg uppercaseString] stringByReplacingOccurrencesOfString:@"-" withString:@""];
-    const EVP_MD *md = EVP_md5();
-    if ([a isEqualToString:@"SHA1"]) md = EVP_sha1();
-    else if ([a isEqualToString:@"SHA256"]) md = EVP_sha256();
-    else if ([a isEqualToString:@"SHA384"]) md = EVP_sha384();
-    else if ([a isEqualToString:@"SHA512"]) md = EVP_sha512();
-    unsigned char buf[EVP_MAX_MD_SIZE];
-    unsigned int len = 0;
+    const struct nettle_hash *hash = &nettle_md5;
+    if ([a isEqualToString:@"SHA1"]) hash = &nettle_sha1;
+    else if ([a isEqualToString:@"SHA256"]) hash = &nettle_sha256;
+    else if ([a isEqualToString:@"SHA384"]) hash = &nettle_sha384;
+    else if ([a isEqualToString:@"SHA512"]) hash = &nettle_sha512;
+    uint8_t buf[64];
+    NSMutableData *state = [NSMutableData dataWithLength:hash->context_size * 3];
+    void *outer = state.mutableBytes, *inner = (uint8_t *)outer + hash->context_size, *ctx = (uint8_t *)inner + hash->context_size;
     if (key) {
         NSData *k = [key dataUsingEncoding:NSUTF8StringEncoding];
-        if (HMAC(md, k.bytes, (int)k.length, inData.bytes, inData.length, buf, &len) == NULL) {
-            return @"";
-        }
-    } else if (!EVP_Digest(inData.bytes, inData.length, buf, &len, md, NULL)) {
-        return @"";
+        hmac_set_key(outer, inner, ctx, hash, k.length, k.bytes);
+        hmac_update(ctx, hash, inData.length, inData.bytes);
+        hmac_digest(outer, inner, ctx, hash, hash->digest_size, buf);
+    } else {
+        hash->init(ctx);
+        hash->update(ctx, inData.length, inData.bytes);
+        hash->digest(ctx, hash->digest_size, buf);
     }
-    out = [NSData dataWithBytes:buf length:len];
+    out = [NSData dataWithBytes:buf length:hash->digest_size];
 #else
     (void)alg; (void)key; (void)inData;
     return @"";
