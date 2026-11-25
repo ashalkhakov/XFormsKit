@@ -7,6 +7,7 @@
    with it (not OpenSSL, whose DLL a Windows build is tied to the version
    of, and MSYS2 moves on). */
 #include <nettle/md5.h>
+#include <nettle/version.h>
 #endif
 
 @implementation XFSubmissionRequest
@@ -59,7 +60,11 @@ static NSString *XFMD5Hex(NSString *input)
     struct md5_ctx ctx;
     md5_init(&ctx);
     md5_update(&ctx, bytes.length, bytes.bytes);
+#if NETTLE_VERSION_MAJOR >= 4
+    md5_digest(&ctx, digest);  /* Nettle 4 (MSYS2): the whole digest */
+#else
     md5_digest(&ctx, MD5_DIGEST_SIZE, digest);
+#endif
 #endif
     NSMutableString *hex = [NSMutableString stringWithCapacity:32];
     for (int i = 0; i < 16; i++) {

@@ -22,8 +22,15 @@
    with it (not OpenSSL, whose DLL a Windows build is tied to the version
    of, and MSYS2 moves on). */
 #include <nettle/nettle-meta.h>
-#include <nettle/hmac.h>
+#include <nettle/version.h>
 #define XF_HAS_NETTLE 1
+/* Nettle 4 (MSYS2's) digests the whole hash; 3 (Ubuntu 22.04's) takes its
+   length. */
+#if NETTLE_VERSION_MAJOR >= 4
+#define XF_NETTLE_DIGEST(hash, ctx, out) (hash)->digest((ctx), (out))
+#else
+#define XF_NETTLE_DIGEST(hash, ctx, out) (hash)->digest((ctx), (hash)->digest_size, (out))
+#endif
 #endif
 
 static NSString *XFLocalName(NSString *qname)
@@ -285,18 +292,37 @@ static NSString *XFDigestString(NSString *data, NSString *alg, NSString *enc, NS
     else if ([a isEqualToString:@"SHA256"]) hash = &nettle_sha256;
     else if ([a isEqualToString:@"SHA384"]) hash = &nettle_sha384;
     else if ([a isEqualToString:@"SHA512"]) hash = &nettle_sha512;
+    NSMutableData *context = [NSMutableData dataWithLength:hash->context_size];
+    void *ctx = context.mutableBytes;
     uint8_t buf[64];
-    NSMutableData *state = [NSMutableData dataWithLength:hash->context_size * 3];
-    void *outer = state.mutableBytes, *inner = (uint8_t *)outer + hash->context_size, *ctx = (uint8_t *)inner + hash->context_size;
     if (key) {
+        /* HMAC (RFC 2104) over the hash: Nettle 4 has no generic HMAC. The
+           key padded to the block (hashed first when longer), its inner
+           and outer pads. */
         NSData *k = [key dataUsingEncoding:NSUTF8StringEncoding];
-        hmac_set_key(outer, inner, ctx, hash, k.length, k.bytes);
-        hmac_update(ctx, hash, inData.length, inData.bytes);
-        hmac_digest(outer, inner, ctx, hash, hash->digest_size, buf);
+        unsigned block = hash->block_size;
+        uint8_t padded[128] = { 0 }, pad[128], inner[64];
+        if (k.length > block) {
+            hash->init(ctx);
+            hash->update(ctx, k.length, k.bytes);
+            XF_NETTLE_DIGEST(hash, ctx, padded);
+        } else {
+            memcpy(padded, k.bytes, k.length);
+        }
+        for (unsigned i = 0; i < block; i++) pad[i] = padded[i] ^ 0x36;
+        hash->init(ctx);
+        hash->update(ctx, block, pad);
+        hash->update(ctx, inData.length, inData.bytes);
+        XF_NETTLE_DIGEST(hash, ctx, inner);
+        for (unsigned i = 0; i < block; i++) pad[i] = padded[i] ^ 0x5c;
+        hash->init(ctx);
+        hash->update(ctx, block, pad);
+        hash->update(ctx, hash->digest_size, inner);
+        XF_NETTLE_DIGEST(hash, ctx, buf);
     } else {
         hash->init(ctx);
         hash->update(ctx, inData.length, inData.bytes);
-        hash->digest(ctx, hash->digest_size, buf);
+        XF_NETTLE_DIGEST(hash, ctx, buf);
     }
     out = [NSData dataWithBytes:buf length:hash->digest_size];
 #else
