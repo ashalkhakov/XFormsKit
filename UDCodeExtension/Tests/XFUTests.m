@@ -85,6 +85,15 @@
   [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:seconds]];
 }
 
+// The run loop spun until the text has changed, at most `seconds`: the
+// extension writes a designer's change a turn of the run loop later, and on
+// a busy runner that turn can be later than a fixed spin.
+- (void)spinUntilTextIsNot:(NSString *)text within:(NSTimeInterval)seconds {
+  NSDate *end = [NSDate dateWithTimeIntervalSinceNow:seconds];
+  while ([[_document.textModel getValue] isEqualToString:text] && [end timeIntervalSinceNow] > 0)
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
+}
+
 // The tab over a document of the text, its view in a window as UDCode's tab
 // would have it.
 - (void)openText:(NSString *)text {
@@ -168,7 +177,7 @@
   _edits = 0;
   [control.controlLabelField setStringValue:@"Your name"];
   XCTAssertTrue([control.controlLabelField commitEditing]);
-  [self spin:0.1];
+  [self spinUntilTextIsNot:text within:5];
   NSString *changed = [_document.textModel getValue];
   XCTAssertTrue([changed containsString:@"<xf:label>Your name</xf:label>"]);
   XCTAssertEqual(_edits, 1u, @"one action, one edit of the text");
@@ -181,7 +190,7 @@
   // after it, a change is its own lines
   [control.controlLabelField setStringValue:@"Full name"];
   XCTAssertTrue([control.controlLabelField commitEditing]);
-  [self spin:0.1];
+  [self spinUntilTextIsNot:changed within:5];
   NSArray *second = XFULineChanges(changed, [_document.textModel getValue]);
   XCTAssertEqual(second.count, 1u, @"only the label's line");
   XCTAssertEqualObjects(((XFUTextChange *)second.firstObject).text, @"        <xf:label>Full name</xf:label>\n");
