@@ -5,8 +5,8 @@
 #import "XFMenuStyle.h"
 #if defined(GNUSTEP)
 #import <XFormsKit/XFCrashReporter.h>   // not in the Xcode project: GNUstep-only
-#import <objc/runtime.h>
 #endif
+#import <objc/runtime.h>
 
 @interface XFViewerApp : NSObject
 @end
