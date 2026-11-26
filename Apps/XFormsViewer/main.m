@@ -5,6 +5,7 @@
 #import "XFMenuStyle.h"
 #if defined(GNUSTEP)
 #import <XFormsKit/XFCrashReporter.h>   // not in the Xcode project: GNUstep-only
+#import <objc/runtime.h>
 #endif
 
 @interface XFViewerApp : NSObject
@@ -32,7 +33,7 @@
 
 - (BOOL)validateMenuItem:(NSMenuItem *)item
 {
-    if ([item action] == @selector(checkForUpdates:)) {
+    if (sel_isEqual([item action], @selector(checkForUpdates:))) {
         return [_updater canCheckForUpdates];
     }
     return YES;

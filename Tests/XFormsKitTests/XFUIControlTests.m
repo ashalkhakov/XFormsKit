@@ -187,6 +187,35 @@
     XCTAssertEqualObjects([XFXML stringValueOfNode:done_], @"yes", @"and the trigger still ran");
 }
 
+/// Tab and Shift-Tab in a textarea move the focus on; Return and the rest
+/// stay the text view's. The commands are made from their names, as the key
+/// bindings make them: on GNUstep those are not always == @selector().
+- (void)testATextareaTakesTabAsTheKeyBindingsSendIt
+{
+    [NSApplication sharedApplication];
+    NSError *error = nil;
+    XFProcessor *p = [self formWithANoteAndADoneButtonError:&error];
+    XCTAssertNotNil(p, @"%@", error);
+    XFFormView *view = [[XFFormView alloc] initWithProcessor:p];
+    NSWindow *window = [self windowShowing:view];
+    NSScrollView *scroll = [self firstViewOfClass:[NSScrollView class] under:view
+                                         matching:^BOOL(NSView *v) {
+        return [[(NSScrollView *)v documentView] isKindOfClass:[NSTextView class]];
+    }];
+    NSTextView *area = [scroll documentView];
+    XCTAssertNotNil(area);
+    XCTAssertTrue([window makeFirstResponder:area]);
+    id<NSTextViewDelegate> delegate = (id<NSTextViewDelegate>)view;
+    XCTAssertFalse([delegate textView:area doCommandBySelector:NSSelectorFromString(@"insertNewline:")],
+                   @"Return: a new line in the textarea");
+    XCTAssertFalse([delegate textView:area doCommandBySelector:NSSelectorFromString(@"moveUp:")]);
+    XCTAssertTrue([delegate textView:area doCommandBySelector:NSSelectorFromString(@"insertTab:")],
+                  @"Tab: the focus moves on");
+    XCTAssertTrue([delegate textView:area doCommandBySelector:NSSelectorFromString(@"insertBacktab:")],
+                  @"Shift-Tab: the focus moves back");
+    [NSObject cancelPreviousPerformRequestsWithTarget:view];
+}
+
 /// The same click with a text field being edited. This half already
 /// worked on macOS — ending a field editor is AppKit's own business, and
 /// a click does it — so this pins that rather than the fix; the flush

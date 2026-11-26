@@ -5,6 +5,7 @@
 #import <XFormsKit/XFNodeState.h>
 #import <XFormsKit/XFXML.h>
 #import <XFormsKit/XFNamespaces.h>
+#import <objc/runtime.h>
 
 @interface XFTreeItem : NSObject
 @property (nonatomic, strong) XFXMLNode *node;
@@ -1433,7 +1434,7 @@ objectValueForTableColumn:(NSTableColumn *)tableColumn
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
 {
     SEL a = [menuItem action];
-    if (a == @selector(deleteSelected:) || a == @selector(duplicateSelected:)) {
+    if (sel_isEqual(a, @selector(deleteSelected:)) || sel_isEqual(a, @selector(duplicateSelected:))) {
         return self.selectedItem != nil && !self.selectedItem.instanceSide;
     }
     return YES;

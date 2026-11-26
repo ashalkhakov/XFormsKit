@@ -1,4 +1,5 @@
 #import "XFAppKitPriv.h"
+#import <objc/runtime.h>
 
 void XFAppKitHasEditingFile(void) {}
 
@@ -213,19 +214,19 @@ void XFAppKitHasEditingFile(void) {}
 /// form (the HTML behaviour XSLTForms gets for free).
 - (BOOL)textView:(NSTextView *)textView doCommandBySelector:(SEL)commandSelector
 {
-    if (commandSelector == @selector(insertNewline:)) {
+    if (sel_isEqual(commandSelector, @selector(insertNewline:))) {
         XFWidget *w = [self widgetForTextView:textView];
         if ([w.view isKindOfClass:[XFRichTextEditor class]]) {
             return [(XFRichTextEditor *)w.view handleNewline];
         }
         return NO;
     }
-    if (commandSelector != @selector(insertTab:) && commandSelector != @selector(insertBacktab:)) {
+    if (!sel_isEqual(commandSelector, @selector(insertTab:)) && !sel_isEqual(commandSelector, @selector(insertBacktab:))) {
         return NO;
     }
     XFControl *control = [self widgetForTextView:textView].control;
     self.pendingTabControl = control;
-    self.pendingTabDirection = commandSelector == @selector(insertTab:) ? 1 : -1;
+    self.pendingTabDirection = sel_isEqual(commandSelector, @selector(insertTab:)) ? 1 : -1;
     // end the editing (commits and may rebuild), then move on the new widgets
     [[textView window] makeFirstResponder:nil];
     [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(applyPendingTab) object:nil];
