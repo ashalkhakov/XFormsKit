@@ -2,6 +2,7 @@
 #import "XFDRichTextPanel.h"
 #import "XFDRichFragment.h"
 #import "XFDXPathField.h"
+#import <objc/runtime.h>
 
 // Its outlets (its XIB's connections), on the ivars above.
 @interface XFDRichTextPanel ()
@@ -296,17 +297,17 @@
 
 - (BOOL)textView:(NSTextView *)textView doCommandBySelector:(SEL)commandSelector
 {
-    if (textView == [_richEditor textView] && commandSelector == @selector(insertNewline:)) {
+    if (textView == [_richEditor textView] && sel_isEqual(commandSelector, @selector(insertNewline:))) {
         return [_richEditor handleNewline];
     }
     // deleting against a pill's edge removes the WHOLE pill (a lone
     // bracket would leave a half-token that degrades to literal text)
     if (textView == [_richEditor textView]
-        && (commandSelector == @selector(deleteBackward:)
-            || commandSelector == @selector(deleteForward:))) {
+        && (sel_isEqual(commandSelector, @selector(deleteBackward:))
+            || sel_isEqual(commandSelector, @selector(deleteForward:)))) {
         NSRange sel = [textView selectedRange];
         if (sel.length == 0) {
-            BOOL backward = (commandSelector == @selector(deleteBackward:));
+            BOOL backward = (sel_isEqual(commandSelector, @selector(deleteBackward:)));
             for (NSValue *value in [self tokenRanges]) {
                 NSRange token = [value rangeValue];
                 if ((backward && NSMaxRange(token) == sel.location)

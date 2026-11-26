@@ -14,6 +14,7 @@
 #import "XFormsDesignKit.h"
 #import "XFUpdater.h"
 #import "XFMenuStyle.h"
+#import <objc/runtime.h>
 
 /* The application's delegate, from MainMenu.xib: it holds the updater.
    Set up as the menu is loaded, before the app finishes launching (as
@@ -43,7 +44,7 @@
 
 - (BOOL)validateMenuItem:(NSMenuItem *)item
 {
-    if ([item action] == @selector(checkForUpdates:)) {
+    if (sel_isEqual([item action], @selector(checkForUpdates:))) {
         return [_updater canCheckForUpdates];
     }
     return YES;
@@ -105,7 +106,7 @@ static int XFDRunSelfTest(NSString *path)
     NSMenuItem *checkForUpdates = [[[[NSApp mainMenu] itemAtIndex:0] submenu]
                                    itemWithTag:XFCheckForUpdatesMenuItemTag];
     if ((checkForUpdates != nil) != hasUpdater
-        || (checkForUpdates != nil && [checkForUpdates action] != @selector(checkForUpdates:))) {
+        || (checkForUpdates != nil && !sel_isEqual([checkForUpdates action], @selector(checkForUpdates:)))) {
         NSLog(@"SELFTEST Check for Updates… %@", hasUpdater ? @"missing from the app menu" : @"offered");
         return 1;
     }
